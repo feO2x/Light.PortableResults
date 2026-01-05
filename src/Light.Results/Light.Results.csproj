@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <!-- No explicit properties needed; Directory.Build.props provides shared settings. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
 </Project>
