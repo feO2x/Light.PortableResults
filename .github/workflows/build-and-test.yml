@@ -29,7 +29,8 @@ jobs:
           --no-build
           --verbosity normal
           --collect:"XPlat Code Coverage"
-          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+          -- 
+          DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
       - name: Publish coverage summary
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
