@@ -1,10 +1,10 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Light.Results.Metadata;
 
 namespace Light.Results;
 
@@ -15,6 +15,7 @@ namespace Light.Results;
 public readonly struct Result<T>
 {
     private readonly Errors _errors;
+    private readonly MetadataObject? _metadata;
 
     [MemberNotNullWhen(true, nameof(Value))]
     public bool IsSuccess { get; }
@@ -34,21 +35,28 @@ public readonly struct Result<T>
         _errors.First :
         throw new InvalidOperationException("Cannot access errors on a successful Result.");
 
-    private Result(T value)
+    /// <summary>Gets the result-level metadata (correlation IDs, timing data, etc.).</summary>
+    public MetadataObject? Metadata => _metadata;
+
+    private Result(T value, MetadataObject? metadata = null)
     {
         IsSuccess = true;
         Value = value;
         _errors = default;
+        _metadata = metadata;
     }
 
-    private Result(Errors errors)
+    private Result(Errors errors, MetadataObject? metadata = null)
     {
         IsSuccess = false;
         Value = default;
         _errors = errors;
+        _metadata = metadata;
     }
 
     public static Result<T> Ok(T value) => new (value);
+
+    public static Result<T> Ok(T value, MetadataObject metadata) => new (value, metadata);
 
     public static Result<T> Fail(Error error) => new (new Errors(error));
 
@@ -76,21 +84,35 @@ public readonly struct Result<T>
             throw new ArgumentException("At least one error is required.", nameof(errors));
         }
 
-        if (list.Count == 1)
-        {
-            return Fail(list[0]);
-        }
-
-        return new Result<T>(Errors.FromArray(list.ToArray()));
+        return list.Count == 1 ? Fail(list[0]) : new Result<T>(Errors.FromArray(list.ToArray()));
     }
 
     /// <summary>Transforms the successful value.</summary>
     public Result<TOut> Map<TOut>(Func<T, TOut> map)
-        => IsSuccess ? Result<TOut>.Ok(map(Value)) : Result<TOut>.Fail(_errors);
+        => IsSuccess ? Result<TOut>.Ok(map(Value), _metadata) : Result<TOut>.Fail(_errors, _metadata);
 
     /// <summary>Chains another result-returning function.</summary>
     public Result<TOut> Bind<TOut>(Func<T, Result<TOut>> bind)
-        => IsSuccess ? bind(Value) : Result<TOut>.Fail(_errors);
+    {
+        if (!IsSuccess)
+        {
+            return Result<TOut>.Fail(_errors, _metadata);
+        }
+
+        var inner = bind(Value);
+        // Merge metadata from this result into the bound result
+        if (_metadata is not null && inner._metadata is null)
+        {
+            return inner.WithMetadata(_metadata.Value);
+        }
+
+        if (_metadata is not null && inner._metadata is not null)
+        {
+            return inner.MergeMetadata(_metadata.Value);
+        }
+
+        return inner;
+    }
 
     /// <summary>Executes an action on success and returns the same result.</summary>
     public Result<T> Tap(Action<T> action)
@@ -124,8 +146,43 @@ public readonly struct Result<T>
     public static implicit operator Result<T>(Error error) => Fail(error);
 
 
+    /// <summary>Creates a new result with the specified metadata.</summary>
+    public Result<T> WithMetadata(MetadataObject metadata)
+    {
+        if (IsSuccess)
+        {
+            return new Result<T>(Value, metadata);
+        }
+
+        return new Result<T>(_errors, metadata);
+    }
+
+    /// <summary>Creates a new result with additional metadata properties.</summary>
+    public Result<T> WithMetadata(params (string Key, MetadataValue Value)[] properties)
+    {
+        var newMetadata = _metadata?.With(properties) ?? MetadataObject.Create(properties);
+        return WithMetadata(newMetadata);
+    }
+
+    /// <summary>Merges the specified metadata into this result's metadata.</summary>
+    public Result<T> MergeMetadata(
+        MetadataObject other,
+        MetadataMergeStrategy strategy = MetadataMergeStrategy.AddOrReplace
+    )
+    {
+        if (_metadata is null)
+        {
+            return WithMetadata(other);
+        }
+
+        var merged = _metadata.Value.Merge(other, strategy);
+        return WithMetadata(merged);
+    }
+
     // Allow Result<T>.Fail(_errors) reuse without re-allocating arrays.
-    private static Result<T> Fail(Errors errors) => new (errors);
+    private static Result<T> Fail(Errors errors, MetadataObject? metadata = null) => new (errors, metadata);
+
+    internal static Result<T> Ok(T value, MetadataObject? metadata) => new (value, metadata);
 }
 
 /// <summary>
@@ -140,94 +197,29 @@ public readonly struct Result
     public bool IsFailure => _inner.IsFailure;
     public ImmutableArray<Error> ErrorList => _inner.ErrorList;
 
+    /// <summary>Gets the result-level metadata (correlation IDs, timing data, etc.).</summary>
+    public MetadataObject? Metadata => _inner.Metadata;
+
     public static Result Ok() => new (Result<Unit>.Ok(Unit.Value));
+    public static Result Ok(MetadataObject metadata) => new (Result<Unit>.Ok(Unit.Value, metadata));
     public static Result Fail(Error error) => new (Result<Unit>.Fail(error));
     public static Result Fail(IEnumerable<Error> errors) => new (Result<Unit>.Fail(errors));
-}
 
-/// <summary>
-/// Represents a void-like successful value.
-/// </summary>
-public readonly struct Unit
-{
-    public static readonly Unit Value = new ();
+    /// <summary>Creates a new result with the specified metadata.</summary>
+    public Result WithMetadata(MetadataObject metadata) => new (_inner.WithMetadata(metadata));
+
+    /// <summary>Creates a new result with additional metadata properties.</summary>
+    public Result WithMetadata(params (string Key, MetadataValue Value)[] properties) =>
+        new (_inner.WithMetadata(properties));
+
+    /// <summary>Merges the specified metadata into this result's metadata.</summary>
+    public Result MergeMetadata(
+        MetadataObject other,
+        MetadataMergeStrategy strategy = MetadataMergeStrategy.AddOrReplace
+    ) =>
+        new (_inner.MergeMetadata(other, strategy));
 }
 
 // Internal errors storage with small-buffer optimization:
 // - one error inline (no array allocation)
 // - many errors in an array
-public readonly struct Errors : IEnumerable<Error>
-{
-    private readonly Error _one;
-    private readonly Error[]? _many;
-
-    public int Count { get; }
-
-    public Error First => Count switch
-    {
-        <= 0 => throw new InvalidOperationException("No errors present."),
-        1 => _one,
-        _ => _many![0]
-    };
-
-    public Errors(Error one)
-    {
-        _one = one;
-        _many = null;
-        Count = 1;
-    }
-
-    private Errors(Error[] many)
-    {
-        if (many is null)
-        {
-            throw new ArgumentNullException(nameof(many));
-        }
-
-        if (many.Length < 2)
-        {
-            throw new ArgumentException("Use single-error constructor for one error.", nameof(many));
-        }
-
-        _one = default;
-        _many = many;
-        Count = many.Length;
-    }
-
-    public static Errors FromArray(Error[] errors)
-        => errors.Length == 1 ? new Errors(errors[0]) : new Errors(errors);
-
-    public ImmutableArray<Error> ToImmutableArray()
-    {
-        if (Count == 0)
-        {
-            return ImmutableArray<Error>.Empty;
-        }
-
-        if (Count == 1)
-        {
-            return ImmutableArray.Create(_one);
-        }
-
-        return ImmutableArray.Create(_many!);
-    }
-
-    public IEnumerator<Error> GetEnumerator()
-    {
-        if (Count == 1)
-        {
-            yield return _one;
-            yield break;
-        }
-
-        if (Count > 1)
-        {
-            for (var i = 0; i < _many!.Length; i++)
-            {
-                yield return _many[i];
-            }
-        }
-    }
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-}
