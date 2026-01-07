@@ -1,4 +1,12 @@
 <Solution>
+    <Folder Name="/.github/" />
+    <Folder Name="/.github/actions/" />
+    <Folder Name="/.github/actions/cache-nuget/">
+        <File Path=".github\actions\cache-nuget\action.yml" />
+    </Folder>
+    <Folder Name="/.github/workflows/">
+        <File Path=".github\workflows\build-and-test.yml" />
+    </Folder>
     <Folder Name="/ai-plans/">
         <File Path="ai-plans\0001-metadata.md" />
     </Folder>
