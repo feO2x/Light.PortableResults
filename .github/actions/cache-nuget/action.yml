@@ -1,0 +1,14 @@
+name: 'Cache NuGet Packages'
+description: 'Sets up caching for NuGet packages to speed up builds'
+author: 'Kenny Pflug'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          nuget-${{ runner.os }}-
