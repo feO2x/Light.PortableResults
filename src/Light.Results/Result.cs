@@ -88,8 +88,8 @@ public readonly struct Result<T>
     }
 
     /// <summary>Transforms the successful value.</summary>
-    public Result<TOut> Map<TOut>(Func<T, TOut> map)
-        => IsSuccess ? Result<TOut>.Ok(map(Value), _metadata) : Result<TOut>.Fail(_errors, _metadata);
+    public Result<TOut> Map<TOut>(Func<T, TOut> map) =>
+        IsSuccess ? Result<TOut>.Ok(map(Value), _metadata) : Result<TOut>.Fail(_errors, _metadata);
 
     /// <summary>Chains another result-returning function.</summary>
     public Result<TOut> Bind<TOut>(Func<T, Result<TOut>> bind)
@@ -101,17 +101,11 @@ public readonly struct Result<T>
 
         var inner = bind(Value);
         // Merge metadata from this result into the bound result
-        if (_metadata is not null && inner._metadata is null)
-        {
-            return inner.WithMetadata(_metadata.Value);
-        }
-
-        if (_metadata is not null && inner._metadata is not null)
-        {
-            return inner.MergeMetadata(_metadata.Value);
-        }
-
-        return inner;
+        return _metadata is null ?
+            inner :
+            inner._metadata is null ?
+                inner.WithMetadata(_metadata.Value) :
+                inner.MergeMetadata(_metadata.Value);
     }
 
     /// <summary>Executes an action on success and returns the same result.</summary>
