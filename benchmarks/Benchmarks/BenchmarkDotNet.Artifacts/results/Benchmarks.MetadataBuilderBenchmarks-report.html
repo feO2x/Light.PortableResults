@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'/>
+    <title>Benchmarks.MetadataBuilderBenchmarks-20260107-135953</title>
+
+    <style type="text/css">
+        table {
+            border-collapse: collapse;
+            display: block;
+            width: 100%;
+            overflow: auto;
+        }
+
+        td, th {
+            padding: 6px 13px;
+            border: 1px solid #ddd;
+            text-align: right;
+        }
+
+        tr {
+            background-color: #fff;
+            border-top: 1px solid #ccc;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f8f8;
+        }
+    </style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.15.8, macOS Tahoe 26.2 (25C56) [Darwin 25.2.0]
+Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
+.NET SDK 10.0.101
+  [Host]     : .NET 10.0.1 (10.0.1, 10.0.125.57005), Arm64 RyuJIT armv8.0-a
+  DefaultJob : .NET 10.0.1 (10.0.1, 10.0.125.57005), Arm64 RyuJIT armv8.0-a
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+    <thead>
+    <tr>
+        <th>Method</th>
+        <th>Mean</th>
+        <th>Error</th>
+        <th>StdDev</th>
+        <th>Ratio</th>
+        <th>RatioSD</th>
+        <th>Gen0</th>
+        <th>Gen1</th>
+        <th>Allocated</th>
+        <th>Alloc Ratio</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>BuildDictionary</td>
+        <td>61.61 ns</td>
+        <td>0.342 ns</td>
+        <td>0.304 ns</td>
+        <td>1.00</td>
+        <td>0.01</td>
+        <td>0.0640</td>
+        <td>-</td>
+        <td>536 B</td>
+        <td>1.00</td>
+    </tr>
+    <tr>
+        <td>BuildMetadataObject</td>
+        <td>39.42 ns</td>
+        <td>0.238 ns</td>
+        <td>0.223 ns</td>
+        <td>0.64</td>
+        <td>0.00</td>
+        <td>0.0220</td>
+        <td>-</td>
+        <td>184 B</td>
+        <td>0.34</td>
+    </tr>
+    <tr>
+        <td>BuildDictionary_Large</td>
+        <td>480.47 ns</td>
+        <td>2.542 ns</td>
+        <td>2.253 ns</td>
+        <td>7.80</td>
+        <td>0.05</td>
+        <td>0.3824</td>
+        <td>0.0029</td>
+        <td>3200 B</td>
+        <td>5.97</td>
+    </tr>
+    <tr>
+        <td>BuildMetadataObject_Large</td>
+        <td>552.73 ns</td>
+        <td>1.572 ns</td>
+        <td>1.313 ns</td>
+        <td>8.97</td>
+        <td>0.05</td>
+        <td>0.1593</td>
+        <td>-</td>
+        <td>1336 B</td>
+        <td>2.49</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

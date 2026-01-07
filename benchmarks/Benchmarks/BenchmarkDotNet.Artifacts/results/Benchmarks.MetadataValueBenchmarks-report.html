@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'/>
+    <title>Benchmarks.MetadataValueBenchmarks-20260107-124920</title>
+
+    <style type="text/css">
+        table {
+            border-collapse: collapse;
+            display: block;
+            width: 100%;
+            overflow: auto;
+        }
+
+        td, th {
+            padding: 6px 13px;
+            border: 1px solid #ddd;
+            text-align: right;
+        }
+
+        tr {
+            background-color: #fff;
+            border-top: 1px solid #ccc;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f8f8;
+        }
+    </style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.15.8, macOS Tahoe 26.2 (25C56) [Darwin 25.2.0]
+Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
+.NET SDK 10.0.101
+  [Host]     : .NET 10.0.1 (10.0.1, 10.0.125.57005), Arm64 RyuJIT armv8.0-a
+  DefaultJob : .NET 10.0.1 (10.0.1, 10.0.125.57005), Arm64 RyuJIT armv8.0-a
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+    <thead>
+    <tr>
+        <th>Method</th>
+        <th>Mean</th>
+        <th>Error</th>
+        <th>StdDev</th>
+        <th>Gen0</th>
+        <th>Allocated</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>CreateInt64Value</td>
+        <td>0.0000 ns</td>
+        <td>0.0000 ns</td>
+        <td>0.0000 ns</td>
+        <td>-</td>
+        <td>-</td>
+    </tr>
+    <tr>
+        <td>CreateBoxedInt64</td>
+        <td>2.2388 ns</td>
+        <td>0.0127 ns</td>
+        <td>0.0113 ns</td>
+        <td>0.0029</td>
+        <td>24 B</td>
+    </tr>
+    <tr>
+        <td>CreateDoubleValue</td>
+        <td>0.0000 ns</td>
+        <td>0.0000 ns</td>
+        <td>0.0000 ns</td>
+        <td>-</td>
+        <td>-</td>
+    </tr>
+    <tr>
+        <td>CreateBoxedDouble</td>
+        <td>2.2328 ns</td>
+        <td>0.0108 ns</td>
+        <td>0.0096 ns</td>
+        <td>0.0029</td>
+        <td>24 B</td>
+    </tr>
+    <tr>
+        <td>CreateBooleanValue</td>
+        <td>0.0000 ns</td>
+        <td>0.0000 ns</td>
+        <td>0.0000 ns</td>
+        <td>-</td>
+        <td>-</td>
+    </tr>
+    <tr>
+        <td>CreateBoxedBoolean</td>
+        <td>2.2254 ns</td>
+        <td>0.0133 ns</td>
+        <td>0.0125 ns</td>
+        <td>0.0029</td>
+        <td>24 B</td>
+    </tr>
+    <tr>
+        <td>CreateStringValue</td>
+        <td>0.0000 ns</td>
+        <td>0.0000 ns</td>
+        <td>0.0000 ns</td>
+        <td>-</td>
+        <td>-</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

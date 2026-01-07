@@ -1,0 +1,45 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: ./global.json
+      - name: Cache NuGet packages
+        uses: ./.github/actions/cache-nuget
+      - name: Restore dependencies
+        run: dotnet restore ./Light.Results.slnx /p:ContinuousIntegrationBuild=true
+      - name: Build
+        run: dotnet build ./Light.Results.slnx --configuration Release --no-restore /p:ContinuousIntegrationBuild=true
+      - name: Test
+        run: >
+          dotnet test ./Light.Results.slnx
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          -- 
+          DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+      - name: Publish coverage summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: '**/coverage.cobertura.xml'
+          badge: true
+          format: 'markdown'
+          output: 'both'
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: '**/coverage.cobertura.xml'

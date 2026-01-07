@@ -5,5 +5,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <TreatWarningsAsErrors Condition="'$(Configuration)' == 'Release'">true</TreatWarningsAsErrors>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
+    <Authors>Kenny Pflug</Authors>
+    <Company>Kenny Pflug</Company>
+    <Copyright>Copyright (c) 2026 Kenny Pflug</Copyright>
   </PropertyGroup>
 </Project>
