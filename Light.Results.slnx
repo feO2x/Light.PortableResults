@@ -1,5 +1,11 @@
 <Solution>
-  <Folder Name="/SolutionItems/">
+    <Folder Name="/ai-plans/">
+        <File Path="ai-plans\0001-metadata.md" />
+    </Folder>
+    <Folder Name="/benchmarks/">
+        <Project Path="benchmarks/Benchmarks/Benchmarks.csproj" />
+    </Folder>
+    <Folder Name="/solution-items/">
     <File Path=".editorconfig" />
     <File Path=".gitignore" />
     <File Path="Directory.Build.props" />
