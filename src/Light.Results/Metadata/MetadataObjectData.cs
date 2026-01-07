@@ -4,56 +4,29 @@ using System.Collections.Generic;
 namespace Light.Results.Metadata;
 
 /// <summary>
-/// Internal backing storage for <see cref="MetadataObject" />. Owns parallel arrays of keys and values,
-/// sorted by key for deterministic ordering.
+/// Internal backing storage for <see cref="MetadataObject" />. Owns a single array of entries,
+/// sorted by key for deterministic ordering and better cache locality during iteration.
 /// </summary>
 internal sealed class MetadataObjectData
 {
     private const int DictionaryThreshold = 8;
 
-    private readonly string[] _keys;
-    private readonly MetadataValue[] _values;
+    private readonly MetadataEntry[] _entries;
     private Dictionary<string, int>? _indexLookup;
 
-    internal MetadataObjectData(string[] keys, MetadataValue[] values)
+    internal MetadataObjectData(MetadataEntry[] entries)
     {
-        if (keys is null)
-        {
-            throw new ArgumentNullException(nameof(keys));
-        }
-
-        if (values is null)
-        {
-            throw new ArgumentNullException(nameof(values));
-        }
-
-        if (keys.Length != values.Length)
-        {
-            throw new ArgumentException("Keys and values must have the same length.");
-        }
-
-        _keys = keys;
-        _values = values;
+        _entries = entries ?? throw new ArgumentNullException(nameof(entries));
     }
 
-    public static MetadataObjectData Empty { get; } = new ([], []);
+    public static MetadataObjectData Empty { get; } = new ([]);
 
-    public int Count => _keys.Length;
+    public int Count => _entries.Length;
 
-    public ReadOnlySpan<string> Keys => _keys;
-    public ReadOnlySpan<MetadataValue> Values => _values;
-
-    public string GetKey(int index)
+    public ref readonly MetadataEntry GetEntry(int index)
     {
-        return (uint) index >= (uint) _keys.Length ?
-            throw new ArgumentOutOfRangeException(nameof(index)) :
-            _keys[index];
+        return ref _entries[index];
     }
-
-    public MetadataValue GetValue(int index) =>
-        (uint) index >= (uint) _values.Length ?
-            throw new ArgumentOutOfRangeException(nameof(index)) :
-            _values[index];
 
     public bool TryGetValue(string key, out MetadataValue value)
     {
@@ -65,7 +38,7 @@ internal sealed class MetadataObjectData
         var index = FindIndex(key);
         if (index >= 0)
         {
-            value = _values[index];
+            value = _entries[index].Value;
             return true;
         }
 
@@ -75,7 +48,7 @@ internal sealed class MetadataObjectData
 
     private int FindIndex(string key)
     {
-        return _keys.Length switch
+        return _entries.Length switch
         {
             0 => -1,
             > DictionaryThreshold => FindIndexWithDictionary(key),
@@ -85,9 +58,9 @@ internal sealed class MetadataObjectData
 
     private int FindIndexLinear(string key)
     {
-        for (var i = 0; i < _keys.Length; i++)
+        for (var i = 0; i < _entries.Length; i++)
         {
-            if (string.Equals(_keys[i], key, StringComparison.Ordinal))
+            if (string.Equals(_entries[i].Key, key, StringComparison.Ordinal))
             {
                 return i;
             }
@@ -100,10 +73,10 @@ internal sealed class MetadataObjectData
     {
         if (_indexLookup is null)
         {
-            var dict = new Dictionary<string, int>(_keys.Length, StringComparer.Ordinal);
-            for (var i = 0; i < _keys.Length; i++)
+            var dict = new Dictionary<string, int>(_entries.Length, StringComparer.Ordinal);
+            for (var i = 0; i < _entries.Length; i++)
             {
-                dict[_keys[i]] = i;
+                dict[_entries[i].Key] = i;
             }
 
             _indexLookup = dict;
@@ -112,6 +85,5 @@ internal sealed class MetadataObjectData
         return _indexLookup.TryGetValue(key, out var index) ? index : -1;
     }
 
-    public string[] GetKeys() => _keys;
-    public MetadataValue[] GetValues() => _values;
+    public MetadataEntry[] GetEntries() => _entries;
 }

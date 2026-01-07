@@ -11,7 +11,7 @@ Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
 
 | Method                    |      Mean |    Error |   StdDev | Ratio | RatioSD |   Gen0 |   Gen1 | Allocated | Alloc Ratio |
 |---------------------------|----------:|---------:|---------:|------:|--------:|-------:|-------:|----------:|------------:|
-| BuildDictionary           |  63.45 ns | 0.899 ns | 0.841 ns |  1.00 |    0.02 | 0.0640 |      - |     536 B |        1.00 |
-| BuildMetadataObject       |  54.61 ns | 0.573 ns | 0.536 ns |  0.86 |    0.01 | 0.0258 |      - |     216 B |        0.40 |
-| BuildDictionary_Large     | 523.05 ns | 1.787 ns | 1.672 ns |  8.24 |    0.11 | 0.3824 | 0.0029 |    3200 B |        5.97 |
-| BuildMetadataObject_Large | 664.89 ns | 1.330 ns | 1.179 ns | 10.48 |    0.14 | 0.1631 |      - |    1368 B |        2.55 |
+| BuildDictionary           |  61.61 ns | 0.342 ns | 0.304 ns |  1.00 |    0.01 | 0.0640 |      - |     536 B |        1.00 |
+| BuildMetadataObject       |  39.42 ns | 0.238 ns | 0.223 ns |  0.64 |    0.00 | 0.0220 |      - |     184 B |        0.34 |
+| BuildDictionary_Large     | 480.47 ns | 2.542 ns | 2.253 ns |  7.80 |    0.05 | 0.3824 | 0.0029 |    3200 B |        5.97 |
+| BuildMetadataObject_Large | 552.73 ns | 1.572 ns | 1.313 ns |  8.97 |    0.05 | 0.1593 |      - |    1336 B |        2.49 |

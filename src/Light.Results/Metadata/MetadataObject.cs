@@ -35,7 +35,7 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
 
             for (var i = 0; i < Data.Count; i++)
             {
-                yield return Data.GetKey(i);
+                yield return Data.GetEntry(i).Key;
             }
         }
     }
@@ -51,7 +51,7 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
 
             for (var i = 0; i < Data.Count; i++)
             {
-                yield return Data.GetValue(i);
+                yield return Data.GetEntry(i).Value;
             }
         }
     }
@@ -167,28 +167,27 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
             return Empty;
         }
 
-        var keys = new string[properties.Length];
-        var values = new MetadataValue[properties.Length];
+        var entries = new MetadataEntry[properties.Length];
 
         for (var i = 0; i < properties.Length; i++)
         {
-            keys[i] = properties[i].Key ?? throw new ArgumentNullException(nameof(properties), "Key cannot be null.");
-            values[i] = properties[i].Value;
+            var key = properties[i].Key ?? throw new ArgumentNullException(nameof(properties), "Key cannot be null.");
+            entries[i] = new MetadataEntry(key, properties[i].Value);
         }
 
         // Sort by key for deterministic ordering
-        Array.Sort(keys, values, StringComparer.Ordinal);
+        Array.Sort(entries, (a, b) => string.CompareOrdinal(a.Key, b.Key));
 
         // Check for duplicates
-        for (var i = 1; i < keys.Length; i++)
+        for (var i = 1; i < entries.Length; i++)
         {
-            if (string.Equals(keys[i], keys[i - 1], StringComparison.Ordinal))
+            if (string.Equals(entries[i].Key, entries[i - 1].Key, StringComparison.Ordinal))
             {
-                throw new ArgumentException($"Duplicate key: '{keys[i]}'.", nameof(properties));
+                throw new ArgumentException($"Duplicate key: '{entries[i].Key}'.", nameof(properties));
             }
         }
 
-        return new MetadataObject(new MetadataObjectData(keys, values));
+        return new MetadataObject(new MetadataObjectData(entries));
     }
 
     public Enumerator GetEnumerator() => new (this);
@@ -209,8 +208,7 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
 
     public struct Enumerator : IEnumerator<KeyValuePair<string, MetadataValue>>
     {
-        private readonly string[]? _keys;
-        private readonly MetadataValue[]? _values;
+        private readonly MetadataEntry[]? _entries;
         private readonly int _count;
         private int _index;
 
@@ -218,22 +216,26 @@ public readonly struct MetadataObject : IReadOnlyDictionary<string, MetadataValu
         {
             if (obj.Data is null)
             {
-                _keys = null;
-                _values = null;
+                _entries = null;
                 _count = 0;
             }
             else
             {
-                _keys = obj.Data.GetKeys();
-                _values = obj.Data.GetValues();
+                _entries = obj.Data.GetEntries();
                 _count = obj.Data.Count;
             }
 
             _index = -1;
         }
 
-        public KeyValuePair<string, MetadataValue> Current =>
-            new (_keys![_index], _values![_index]);
+        public KeyValuePair<string, MetadataValue> Current
+        {
+            get
+            {
+                ref readonly var entry = ref _entries![_index];
+                return new KeyValuePair<string, MetadataValue>(entry.Key, entry.Value);
+            }
+        }
 
         object IEnumerator.Current => Current;
 

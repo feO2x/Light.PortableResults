@@ -9,9 +9,9 @@ Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
 
 ```
 
-| Method                      |      Mean |     Error |    StdDev | Ratio | RatioSD | Allocated | Alloc Ratio |
-|-----------------------------|----------:|----------:|----------:|------:|--------:|----------:|------------:|
-| DictionaryIterate_Small     | 1.4263 ns | 0.0170 ns | 0.0159 ns |  1.00 |    0.02 |         - |          NA |
-| MetadataObjectIterate_Small | 0.9088 ns | 0.0108 ns | 0.0096 ns |  0.64 |    0.01 |         - |          NA |
-| DictionaryIterate_Large     | 5.2705 ns | 0.0243 ns | 0.0215 ns |  3.70 |    0.04 |         - |          NA |
-| MetadataObjectIterate_Large | 7.3371 ns | 0.1175 ns | 0.1099 ns |  5.14 |    0.09 |         - |          NA |
+| Method                      |      Mean |     Error |    StdDev |    Median | Ratio | RatioSD | Allocated | Alloc Ratio |
+|-----------------------------|----------:|----------:|----------:|----------:|------:|--------:|----------:|------------:|
+| DictionaryIterate_Small     | 1.3995 ns | 0.0145 ns | 0.0129 ns | 1.3971 ns |  1.00 |    0.01 |         - |          NA |
+| MetadataObjectIterate_Small | 0.9278 ns | 0.0193 ns | 0.0181 ns | 0.9243 ns |  0.66 |    0.01 |         - |          NA |
+| DictionaryIterate_Large     | 5.3035 ns | 0.0267 ns | 0.0249 ns | 5.3048 ns |  3.79 |    0.04 |         - |          NA |
+| MetadataObjectIterate_Large | 5.8316 ns | 0.2393 ns | 0.7055 ns | 5.5857 ns |  4.17 |    0.50 |         - |          NA |
