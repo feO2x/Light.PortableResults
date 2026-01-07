@@ -147,7 +147,7 @@ public sealed class GenericResultTests
     {
         var result = Result<int>.Fail(new Error("Message", Code: "ERR001"));
 
-        result.ToString().Should().Contain("ERR001");
+        result.ToString().Should().Contain("Message");
     }
 
     [Fact]

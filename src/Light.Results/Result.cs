@@ -15,16 +15,17 @@ public readonly struct Result<T>
     // Field order optimized to reduce padding: reference types first, then value types
     private readonly Errors _errors;
     private readonly MetadataObject? _metadata;
+    private readonly T? _value;
 
-    [MemberNotNullWhen(true, nameof(Value))]
-    public bool IsSuccess { get; }
+    [MemberNotNullWhen(true, nameof(Value), nameof(_value))]
+    public bool IsSuccess => _errors.Count == 0;
 
-    [MemberNotNullWhen(false, nameof(Value))]
+    [MemberNotNullWhen(false, nameof(Value), nameof(_value))]
     public bool IsFailure => !IsSuccess;
 
     /// <summary>Gets the successful value. Throws if this is a failure.</summary>
     public T Value =>
-        IsSuccess ? field! : throw new InvalidOperationException("Cannot access Value on a failed Result.");
+        IsSuccess ? _value : throw new InvalidOperationException("Cannot access Value on a failed Result.");
 
     /// <summary>Returns the errors collection (empty struct on success).</summary>
     public Errors Errors => _errors;
@@ -39,16 +40,14 @@ public readonly struct Result<T>
 
     private Result(T value, MetadataObject? metadata = null)
     {
-        IsSuccess = true;
-        Value = value;
+        _value = value;
         _errors = default;
         _metadata = metadata;
     }
 
     private Result(Errors errors, MetadataObject? metadata = null)
     {
-        IsSuccess = false;
-        Value = default;
+        _value = default;
         _errors = errors;
         _metadata = metadata;
     }
@@ -59,15 +58,10 @@ public readonly struct Result<T>
 
     public static Result<T> Fail(Error error) => new (new Errors(error));
 
-    public static Result<T> Fail(ReadOnlyMemory<Error> errors)
-    {
-        if (errors.IsEmpty)
-        {
+    public static Result<T> Fail(ReadOnlyMemory<Error> errors) =>
+        !errors.IsEmpty ?
+            new Result<T>(new Errors(errors)) :
             throw new ArgumentException("At least one error is required.", nameof(errors));
-        }
-
-        return new Result<T>(new Errors(errors));
-    }
 
     /// <summary>Transforms the successful value.</summary>
     public Result<TOut> Map<TOut>(Func<T, TOut> map) =>
@@ -138,8 +132,8 @@ public readonly struct Result<T>
         return false;
     }
 
-    public override string ToString()
-        => IsSuccess ? $"Ok({Value})" : $"Fail({string.Join(", ", _errors.Select(e => e.Code))})";
+    public override string ToString() =>
+        IsSuccess ? $"Ok({Value})" : $"Fail({string.Join(", ", _errors.Select(e => e.Message))})";
 
     private string DebuggerDisplay => IsSuccess ? $"Ok({Value})" : $"Fail({_errors.Count} error(s))";
 
@@ -149,15 +143,8 @@ public readonly struct Result<T>
 
 
     /// <summary>Creates a new result with the specified metadata.</summary>
-    public Result<T> WithMetadata(MetadataObject metadata)
-    {
-        if (IsSuccess)
-        {
-            return new Result<T>(Value, metadata);
-        }
-
-        return new Result<T>(_errors, metadata);
-    }
+    public Result<T> WithMetadata(MetadataObject metadata) =>
+        IsSuccess ? new Result<T>(Value, metadata) : new Result<T>(_errors, metadata);
 
     /// <summary>Creates a new result with the specified metadata (or clears metadata if null).</summary>
     private Result<T> WithMetadata(MetadataObject? metadata) =>
@@ -231,7 +218,3 @@ public readonly struct Result
     ) =>
         new (_inner.MergeMetadata(other, strategy));
 }
-
-// Internal errors storage with small-buffer optimization:
-// - one error inline (no array allocation)
-// - many errors in an array
