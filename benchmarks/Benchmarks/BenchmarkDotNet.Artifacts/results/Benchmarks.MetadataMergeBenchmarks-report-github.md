@@ -9,7 +9,7 @@ Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
 
 ```
 
-| Method               |      Mean |    Error |   StdDev | Ratio |   Gen0 | Allocated | Alloc Ratio |
-|----------------------|----------:|---------:|---------:|------:|-------:|----------:|------------:|
-| MergeDictionaries    |  69.09 ns | 0.222 ns | 0.208 ns |  1.00 | 0.0554 |     464 B |        1.00 |
-| MergeMetadataObjects | 123.95 ns | 0.444 ns | 0.394 ns |  1.79 | 0.0296 |     248 B |        0.53 |
+| Method               |     Mean |    Error |   StdDev | Ratio |   Gen0 | Allocated | Alloc Ratio |
+|----------------------|---------:|---------:|---------:|------:|-------:|----------:|------------:|
+| MergeDictionaries    | 71.18 ns | 0.251 ns | 0.223 ns |  1.00 | 0.0554 |     464 B |        1.00 |
+| MergeMetadataObjects | 85.61 ns | 0.431 ns | 0.403 ns |  1.20 | 0.0296 |     248 B |        0.53 |

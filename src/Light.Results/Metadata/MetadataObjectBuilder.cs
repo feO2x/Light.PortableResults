@@ -57,14 +57,24 @@ public struct MetadataObjectBuilder : IDisposable
             throw new ArgumentNullException(nameof(key));
         }
 
-        if (ContainsKey(key))
+        // Find insertion position using binary search
+        var insertIndex = FindInsertionIndex(key);
+        if (insertIndex < 0)
         {
             throw new ArgumentException($"Duplicate key: '{key}'.", nameof(key));
         }
 
         EnsureCapacity(Count + 1);
-        _keys![Count] = key;
-        _values![Count] = value;
+
+        // Shift elements to make room for the new key-value pair
+        if (insertIndex < Count)
+        {
+            Array.Copy(_keys!, insertIndex, _keys!, insertIndex + 1, Count - insertIndex);
+            Array.Copy(_values!, insertIndex, _values!, insertIndex + 1, Count - insertIndex);
+        }
+
+        _keys![insertIndex] = key;
+        _values![insertIndex] = value;
         Count++;
     }
 
@@ -75,13 +85,11 @@ public struct MetadataObjectBuilder : IDisposable
             throw new ArgumentNullException(nameof(key));
         }
 
-        for (var i = 0; i < Count; i++)
+        var index = FindIndex(key);
+        if (index >= 0)
         {
-            if (string.Equals(_keys![i], key, StringComparison.Ordinal))
-            {
-                value = _values![i];
-                return true;
-            }
+            value = _values![index];
+            return true;
         }
 
         value = default;
@@ -95,15 +103,7 @@ public struct MetadataObjectBuilder : IDisposable
             throw new ArgumentNullException(nameof(key));
         }
 
-        for (var i = 0; i < Count; i++)
-        {
-            if (string.Equals(_keys![i], key, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return FindIndex(key) >= 0;
     }
 
     public void Replace(string key, MetadataValue value)
@@ -115,16 +115,13 @@ public struct MetadataObjectBuilder : IDisposable
             throw new ArgumentNullException(nameof(key));
         }
 
-        for (var i = 0; i < Count; i++)
+        var index = FindIndex(key);
+        if (index < 0)
         {
-            if (string.Equals(_keys![i], key, StringComparison.Ordinal))
-            {
-                _values![i] = value;
-                return;
-            }
+            throw new KeyNotFoundException($"Key '{key}' not found.");
         }
 
-        throw new KeyNotFoundException($"Key '{key}' not found.");
+        _values![index] = value;
     }
 
     public void AddOrReplace(string key, MetadataValue value)
@@ -136,18 +133,26 @@ public struct MetadataObjectBuilder : IDisposable
             throw new ArgumentNullException(nameof(key));
         }
 
-        for (var i = 0; i < Count; i++)
+        var insertIndex = FindInsertionIndex(key);
+        if (insertIndex < 0)
         {
-            if (string.Equals(_keys![i], key, StringComparison.Ordinal))
-            {
-                _values![i] = value;
-                return;
-            }
+            // Key exists, replace value
+            var existingIndex = ~insertIndex;
+            _values![existingIndex] = value;
+            return;
         }
 
+        // Insert new key-value pair in sorted position
         EnsureCapacity(Count + 1);
-        _keys![Count] = key;
-        _values![Count] = value;
+
+        if (insertIndex < Count)
+        {
+            Array.Copy(_keys!, insertIndex, _keys!, insertIndex + 1, Count - insertIndex);
+            Array.Copy(_values!, insertIndex, _values!, insertIndex + 1, Count - insertIndex);
+        }
+
+        _keys![insertIndex] = key;
+        _values![insertIndex] = value;
         Count++;
     }
 
@@ -168,9 +173,7 @@ public struct MetadataObjectBuilder : IDisposable
         Array.Copy(_keys!, keys, Count);
         Array.Copy(_values!, values, Count);
 
-        // Sort by key for deterministic ordering
-        Array.Sort(keys, values, StringComparer.Ordinal);
-
+        // Keys are already sorted due to sorted insertion in Add/AddOrReplace
         ReturnBuffers();
 
         return new MetadataObject(new MetadataObjectData(keys, values));
@@ -234,5 +237,71 @@ public struct MetadataObjectBuilder : IDisposable
         {
             throw new InvalidOperationException("Builder has already been used to build an object.");
         }
+    }
+
+    /// <summary>
+    /// Finds the index of an existing key using binary search.
+    /// Returns the index if found, or -1 if not found.
+    /// </summary>
+    private int FindIndex(string key)
+    {
+        var lo = 0;
+        var hi = Count - 1;
+
+        while (lo <= hi)
+        {
+            var mid = lo + ((hi - lo) >> 1);
+            var cmp = string.CompareOrdinal(_keys![mid], key);
+
+            if (cmp == 0)
+            {
+                return mid;
+            }
+
+            if (cmp < 0)
+            {
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid - 1;
+            }
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// Finds the insertion index for a new key using binary search.
+    /// Returns the insertion index if the key doesn't exist.
+    /// Returns a negative value (bitwise complement of existing index) if the key already exists.
+    /// </summary>
+    private int FindInsertionIndex(string key)
+    {
+        var lo = 0;
+        var hi = Count - 1;
+
+        while (lo <= hi)
+        {
+            var mid = lo + ((hi - lo) >> 1);
+            var cmp = string.CompareOrdinal(_keys![mid], key);
+
+            if (cmp == 0)
+            {
+                // Key already exists, return negative value
+                return ~mid;
+            }
+
+            if (cmp < 0)
+            {
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid - 1;
+            }
+        }
+
+        return lo;
     }
 }

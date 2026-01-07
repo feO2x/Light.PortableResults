@@ -11,7 +11,7 @@ Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
 
 | Method                     |     Mean |     Error |    StdDev | Ratio | RatioSD | Allocated | Alloc Ratio |
 |----------------------------|---------:|----------:|----------:|------:|--------:|----------:|------------:|
-| DictionaryLookup_Small     | 2.448 ns | 0.0154 ns | 0.0137 ns |  1.00 |    0.01 |         - |          NA |
-| MetadataObjectLookup_Small | 2.427 ns | 0.0754 ns | 0.1540 ns |  0.99 |    0.06 |         - |          NA |
-| DictionaryLookup_Large     | 2.418 ns | 0.0152 ns | 0.0142 ns |  0.99 |    0.01 |         - |          NA |
-| MetadataObjectLookup_Large | 3.047 ns | 0.0279 ns | 0.0261 ns |  1.24 |    0.01 |         - |          NA |
+| DictionaryLookup_Small     | 2.506 ns | 0.0212 ns | 0.0198 ns |  1.00 |    0.01 |         - |          NA |
+| MetadataObjectLookup_Small | 2.282 ns | 0.0748 ns | 0.0973 ns |  0.91 |    0.04 |         - |          NA |
+| DictionaryLookup_Large     | 2.850 ns | 0.0449 ns | 0.0420 ns |  1.14 |    0.02 |         - |          NA |
+| MetadataObjectLookup_Large | 3.043 ns | 0.0108 ns | 0.0096 ns |  1.21 |    0.01 |         - |          NA |
