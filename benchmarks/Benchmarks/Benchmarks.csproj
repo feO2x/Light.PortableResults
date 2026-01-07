@@ -5,4 +5,7 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Light.Results\Light.Results.csproj" />
+  </ItemGroup>
 </Project>
