@@ -132,4 +132,48 @@ public sealed class ErrorsTests
         errors.Count.Should().Be(1);
         errors.First.Message.Should().Be("Single");
     }
+
+    [Fact]
+    public void Errors_WithSameSingleError_ShouldBeEqual()
+    {
+        var error = new Error { Message = "Duplicate" };
+
+        var left = new Errors(error);
+        var right = new Errors(error);
+
+        (left == right).Should().BeTrue();
+        (left != right).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Errors_WithDifferentCounts_ShouldNotBeEqual()
+    {
+        var single = new Errors(new Error { Message = "Only" });
+        var multiple = new Errors(
+            new[]
+            {
+                new Error { Message = "Only" },
+                new Error { Message = "Second" }
+            }
+        );
+
+        (single == multiple).Should().BeFalse();
+        (single != multiple).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Errors_WithSameMultipleErrors_ShouldBeEqual()
+    {
+        var errorsArray = new[]
+        {
+            new Error { Message = "First" },
+            new Error { Message = "Second" }
+        };
+
+        var left = new Errors(errorsArray);
+        var right = new Errors(errorsArray.ToArray());
+
+        (left == right).Should().BeTrue();
+        (left != right).Should().BeFalse();
+    }
 }

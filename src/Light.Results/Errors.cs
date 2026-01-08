@@ -9,7 +9,7 @@ namespace Light.Results;
 /// Single error is stored inline; multiple errors use a <see cref="ReadOnlyMemory{T}" />.
 /// Implements <see cref="IReadOnlyList{T}" /> with a zero-allocation value-type enumerator.
 /// </summary>
-public readonly struct Errors : IReadOnlyList<Error>
+public readonly struct Errors : IReadOnlyList<Error>, IEquatable<Errors>
 {
     private readonly Error _singleError;
     private readonly ReadOnlyMemory<Error> _manyErrors;
@@ -112,6 +112,51 @@ public readonly struct Errors : IReadOnlyList<Error>
     IEnumerator<Error> IEnumerable<Error>.GetEnumerator() => GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public bool Equals(Errors other)
+    {
+        if (Count != other.Count)
+        {
+            return false;
+        }
+
+        return Count switch
+        {
+            0 => true,
+            1 => _singleError.Equals(other._singleError),
+            _ => _manyErrors.Span.SequenceEqual(other._manyErrors.Span)
+        };
+    }
+
+    public override bool Equals(object? obj) => obj is Errors other && Equals(other);
+
+    public override int GetHashCode()
+    {
+        if (Count == 0)
+        {
+            return 0;
+        }
+
+        var hash = new HashCode();
+
+        if (Count == 1)
+        {
+            hash.Add(_singleError);
+            return hash.ToHashCode();
+        }
+
+        var span = _manyErrors.Span;
+        for (var i = 0; i < span.Length; i++)
+        {
+            hash.Add(span[i]);
+        }
+
+        return hash.ToHashCode();
+    }
+
+    public static bool operator ==(Errors left, Errors right) => left.Equals(right);
+
+    public static bool operator !=(Errors left, Errors right) => !left.Equals(right);
 
     /// <summary>
     /// Value-type enumerator that avoids compiler-generated state machine allocations.
