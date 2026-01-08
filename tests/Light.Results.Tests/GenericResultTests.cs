@@ -10,7 +10,7 @@ public sealed class GenericResultTests
     public void Map_OnFailure_ShouldPreserveErrorsAndMetadata()
     {
         var metadata = MetadataObject.Create(("trace", "123"));
-        var result = Result<int>.Fail(new Error("Error")).WithMetadata(metadata);
+        var result = Result<int>.Fail(new Error { Message = "Error" }).WithMetadata(metadata);
 
         var mapped = result.Map(x => x.ToString());
 
@@ -37,7 +37,7 @@ public sealed class GenericResultTests
     public void Bind_OnFailure_ShouldPreserveErrorsAndMetadata()
     {
         var metadata = MetadataObject.Create(("trace", "123"));
-        var result = Result<int>.Fail(new Error("Error")).WithMetadata(metadata);
+        var result = Result<int>.Fail(new Error { Message = "Error" }).WithMetadata(metadata);
 
         var bound = result.Bind(x => Result<string>.Ok(x.ToString()));
 
@@ -101,7 +101,7 @@ public sealed class GenericResultTests
     public void Tap_OnFailure_ShouldNotExecuteAction()
     {
         var executed = false;
-        var result = Result<int>.Fail(new Error("Error"));
+        var result = Result<int>.Fail(new Error { Message = "Error" });
 
         var tapped = result.Tap(_ => executed = true);
 
@@ -113,7 +113,7 @@ public sealed class GenericResultTests
     public void TapError_OnFailure_ShouldExecuteAction()
     {
         Errors? capturedErrors = null;
-        var result = Result<int>.Fail(new Error("Error"));
+        var result = Result<int>.Fail(new Error { Message = "Error" });
 
         var tapped = result.TapError(errors => capturedErrors = errors);
 
@@ -145,7 +145,7 @@ public sealed class GenericResultTests
     [Fact]
     public void ToString_OnFailure_ShouldShowErrorCodes()
     {
-        var result = Result<int>.Fail(new Error("Message", Code: "ERR001"));
+        var result = Result<int>.Fail(new Error { Message = "Message", Code = "ERR001" });
 
         result.ToString().Should().Contain("Message");
     }
@@ -162,7 +162,7 @@ public sealed class GenericResultTests
     [Fact]
     public void ImplicitConversion_FromError_ShouldCreateFailure()
     {
-        Result<int> result = new Error("Error");
+        Result<int> result = new Error { Message = "Error" };
 
         result.IsFailure.Should().BeTrue();
     }
@@ -172,14 +172,13 @@ public sealed class GenericResultTests
     {
         var act = () => Result<int>.Fail(Array.Empty<Error>());
 
-        act.Should().Throw<ArgumentException>()
-           .WithMessage("*At least one error*");
+        act.Should().Throw<ArgumentException>().Where(x => x.ParamName == "manyErrors");
     }
 
     [Fact]
     public void Fail_WithSingleItemArray_ShouldCreateFailure()
     {
-        var result = Result<int>.Fail(new[] { new Error("Error") });
+        var result = Result<int>.Fail(new[] { new Error { Message = "Error" } });
 
         result.IsFailure.Should().BeTrue();
         result.Errors.Should().ContainSingle();
@@ -188,7 +187,7 @@ public sealed class GenericResultTests
     [Fact]
     public void Fail_WithMultipleErrors_ShouldCreateFailure()
     {
-        var result = Result<int>.Fail(new[] { new Error("Error1"), new Error("Error2") });
+        var result = Result<int>.Fail(new[] { new Error { Message = "Error1" }, new Error { Message = "Error2" } });
 
         result.IsFailure.Should().BeTrue();
         result.Errors.Should().HaveCount(2);
@@ -198,7 +197,7 @@ public sealed class GenericResultTests
     public void WithMetadata_OnFailure_ShouldSetMetadata()
     {
         var metadata = MetadataObject.Create(("key", "value"));
-        var result = Result<int>.Fail(new Error("Error"));
+        var result = Result<int>.Fail(new Error { Message = "Error" });
 
         var withMeta = result.WithMetadata(metadata);
 
@@ -222,7 +221,7 @@ public sealed class GenericResultTests
     [Fact]
     public void Value_OnFailure_ShouldThrow()
     {
-        var result = Result<int>.Fail(new Error("Error"));
+        var result = Result<int>.Fail(new Error { Message = "Error" });
 
         var act = () => result.Value;
 

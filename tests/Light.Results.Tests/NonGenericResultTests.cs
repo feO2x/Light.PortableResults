@@ -8,7 +8,7 @@ public sealed class NonGenericResultTests
     [Fact]
     public void IsFailure_OnFailure_ShouldBeTrue()
     {
-        var result = Result.Fail(new Error("Error"));
+        var result = Result.Fail(new Error { Message = "Error" });
 
         result.IsFailure.Should().BeTrue();
         result.IsSuccess.Should().BeFalse();
@@ -17,7 +17,7 @@ public sealed class NonGenericResultTests
     [Fact]
     public void Errors_OnFailure_ShouldContainErrors()
     {
-        var result = Result.Fail(new Error("Error"));
+        var result = Result.Fail(new Error { Message = "Error" });
 
         result.Errors.Should().ContainSingle();
     }
@@ -25,7 +25,7 @@ public sealed class NonGenericResultTests
     [Fact]
     public void Fail_WithMultipleErrors_ShouldWork()
     {
-        var result = Result.Fail(new[] { new Error("E1"), new Error("E2") });
+        var result = Result.Fail(new[] { new Error { Message = "E1" }, new Error { Message = "E2" } });
 
         result.IsFailure.Should().BeTrue();
         result.Errors.Should().HaveCount(2);

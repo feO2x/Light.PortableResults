@@ -48,7 +48,7 @@ public sealed class GenericResultWithMetadataTests
     [Fact]
     public void WithMetadata_OnFailure_ShouldPreserveErrors()
     {
-        var result = Result<int>.Fail(new Error("Error")).WithMetadata(("key", "value"));
+        var result = Result<int>.Fail(new Error { Message = "Error" }).WithMetadata(("key", "value"));
 
         result.IsFailure.Should().BeTrue();
         result.Metadata.Should().NotBeNull();
@@ -98,7 +98,7 @@ public sealed class GenericResultWithMetadataTests
     [Fact]
     public void Map_OnFailure_ShouldPreserveMetadata()
     {
-        var result = Result<int>.Fail(new Error("Error")).WithMetadata(("context", "test"));
+        var result = Result<int>.Fail(new Error { Message = "Error" }).WithMetadata(("context", "test"));
 
         var mapped = result.Map(x => x * 2);
 
@@ -127,7 +127,7 @@ public sealed class GenericResultWithMetadataTests
     [Fact]
     public void Bind_OnFailure_ShouldPreserveMetadata()
     {
-        var result = Result<int>.Fail(new Error("Error")).WithMetadata(("context", "test"));
+        var result = Result<int>.Fail(new Error { Message = "Error" }).WithMetadata(("context", "test"));
 
         var bound = result.Bind(x => Result<int>.Ok(x * 2));
 

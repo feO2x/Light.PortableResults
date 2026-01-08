@@ -9,7 +9,7 @@ public sealed class ErrorsEnumeratorTests
     [Fact]
     public void Errors_SingleError_ShouldEnumerateCorrectly()
     {
-        var errors = new Errors(new Error("Single error"));
+        var errors = new Errors(new Error { Message = "Single error" });
 
         var list = new List<Error>();
         foreach (var error in errors)
@@ -17,14 +17,19 @@ public sealed class ErrorsEnumeratorTests
             list.Add(error);
         }
 
-        list.Should().ContainSingle();
-        list[0].Message.Should().Be("Single error");
+        Error[] expected = [new() { Message = "Single error" }];
+        list.Should().Equal(expected);
     }
 
     [Fact]
     public void Errors_MultipleErrors_ShouldEnumerateCorrectly()
     {
-        var errors = new Errors(new[] { new Error("Error1"), new Error("Error2"), new Error("Error3") });
+        var errors = new Errors(
+            new[]
+            {
+                new Error { Message = "Error1" }, new Error { Message = "Error2" }, new Error { Message = "Error3" }
+            }
+        );
 
         var list = new List<Error>();
         foreach (var error in errors)
@@ -41,7 +46,7 @@ public sealed class ErrorsEnumeratorTests
     [Fact]
     public void Errors_Indexer_ShouldReturnCorrectError()
     {
-        var errors = new Errors(new[] { new Error("Error1"), new Error("Error2") });
+        var errors = new Errors(new[] { new Error { Message = "Error1" }, new Error { Message = "Error2" } });
 
         errors[0].Message.Should().Be("Error1");
         errors[1].Message.Should().Be("Error2");
@@ -50,7 +55,7 @@ public sealed class ErrorsEnumeratorTests
     [Fact]
     public void Errors_SingleError_Indexer_ShouldReturnCorrectError()
     {
-        var errors = new Errors(new Error("Single error"));
+        var errors = new Errors(new Error { Message = "Single error" });
 
         errors[0].Message.Should().Be("Single error");
     }
@@ -58,8 +63,8 @@ public sealed class ErrorsEnumeratorTests
     [Fact]
     public void Errors_Count_ShouldReturnCorrectCount()
     {
-        var single = new Errors(new Error("Single"));
-        var multiple = new Errors(new[] { new Error("E1"), new Error("E2") });
+        var single = new Errors(new Error { Message = "Single" });
+        var multiple = new Errors(new[] { new Error { Message = "E1" }, new Error { Message = "E2" } });
 
         single.Count.Should().Be(1);
         multiple.Count.Should().Be(2);
@@ -68,7 +73,9 @@ public sealed class ErrorsEnumeratorTests
     [Fact]
     public void Errors_LinqOperations_ShouldWork()
     {
-        var errors = new Errors(new[] { new Error("Error1", Code: "E1"), new Error("Error2", Code: "E2") });
+        var errors = new Errors(
+            new[] { new Error { Message = "Error1", Code = "E1" }, new Error { Message = "Error2", Code = "E2" } }
+        );
 
         var codes = errors.Select(e => e.Code).ToList();
 
@@ -78,7 +85,7 @@ public sealed class ErrorsEnumeratorTests
     [Fact]
     public void Errors_First_ShouldReturnFirstError()
     {
-        var errors = new Errors(new[] { new Error("First"), new Error("Second") });
+        var errors = new Errors(new[] { new Error { Message = "First" }, new Error { Message = "Second" } });
 
         errors.First.Message.Should().Be("First");
     }
@@ -86,7 +93,7 @@ public sealed class ErrorsEnumeratorTests
     [Fact]
     public void Errors_SingleError_First_ShouldReturnTheError()
     {
-        var errors = new Errors(new Error("Only"));
+        var errors = new Errors(new Error { Message = "Only" });
 
         errors.First.Message.Should().Be("Only");
     }

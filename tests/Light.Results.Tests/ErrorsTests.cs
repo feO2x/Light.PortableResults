@@ -10,7 +10,7 @@ public sealed class ErrorsTests
     [Fact]
     public void SingleError_Count_ShouldBeOne()
     {
-        var errors = new Errors(new Error("Error"));
+        var errors = new Errors(new Error { Message = "Error" });
 
         errors.Count.Should().Be(1);
     }
@@ -18,7 +18,7 @@ public sealed class ErrorsTests
     [Fact]
     public void SingleError_First_ShouldReturnTheError()
     {
-        var error = new Error("Error");
+        var error = new Error { Message = "Error" };
         var errors = new Errors(error);
 
         errors.First.Should().Be(error);
@@ -27,7 +27,7 @@ public sealed class ErrorsTests
     [Fact]
     public void SingleError_GetEnumerator_ShouldYieldOneError()
     {
-        var error = new Error("Error");
+        var error = new Error { Message = "Error" };
         var errors = new Errors(error);
 
         var list = errors.ToList();
@@ -38,7 +38,8 @@ public sealed class ErrorsTests
     [Fact]
     public void MultipleErrors_Count_ShouldBeCorrect()
     {
-        var errorArray = new[] { new Error("E1"), new Error("E2"), new Error("E3") };
+        var errorArray = new[]
+            { new Error { Message = "E1" }, new Error { Message = "E2" }, new Error { Message = "E3" } };
         var errors = new Errors(errorArray);
 
         errors.Count.Should().Be(3);
@@ -47,7 +48,7 @@ public sealed class ErrorsTests
     [Fact]
     public void MultipleErrors_First_ShouldReturnFirstError()
     {
-        var errorArray = new[] { new Error("E1"), new Error("E2") };
+        var errorArray = new[] { new Error { Message = "E1" }, new Error { Message = "E2" } };
         var errors = new Errors(errorArray);
 
         errors.First.Message.Should().Be("E1");
@@ -56,7 +57,8 @@ public sealed class ErrorsTests
     [Fact]
     public void MultipleErrors_GetEnumerator_ShouldYieldAllErrors()
     {
-        var errorArray = new[] { new Error("E1"), new Error("E2"), new Error("E3") };
+        var errorArray = new[]
+            { new Error { Message = "E1" }, new Error { Message = "E2" }, new Error { Message = "E3" } };
         var errors = new Errors(errorArray);
 
         var list = errors.ToList();
@@ -70,7 +72,7 @@ public sealed class ErrorsTests
     [Fact]
     public void IEnumerable_GetEnumerator_ShouldWork()
     {
-        var errors = new Errors(new Error("Error"));
+        var errors = new Errors(new Error { Message = "Error" });
         IEnumerable enumerable = errors;
 
         var count = 0;
@@ -95,7 +97,7 @@ public sealed class ErrorsTests
     [Fact]
     public void Indexer_WithOneError_ShouldReturnTheError()
     {
-        var error = new Error("Error");
+        var error = new Error { Message = "Error" };
         var errors = new Errors(error);
 
         errors[0].Should().Be(error);
@@ -104,7 +106,7 @@ public sealed class ErrorsTests
     [Fact]
     public void Indexer_WithMultipleErrors_ShouldReturnCorrectError()
     {
-        var errorArray = new[] { new Error("E1"), new Error("E2") };
+        var errorArray = new[] { new Error { Message = "E1" }, new Error { Message = "E2" } };
         var errors = new Errors(errorArray);
 
         errors[0].Message.Should().Be("E1");
@@ -124,7 +126,7 @@ public sealed class ErrorsTests
     [Fact]
     public void FromArray_WithSingleError_ShouldUseSingleErrorPath()
     {
-        var errorArray = new[] { new Error("Single") };
+        var errorArray = new[] { new Error { Message = "Single" } };
         var errors = new Errors(errorArray);
 
         errors.Count.Should().Be(1);

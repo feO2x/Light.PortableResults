@@ -15,13 +15,13 @@ public sealed class ErrorsAdditionalTests
         var act = () => errors.First;
 
         act.Should().Throw<InvalidOperationException>()
-           .WithMessage("No errors present.");
+           .WithMessage("No errors present");
     }
 
     [Fact]
     public void Indexer_WithNegativeIndex_ShouldThrow()
     {
-        var errors = new Errors(new Error("Error"));
+        var errors = new Errors(new Error { Message = "Error" });
 
         var act = () => errors[-1];
 
@@ -32,7 +32,7 @@ public sealed class ErrorsAdditionalTests
     [Fact]
     public void Indexer_WithIndexEqualToCount_ShouldThrow()
     {
-        var errors = new Errors(new Error("Error"));
+        var errors = new Errors(new Error { Message = "Error" });
 
         var act = () => errors[1];
 
@@ -41,18 +41,18 @@ public sealed class ErrorsAdditionalTests
     }
 
     [Fact]
-    public void Constructor_WithEmptyMemory_ShouldCreateEmptyErrors()
+    public void Constructor_WithEmptyMemory_ShouldThrowArgumentException()
     {
-        var errors = new Errors(ReadOnlyMemory<Error>.Empty);
+        var act = () => new Errors(ReadOnlyMemory<Error>.Empty);
 
-        errors.Count.Should().Be(0);
+        act.Should().Throw<ArgumentException>().Where(x => x.ParamName == "manyErrors");
     }
 
     [Fact]
     public void Enumerator_Reset_ShouldResetPosition()
     {
-        var errors = new Errors(new[] { new Error("E1"), new Error("E2") });
-        var enumerator = errors.GetEnumerator();
+        var errors = new Errors(new[] { new Error { Message = "E1" }, new Error { Message = "E2" } });
+        using var enumerator = errors.GetEnumerator();
 
         enumerator.MoveNext();
         enumerator.MoveNext();
@@ -65,19 +65,20 @@ public sealed class ErrorsAdditionalTests
     [Fact]
     public void Enumerator_Current_ViaIEnumerator_ShouldReturnBoxedValue()
     {
-        var errors = new Errors(new Error("Test"));
+        var errors = new Errors(new Error { Message = "Test" });
         IEnumerator enumerator = errors.GetEnumerator();
 
         enumerator.MoveNext();
 
         var current = (Error) enumerator.Current;
         current.Message.Should().Be("Test");
+        (enumerator as IDisposable)?.Dispose();
     }
 
     [Fact]
     public void Enumerator_Dispose_ShouldNotThrow()
     {
-        var errors = new Errors(new Error("Test"));
+        var errors = new Errors(new Error { Message = "Test" });
         var enumerator = errors.GetEnumerator();
 
         var act = () => enumerator.Dispose();
@@ -88,9 +89,9 @@ public sealed class ErrorsAdditionalTests
     [Fact]
     public void Enumerator_SingleError_Current_ShouldReturnError()
     {
-        var error = new Error("Single");
+        var error = new Error { Message = "Single" };
         var errors = new Errors(error);
-        var enumerator = errors.GetEnumerator();
+        using var enumerator = errors.GetEnumerator();
 
         enumerator.MoveNext();
 
@@ -100,8 +101,8 @@ public sealed class ErrorsAdditionalTests
     [Fact]
     public void Enumerator_MultipleErrors_Current_ShouldReturnCorrectError()
     {
-        var errors = new Errors(new[] { new Error("E1"), new Error("E2") });
-        var enumerator = errors.GetEnumerator();
+        var errors = new Errors(new[] { new Error { Message = "E1" }, new Error { Message = "E2" } });
+        using var enumerator = errors.GetEnumerator();
 
         enumerator.MoveNext();
         enumerator.Current.Message.Should().Be("E1");
@@ -112,7 +113,7 @@ public sealed class ErrorsAdditionalTests
     [Fact]
     public void IEnumerableGeneric_GetEnumerator_ShouldWork()
     {
-        var errors = new Errors(new Error("Test"));
+        var errors = new Errors(new Error { Message = "Test" });
         IEnumerable<Error> enumerable = errors;
 
         var list = new List<Error>();

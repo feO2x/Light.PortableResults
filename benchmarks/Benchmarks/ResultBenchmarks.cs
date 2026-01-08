@@ -14,13 +14,13 @@ public class ResultBenchmarks
     public void Setup()
     {
         _successResult = Result<int>.Ok(42);
-        _failureResult = Result<int>.Fail(new Error("Error message", Code: "ERR001"));
+        _failureResult = Result<int>.Fail(new Error { Message = "Error message", Code = "ERR001" });
         _multiErrorResult = Result<int>.Fail(
             new[]
             {
-                new Error("Error 1", Code: "E1"),
-                new Error("Error 2", Code: "E2"),
-                new Error("Error 3", Code: "E3")
+                new Error { Message = "Error 1", Code = "E1" },
+                new Error { Message = "Error 2", Code = "E2" },
+                new Error { Message = "Error 3", Code = "E3" }
             }
         );
     }
@@ -29,7 +29,7 @@ public class ResultBenchmarks
     public Result<int> CreateSuccess() => Result<int>.Ok(42);
 
     [Benchmark]
-    public Result<int> CreateFailure() => Result<int>.Fail(new Error("Error"));
+    public Result<int> CreateFailure() => Result<int>.Fail(new Error { Message = "Error" });
 
     [Benchmark]
     public bool TryGetValue_Success()

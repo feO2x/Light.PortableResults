@@ -6,150 +6,73 @@ namespace Light.Results;
 /// <summary>
 /// Represents an error with a message, optional code, target, metadata, source, correlation ID, and category.
 /// </summary>
-public readonly record struct Error(
-    string Message,
-    string? Code = null,
-    string? Target = null,
-    MetadataObject? Metadata = null,
-    string? Source = null,
-    Guid? CorrelationId = null,
-    ErrorCategory Category = ErrorCategory.Unclassified
-)
+public readonly record struct Error
 {
     /// <summary>
-    /// Creates a new <see cref="Error" /> with additional metadata properties.
+    /// Gets or initializes the message of the error. This value is required to be set.
     /// </summary>
-    public Error WithMetadata(params (string Key, MetadataValue Value)[] properties)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value" /> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="value" /> is empty or contains only white space.</exception>
+    public required string Message
     {
-        var newMetadata = Metadata?.With(properties) ?? MetadataObject.Create(properties);
-        return this with { Metadata = newMetadata };
+        get;
+        init
+        {
+            if (value is null)
+            {
+                throw new ArgumentNullException(nameof(Message));
+            }
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException(
+                    $"{nameof(Message)} cannot be empty or contain only white space",
+                    nameof(Message)
+                );
+            }
+
+            field = value;
+        }
     }
 
     /// <summary>
-    /// Creates a new <see cref="Error" /> with the specified metadata, replacing any existing metadata.
+    /// <para>
+    /// Gets or initializes the error code.
+    /// </para>
+    /// <para>
+    /// PLEASE NOTE: although this value is optional by design, it is highly recommended that you
+    /// assign all different error types a dedicated error code so that clients can easily point to it.
+    /// </para>
     /// </summary>
-    public Error WithMetadata(MetadataObject metadata) => this with { Metadata = metadata };
+    public string? Code { get; init; }
 
     /// <summary>
-    /// Creates a new <see cref="Error" /> with the specified source.
+    /// Gets or initializes the target of the error. This value is optional. It usually refers to a key in a JSON object
+    /// uses as a Data Transfer Object (DTO) or the name of an HTTP header which is erroneous. Use it to identify an
+    /// optional subelement that is the cause of the error.
     /// </summary>
-    public Error WithSource(string source) => this with { Source = source };
+    public string? Target { get; init; }
 
     /// <summary>
-    /// Creates a new <see cref="Error" /> with the specified correlation ID.
+    /// <para>
+    /// Gets or initializes the category of the error. The default category is <see cref="ErrorCategory.Unclassified" />.
+    /// </para>
+    /// <para>
+    /// PLEASE NOTE: we highly encourage you to set a category for each error. This allows for proper mapping to
+    /// a serialized format.
+    /// </para>
     /// </summary>
-    public Error WithCorrelationId(Guid correlationId) => this with { CorrelationId = correlationId };
+    public ErrorCategory Category { get; init; }
 
     /// <summary>
-    /// Creates a new <see cref="Error" /> with the specified category.
+    /// Gets or initializes the metadata of the error. This value is optional.
     /// </summary>
-    public Error WithCategory(ErrorCategory category) => this with { Category = category };
+    public MetadataObject? Metadata { get; init; }
 
     /// <summary>
-    /// Creates a validation error.
+    /// Gets the value indicating whether this instance is the default instance. This
+    /// usually happens when the 'default' keyword is used: <c>Error error = default;</c>.
     /// </summary>
-    public static Error Validation(
-        string message,
-        string? code = null,
-        string? target = null,
-        MetadataObject? metadata = null,
-        string? source = null,
-        Guid? correlationId = null
-    ) => new (message, code, target, metadata, source, correlationId, ErrorCategory.Validation);
-
-    /// <summary>
-    /// Creates a not found error.
-    /// </summary>
-    public static Error NotFound(
-        string message,
-        string? code = null,
-        string? target = null,
-        MetadataObject? metadata = null,
-        string? source = null,
-        Guid? correlationId = null
-    ) => new (message, code, target, metadata, source, correlationId, ErrorCategory.NotFound);
-
-    /// <summary>
-    /// Creates a conflict error.
-    /// </summary>
-    public static Error Conflict(
-        string message,
-        string? code = null,
-        string? target = null,
-        MetadataObject? metadata = null,
-        string? source = null,
-        Guid? correlationId = null
-    ) => new (message, code, target, metadata, source, correlationId, ErrorCategory.Conflict);
-
-    /// <summary>
-    /// Creates an unauthorized error.
-    /// </summary>
-    public static Error Unauthorized(
-        string message,
-        string? code = null,
-        string? target = null,
-        MetadataObject? metadata = null,
-        string? source = null,
-        Guid? correlationId = null
-    ) => new (message, code, target, metadata, source, correlationId, ErrorCategory.Unauthorized);
-
-    /// <summary>
-    /// Creates a forbidden error.
-    /// </summary>
-    public static Error Forbidden(
-        string message,
-        string? code = null,
-        string? target = null,
-        MetadataObject? metadata = null,
-        string? source = null,
-        Guid? correlationId = null
-    ) => new (message, code, target, metadata, source, correlationId, ErrorCategory.Forbidden);
-
-    /// <summary>
-    /// Creates a dependency failure error.
-    /// </summary>
-    public static Error DependencyFailure(
-        string message,
-        string? code = null,
-        string? target = null,
-        MetadataObject? metadata = null,
-        string? source = null,
-        Guid? correlationId = null
-    ) => new (message, code, target, metadata, source, correlationId, ErrorCategory.DependencyFailure);
-
-    /// <summary>
-    /// Creates a transient error.
-    /// </summary>
-    public static Error Transient(
-        string message,
-        string? code = null,
-        string? target = null,
-        MetadataObject? metadata = null,
-        string? source = null,
-        Guid? correlationId = null
-    ) => new (message, code, target, metadata, source, correlationId, ErrorCategory.Transient);
-
-    /// <summary>
-    /// Creates a rate limited error.
-    /// </summary>
-    public static Error RateLimited(
-        string message,
-        string? code = null,
-        string? target = null,
-        MetadataObject? metadata = null,
-        string? source = null,
-        Guid? correlationId = null
-    ) => new (message, code, target, metadata, source, correlationId, ErrorCategory.RateLimited);
-
-    /// <summary>
-    /// Creates an unexpected error.
-    /// </summary>
-    public static Error Unexpected(
-        string message,
-        string? code = null,
-        string? target = null,
-        MetadataObject? metadata = null,
-        string? source = null,
-        Guid? correlationId = null
-    ) => new (message, code, target, metadata, source, correlationId, ErrorCategory.Unexpected);
+    // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+    public bool IsDefaultInstance => Message is null;
 }

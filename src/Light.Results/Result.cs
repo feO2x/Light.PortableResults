@@ -17,8 +17,22 @@ public readonly struct Result<T>
     private readonly MetadataObject? _metadata;
     private readonly T? _value;
 
+    public Result(T value, MetadataObject? metadata = null)
+    {
+        _value = value ?? throw new ArgumentNullException(nameof(value));
+        _errors = default;
+        _metadata = metadata;
+    }
+
+    public Result(Errors errors, MetadataObject? metadata = null)
+    {
+        _value = default;
+        _errors = errors;
+        _metadata = metadata;
+    }
+
     [MemberNotNullWhen(true, nameof(Value), nameof(_value))]
-    public bool IsSuccess => _errors.Count == 0;
+    public bool IsSuccess => _value is not null && _errors.Count is 0;
 
     [MemberNotNullWhen(false, nameof(Value), nameof(_value))]
     public bool IsFailure => !IsSuccess;
@@ -38,30 +52,13 @@ public readonly struct Result<T>
     /// <summary>Gets the result-level metadata (correlation IDs, timing data, etc.).</summary>
     public MetadataObject? Metadata => _metadata;
 
-    private Result(T value, MetadataObject? metadata = null)
-    {
-        _value = value;
-        _errors = default;
-        _metadata = metadata;
-    }
-
-    private Result(Errors errors, MetadataObject? metadata = null)
-    {
-        _value = default;
-        _errors = errors;
-        _metadata = metadata;
-    }
-
     public static Result<T> Ok(T value) => new (value);
 
     public static Result<T> Ok(T value, MetadataObject metadata) => new (value, metadata);
 
-    public static Result<T> Fail(Error error) => new (new Errors(error));
+    public static Result<T> Fail(Error singleError) => new (new Errors(singleError));
 
-    public static Result<T> Fail(ReadOnlyMemory<Error> errors) =>
-        !errors.IsEmpty ?
-            new Result<T>(new Errors(errors)) :
-            throw new ArgumentException("At least one error is required.", nameof(errors));
+    public static Result<T> Fail(ReadOnlyMemory<Error> manyErrors) => new (new Errors(manyErrors));
 
     /// <summary>Transforms the successful value.</summary>
     public Result<TOut> Map<TOut>(Func<T, TOut> map) =>

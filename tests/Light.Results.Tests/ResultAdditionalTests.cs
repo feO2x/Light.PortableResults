@@ -8,7 +8,7 @@ public sealed class ResultAdditionalTests
     [Fact]
     public void Value_OnFailure_ShouldThrow()
     {
-        var result = Result<int>.Fail(new Error("Failed"));
+        var result = Result<int>.Fail(new Error { Message = "Failed" });
 
         var act = () => result.Value;
 

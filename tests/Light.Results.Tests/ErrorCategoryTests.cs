@@ -6,146 +6,81 @@ public sealed class ErrorCategoryTests
 {
     [Fact]
     public void ErrorCategory_Unclassified_ShouldBe0() =>
-        ((byte) ErrorCategory.Unclassified).Should().Be(0);
+        ((int) ErrorCategory.Unclassified).Should().Be(0);
 
     [Fact]
-    public void ErrorCategory_Validation_ShouldBe1() =>
-        ((byte) ErrorCategory.Validation).Should().Be(1);
+    public void ErrorCategory_Validation_ShouldBe400() =>
+        ((int) ErrorCategory.Validation).Should().Be(400);
 
     [Fact]
-    public void ErrorCategory_NotFound_ShouldBe2() =>
-        ((byte) ErrorCategory.NotFound).Should().Be(2);
+    public void ErrorCategory_Unauthorized_ShouldBe401() =>
+        ((int) ErrorCategory.Unauthorized).Should().Be(401);
 
     [Fact]
-    public void ErrorCategory_Conflict_ShouldBe3() =>
-        ((byte) ErrorCategory.Conflict).Should().Be(3);
+    public void ErrorCategory_Forbidden_ShouldBe403() =>
+        ((int) ErrorCategory.Forbidden).Should().Be(403);
 
     [Fact]
-    public void ErrorCategory_Unauthorized_ShouldBe4() =>
-        ((byte) ErrorCategory.Unauthorized).Should().Be(4);
+    public void ErrorCategory_NotFound_ShouldBe404() =>
+        ((int) ErrorCategory.NotFound).Should().Be(404);
 
     [Fact]
-    public void ErrorCategory_Forbidden_ShouldBe5() =>
-        ((byte) ErrorCategory.Forbidden).Should().Be(5);
+    public void ErrorCategory_Conflict_ShouldBe409() =>
+        ((int) ErrorCategory.Conflict).Should().Be(409);
 
     [Fact]
-    public void ErrorCategory_DependencyFailure_ShouldBe6() =>
-        ((byte) ErrorCategory.DependencyFailure).Should().Be(6);
+    public void ErrorCategory_Gone_ShouldBe410() =>
+        ((int) ErrorCategory.Gone).Should().Be(410);
 
     [Fact]
-    public void ErrorCategory_Transient_ShouldBe7() =>
-        ((byte) ErrorCategory.Transient).Should().Be(7);
+    public void ErrorCategory_PreconditionFailed_ShouldBe412() =>
+        ((int) ErrorCategory.PreconditionFailed).Should().Be(412);
 
     [Fact]
-    public void ErrorCategory_RateLimited_ShouldBe8() =>
-        ((byte) ErrorCategory.RateLimited).Should().Be(8);
+    public void ErrorCategory_ContentTooLarge_ShouldBe413() =>
+        ((int) ErrorCategory.ContentTooLarge).Should().Be(413);
 
     [Fact]
-    public void ErrorCategory_Unexpected_ShouldBe9() =>
-        ((byte) ErrorCategory.Unexpected).Should().Be(9);
+    public void ErrorCategory_UriTooLong_ShouldBe414() =>
+        ((int) ErrorCategory.UriTooLong).Should().Be(414);
+
+    [Fact]
+    public void ErrorCategory_UnsupportedMediaType_ShouldBe415() =>
+        ((int) ErrorCategory.UnsupportedMediaType).Should().Be(415);
+
+    [Fact]
+    public void ErrorCategory_UnprocessableEntity_ShouldBe422() =>
+        ((int) ErrorCategory.UnprocessableEntity).Should().Be(422);
+
+    [Fact]
+    public void ErrorCategory_RateLimited_ShouldBe429() =>
+        ((int) ErrorCategory.RateLimited).Should().Be(429);
+
+    [Fact]
+    public void ErrorCategory_UnavailableForLegaReasons_ShouldBe451() =>
+        ((int) ErrorCategory.UnavailableForLegaReasons).Should().Be(451);
+
+    [Fact]
+    public void ErrorCategory_InternalError_ShouldBe500() =>
+        ((int) ErrorCategory.InternalError).Should().Be(500);
+
+    [Fact]
+    public void ErrorCategory_BadGateway_ShouldBe502() =>
+        ((int) ErrorCategory.BadGateway).Should().Be(502);
+
+    [Fact]
+    public void ErrorCategory_ServiceUnavailable_ShouldBe503() =>
+        ((int) ErrorCategory.ServiceUnavailable).Should().Be(503);
+
+    [Fact]
+    public void ErrorCategory_GatewayTimeout_ShouldBe504() =>
+        ((int) ErrorCategory.GatewayTimeout).Should().Be(504);
 
     [Fact]
     public void Error_DefaultCategory_ShouldBeUnclassified()
     {
-        var error = new Error("Test message");
+        var error = new Error { Message = "Test message" };
 
         error.Category.Should().Be(ErrorCategory.Unclassified);
-    }
-
-    [Fact]
-    public void Error_WithCategory_ShouldSetCategory()
-    {
-        var error = new Error("Test message", Category: ErrorCategory.Validation);
-
-        error.Category.Should().Be(ErrorCategory.Validation);
-    }
-
-    [Fact]
-    public void Error_WithCategoryMethod_ShouldReturnNewErrorWithCategory()
-    {
-        var error = new Error("Test message");
-
-        var withCategory = error.WithCategory(ErrorCategory.NotFound);
-
-        withCategory.Category.Should().Be(ErrorCategory.NotFound);
-        withCategory.Message.Should().Be("Test message");
-    }
-
-    [Fact]
-    public void Error_ValidationFactory_ShouldCreateValidationError()
-    {
-        var error = Error.Validation("Invalid input", code: "VAL001", target: "email");
-
-        error.Category.Should().Be(ErrorCategory.Validation);
-        error.Message.Should().Be("Invalid input");
-        error.Code.Should().Be("VAL001");
-        error.Target.Should().Be("email");
-    }
-
-    [Fact]
-    public void Error_NotFoundFactory_ShouldCreateNotFoundError()
-    {
-        var error = Error.NotFound("Resource not found", code: "NF001");
-
-        error.Category.Should().Be(ErrorCategory.NotFound);
-        error.Message.Should().Be("Resource not found");
-        error.Code.Should().Be("NF001");
-    }
-
-    [Fact]
-    public void Error_ConflictFactory_ShouldCreateConflictError()
-    {
-        var error = Error.Conflict("Resource already exists");
-
-        error.Category.Should().Be(ErrorCategory.Conflict);
-        error.Message.Should().Be("Resource already exists");
-    }
-
-    [Fact]
-    public void Error_UnauthorizedFactory_ShouldCreateUnauthorizedError()
-    {
-        var error = Error.Unauthorized("Authentication required");
-
-        error.Category.Should().Be(ErrorCategory.Unauthorized);
-    }
-
-    [Fact]
-    public void Error_ForbiddenFactory_ShouldCreateForbiddenError()
-    {
-        var error = Error.Forbidden("Access denied");
-
-        error.Category.Should().Be(ErrorCategory.Forbidden);
-    }
-
-    [Fact]
-    public void Error_DependencyFailureFactory_ShouldCreateDependencyFailureError()
-    {
-        var error = Error.DependencyFailure("Database connection failed");
-
-        error.Category.Should().Be(ErrorCategory.DependencyFailure);
-    }
-
-    [Fact]
-    public void Error_TransientFactory_ShouldCreateTransientError()
-    {
-        var error = Error.Transient("Service temporarily unavailable");
-
-        error.Category.Should().Be(ErrorCategory.Transient);
-    }
-
-    [Fact]
-    public void Error_RateLimited_ShouldCreateRateLimitedError()
-    {
-        var error = Error.RateLimited("Too many calls");
-
-        error.Category.Should().Be(ErrorCategory.RateLimited);
-    }
-
-    [Fact]
-    public void Error_UnexpectedFactory_ShouldCreateUnexpectedError()
-    {
-        var error = Error.Unexpected("An unexpected error occurred");
-
-        error.Category.Should().Be(ErrorCategory.Unexpected);
     }
 }

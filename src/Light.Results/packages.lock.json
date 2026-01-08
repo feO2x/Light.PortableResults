@@ -23,6 +23,12 @@
         "resolved": "1.3.1",
         "contentHash": "Mk4ZVDfAORTjvckQprCSehi1XgOAAlk5ez06Va/acRYEloN9t6d6zpzJRn5MEq7+RnagyFIq9r+kbWzLGd+6QA=="
       },
+      "RequiredMemberAttribute": {
+        "type": "Direct",
+        "requested": "[1.0.0, )",
+        "resolved": "1.0.0",
+        "contentHash": "O1j+O0akrY2QqHuwbanc//aZDFy7sTvTq9qHPd1Z+Nblaz50g1lEDjQL41cJaGia5zy/EK5MKRbLfewNkg/hbw=="
+      },
       "System.Collections.Immutable": {
         "type": "Direct",
         "requested": "[10.0.1, )",

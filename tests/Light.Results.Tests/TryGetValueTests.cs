@@ -18,7 +18,7 @@ public sealed class TryGetValueTests
     [Fact]
     public void TryGetValue_OnFailure_ShouldReturnFalseAndDefault()
     {
-        var result = Result<int>.Fail(new Error("Error"));
+        var result = Result<int>.Fail(new Error { Message = "Error" });
 
         var success = result.TryGetValue(out var value);
 
@@ -40,7 +40,7 @@ public sealed class TryGetValueTests
     [Fact]
     public void TryGetValue_OnFailureWithReferenceType_ShouldReturnFalseAndNull()
     {
-        var result = Result<string>.Fail(new Error("Error"));
+        var result = Result<string>.Fail(new Error { Message = "Error" });
 
         var success = result.TryGetValue(out var value);
 

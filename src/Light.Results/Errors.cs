@@ -11,8 +11,78 @@ namespace Light.Results;
 /// </summary>
 public readonly struct Errors : IReadOnlyList<Error>
 {
-    private readonly Error _one;
-    private readonly ReadOnlyMemory<Error> _many;
+    private readonly Error _singleError;
+    private readonly ReadOnlyMemory<Error> _manyErrors;
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="Errors" />, containing a single error instance.
+    /// </summary>
+    /// <param name="singleError">The error that is stored inline.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="singleError" /> is the default instance.</exception>
+    public Errors(Error singleError)
+    {
+        if (singleError.IsDefaultInstance)
+        {
+            throw new ArgumentException($"'{nameof(singleError)}' must not be default instance", nameof(singleError));
+        }
+
+        _singleError = singleError;
+        _manyErrors = ReadOnlyMemory<Error>.Empty;
+        Count = 1;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="Errors" />, containing one or more errors.
+    /// If only one error is contained in the <paramref name="manyErrors" /> parameter, it is stored inline.
+    /// </summary>
+    /// <param name="manyErrors">The collection containing many errors.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="manyErrors" /> is empty or contains at least one error instance which is the default instance.
+    /// </exception>
+    public Errors(ReadOnlyMemory<Error> manyErrors)
+    {
+        switch (manyErrors.Length)
+        {
+            case 0:
+                throw new ArgumentException(
+                    $"'{nameof(manyErrors)}' must contain one or more errors",
+                    nameof(manyErrors)
+                );
+            case 1:
+            {
+                var singleError = manyErrors.Span[0];
+                if (singleError.IsDefaultInstance)
+                {
+                    throw new ArgumentException(
+                        $"The single error in '{nameof(manyErrors)}' must not be the default instance",
+                        nameof(manyErrors)
+                    );
+                }
+
+                _singleError = singleError;
+                _manyErrors = ReadOnlyMemory<Error>.Empty;
+                Count = 1;
+                return;
+            }
+            default:
+                var span = manyErrors.Span;
+                for (var i = 0; i < span.Length; i++)
+                {
+                    if (span[i].IsDefaultInstance)
+                    {
+                        throw new ArgumentException(
+                            $"The error at index {i} in '{nameof(manyErrors)}' must not be the default instance",
+                            nameof(manyErrors)
+                        );
+                    }
+                }
+
+                _singleError = default;
+                _manyErrors = manyErrors;
+                Count = manyErrors.Length;
+                return;
+        }
+    }
 
     public int Count { get; }
 
@@ -26,46 +96,16 @@ public readonly struct Errors : IReadOnlyList<Error>
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
-            return Count == 1 ? _one : _many.Span[index];
+            return Count == 1 ? _singleError : _manyErrors.Span[index];
         }
     }
 
     public Error First => Count switch
     {
-        <= 0 => throw new InvalidOperationException("No errors present."),
-        1 => _one,
-        _ => _many.Span[0]
+        0 => throw new InvalidOperationException("No errors present"),
+        1 => _singleError,
+        _ => _manyErrors.Span[0]
     };
-
-    public Errors(Error one)
-    {
-        _one = one;
-        _many = ReadOnlyMemory<Error>.Empty;
-        Count = 1;
-    }
-
-    public Errors(ReadOnlyMemory<Error> many)
-    {
-        if (many.IsEmpty)
-        {
-            _one = default;
-            _many = ReadOnlyMemory<Error>.Empty;
-            Count = 0;
-            return;
-        }
-
-        if (many.Length == 1)
-        {
-            _one = many.Span[0];
-            _many = ReadOnlyMemory<Error>.Empty;
-            Count = 1;
-            return;
-        }
-
-        _one = default;
-        _many = many;
-        Count = many.Length;
-    }
 
     public Enumerator GetEnumerator() => new (this);
 
@@ -85,8 +125,8 @@ public readonly struct Errors : IReadOnlyList<Error>
 
         public Enumerator(Errors errors)
         {
-            _one = errors._one;
-            _many = errors._many;
+            _one = errors._singleError;
+            _many = errors._manyErrors;
             _count = errors.Count;
             _index = -1;
         }
