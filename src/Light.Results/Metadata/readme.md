@@ -19,7 +19,6 @@ The following types are intentionally kept **internal**:
 
 - **`MetadataObjectData`** - Backing storage for `MetadataObject`
 - **`MetadataArrayData`** - Backing storage for `MetadataArray`
-- **`MetadataEntry`** - Key-value pair struct for internal storage
 - **`MetadataPayload`** - Union-style memory layout for `MetadataValue` storage
 
 ## Rationale for Keeping Types Internal
@@ -38,7 +37,6 @@ The internal types contain performance optimizations that may need to evolve:
   for larger collections
 - **Memory layout**: `MetadataPayload` uses explicit struct layout with overlapping fields to minimize memory
   footprint (16 bytes total)
-- **Cache locality**: `MetadataEntry` enables single-array storage for better iteration performance
 
 Making these public would lock us into these implementation details forever, preventing future optimizations.
 
@@ -69,7 +67,7 @@ Public API (MetadataObject/MetadataArray)
     ↓ delegates to
 Internal Storage (MetadataObjectData/MetadataArrayData)
     ↓ uses
-Internal Primitives (MetadataEntry/MetadataPayload)
+Internal Primitives (MetadataPayload)
 ```
 
 This separation allows the public API to remain stable while internal implementation evolves.
