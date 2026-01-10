@@ -107,6 +107,11 @@ public readonly struct Errors : IReadOnlyList<Error>, IEquatable<Errors>
         _ => _manyErrors.Span[0]
     };
 
+    /// <summary>
+    /// Gets the value indicating whether this instance is the default instance.
+    /// </summary>
+    public bool IsDefaultInstance => Count == 0;
+
     public Enumerator GetEnumerator() => new (this);
 
     IEnumerator<Error> IEnumerable<Error>.GetEnumerator() => GetEnumerator();

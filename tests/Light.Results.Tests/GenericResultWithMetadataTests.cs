@@ -50,7 +50,7 @@ public sealed class GenericResultWithMetadataTests
     {
         var result = Result<int>.Fail(new Error { Message = "Error" }).WithMetadata(("key", "value"));
 
-        result.IsFailure.Should().BeTrue();
+        result.IsValid.Should().BeFalse();
         result.Metadata.Should().NotBeNull();
         result.Errors.Should().ContainSingle();
     }
@@ -88,7 +88,7 @@ public sealed class GenericResultWithMetadataTests
 
         var mapped = result.Map(x => x * 2);
 
-        mapped.IsSuccess.Should().BeTrue();
+        mapped.IsValid.Should().BeTrue();
         mapped.Value.Should().Be(20);
         mapped.Metadata.Should().NotBeNull();
         mapped.Metadata!.Value.TryGetString("source", out var source).Should().BeTrue();
@@ -102,7 +102,7 @@ public sealed class GenericResultWithMetadataTests
 
         var mapped = result.Map(x => x * 2);
 
-        mapped.IsFailure.Should().BeTrue();
+        mapped.IsValid.Should().BeFalse();
         mapped.Metadata.Should().NotBeNull();
     }
 
@@ -115,7 +115,7 @@ public sealed class GenericResultWithMetadataTests
             x => Result<int>.Ok(x * 2).WithMetadata(("inner", "b"))
         );
 
-        bound.IsSuccess.Should().BeTrue();
+        bound.IsValid.Should().BeTrue();
         bound.Value.Should().Be(20);
         bound.Metadata.Should().NotBeNull();
         bound.Metadata!.Value.TryGetString("outer", out var outer).Should().BeTrue();
@@ -131,7 +131,7 @@ public sealed class GenericResultWithMetadataTests
 
         var bound = result.Bind(x => Result<int>.Ok(x * 2));
 
-        bound.IsFailure.Should().BeTrue();
+        bound.IsValid.Should().BeFalse();
         bound.Metadata.Should().NotBeNull();
     }
 }

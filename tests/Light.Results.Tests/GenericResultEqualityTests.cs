@@ -242,7 +242,7 @@ public sealed class GenericResultEqualityTests
         var errors = new Errors(new Error { Message = "Error" });
         Result<int> result = errors;
 
-        result.IsFailure.Should().BeTrue();
+        result.IsValid.Should().BeFalse();
         result.Errors.Should().Equal(errors);
     }
 

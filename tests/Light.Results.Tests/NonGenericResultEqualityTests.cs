@@ -192,8 +192,7 @@ public sealed class NonGenericResultEqualityTests
     {
         var result = new Result();
 
-        result.IsSuccess.Should().BeTrue();
-        result.IsFailure.Should().BeFalse();
+        result.IsValid.Should().BeTrue();
     }
 
     [Fact]

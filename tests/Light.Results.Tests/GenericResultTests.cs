@@ -14,7 +14,7 @@ public sealed class GenericResultTests
 
         var mapped = result.Map(x => x.ToString());
 
-        mapped.IsFailure.Should().BeTrue();
+        mapped.IsValid.Should().BeFalse();
         mapped.Metadata.Should().NotBeNull();
         mapped.Metadata!.Value.Should().Equal(metadata);
     }
@@ -27,7 +27,7 @@ public sealed class GenericResultTests
 
         var mapped = result.Map(x => x * 2);
 
-        mapped.IsSuccess.Should().BeTrue();
+        mapped.IsValid.Should().BeTrue();
         mapped.Value.Should().Be(84);
         mapped.Metadata.Should().NotBeNull();
         mapped.Metadata!.Value.Should().Equal(metadata);
@@ -41,7 +41,7 @@ public sealed class GenericResultTests
 
         var bound = result.Bind(x => Result<string>.Ok(x.ToString()));
 
-        bound.IsFailure.Should().BeTrue();
+        bound.IsValid.Should().BeFalse();
         bound.Metadata.Should().NotBeNull();
         bound.Metadata!.Value.Should().Equal(metadata);
     }
@@ -53,7 +53,7 @@ public sealed class GenericResultTests
 
         var bound = result.Bind(x => Result<string>.Ok(x.ToString()));
 
-        bound.IsSuccess.Should().BeTrue();
+        bound.IsValid.Should().BeTrue();
         bound.Value.Should().Be("42");
         bound.Metadata.Should().BeNull();
     }
@@ -66,7 +66,7 @@ public sealed class GenericResultTests
 
         var bound = result.Bind(x => Result<string>.Ok(x.ToString()));
 
-        bound.IsSuccess.Should().BeTrue();
+        bound.IsValid.Should().BeTrue();
         bound.Metadata.Should().NotBeNull();
         bound.Metadata!.Value.Should().Equal(metadata);
     }
@@ -80,7 +80,7 @@ public sealed class GenericResultTests
 
         var bound = result.Bind(x => Result<string>.Ok(x.ToString()).WithMetadata(innerMeta));
 
-        bound.IsSuccess.Should().BeTrue();
+        bound.IsValid.Should().BeTrue();
         bound.Metadata.Should().NotBeNull();
         bound.Metadata!.Value.Count.Should().Be(2);
     }
@@ -155,7 +155,7 @@ public sealed class GenericResultTests
     {
         Result<int> result = 42;
 
-        result.IsSuccess.Should().BeTrue();
+        result.IsValid.Should().BeTrue();
         result.Value.Should().Be(42);
     }
 
@@ -164,7 +164,7 @@ public sealed class GenericResultTests
     {
         Result<int> result = new Error { Message = "Error" };
 
-        result.IsFailure.Should().BeTrue();
+        result.IsValid.Should().BeFalse();
     }
 
     [Fact]
@@ -180,7 +180,7 @@ public sealed class GenericResultTests
     {
         var result = Result<int>.Fail(new[] { new Error { Message = "Error" } });
 
-        result.IsFailure.Should().BeTrue();
+        result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle();
     }
 
@@ -189,7 +189,7 @@ public sealed class GenericResultTests
     {
         var result = Result<int>.Fail(new[] { new Error { Message = "Error1" }, new Error { Message = "Error2" } });
 
-        result.IsFailure.Should().BeTrue();
+        result.IsValid.Should().BeFalse();
         result.Errors.Should().HaveCount(2);
     }
 
@@ -201,7 +201,7 @@ public sealed class GenericResultTests
 
         var withMeta = result.WithMetadata(metadata);
 
-        withMeta.IsFailure.Should().BeTrue();
+        withMeta.IsValid.Should().BeFalse();
         withMeta.Metadata.Should().NotBeNull();
         withMeta.Metadata!.Value.Should().Equal(metadata);
     }

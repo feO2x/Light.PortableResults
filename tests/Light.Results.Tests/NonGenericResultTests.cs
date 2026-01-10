@@ -10,8 +10,7 @@ public sealed class NonGenericResultTests
     {
         var result = Result.Fail(new Error { Message = "Error" });
 
-        result.IsFailure.Should().BeTrue();
-        result.IsSuccess.Should().BeFalse();
+        result.IsValid.Should().BeFalse();
     }
 
     [Fact]
@@ -27,7 +26,7 @@ public sealed class NonGenericResultTests
     {
         var result = Result.Fail(new[] { new Error { Message = "E1" }, new Error { Message = "E2" } });
 
-        result.IsFailure.Should().BeTrue();
+        result.IsValid.Should().BeFalse();
         result.Errors.Should().HaveCount(2);
     }
 
@@ -38,7 +37,7 @@ public sealed class NonGenericResultTests
 
         var result = Result.Ok(metadata);
 
-        result.IsSuccess.Should().BeTrue();
+        result.IsValid.Should().BeTrue();
         result.Metadata.Should().NotBeNull();
         result.Metadata!.Value.Should().Equal(metadata);
     }

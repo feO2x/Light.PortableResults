@@ -54,7 +54,7 @@ public sealed class NonGenericResultMetadataTests
         var result = Result.Fail(new Error { Message = "Error" }).WithMetadata(("context", "failure"));
 
         var expected = MetadataObject.Create(("context", "failure"));
-        result.IsFailure.Should().BeTrue();
+        result.IsValid.Should().BeFalse();
         result.Metadata.Should().NotBeNull();
         result.Metadata.Value.Should().Equal(expected);
     }

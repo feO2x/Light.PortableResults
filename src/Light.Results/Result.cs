@@ -17,6 +17,13 @@ public readonly struct Result<T> : IEquatable<Result<T>>
     private readonly MetadataObject? _metadata;
     private readonly T? _value;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="Result{T}" /> with a successful value.
+    /// </summary>
+    /// <param name="value">The non-null value.</param>
+    /// <param name="metadata">The optional metadata for this result.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value" /> is null.</exception>
+    // ReSharper disable once MemberCanBePrivate.Global -- public API
     public Result(T value, MetadataObject? metadata = null)
     {
         _value = value ?? throw new ArgumentNullException(nameof(value));
@@ -24,35 +31,51 @@ public readonly struct Result<T> : IEquatable<Result<T>>
         _metadata = metadata;
     }
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="Result{T}" /> with one or more errors.
+    /// </summary>
+    /// <param name="errors">The errors of this result instance. At least one error must be present.</param>
+    /// <param name="metadata">The optional metadata for this result.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="errors" /> is the default instance and thus contains no errors.
+    /// </exception>
+    // ReSharper disable once MemberCanBePrivate.Global -- public API
     public Result(Errors errors, MetadataObject? metadata = null)
     {
+        if (errors.IsDefaultInstance)
+        {
+            throw new ArgumentException($"{nameof(errors)} must contain at least one error", nameof(errors));
+        }
+
         _value = default;
         _errors = errors;
         _metadata = metadata;
     }
 
+    /// <summary>
+    /// Gets the value indicating whether this instance is a success.
+    /// </summary>
     [MemberNotNullWhen(true, nameof(Value), nameof(_value))]
-    public bool IsSuccess => _value is not null && _errors.Count is 0;
+    public bool IsValid => _value is not null && _errors.Count is 0;
 
-    [MemberNotNullWhen(false, nameof(Value), nameof(_value))]
-    public bool IsFailure => !IsSuccess;
-
-    /// <summary>Gets the successful value. Throws if this is a failure.</summary>
+    /// <summary>
+    /// Gets the successful value. Throws if this is a failure.
+    /// </summary>
     public T Value =>
-        IsSuccess ? _value : throw new InvalidOperationException("Cannot access Value on a failed Result.");
+        IsValid ? _value : throw new InvalidOperationException("Cannot access Value on a failed Result.");
 
     /// <summary>Returns the errors collection (empty struct on success).</summary>
     public Errors Errors => _errors;
 
     /// <summary>Returns the first error (or throws if success).</summary>
-    public Error FirstError => IsFailure ?
+    public Error FirstError => !IsValid ?
         _errors.First :
         throw new InvalidOperationException("Cannot access errors on a successful Result.");
 
     /// <summary>Gets the result-level metadata (correlation IDs, timing data, etc.).</summary>
     public MetadataObject? Metadata => _metadata;
 
-    public string DebuggerDisplay => IsSuccess ? $"Ok({Value})" : $"Fail({_errors.Count} error(s))";
+    public string DebuggerDisplay => IsValid ? $"Ok({Value})" : $"Fail({_errors.Count} error(s))";
 
     public static Result<T> Ok(T value) => new (value);
 
@@ -64,12 +87,12 @@ public readonly struct Result<T> : IEquatable<Result<T>>
 
     /// <summary>Transforms the successful value.</summary>
     public Result<TOut> Map<TOut>(Func<T, TOut> map) =>
-        IsSuccess ? Result<TOut>.Ok(map(Value), _metadata) : Result<TOut>.Fail(_errors, _metadata);
+        IsValid ? Result<TOut>.Ok(map(Value), _metadata) : Result<TOut>.Fail(_errors, _metadata);
 
     /// <summary>Chains another result-returning function.</summary>
     public Result<TOut> Bind<TOut>(Func<T, Result<TOut>> bind)
     {
-        if (!IsSuccess)
+        if (!IsValid)
         {
             return Result<TOut>.Fail(_errors, _metadata);
         }
@@ -98,7 +121,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>
     /// <summary>Executes an action on success and returns the same result.</summary>
     public Result<T> Tap(Action<T> action)
     {
-        if (IsSuccess)
+        if (IsValid)
         {
             action(Value);
         }
@@ -109,7 +132,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>
     /// <summary>Executes an action on failure and returns the same result.</summary>
     public Result<T> TapError(Action<Errors> action)
     {
-        if (IsFailure)
+        if (!IsValid)
         {
             action(_errors);
         }
@@ -125,7 +148,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>
     [MemberNotNullWhen(true, nameof(Value))]
     public bool TryGetValue([MaybeNullWhen(false)] out T value)
     {
-        if (IsSuccess)
+        if (IsValid)
         {
             value = Value;
             return true;
@@ -136,7 +159,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>
     }
 
     public override string ToString() =>
-        IsSuccess ? $"Ok({Value})" : $"Fail({string.Join(", ", _errors.Select(e => e.Message))})";
+        IsValid ? $"Ok({Value})" : $"Fail({string.Join(", ", _errors.Select(e => e.Message))})";
 
     public bool Equals(Result<T> other) => Equals(other, compareMetadata: true, valueComparer: null);
 
@@ -193,11 +216,11 @@ public readonly struct Result<T> : IEquatable<Result<T>>
 
     /// <summary>Creates a new result with the specified metadata.</summary>
     public Result<T> WithMetadata(MetadataObject metadata) =>
-        IsSuccess ? new Result<T>(Value, metadata) : new Result<T>(_errors, metadata);
+        IsValid ? new Result<T>(Value, metadata) : new Result<T>(_errors, metadata);
 
     /// <summary>Creates a new result with the specified metadata (or clears metadata if null).</summary>
     private Result<T> WithMetadata(MetadataObject? metadata) =>
-        IsSuccess ? new Result<T>(Value, metadata) : new Result<T>(_errors, metadata);
+        IsValid ? new Result<T>(Value, metadata) : new Result<T>(_errors, metadata);
 
     /// <summary>Creates a new result with additional metadata properties.</summary>
     public Result<T> WithMetadata(params (string Key, MetadataValue Value)[] properties)
@@ -244,8 +267,7 @@ public readonly struct Result : IEquatable<Result>
     public Result() : this(Result<Unit>.Ok(Unit.Value)) { }
     private Result(Result<Unit> inner) => _inner = inner;
 
-    public bool IsSuccess => _inner.IsSuccess;
-    public bool IsFailure => _inner.IsFailure;
+    public bool IsValid => _inner.IsValid;
     public Errors Errors => _inner.Errors;
     public Error FirstError => _inner.FirstError;
     public string DebuggerDisplay => _inner.DebuggerDisplay;
