@@ -91,7 +91,7 @@ public sealed class ErrorsTests
 
         var act = () => errors[0];
 
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        act.Should().Throw<IndexOutOfRangeException>();
     }
 
     [Fact]

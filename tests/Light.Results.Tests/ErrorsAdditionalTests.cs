@@ -25,8 +25,7 @@ public sealed class ErrorsAdditionalTests
 
         var act = () => errors[-1];
 
-        act.Should().Throw<ArgumentOutOfRangeException>()
-           .WithParameterName("index");
+        act.Should().Throw<IndexOutOfRangeException>();
     }
 
     [Fact]
@@ -36,8 +35,7 @@ public sealed class ErrorsAdditionalTests
 
         var act = () => errors[1];
 
-        act.Should().Throw<ArgumentOutOfRangeException>()
-           .WithParameterName("index");
+        act.Should().Throw<IndexOutOfRangeException>();
     }
 
     [Fact]

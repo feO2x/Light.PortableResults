@@ -24,6 +24,10 @@ public enum ErrorCategory
     /// <remarks>https://tools.ietf.org/html/rfc9110#section-15.5.5</remarks>
     NotFound = 404,
 
+    /// <summary>Request timeout - client took too long to send request (HTTP 408, gRPC DeadlineExceeded).</summary>
+    /// <remarks>https://tools.ietf.org/html/rfc9110#section-15.5.9</remarks>
+    Timeout = 408,
+
     /// <summary>Resource state conflict (HTTP 409, gRPC Aborted/AlreadyExists).</summary>
     /// <remarks>https://tools.ietf.org/html/rfc9110#section-15.5.10</remarks>
     Conflict = 409,
@@ -58,11 +62,18 @@ public enum ErrorCategory
 
     /// <summary>The server is denying access to the resource as a consequence of a legal demand (HTTP 451).</summary>
     /// <remarks>https://datatracker.ietf.org/doc/html/rfc7725#section-3</remarks>
-    UnavailableForLegaReasons = 451,
+    UnavailableForLegalReasons = 451,
 
     /// <summary>Unexpected internal error (HTTP 500, gRPC Internal).</summary>
     /// <remarks>https://tools.ietf.org/html/rfc9110#section-15.6.1</remarks>
     InternalError = 500,
+
+    /// <summary>
+    /// Functionality not implemented (HTTP 501, gRPC Unimplemented). Can be used with canary releases where some
+    /// clients are not allowed to access new features.
+    /// </summary>
+    /// <remarks>https://tools.ietf.org/html/rfc9110#section-15.6.2</remarks>
+    NotImplemented = 501,
 
     /// <summary>
     /// The server, while acting as a gateway or proxy, received an invalid response from an inbound server it accessed

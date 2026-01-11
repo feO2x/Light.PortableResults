@@ -25,6 +25,10 @@ public sealed class ErrorCategoryTests
         ((int) ErrorCategory.NotFound).Should().Be(404);
 
     [Fact]
+    public void ErrorCategory_Timeout_ShouldBe408() =>
+        ((int) ErrorCategory.Timeout).Should().Be(408);
+
+    [Fact]
     public void ErrorCategory_Conflict_ShouldBe409() =>
         ((int) ErrorCategory.Conflict).Should().Be(409);
 
@@ -58,11 +62,15 @@ public sealed class ErrorCategoryTests
 
     [Fact]
     public void ErrorCategory_UnavailableForLegaReasons_ShouldBe451() =>
-        ((int) ErrorCategory.UnavailableForLegaReasons).Should().Be(451);
+        ((int) ErrorCategory.UnavailableForLegalReasons).Should().Be(451);
 
     [Fact]
     public void ErrorCategory_InternalError_ShouldBe500() =>
         ((int) ErrorCategory.InternalError).Should().Be(500);
+
+    [Fact]
+    public void ErrorCategory_NotImplemented_ShouldBe501() =>
+        ((int) ErrorCategory.NotImplemented).Should().Be(501);
 
     [Fact]
     public void ErrorCategory_BadGateway_ShouldBe502() =>

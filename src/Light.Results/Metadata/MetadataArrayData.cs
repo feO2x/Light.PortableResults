@@ -48,8 +48,6 @@ internal sealed class MetadataArrayData : IEquatable<MetadataArrayData>
 
     public ReadOnlySpan<MetadataValue> AsSpan() => _values;
 
-    public MetadataValue[] GetValues() => _values;
-
     public override bool Equals(object? obj) => Equals(obj as MetadataArrayData);
 
     public override int GetHashCode()

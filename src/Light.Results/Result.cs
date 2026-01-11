@@ -67,13 +67,17 @@ public readonly struct Result<T> : IEquatable<Result<T>>
     /// <summary>Returns the errors collection (empty struct on success).</summary>
     public Errors Errors => _errors;
 
-    /// <summary>Returns the first error (or throws if result contains no errors).</summary>
+    /// <summary>
+    /// Returns the first error (or throws if result contains no errors).
+    /// </summary>
     /// <exception cref="InvalidOperationException">Thrown when this result contains no errors.</exception>
     public Error FirstError => !IsValid ?
         _errors.First :
         throw new InvalidOperationException("Cannot access errors on a successful Result.");
 
-    /// <summary>Gets the result-level metadata.</summary>
+    /// <summary>
+    /// Gets the result-level metadata.
+    /// </summary>
     public MetadataObject? Metadata { get; }
 
     /// <summary>
@@ -228,7 +232,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>
     {
         valueComparer ??= EqualityComparer<T?>.Default;
 
-        if (!_errors.Equals(other._errors))
+        if (!_errors.Equals(other._errors, compareMetadata))
         {
             return false;
         }
@@ -242,7 +246,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>
         {
             return Metadata is null ?
                 other.Metadata is null :
-                other.Metadata is not null && Metadata.Equals(other.Metadata);
+                other.Metadata is not null && Metadata.Value.Equals(other.Metadata.Value);
         }
 
         return true;
