@@ -11,7 +11,7 @@ namespace Light.Results;
 /// Represents either a successful value of <typeparamref name="T" /> or one or more errors.
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
-public readonly struct Result<T> : IEquatable<Result<T>>
+public readonly struct Result<T> : IEquatable<Result<T>>, IHasOptionalMetadata<Result<T>>
 {
     private readonly Errors _errors;
     private readonly T? _value;
@@ -295,42 +295,13 @@ public readonly struct Result<T> : IEquatable<Result<T>>
     public static bool operator !=(Result<T> x, Result<T> y) => !(x == y);
 
     /// <summary>
-    /// Creates a new instance oft his result with the metadata being replaced by the specified one.
+    /// Creates a new instance of this result with the metadata being replaced by the specified one.
+    /// Pass <c>null</c> to clear metadata.
     /// </summary>
-    /// <param name="metadata">The metadata to use.</param>
+    /// <param name="metadata">The metadata to use, or <c>null</c> to clear.</param>
     /// <returns>A new result instance with the specified metadata.</returns>
-    public Result<T> ReplaceMetadata(MetadataObject metadata) =>
+    public Result<T> ReplaceMetadata(MetadataObject? metadata) =>
         IsValid ? new Result<T>(Value, metadata) : new Result<T>(_errors, metadata);
-
-    /// <summary>
-    /// Returns a new instance of this result with no metadata.
-    /// </summary>
-    public Result<T> ClearMetadata() => IsValid ? new Result<T>(Value) : new Result<T>(_errors);
-
-    /// <summary>
-    /// Merges the specified metadata with the metadata of this instance and returns a new result instance.
-    /// </summary>
-    /// <param name="properties">The metadata to merge.</param>
-    /// <returns>A new result instance with the merged metadata.</returns>
-    public Result<T> MergeMetadata(params (string Key, MetadataValue Value)[] properties)
-    {
-        var newMetadata = Metadata?.With(properties) ?? MetadataObject.Create(properties);
-        return ReplaceMetadata(newMetadata);
-    }
-
-    /// <summary>
-    /// Merges the specified metadata with the metadata of this instance and returns a new result instance.
-    /// </summary>
-    /// <param name="other">The metadata to merge.</param>
-    /// <param name="strategy">The merge strategy to use.</param>
-    public Result<T> MergeMetadata(
-        MetadataObject other,
-        MetadataMergeStrategy strategy = MetadataMergeStrategy.AddOrReplace
-    )
-    {
-        var merged = MetadataObjectExtensions.MergeIfNeeded(Metadata, other, strategy);
-        return merged is null ? this : ReplaceMetadata(merged.Value);
-    }
 }
 
 /// <summary>
@@ -342,7 +313,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>
 /// </para>
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
-public readonly struct Result : IEquatable<Result>
+public readonly struct Result : IEquatable<Result>, IHasOptionalMetadata<Result>
 {
     private readonly Result<Unit> _inner;
 
@@ -409,18 +380,11 @@ public readonly struct Result : IEquatable<Result>
 
     /// <summary>
     /// Creates a new instance of this result with the metadata being replaced by the specified one.
+    /// Pass <c>null</c> to clear metadata.
     /// </summary>
-    /// <param name="metadata">The metadata to use.</param>
+    /// <param name="metadata">The metadata to use, or <c>null</c> to clear.</param>
     /// <returns>A new result instance with the specified metadata.</returns>
-    public Result ReplaceMetadata(MetadataObject metadata) => new (_inner.ReplaceMetadata(metadata));
-
-    /// <summary>
-    /// Merges the specified metadata with the metadata of this instance and returns a new result instance.
-    /// </summary>
-    /// <param name="properties">The metadata to merge.</param>
-    /// <returns>A new result instance with the merged metadata.</returns>
-    public Result MergeMetadata(params (string Key, MetadataValue Value)[] properties) =>
-        new (_inner.MergeMetadata(properties));
+    public Result ReplaceMetadata(MetadataObject? metadata) => new (_inner.ReplaceMetadata(metadata));
 
     /// <summary>
     /// Executes the specified action on the errors if this result is invalid.
@@ -432,18 +396,6 @@ public readonly struct Result : IEquatable<Result>
         _inner.TapError(action);
         return this;
     }
-
-    /// <summary>
-    /// Merges the specified metadata with the metadata of this instance and returns a new result instance.
-    /// </summary>
-    /// <param name="other">The metadata to merge.</param>
-    /// <param name="strategy">The merge strategy to use.</param>
-    /// <returns>A new result instance with the merged metadata.</returns>
-    public Result MergeMetadata(
-        MetadataObject other,
-        MetadataMergeStrategy strategy = MetadataMergeStrategy.AddOrReplace
-    ) =>
-        new (_inner.MergeMetadata(other, strategy));
 
     /// <summary>
     /// Determines whether this result is equal to another result.
