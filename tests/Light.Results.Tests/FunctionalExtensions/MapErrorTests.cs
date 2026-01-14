@@ -24,7 +24,7 @@ public sealed class MapErrorTests
     {
         var result = Result<int>.Ok(42);
 
-        var mapped = result.MapError(e => new Error { Message = "Transformed" });
+        var mapped = result.MapError(_ => new Error { Message = "Transformed" });
 
         mapped.IsValid.Should().BeTrue();
         mapped.Value.Should().Be(42);
@@ -49,7 +49,7 @@ public sealed class MapErrorTests
         var metadata = MetadataObject.Create(("key", "value"));
         var result = Result<int>.Fail(new Error { Message = "Error" }, metadata);
 
-        var mapped = result.MapError(e => new Error { Message = "Transformed" });
+        var mapped = result.MapError(_ => new Error { Message = "Transformed" });
 
         mapped.Metadata.Should().NotBeNull();
         mapped.Metadata!.Value.Should().Equal(metadata);
@@ -71,7 +71,7 @@ public sealed class MapErrorTests
     {
         var result = Result.Ok();
 
-        var mapped = result.MapError(e => new Error { Message = "Transformed" });
+        var mapped = result.MapError(_ => new Error { Message = "Transformed" });
 
         mapped.IsValid.Should().BeTrue();
     }
@@ -91,6 +91,20 @@ public sealed class MapErrorTests
     }
 
     [Fact]
+    public async Task MapErrorAsync_OnGenericResult_OnSuccess_ShouldReturnOriginal()
+    {
+        var result = Result<int>.Ok(42);
+
+        var mapped = await result.MapErrorAsync(
+            e =>
+                new ValueTask<Error>(new Error { Message = "Transformed: " + e.Message })
+        );
+
+        mapped.IsValid.Should().BeTrue();
+        mapped.Value.Should().Be(42);
+    }
+
+    [Fact]
     public async Task MapErrorAsync_OnNonGenericResult_OnFailure_ShouldTransformErrors()
     {
         var result = Result.Fail(new Error { Message = "Original" });
@@ -102,5 +116,18 @@ public sealed class MapErrorTests
 
         mapped.IsValid.Should().BeFalse();
         mapped.FirstError.Message.Should().Be("Transformed: Original");
+    }
+
+    [Fact]
+    public async Task MapErrorAsync_OnNonGenericResult_OnSuccess_ShouldReturnOriginal()
+    {
+        var result = Result.Ok();
+
+        var mapped = await result.MapErrorAsync(
+            e =>
+                new ValueTask<Error>(new Error { Message = "Transformed: " + e.Message })
+        );
+
+        mapped.IsValid.Should().BeTrue();
     }
 }
