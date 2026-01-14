@@ -14,7 +14,7 @@ public sealed class TracingTests
         var withSource = result.WithSource("UserService");
 
         withSource.Metadata.Should().NotBeNull();
-        withSource.Metadata!.Value.TryGetString(Tracing.SourceKey, out var source).Should().BeTrue();
+        withSource.TryGetSource(out var source).Should().BeTrue();
         source.Should().Be("UserService");
         withSource.Value.Should().Be(42);
     }
@@ -28,7 +28,7 @@ public sealed class TracingTests
 
         withSource.Metadata.Should().NotBeNull();
         withSource.Metadata!.Value.Should().HaveCount(2);
-        withSource.Metadata.Value.TryGetString(Tracing.SourceKey, out var source).Should().BeTrue();
+        withSource.TryGetSource(out var source).Should().BeTrue();
         source.Should().Be("OrderService");
         withSource.Metadata.Value.TryGetString("requestId", out var requestId).Should().BeTrue();
         requestId.Should().Be("req-123");
@@ -45,7 +45,7 @@ public sealed class TracingTests
         withSource.IsValid.Should().BeFalse();
         withSource.Errors.Should().ContainSingle().Which.Message.Should().Be("Validation failed");
         withSource.Metadata.Should().NotBeNull();
-        withSource.Metadata!.Value.TryGetString(Tracing.SourceKey, out var source).Should().BeTrue();
+        withSource.TryGetSource(out var source).Should().BeTrue();
         source.Should().Be("ValidationService");
     }
 
@@ -57,7 +57,7 @@ public sealed class TracingTests
         var withSource = result.WithSource("PaymentService");
 
         withSource.Metadata.Should().NotBeNull();
-        withSource.Metadata!.Value.TryGetString(Tracing.SourceKey, out var source).Should().BeTrue();
+        withSource.TryGetSource(out var source).Should().BeTrue();
         source.Should().Be("PaymentService");
     }
 
@@ -70,7 +70,7 @@ public sealed class TracingTests
         var withCorrelationId = result.WithCorrelationId(correlationId);
 
         withCorrelationId.Metadata.Should().NotBeNull();
-        withCorrelationId.Metadata!.Value.TryGetString(Tracing.CorrelationIdKey, out var id).Should().BeTrue();
+        withCorrelationId.TryGetCorrelationId(out var id).Should().BeTrue();
         id.Should().Be(correlationId);
         withCorrelationId.Value.Should().Be(42);
     }
@@ -85,7 +85,7 @@ public sealed class TracingTests
 
         withCorrelationId.Metadata.Should().NotBeNull();
         withCorrelationId.Metadata!.Value.Should().HaveCount(2);
-        withCorrelationId.Metadata.Value.TryGetString(Tracing.CorrelationIdKey, out var id).Should().BeTrue();
+        withCorrelationId.TryGetCorrelationId(out var id).Should().BeTrue();
         id.Should().Be(correlationId);
         withCorrelationId.Metadata.Value.TryGetString("userId", out var userId).Should().BeTrue();
         userId.Should().Be("user-456");
@@ -103,7 +103,7 @@ public sealed class TracingTests
         withCorrelationId.IsValid.Should().BeFalse();
         withCorrelationId.Errors.Should().ContainSingle().Which.Message.Should().Be("Not found");
         withCorrelationId.Metadata.Should().NotBeNull();
-        withCorrelationId.Metadata!.Value.TryGetString(Tracing.CorrelationIdKey, out var id).Should().BeTrue();
+        withCorrelationId.TryGetCorrelationId(out var id).Should().BeTrue();
         id.Should().Be(correlationId);
     }
 
@@ -124,14 +124,14 @@ public sealed class TracingTests
     public void WithTracing_ShouldAddBothSourceAndCorrelationId()
     {
         var result = Result<int>.Ok(42);
-        var source = "InventoryService";
-        var correlationId = "550e8400-e29b-41d4-a716-446655440000";
+        const string source = "InventoryService";
+        const string correlationId = "550e8400-e29b-41d4-a716-446655440000";
 
         var withTracing = result.WithTracing(source, correlationId);
 
         withTracing.Metadata.Should().NotBeNull();
         withTracing.Metadata!.Value.Should().HaveCount(2);
-        withTracing.Metadata.Value.TryGetString(Tracing.SourceKey, out var actualSource).Should().BeTrue();
+        withTracing.TryGetSource(out var actualSource).Should().BeTrue();
         actualSource.Should().Be(source);
         withTracing.Metadata.Value.TryGetString(Tracing.CorrelationIdKey, out var actualId).Should().BeTrue();
         actualId.Should().Be(correlationId);
@@ -142,8 +142,8 @@ public sealed class TracingTests
     public void WithTracing_OnResultWithExistingMetadata_ShouldMerge()
     {
         var result = Result<string>.Ok("test").MergeMetadata(("environment", "production"));
-        var source = "AuthService";
-        var correlationId = "trace-xyz-789";
+        const string source = "AuthService";
+        const string correlationId = "trace-xyz-789";
 
         var withTracing = result.WithTracing(source, correlationId);
 
@@ -151,9 +151,9 @@ public sealed class TracingTests
         withTracing.Metadata!.Value.Should().HaveCount(3);
         withTracing.Metadata.Value.TryGetString("environment", out var env).Should().BeTrue();
         env.Should().Be("production");
-        withTracing.Metadata.Value.TryGetString(Tracing.SourceKey, out var actualSource).Should().BeTrue();
+        withTracing.TryGetSource(out var actualSource).Should().BeTrue();
         actualSource.Should().Be(source);
-        withTracing.Metadata.Value.TryGetString(Tracing.CorrelationIdKey, out var actualId).Should().BeTrue();
+        withTracing.TryGetCorrelationId(out var actualId).Should().BeTrue();
         actualId.Should().Be(correlationId);
     }
 
@@ -162,8 +162,8 @@ public sealed class TracingTests
     {
         var error = new Error { Message = "Unauthorized" };
         var result = Result<int>.Fail(error);
-        var source = "SecurityService";
-        var correlationId = "sec-trace-001";
+        const string source = "SecurityService";
+        const string correlationId = "sec-trace-001";
 
         var withTracing = result.WithTracing(source, correlationId);
 
@@ -177,16 +177,16 @@ public sealed class TracingTests
     public void WithTracing_OnNonGenericResult_ShouldWork()
     {
         var result = Result.Ok();
-        var source = "NotificationService";
-        var correlationId = "notif-123-abc";
+        const string source = "NotificationService";
+        const string correlationId = "notif-123-abc";
 
         var withTracing = result.WithTracing(source, correlationId);
 
         withTracing.Metadata.Should().NotBeNull();
         withTracing.Metadata!.Value.Should().HaveCount(2);
-        withTracing.Metadata.Value.TryGetString(Tracing.SourceKey, out var actualSource).Should().BeTrue();
+        withTracing.TryGetSource(out var actualSource).Should().BeTrue();
         actualSource.Should().Be(source);
-        withTracing.Metadata.Value.TryGetString(Tracing.CorrelationIdKey, out var actualId).Should().BeTrue();
+        withTracing.TryGetCorrelationId(out var actualId).Should().BeTrue();
         actualId.Should().Be(correlationId);
     }
 
@@ -325,19 +325,19 @@ public sealed class TracingTests
     [Fact]
     public void WithSource_SupportsVariousCorrelationIdFormats()
     {
-        var uuidFormat = "550e8400-e29b-41d4-a716-446655440000";
-        var w3cFormat = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
-        var customFormat = "req-2024-001-abc123";
+        const string uuidFormat = "550e8400-e29b-41d4-a716-446655440000";
+        const string w3CFormat = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
+        const string customFormat = "req-2024-001-abc123";
 
         var result1 = Result<int>.Ok(1).WithCorrelationId(uuidFormat);
-        var result2 = Result<int>.Ok(2).WithCorrelationId(w3cFormat);
+        var result2 = Result<int>.Ok(2).WithCorrelationId(w3CFormat);
         var result3 = Result<int>.Ok(3).WithCorrelationId(customFormat);
 
         result1.TryGetCorrelationId(out var id1).Should().BeTrue();
         id1.Should().Be(uuidFormat);
 
         result2.TryGetCorrelationId(out var id2).Should().BeTrue();
-        id2.Should().Be(w3cFormat);
+        id2.Should().Be(w3CFormat);
 
         result3.TryGetCorrelationId(out var id3).Should().BeTrue();
         id3.Should().Be(customFormat);
