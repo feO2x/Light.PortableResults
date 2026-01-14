@@ -11,7 +11,10 @@ namespace Light.Results;
 /// Represents either a successful value of <typeparamref name="T" /> or one or more errors.
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
-public readonly struct Result<T> : IEquatable<Result<T>>, IHasOptionalMetadata<Result<T>>
+public readonly struct Result<T> : IEquatable<Result<T>>,
+                                   IHasOptionalMetadata<Result<T>>,
+                                   IResult<Result<T>>,
+                                   IResultWithValue<Result<T>, T>
 {
     private readonly Errors _errors;
     private readonly T? _value;
@@ -123,71 +126,6 @@ public readonly struct Result<T> : IEquatable<Result<T>>, IHasOptionalMetadata<R
     /// <param name="metadata">The optional metadata.</param>
     /// <returns>The failed result.</returns>
     public static Result<T> Fail(Errors errors, MetadataObject? metadata = null) => new (errors, metadata);
-
-    /// <summary>
-    /// Maps the value of this result to a new result using the specified function.
-    /// </summary>
-    /// <typeparam name="TOut">The type of the output value.</typeparam>
-    /// <param name="map">The function to map the value.</param>
-    /// <returns>A new result with the mapped value if this result is valid; otherwise, a failed result with the same errors.</returns>
-    public Result<TOut> Map<TOut>(Func<T, TOut> map) =>
-        IsValid ? Result<TOut>.Ok(map(Value), Metadata) : Result<TOut>.Fail(_errors, Metadata);
-
-    /// <summary>
-    /// Binds the value of this result to a new result using the specified function. The metadata from the new result
-    /// and this instance will be merged.
-    /// </summary>
-    /// <typeparam name="TOut">The type of the output value.</typeparam>
-    /// <param name="bind">The function to bind the value to a new result.</param>
-    /// <param name="metadataMergeStrategy">The strategy to use when merging metadata.</param>
-    /// <returns>The result returned by the bind function if this result is valid; otherwise, a failed result with the same errors.</returns>
-    public Result<TOut> Bind<TOut>(
-        Func<T, Result<TOut>> bind,
-        MetadataMergeStrategy metadataMergeStrategy = MetadataMergeStrategy.AddOrReplace
-    )
-    {
-        if (!IsValid)
-        {
-            return Result<TOut>.Fail(_errors, Metadata);
-        }
-
-        var newResult = bind(Value);
-
-        // Merge metadata from this result into the bound result using MergeIfNeeded
-        var mergedMetadata =
-            MetadataObjectExtensions.MergeIfNeeded(Metadata, newResult.Metadata, metadataMergeStrategy);
-        return mergedMetadata is null ? newResult : newResult.ReplaceMetadata(mergedMetadata.Value);
-    }
-
-    /// <summary>
-    /// Executes the specified action on the value if this result is valid.
-    /// </summary>
-    /// <param name="action">The action to execute.</param>
-    /// <returns>This result instance.</returns>
-    public Result<T> Tap(Action<T> action)
-    {
-        if (IsValid)
-        {
-            action(Value);
-        }
-
-        return this;
-    }
-
-    /// <summary>
-    /// Executes the specified action on the errors if this result is invalid.
-    /// </summary>
-    /// <param name="action">The action to execute.</param>
-    /// <returns>This result instance.</returns>
-    public Result<T> TapError(Action<Errors> action)
-    {
-        if (!IsValid)
-        {
-            action(_errors);
-        }
-
-        return this;
-    }
 
     /// <summary>
     /// Attempts to get the value if this is a valid result.
@@ -313,7 +251,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>, IHasOptionalMetadata<R
 /// </para>
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
-public readonly struct Result : IEquatable<Result>, IHasOptionalMetadata<Result>
+public readonly struct Result : IEquatable<Result>, IHasOptionalMetadata<Result>, IResult<Result>
 {
     private readonly Result<Unit> _inner;
 
@@ -385,17 +323,6 @@ public readonly struct Result : IEquatable<Result>, IHasOptionalMetadata<Result>
     /// <param name="metadata">The metadata to use, or <c>null</c> to clear.</param>
     /// <returns>A new result instance with the specified metadata.</returns>
     public Result ReplaceMetadata(MetadataObject? metadata) => new (_inner.ReplaceMetadata(metadata));
-
-    /// <summary>
-    /// Executes the specified action on the errors if this result is invalid.
-    /// </summary>
-    /// <param name="action">The action to execute.</param>
-    /// <returns>This result instance.</returns>
-    public Result TapError(Action<Errors> action)
-    {
-        _inner.TapError(action);
-        return this;
-    }
 
     /// <summary>
     /// Determines whether this result is equal to another result.

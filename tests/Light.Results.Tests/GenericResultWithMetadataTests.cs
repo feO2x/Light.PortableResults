@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Light.Results.FunctionalExtensions;
 using Light.Results.Metadata;
 
 namespace Light.Results.Tests;

@@ -1,5 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using Light.Results;
+using Light.Results.FunctionalExtensions;
 
 namespace Benchmarks;
 
