@@ -35,7 +35,7 @@ public sealed class ToMinimalApiResultTests
     {
         var result = Result.Ok();
 
-        var apiResult = result.ToMinimalApiResult(() => TypedResults.Accepted("/status"));
+        var apiResult = result.ToMinimalApiResult(_ => TypedResults.Accepted("/status"));
 
         apiResult.Should().BeOfType<Accepted>();
     }
@@ -45,7 +45,7 @@ public sealed class ToMinimalApiResultTests
     {
         var result = Result.Fail(new Error { Message = "Error", Category = ErrorCategory.Conflict });
 
-        var apiResult = result.ToMinimalApiResult(() => TypedResults.Accepted("/status"));
+        var apiResult = result.ToMinimalApiResult(_ => TypedResults.Accepted("/status"));
 
         apiResult.Should().BeOfType<LightProblemDetailsResult>();
         var problemDetails = (LightProblemDetailsResult) apiResult;

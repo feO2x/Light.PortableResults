@@ -66,7 +66,7 @@ public static class MinimalApiResultExtensions
     /// <returns>An IResult representing the result.</returns>
     public static IResult ToMinimalApiResult<T>(
         this Result<T> result,
-        Func<T, IResult> onSuccess,
+        Func<Result<T>, IResult> onSuccess,
         HttpContext? httpContext = null,
         bool firstCategoryIsLeadingCategory = false,
         string? instance = null,
@@ -77,7 +77,7 @@ public static class MinimalApiResultExtensions
 
         if (result.IsValid)
         {
-            return onSuccess(result.Value);
+            return onSuccess(result);
         }
 
         var enrichedResult = EnrichIfRegistered(result, httpContext);
@@ -138,7 +138,7 @@ public static class MinimalApiResultExtensions
     /// <returns>An IResult representing the result.</returns>
     public static IResult ToMinimalApiResult(
         this Result result,
-        Func<IResult> onSuccess,
+        Func<Result, IResult> onSuccess,
         HttpContext? httpContext = null,
         bool firstCategoryIsLeadingCategory = false,
         string? instance = null,
@@ -149,7 +149,7 @@ public static class MinimalApiResultExtensions
 
         if (result.IsValid)
         {
-            return onSuccess();
+            return onSuccess(result);
         }
 
         var enrichedResult = EnrichIfRegistered(result, httpContext);

@@ -37,7 +37,7 @@ public sealed class ToMinimalApiResultOfTTests
     {
         var result = Result<int>.Ok(42);
 
-        var apiResult = result.ToMinimalApiResult(value => TypedResults.Created($"/items/{value}", value));
+        var apiResult = result.ToMinimalApiResult(r => TypedResults.Created($"/items/{r.Value}", r.Value));
 
         apiResult.Should().BeOfType<Created<int>>();
     }
