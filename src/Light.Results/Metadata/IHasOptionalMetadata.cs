@@ -4,7 +4,7 @@ namespace Light.Results.Metadata;
 /// Represents a type that can optionally carry metadata.
 /// </summary>
 /// <typeparam name="T">The implementing type.</typeparam>
-public interface IHasOptionalMetadata<T>
+public interface IHasOptionalMetadata<out T>
     where T : struct, IHasOptionalMetadata<T>
 {
     /// <summary>
