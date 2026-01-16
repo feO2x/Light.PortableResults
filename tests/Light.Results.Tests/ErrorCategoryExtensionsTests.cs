@@ -2,7 +2,7 @@ using System;
 using FluentAssertions;
 using Xunit;
 
-namespace Light.Results.AspNetCore.Abstractions.Tests;
+namespace Light.Results.Tests;
 
 public sealed class ErrorCategoryExtensionsTests
 {

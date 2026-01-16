@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using Light.Results.Metadata;
+using Xunit;
 
 namespace Light.Results.Tests.Metadata;
 

@@ -1,6 +1,6 @@
 using System;
 
-namespace Light.Results.AspNetCore.Abstractions;
+namespace Light.Results;
 
 /// <summary>
 /// Provides extension methods for <see cref="ErrorCategory" /> and <see cref="Errors" />.

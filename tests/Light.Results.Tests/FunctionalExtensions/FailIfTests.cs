@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Light.Results.FunctionalExtensions;
 using Light.Results.Metadata;
+using Xunit;
 
 namespace Light.Results.Tests.FunctionalExtensions;
 
