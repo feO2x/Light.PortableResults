@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Light.Results.AspNetCore.Abstractions;
+using Light.Results.AspNetCore.Shared;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;

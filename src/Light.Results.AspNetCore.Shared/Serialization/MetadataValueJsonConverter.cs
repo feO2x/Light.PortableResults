@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Light.Results.Metadata;
 
-namespace Light.Results.AspNetCore.Abstractions.Serialization;
+namespace Light.Results.AspNetCore.Shared.Serialization;
 
 /// <summary>
 /// JSON converter for <see cref="MetadataValue" />.

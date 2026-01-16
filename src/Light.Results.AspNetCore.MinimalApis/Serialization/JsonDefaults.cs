@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Light.Results.AspNetCore.Abstractions.Serialization;
+using Light.Results.AspNetCore.Shared.Serialization;
 
 namespace Light.Results.AspNetCore.MinimalApis.Serialization;
 

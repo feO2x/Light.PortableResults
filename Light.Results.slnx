@@ -25,14 +25,13 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Light.Results/Light.Results.csproj" />
-      <Project Path="src\Light.Results.AspNetCore.Abstractions\Light.Results.AspNetCore.Abstractions.csproj" />
       <Project Path="src\Light.Results.AspNetCore.MinimalApis\Light.Results.AspNetCore.MinimalApis.csproj" />
+      <Project Path="src\Light.Results.AspNetCore.Shared\Light.Results.AspNetCore.Shared.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Light.Results.Tests/Light.Results.Tests.csproj" />
       <Project
-          Path="tests\Light.Results.AspNetCore.Abstractions.Tests\Light.Results.AspNetCore.Abstractions.Tests.csproj" />
-      <Project
           Path="tests\Light.Results.AspNetCore.MinimalApis.Tests\Light.Results.AspNetCore.MinimalApis.Tests.csproj" />
+      <Project Path="tests\Light.Results.AspNetCore.Shared.Tests\Light.Results.AspNetCore.Shared.Tests.csproj" />
   </Folder>
 </Solution>

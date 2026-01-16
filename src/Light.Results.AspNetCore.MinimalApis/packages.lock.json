@@ -14,7 +14,7 @@
           "Microsoft.Bcl.HashCode": "[6.0.0, )"
         }
       },
-      "light.results.aspnetcore.abstractions": {
+      "light.results.aspnetcore.shared": {
         "type": "Project",
         "dependencies": {
           "Light.Results": "[1.0.0, )"

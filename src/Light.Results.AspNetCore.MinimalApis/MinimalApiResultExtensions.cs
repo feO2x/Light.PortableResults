@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Light.Results.AspNetCore.Abstractions;
+using Light.Results.AspNetCore.Shared;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

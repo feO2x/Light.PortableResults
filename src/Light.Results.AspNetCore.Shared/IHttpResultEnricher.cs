@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace Light.Results.AspNetCore.Abstractions;
+namespace Light.Results.AspNetCore.Shared;
 
 /// <summary>
 /// Service for enriching results with additional metadata before conversion to LightProblemDetails.

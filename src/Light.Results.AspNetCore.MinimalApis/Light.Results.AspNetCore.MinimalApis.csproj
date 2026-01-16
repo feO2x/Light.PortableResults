@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <ProjectReference Include="..\Light.Results.AspNetCore.Abstractions\Light.Results.AspNetCore.Abstractions.csproj" />
+    <ProjectReference Include="..\Light.Results.AspNetCore.Shared\Light.Results.AspNetCore.Shared.csproj" />
   </ItemGroup>
 
 </Project>

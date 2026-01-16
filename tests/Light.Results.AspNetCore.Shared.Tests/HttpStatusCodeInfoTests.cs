@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Xunit;
 
-namespace Light.Results.AspNetCore.Abstractions.Tests;
+namespace Light.Results.AspNetCore.Shared.Tests;
 
 public sealed class HttpStatusCodeInfoTests
 {

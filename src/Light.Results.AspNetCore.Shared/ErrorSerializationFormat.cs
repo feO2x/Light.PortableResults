@@ -1,4 +1,4 @@
-namespace Light.Results.AspNetCore.Abstractions;
+namespace Light.Results.AspNetCore.Shared;
 
 /// <summary>
 /// Specifies how errors are serialized in Problem Details responses.

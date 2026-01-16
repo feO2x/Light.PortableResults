@@ -227,16 +227,16 @@
           "Microsoft.Bcl.HashCode": "[6.0.0, )"
         }
       },
-      "light.results.aspnetcore.abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Light.Results": "[1.0.0, )"
-        }
-      },
       "light.results.aspnetcore.minimalapis": {
         "type": "Project",
         "dependencies": {
-          "Light.Results.AspNetCore.Abstractions": "[1.0.0, )"
+          "Light.Results.AspNetCore.Shared": "[1.0.0, )"
+        }
+      },
+      "light.results.aspnetcore.shared": {
+        "type": "Project",
+        "dependencies": {
+          "Light.Results": "[1.0.0, )"
         }
       },
       "Microsoft.Bcl.HashCode": {

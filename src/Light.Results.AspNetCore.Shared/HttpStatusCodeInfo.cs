@@ -1,4 +1,4 @@
-namespace Light.Results.AspNetCore.Abstractions;
+namespace Light.Results.AspNetCore.Shared;
 
 /// <summary>
 /// Provides RFC 9110 type URIs and status titles for HTTP status codes.

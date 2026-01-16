@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Light.Results.AspNetCore.Abstractions;
+using Light.Results.AspNetCore.Shared;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Http;
 using Xunit;
