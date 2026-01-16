@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
@@ -34,6 +35,11 @@ public sealed class LightProblemDetailsResult : IResult
         JsonSerializerOptions? serializerOptions = null
     )
     {
+        if (errors.IsDefaultInstance)
+        {
+            throw new ArgumentException($"The {nameof(errors)} argument must contain at least one error");
+        }
+
         var leadingCategory = errors.GetLeadingCategory(firstCategoryIsLeadingCategory);
         Status = leadingCategory.ToHttpStatusCode();
         Type = HttpStatusCodeInfo.GetTypeUri(Status);

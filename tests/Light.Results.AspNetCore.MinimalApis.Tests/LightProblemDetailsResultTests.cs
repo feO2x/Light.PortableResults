@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -31,6 +32,16 @@ public sealed class LightProblemDetailsResultTests
         problemDetails.Instance.Should().Be("/api/orders/123");
         problemDetails.Errors.Should().Equal(errors);
         problemDetails.Metadata.Should().Be(metadata);
+    }
+
+    [Fact]
+    public void Constructor_WithDefaultErrors_ThrowsArgumentException()
+    {
+        var errors = default(Errors);
+
+        var action = () => new LightProblemDetailsResult(errors, null);
+
+        action.Should().Throw<ArgumentException>().WithMessage("The errors argument must contain at least one error");
     }
 
     [Fact]
