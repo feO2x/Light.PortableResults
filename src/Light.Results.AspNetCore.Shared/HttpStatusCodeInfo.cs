@@ -5,6 +5,11 @@ namespace Light.Results.AspNetCore.Shared;
 /// </summary>
 public static class HttpStatusCodeInfo
 {
+    /// <summary>
+    /// Gets the RFC 9110 type URI for the specified HTTP status code.
+    /// </summary>
+    /// <param name="statusCode">The HTTP status code.</param>
+    /// <returns>The RFC 9110 section URI for the status code, or the 500 URI for unknown codes.</returns>
     public static string GetTypeUri(int statusCode) => statusCode switch
     {
         400 => "https://tools.ietf.org/html/rfc9110#section-15.5.1",
@@ -29,6 +34,11 @@ public static class HttpStatusCodeInfo
         _ => "https://tools.ietf.org/html/rfc9110#section-15.6.1"
     };
 
+    /// <summary>
+    /// Gets the standard title (reason phrase) for the specified HTTP status code.
+    /// </summary>
+    /// <param name="statusCode">The HTTP status code.</param>
+    /// <returns>The standard title for the status code, or "Internal Server Error" for unknown codes.</returns>
     public static string GetTitle(int statusCode) => statusCode switch
     {
         400 => "Bad Request",
@@ -53,6 +63,11 @@ public static class HttpStatusCodeInfo
         _ => "Internal Server Error"
     };
 
+    /// <summary>
+    /// Gets a human-readable detail message for the specified error category.
+    /// </summary>
+    /// <param name="category">The error category.</param>
+    /// <returns>A descriptive message suitable for the Problem Details "detail" field.</returns>
     public static string GetDetail(ErrorCategory category) => category switch
     {
         ErrorCategory.Validation => "One or more validation errors occurred.",
