@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Light.Results.AspNetCore.Shared.HttpContextInjection;
@@ -8,42 +9,55 @@ using Xunit;
 
 namespace Light.Results.AspNetCore.Shared.Tests.HttpContextInjection;
 
-public sealed class HttpContextInjectionMiddlewareTests : IAsyncDisposable
+public sealed class HttpContextInjectionMiddlewareTests
 {
     private readonly NextMiddlewareSpy _nextMiddleware = new ();
-    private readonly AsyncServiceScope _scope;
-    private readonly ServiceProvider _serviceProvider;
-
-    public HttpContextInjectionMiddlewareTests()
-    {
-        _serviceProvider = new ServiceCollection()
-           .AddScoped<IInjectHttpContext, InjectHttpContextSpyA>()
-           .AddScoped<IInjectHttpContext, InjectHttpContextSpyB>()
-           .BuildServiceProvider();
-        _scope = _serviceProvider.CreateAsyncScope();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _scope.DisposeAsync();
-        await _serviceProvider.DisposeAsync();
-    }
 
     [Fact]
     public async Task InvokeAsync_InjectsHttpContextToAllServicesImplementingIInjectHttpContext()
     {
+        await using var serviceProvider = new ServiceCollection()
+           .AddScoped<IInjectHttpContext, InjectHttpContextSpyA>()
+           .AddScoped<IInjectHttpContext, InjectHttpContextSpyB>()
+           .BuildServiceProvider();
+        await using var scope = serviceProvider.CreateAsyncScope();
         var middleware = new HttpContextInjectionMiddleware(_nextMiddleware.InvokeAsync);
         var httpContext = new DefaultHttpContext
         {
-            RequestServices = _scope.ServiceProvider
+            RequestServices = scope.ServiceProvider
         };
 
         await middleware.InvokeAsync(httpContext);
 
-        var spies = _scope.ServiceProvider.GetServices<IInjectHttpContext>();
+        var spies = scope.ServiceProvider.GetServices<IInjectHttpContext>();
         foreach (var spy in spies)
         {
             spy.Should().BeAssignableTo<BaseInjectHttpContextSpy>().Which.HttpContextMustHaveBeenSet();
+        }
+
+        _nextMiddleware.InvokeAsyncMustHaveBeenCalledWith(httpContext);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_FallsBackToIEnumerableOfT_WhenCustomServiceProviderDoesNotReturnArrayOnGetServices()
+    {
+        var spies = new List<BaseInjectHttpContextSpy>
+        {
+            new InjectHttpContextSpyA(),
+            new InjectHttpContextSpyB()
+        };
+        var serviceProvider = new ServiceProviderStub(spies);
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        var middleware = new HttpContextInjectionMiddleware(_nextMiddleware.InvokeAsync);
+
+        await middleware.InvokeAsync(httpContext);
+
+        foreach (var spy in spies)
+        {
+            spy.HttpContextMustHaveBeenSet();
         }
 
         _nextMiddleware.InvokeAsyncMustHaveBeenCalledWith(httpContext);
@@ -85,5 +99,24 @@ public sealed class HttpContextInjectionMiddlewareTests : IAsyncDisposable
 
         public void InvokeAsyncMustHaveBeenCalledWith(HttpContext httpContext) =>
             _capturedContext.Should().BeSameAs(httpContext);
+    }
+
+    private sealed class ServiceProviderStub : IServiceProvider
+    {
+        private readonly List<BaseInjectHttpContextSpy> _spies;
+
+        public ServiceProviderStub(List<BaseInjectHttpContextSpy> spies) => _spies = spies;
+
+        public object GetService(Type serviceType)
+        {
+            if (serviceType == typeof(IEnumerable<IInjectHttpContext>))
+            {
+                return _spies;
+            }
+
+            throw new InvalidOperationException(
+                "This stub is only configured to return services of type IEnumerable<IInjectHttpContext>"
+            );
+        }
     }
 }
