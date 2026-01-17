@@ -5,7 +5,7 @@ indent_style = space
 indent_size = 4
 insert_final_newline = true
 
-[{*.props,*.csproj,*.xml,*.json,*.jsonc,*.yml,*.yaml}]
+[{*.props,*.csproj,*.xml,*.json,*.jsonc,*.yml,*.yaml,*.slnx}]
 indent_size = 2
 
 [*.cs]
