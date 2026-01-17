@@ -20,7 +20,7 @@ public static class MinimalApiResultExtensions
     /// <summary>
     /// Converts a Result&lt;T&gt; to an ASP.NET Core Minimal API IResult.
     /// On success, returns the value with HTTP 200.
-    /// On failure, returns LightProblemDetails with appropriate HTTP status.
+    /// On failure, returns <see cref="LightProblemDetailsResult" /> with appropriate HTTP status.
     /// </summary>
     /// <param name="result">The result to convert.</param>
     /// <param name="httpContext">HTTP context for enricher resolution (optional if no enricher registered).</param>
@@ -296,8 +296,7 @@ public static class MinimalApiResultExtensions
     {
         switch (value.Kind)
         {
-            case MetadataKind.Null:
-                return null;
+            case MetadataKind.Null: return null;
             case MetadataKind.Boolean:
                 value.TryGetBoolean(out var boolVal);
                 return boolVal;
@@ -322,8 +321,7 @@ public static class MinimalApiResultExtensions
             case MetadataKind.Object:
                 value.TryGetObject(out var objVal);
                 return ConvertMetadataToDict(objVal);
-            default:
-                return null;
+            default: return null;
         }
     }
 }
