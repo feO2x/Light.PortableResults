@@ -70,6 +70,16 @@ public readonly struct Error : IEquatable<Error>
     public MetadataObject? Metadata { get; init; }
 
     /// <summary>
+    /// <para>
+    /// Gets or initializes the exception that caused this error. This value is optional.
+    /// </para>
+    /// <para>
+    /// Exceptions are never serialized by Light.Results and will not cross process boundaries.
+    /// </para>
+    /// </summary>
+    public Exception? Exception { get; init; }
+
+    /// <summary>
     /// Gets the value indicating whether this instance is the default instance. This
     /// usually happens when the 'default' keyword is used: <c>Error error = default;</c>.
     /// </summary>
@@ -98,6 +108,7 @@ public readonly struct Error : IEquatable<Error>
                string.Equals(Code, other.Code, StringComparison.Ordinal) &&
                string.Equals(Target, other.Target, StringComparison.Ordinal) &&
                Category == other.Category &&
+               ReferenceEquals(Exception, other.Exception) &&
                (!compareMetadata || Metadata == other.Metadata);
     }
 
@@ -130,6 +141,7 @@ public readonly struct Error : IEquatable<Error>
         hashCode.Add(Code);
         hashCode.Add(Target);
         hashCode.Add(Category);
+        hashCode.Add(Exception);
         if (includeMetadata)
         {
             hashCode.Add(Metadata);
