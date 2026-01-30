@@ -1,4 +1,4 @@
-# Agents.md for Automated Tests
+# AGENTS.md for Automated Tests
 
 ## General Guidelines
 

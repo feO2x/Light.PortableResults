@@ -1,4 +1,4 @@
-# Agents.md for Production Code
+# AGENTS.md for Production Code
 
 ## Overview of the projects
 
