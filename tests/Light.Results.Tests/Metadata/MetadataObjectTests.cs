@@ -223,6 +223,47 @@ public sealed class MetadataObjectTests
     }
 
     [Fact]
+    public void Equals_BothDefault_ShouldReturnTrue()
+    {
+        var left = default(MetadataObject);
+        var right = default(MetadataObject);
+
+        left.Equals(right).Should().BeTrue();
+        (left == right).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Equals_DefaultVsNonEmpty_ShouldReturnFalse()
+    {
+        var defaultObj = default(MetadataObject);
+        var nonEmpty = MetadataObject.Create(("key", "value"));
+
+        defaultObj.Equals(nonEmpty).Should().BeFalse();
+        (defaultObj == nonEmpty).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equals_NonEmptyVsDefault_ShouldReturnFalse()
+    {
+        var nonEmpty = MetadataObject.Create(("key", "value"));
+        var defaultObj = default(MetadataObject);
+
+        nonEmpty.Equals(defaultObj).Should().BeFalse();
+        (nonEmpty == defaultObj).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equals_DefaultVsEmpty_ShouldReturnFalse()
+    {
+        var defaultObj = default(MetadataObject);
+        var empty = MetadataObject.Empty;
+
+        // default(MetadataObject) has null Data, Empty has non-null Data
+        defaultObj.Equals(empty).Should().BeFalse();
+        (defaultObj == empty).Should().BeFalse();
+    }
+
+    [Fact]
     public void Equals_WithNestedObjects_ShouldCompareByValue()
     {
         var nested1 = MetadataObject.Create(("inner", "value"));
@@ -424,6 +465,22 @@ public sealed class MetadataObjectTests
     }
 
     [Fact]
+    public void Create_WithCustomKeyComparer_AndNullProperties_ShouldReturnEmpty()
+    {
+        var obj = MetadataObject.Create(StringComparer.OrdinalIgnoreCase, null);
+
+        obj.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Create_WithCustomKeyComparer_AndEmptyProperties_ShouldReturnEmpty()
+    {
+        var obj = MetadataObject.Create(StringComparer.OrdinalIgnoreCase);
+
+        obj.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Equals_WithCustomKeyComparer_ShouldCompareUsingComparer()
     {
         var obj1 = MetadataObject.Create(
@@ -436,6 +493,68 @@ public sealed class MetadataObjectTests
         );
 
         obj1.Equals(obj2).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Equals_WithCustomKeyComparer_DifferentKeys_ShouldReturnFalse()
+    {
+        var obj1 = MetadataObject.Create(
+            StringComparer.OrdinalIgnoreCase,
+            ("Key1", "value")
+        );
+        var obj2 = MetadataObject.Create(
+            StringComparer.OrdinalIgnoreCase,
+            ("Key2", "value")
+        );
+
+        obj1.Equals(obj2).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equals_WithCustomKeyComparer_DifferentValues_ShouldReturnFalse()
+    {
+        var obj1 = MetadataObject.Create(
+            StringComparer.OrdinalIgnoreCase,
+            ("Key", "value1")
+        );
+        var obj2 = MetadataObject.Create(
+            StringComparer.OrdinalIgnoreCase,
+            ("Key", "value2")
+        );
+
+        obj1.Equals(obj2).Should().BeFalse();
+    }
+
+    [Fact]
+    public void TryGetValue_SmallObjectWithKeyComparer_MissingKey_ShouldReturnFalse()
+    {
+        // Small object (< DictionaryThreshold) with key comparer exercises linear search with comparer
+        var obj = MetadataObject.Create(
+            StringComparer.OrdinalIgnoreCase,
+            ("Key1", 1),
+            ("Key2", 2),
+            ("Key3", 3)
+        );
+
+        obj.TryGetValue("missing", out var value).Should().BeFalse();
+        value.Should().Be(default(MetadataValue));
+    }
+
+    [Fact]
+    public void TryGetValue_OnEmptyObject_ShouldReturnFalse()
+    {
+        var obj = MetadataObject.Empty;
+
+        obj.TryGetValue("any", out var value).Should().BeFalse();
+        value.Should().Be(default(MetadataValue));
+    }
+
+    [Fact]
+    public void ContainsKey_OnEmptyObject_ShouldReturnFalse()
+    {
+        var obj = MetadataObject.Empty;
+
+        obj.ContainsKey("any").Should().BeFalse();
     }
 
 
@@ -652,6 +771,15 @@ public sealed class MetadataObjectTests
 
         obj.TryGetDouble("a", out var value).Should().BeFalse();
         value.Should().Be(0.0);
+    }
+
+    [Fact]
+    public void TryGetDouble_WhenDoubleType_ShouldReturnTrue()
+    {
+        var obj = MetadataObject.Create(("pi", MetadataValue.FromDouble(3.14159)));
+
+        obj.TryGetDouble("pi", out var value).Should().BeTrue();
+        value.Should().Be(3.14159);
     }
 
     [Fact]
@@ -1455,6 +1583,17 @@ public sealed class MetadataObjectTests
 
         var obj = builder.Build();
         obj.Should().HaveCount(100);
+    }
+
+    [Fact]
+    public void Builder_Add_OnDefaultBuilder_ShouldAllocateBuffer()
+    {
+        // Using a default builder (not created via Create) exercises the null entries path in EnsureCapacity
+        using var builder = default(MetadataObjectBuilder);
+        builder.Add("key1", 1);
+        builder.Add("key2", 2);
+
+        builder.Count.Should().Be(2);
     }
 
     [Fact]

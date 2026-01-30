@@ -463,4 +463,49 @@ public sealed class MetadataArrayTests
 
         array1.Equals(array2).Should().BeFalse();
     }
+
+    [Fact]
+    public void Equals_NonEmptyWithDefault_ShouldReturnFalse()
+    {
+        var array1 = MetadataArray.Create(1, 2, 3);
+        var array2 = default(MetadataArray);
+
+        array1.Equals(array2).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equals_DefaultWithNonEmpty_ShouldReturnFalse()
+    {
+        var array1 = default(MetadataArray);
+        var array2 = MetadataArray.Create(1, 2, 3);
+
+        array1.Equals(array2).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equals_BothDefault_ShouldReturnTrue()
+    {
+        var array1 = default(MetadataArray);
+        var array2 = default(MetadataArray);
+
+        array1.Equals(array2).Should().BeTrue();
+    }
+
+    [Fact]
+    public void EqualityOperator_NonEmptyWithDefault_ShouldReturnFalse()
+    {
+        var array1 = MetadataArray.Create(1);
+        var array2 = default(MetadataArray);
+
+        (array1 == array2).Should().BeFalse();
+    }
+
+    [Fact]
+    public void EqualityOperator_BothDefault_ShouldReturnTrue()
+    {
+        var array1 = default(MetadataArray);
+        var array2 = default(MetadataArray);
+
+        (array1 == array2).Should().BeTrue();
+    }
 }

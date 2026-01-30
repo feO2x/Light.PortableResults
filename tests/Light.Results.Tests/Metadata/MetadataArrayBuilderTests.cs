@@ -197,4 +197,25 @@ public sealed class MetadataArrayBuilderTests
 
         builder.Count.Should().Be(20);
     }
+
+    [Fact]
+    public void Add_OnDefaultBuilder_ShouldAllocateBuffer()
+    {
+        // Using a default builder (not created via Create) exercises the null buffer path in EnsureCapacity
+        using var builder = default(MetadataArrayBuilder);
+        builder.Add(1);
+        builder.Add(2);
+
+        builder.Count.Should().Be(2);
+    }
+
+    [Fact]
+    public void AddRange_OnDefaultBuilder_ShouldAllocateBuffer()
+    {
+        // Using a default builder exercises the null buffer path in EnsureCapacity
+        using var builder = default(MetadataArrayBuilder);
+        builder.AddRange(new MetadataValue[] { 1, 2, 3 });
+
+        builder.Count.Should().Be(3);
+    }
 }

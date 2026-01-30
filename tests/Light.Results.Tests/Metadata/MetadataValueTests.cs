@@ -171,6 +171,36 @@ public sealed class MetadataValueTests
     }
 
     [Fact]
+    public void ImplicitConversion_FromFloat_ShouldWork()
+    {
+        MetadataValue value = 3.14f;
+
+        value.Kind.Should().Be(MetadataKind.Double);
+        value.TryGetDouble(out var result).Should().BeTrue();
+        result.Should().BeApproximately(3.14, 0.001);
+    }
+
+    [Fact]
+    public void ImplicitConversion_FromDouble_ShouldWork()
+    {
+        MetadataValue value = 3.14159;
+
+        value.Kind.Should().Be(MetadataKind.Double);
+        value.TryGetDouble(out var result).Should().BeTrue();
+        result.Should().Be(3.14159);
+    }
+
+    [Fact]
+    public void ImplicitConversion_FromDecimal_ShouldWork()
+    {
+        MetadataValue value = 123.456m;
+
+        value.Kind.Should().Be(MetadataKind.String);
+        value.TryGetString(out var result).Should().BeTrue();
+        result.Should().Be("123.456");
+    }
+
+    [Fact]
     public void Equality_SameValues_ShouldBeEqual()
     {
         var a = MetadataValue.FromInt64(42);
