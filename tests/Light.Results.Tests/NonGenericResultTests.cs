@@ -451,4 +451,33 @@ public sealed class NonGenericResultTests
         result.Metadata.Should().NotBeNull();
         result.Metadata.Value.Should().Equal(expected);
     }
+
+    [Fact]
+    public void ToString_OnSuccess_ShouldReturnOk()
+    {
+        var result = Result.Ok();
+
+        result.ToString().Should().Be("OK");
+    }
+
+    [Fact]
+    public void ToString_OnFailureWithSingleError_ShouldReturnFailWithMessage()
+    {
+        var result = Result.Fail(new Error { Message = "Something went wrong" });
+
+        result.ToString().Should().Be("Fail(Something went wrong)");
+    }
+
+    [Fact]
+    public void ToString_OnFailureWithMultipleErrors_ShouldReturnFailWithAllMessages()
+    {
+        var errors = new Error[]
+        {
+            new () { Message = "First error" },
+            new () { Message = "Second error" }
+        };
+        var result = Result.Fail(errors);
+
+        result.ToString().Should().Be("Fail(First error, Second error)");
+    }
 }

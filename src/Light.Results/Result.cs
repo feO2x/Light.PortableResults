@@ -366,4 +366,10 @@ public readonly struct Result : IEquatable<Result>, IHasOptionalMetadata<Result>
     /// Determines whether two results are not equal.
     /// </summary>
     public static bool operator !=(Result x, Result y) => !(x == y);
+
+    /// <summary>
+    /// Returns a string representation of this result.
+    /// </summary>
+    public override string ToString() =>
+        IsValid ? "OK" : $"Fail({string.Join(", ", _inner.Errors.Select(e => e.Message))})";
 }
