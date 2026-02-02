@@ -10,7 +10,7 @@ namespace Light.Results;
 /// This interface is implemented by structs and should primarily be used to constrain generic parameters.
 /// </para>
 /// </summary>
-public interface IResult
+public interface IResultObject : IHasOptionalMetadata
 {
     /// <summary>
     /// Gets whether this result represents a successful operation.
@@ -23,9 +23,9 @@ public interface IResult
     Errors Errors { get; }
 
     /// <summary>
-    /// Gets the optional metadata attached to the result.
+    /// Gets the value indicating whether this result has a value.
     /// </summary>
-    MetadataObject? Metadata { get; }
+    bool HasValue { get; }
 }
 
 /// <summary>
@@ -37,7 +37,7 @@ public interface IResult
 /// This interface is implemented by structs and should primarily be used to constrain generic parameters.
 /// </para>
 /// <typeparam name="TValue">The type of the success value.</typeparam>
-public interface IResult<out TValue> : IResult
+public interface IResultObject<out TValue> : IResultObject
 {
     /// <summary>
     /// Gets the success value (throws if invalid).

@@ -8,9 +8,9 @@ namespace Light.Results.AspNetCore.MinimalApis.Serialization;
 /// </summary>
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    GenerationMode = JsonSourceGenerationMode.Serialization
 )]
 [JsonSerializable(typeof(MetadataValue))]
 [JsonSerializable(typeof(MetadataObject))]
-[JsonSerializable(typeof(LightProblemDetailsResult))]
+[JsonSerializable(typeof(Result))]
 public sealed partial class LightResultsMinimalApiJsonContext : JsonSerializerContext;

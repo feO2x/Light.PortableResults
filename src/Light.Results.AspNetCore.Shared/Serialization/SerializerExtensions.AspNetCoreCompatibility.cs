@@ -1,103 +1,11 @@
-using System;
 using System.Collections.Generic;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using Light.Results.AspNetCore.Shared;
-using Light.Results.AspNetCore.Shared.Serialization;
 using Light.Results.Metadata;
 
-namespace Light.Results.AspNetCore.MinimalApis.Serialization;
+namespace Light.Results.AspNetCore.Shared.Serialization;
 
-/// <summary>
-/// JSON converter for <see cref="LightProblemDetailsResult" />.
-/// Writes RFC 7807/9457-compliant Problem Details JSON.
-/// </summary>
-public sealed class LightProblemDetailsResultJsonConverter : JsonConverter<LightProblemDetailsResult>
+public static partial class SerializerExtensions
 {
-    public override LightProblemDetailsResult Read(
-        ref Utf8JsonReader reader,
-        Type typeToConvert,
-        JsonSerializerOptions options
-    )
-    {
-        throw new NotSupportedException("Deserialization of LightProblemDetails is not supported");
-    }
-
-    public override void Write(Utf8JsonWriter writer, LightProblemDetailsResult value, JsonSerializerOptions options)
-    {
-        writer.WriteStartObject();
-
-        writer.WriteString("type", value.Type);
-        writer.WriteString("title", value.Title);
-        writer.WriteNumber("status", value.Status);
-        writer.WriteString("detail", value.Detail);
-
-        if (value.Instance is not null)
-        {
-            writer.WriteString("instance", value.Instance);
-        }
-
-        WriteErrors(writer, value.Errors, value.ErrorFormat);
-
-        WriteMetadataExtensions(writer, value.Metadata);
-
-        writer.WriteEndObject();
-    }
-
-    private static void WriteErrors(
-        Utf8JsonWriter writer,
-        Errors errors,
-        ErrorSerializationFormat format
-    )
-    {
-        if (format == ErrorSerializationFormat.Rich)
-        {
-            WriteRichErrors(writer, errors);
-        }
-        else
-        {
-            WriteAspNetCoreCompatibleErrors(writer, errors);
-        }
-    }
-
-    private static void WriteRichErrors(Utf8JsonWriter writer, Errors errors)
-    {
-        writer.WritePropertyName("errors");
-        writer.WriteStartArray();
-
-        foreach (var error in errors)
-        {
-            writer.WriteStartObject();
-
-            writer.WriteString("message", error.Message);
-
-            if (error.Code is not null)
-            {
-                writer.WriteString("code", error.Code);
-            }
-
-            if (error.Target is not null)
-            {
-                writer.WriteString("target", error.Target);
-            }
-
-            if (error.Category != ErrorCategory.Unclassified)
-            {
-                writer.WriteString("category", error.Category.ToString());
-            }
-
-            if (error.Metadata.HasValue)
-            {
-                writer.WritePropertyName("metadata");
-                MetadataValueJsonConverter.WriteMetadataObject(writer, error.Metadata.Value);
-            }
-
-            writer.WriteEndObject();
-        }
-
-        writer.WriteEndArray();
-    }
-
     private static void WriteAspNetCoreCompatibleErrors(
         Utf8JsonWriter writer,
         Errors errors
@@ -225,23 +133,6 @@ public sealed class LightProblemDetailsResultJsonConverter : JsonConverter<Light
         }
 
         writer.WriteEndObject();
-    }
-
-    private static void WriteMetadataExtensions(
-        Utf8JsonWriter writer,
-        MetadataObject? metadata
-    )
-    {
-        if (!metadata.HasValue)
-        {
-            return;
-        }
-
-        foreach (var kvp in metadata.Value)
-        {
-            writer.WritePropertyName(kvp.Key);
-            MetadataValueJsonConverter.WriteMetadataValue(writer, kvp.Value);
-        }
     }
 
     private readonly struct ErrorDetail

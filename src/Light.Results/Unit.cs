@@ -10,8 +10,11 @@ namespace Light.Results;
 /// <see cref="Result"/> instead of <c>Result&lt;Unit></c>. Choose whichever you like best.
 /// <see cref="Result"/> actually encapsulates a <c>Result&lt;Unit></c> instance.
 /// </para>.
+/// <para>
+/// This type is internal because users should use <see cref="Result"/> instead of Result&lt;Unit>.
+/// </para>
 /// </summary>
-public readonly record struct Unit
+internal readonly record struct Unit
 {
     /// <summary>
     /// The singleton instance of <see cref="Unit" />.

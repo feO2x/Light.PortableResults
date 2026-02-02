@@ -11,9 +11,7 @@ namespace Light.Results;
 /// Represents either a successful value of <typeparamref name="T" /> or one or more errors.
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
-public readonly struct Result<T> : IEquatable<Result<T>>,
-                                   IHasOptionalMetadata<Result<T>>,
-                                   IResult<T>
+public readonly struct Result<T> : IResultObject<T>, IEquatable<Result<T>>, ICanReplaceMetadata<Result<T>>
 {
     private readonly Errors _errors;
     private readonly T? _value;
@@ -66,8 +64,15 @@ public readonly struct Result<T> : IEquatable<Result<T>>,
     public T Value =>
         IsValid ? _value : throw new InvalidOperationException("Cannot access Value on a failed Result.");
 
-    /// <summary>Returns the errors collection (empty struct on success).</summary>
+    /// <summary>
+    /// Returns the errors collection (empty struct on success).
+    /// </summary>
     public Errors Errors => _errors;
+
+    /// <summary>
+    /// Gets the value indicating whether this instance has a value. Always returns true.
+    /// </summary>
+    public bool HasValue => true;
 
     /// <summary>
     /// Returns the first error (or throws if result contains no errors).
@@ -250,7 +255,7 @@ public readonly struct Result<T> : IEquatable<Result<T>>,
 /// </para>
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
-public readonly struct Result : IEquatable<Result>, IHasOptionalMetadata<Result>, IResult
+public readonly struct Result : IResultObject, IEquatable<Result>, ICanReplaceMetadata<Result>
 {
     private readonly Result<Unit> _inner;
 
@@ -268,6 +273,11 @@ public readonly struct Result : IEquatable<Result>, IHasOptionalMetadata<Result>
 
     /// <summary>Returns the errors collection (empty struct on success).</summary>
     public Errors Errors => _inner.Errors;
+
+    /// <summary>
+    /// Gets the value indicating whether this instance has a value. Always returns false.
+    /// </summary>
+    public bool HasValue => false;
 
     /// <summary>Returns the first error (or throws if result contains no errors).</summary>
     /// <exception cref="InvalidOperationException">Thrown when this result contains no errors.</exception>

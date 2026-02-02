@@ -18,7 +18,7 @@ public static class TapErrorExtensions
     /// <param name="action">The action to execute on failure.</param>
     /// <returns>The original result.</returns>
     public static TResult TapError<TResult>(this TResult result, Action<Errors> action)
-        where TResult : struct, IResult
+        where TResult : struct, IResultObject
     {
         if (!result.IsValid)
         {
@@ -39,7 +39,7 @@ public static class TapErrorExtensions
         this TResult result,
         Func<Errors, ValueTask> action
     )
-        where TResult : struct, IResult
+        where TResult : struct, IResultObject
     {
         if (!result.IsValid)
         {

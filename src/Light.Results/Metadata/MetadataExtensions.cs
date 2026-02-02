@@ -16,7 +16,7 @@
 namespace Light.Results.Metadata;
 
 /// <summary>
-/// Provides extension methods for types implementing <see cref="IHasOptionalMetadata{T}" />.
+/// Provides extension methods for types implementing <see cref="ICanReplaceMetadata{T}" />.
 /// </summary>
 public static class MetadataExtensions
 {
@@ -24,9 +24,9 @@ public static class MetadataExtensions
     /// Returns a new instance with no metadata.
     /// </summary>
     /// <param name="result">The instance to clear metadata from.</param>
-    /// <typeparam name="T">The type implementing <see cref="IHasOptionalMetadata{T}" />.</typeparam>
+    /// <typeparam name="T">The type implementing <see cref="ICanReplaceMetadata{T}" />.</typeparam>
     /// <returns>A new instance with no metadata.</returns>
-    public static T ClearMetadata<T>(this T result) where T : struct, IHasOptionalMetadata<T> =>
+    public static T ClearMetadata<T>(this T result) where T : struct, ICanReplaceMetadata<T> =>
         result.ReplaceMetadata(null);
 
     /// <summary>
@@ -34,10 +34,10 @@ public static class MetadataExtensions
     /// </summary>
     /// <param name="properties">The metadata properties to merge.</param>
     /// <param name="result">The instance to clear metadata from.</param>
-    /// <typeparam name="T">The type implementing <see cref="IHasOptionalMetadata{T}" />.</typeparam>
+    /// <typeparam name="T">The type implementing <see cref="ICanReplaceMetadata{T}" />.</typeparam>
     /// <returns>A new instance with the merged metadata.</returns>
     public static T MergeMetadata<T>(this T result, params (string Key, MetadataValue Value)[] properties)
-        where T : struct, IHasOptionalMetadata<T>
+        where T : struct, ICanReplaceMetadata<T>
     {
         var newMetadata = result.Metadata?.With(properties) ?? MetadataObject.Create(properties);
         return result.ReplaceMetadata(newMetadata);
@@ -49,13 +49,14 @@ public static class MetadataExtensions
     /// <param name="other">The metadata to merge.</param>
     /// <param name="strategy">The merge strategy to use.</param>
     /// <param name="result">The instance to clear metadata from.</param>
-    /// <typeparam name="T">The type implementing <see cref="IHasOptionalMetadata{T}" />.</typeparam>
+    /// <typeparam name="T">The type implementing <see cref="ICanReplaceMetadata{T}" />.</typeparam>
     /// <returns>A new instance with the merged metadata.</returns>
     public static T MergeMetadata<T>(
         this T result,
         MetadataObject other,
         MetadataMergeStrategy strategy = MetadataMergeStrategy.AddOrReplace
-    ) where T : struct, IHasOptionalMetadata<T>
+    )
+        where T : struct, ICanReplaceMetadata<T>
     {
         var merged = MetadataObjectExtensions.MergeIfNeeded(result.Metadata, other, strategy);
         return merged is null ? result : result.ReplaceMetadata(merged.Value);

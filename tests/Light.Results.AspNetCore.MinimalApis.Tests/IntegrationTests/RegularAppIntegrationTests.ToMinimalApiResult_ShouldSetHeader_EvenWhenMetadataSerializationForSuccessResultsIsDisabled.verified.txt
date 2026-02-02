@@ -1,0 +1,26 @@
+﻿{
+  Status: 200 OK,
+  Headers: {
+    Count: 3
+  },
+  Content: {
+    Headers: {
+      Content-Length: 178,
+      Content-Type: application/json
+    },
+    Value: [
+      {
+        id: Guid_1,
+        name: Foo
+      },
+      {
+        id: Guid_2,
+        name: Bar
+      },
+      {
+        id: Guid_3,
+        name: Baz
+      }
+    ]
+  }
+}

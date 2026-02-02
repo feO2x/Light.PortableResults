@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Serialization;
 using Light.Results.Metadata;
 
 namespace Light.Results;
@@ -77,6 +78,7 @@ public readonly struct Error : IEquatable<Error>
     /// Exceptions are never serialized by Light.Results and will not cross process boundaries.
     /// </para>
     /// </summary>
+    [JsonIgnore]
     public Exception? Exception { get; init; }
 
     /// <summary>
