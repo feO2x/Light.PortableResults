@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using Light.Results.Metadata;
@@ -6,7 +7,150 @@ namespace Light.Results.AspNetCore.Shared.Serialization;
 
 public static partial class SerializerExtensions
 {
+    private const int MaxErrorsForStackAlloc = 10;
+
     private static void WriteAspNetCoreCompatibleErrors(
+        Utf8JsonWriter writer,
+        Errors errors
+    )
+    {
+        if (errors.Count <= MaxErrorsForStackAlloc)
+        {
+            WriteAspNetCoreCompatibleErrorsOptimized(writer, errors);
+        }
+        else
+        {
+            WriteAspNetCoreCompatibleErrorsFallback(writer, errors);
+        }
+    }
+
+    private static void WriteAspNetCoreCompatibleErrorsOptimized(
+        Utf8JsonWriter writer,
+        Errors errors
+    )
+    {
+        // Stack-allocated tracking for unique targets (max 10 errors = max 10 unique targets)
+        Span<int> targetErrorCounts = stackalloc int[MaxErrorsForStackAlloc];
+        Span<int> errorToTargetIndex = stackalloc int[MaxErrorsForStackAlloc];
+        Span<int> errorIndexWithinTarget = stackalloc int[MaxErrorsForStackAlloc];
+
+        // We need to store target strings - use a small inline array approach
+        // targetStrings[i] corresponds to targetErrorCounts[i]
+        var uniqueTargetCount = 0;
+        Span<string> targetStrings = new string[MaxErrorsForStackAlloc];
+
+        // First pass: identify unique targets and map errors to targets
+        for (var i = 0; i < errors.Count; i++)
+        {
+            var error = errors[i];
+            var target = GetNormalizedTargetForValidationResponse(error, i);
+
+            // Find or add target
+            var targetIndex = -1;
+            for (var j = 0; j < uniqueTargetCount; j++)
+            {
+                if (string.Equals(targetStrings[j], target, StringComparison.Ordinal))
+                {
+                    targetIndex = j;
+                    break;
+                }
+            }
+
+            if (targetIndex == -1)
+            {
+                targetIndex = uniqueTargetCount;
+                targetStrings[uniqueTargetCount] = target;
+                targetErrorCounts[uniqueTargetCount] = 0;
+                uniqueTargetCount++;
+            }
+
+            errorIndexWithinTarget[i] = targetErrorCounts[targetIndex];
+            targetErrorCounts[targetIndex]++;
+            errorToTargetIndex[i] = targetIndex;
+        }
+
+        // Write "errors" object grouped by target
+        writer.WritePropertyName("errors");
+        writer.WriteStartObject();
+
+        for (var targetIdx = 0; targetIdx < uniqueTargetCount; targetIdx++)
+        {
+            writer.WritePropertyName(targetStrings[targetIdx]);
+            writer.WriteStartArray();
+
+            // Write all messages for this target
+            for (var i = 0; i < errors.Count; i++)
+            {
+                if (errorToTargetIndex[i] == targetIdx)
+                {
+                    writer.WriteStringValue(errors[i].Message);
+                }
+            }
+
+            writer.WriteEndArray();
+        }
+
+        writer.WriteEndObject();
+
+        // Check if any error has details (code, category, or metadata)
+        var hasAnyDetails = false;
+        for (var i = 0; i < errors.Count; i++)
+        {
+            var error = errors[i];
+            if (error.Code is not null || error.Category != ErrorCategory.Unclassified || error.Metadata.HasValue)
+            {
+                hasAnyDetails = true;
+                break;
+            }
+        }
+
+        if (!hasAnyDetails)
+        {
+            return;
+        }
+
+        // Write "errorDetails" array
+        writer.WritePropertyName("errorDetails");
+        writer.WriteStartArray();
+
+        for (var i = 0; i < errors.Count; i++)
+        {
+            var error = errors[i];
+            var hasCode = error.Code is not null;
+            var hasCategory = error.Category != ErrorCategory.Unclassified;
+
+            if (!hasCode && !hasCategory && !error.Metadata.HasValue)
+            {
+                continue;
+            }
+
+            writer.WriteStartObject();
+            writer.WriteString("target", targetStrings[errorToTargetIndex[i]]);
+            writer.WriteNumber("index", errorIndexWithinTarget[i]);
+
+            if (hasCode)
+            {
+                writer.WriteString("code", error.Code);
+            }
+
+            if (hasCategory)
+            {
+                writer.WriteString("category", error.Category.ToString());
+            }
+
+            if (error.Metadata is { } metadata)
+            {
+                writer.WritePropertyName("metadata");
+                MetadataValueJsonConverter.WriteMetadataObject(writer, metadata);
+            }
+
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+    }
+
+    private static void WriteAspNetCoreCompatibleErrorsFallback(
         Utf8JsonWriter writer,
         Errors errors
     )
