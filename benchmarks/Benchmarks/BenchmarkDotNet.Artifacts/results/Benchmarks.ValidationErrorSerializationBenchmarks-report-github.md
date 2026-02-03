@@ -10,12 +10,12 @@ IterationCount=5  WarmupCount=1
 
 ```
 
-| Method                 |       Mean |    Error |   StdDev | Ratio | RatioSD |   Gen0 | Allocated | Alloc Ratio |
-|------------------------|-----------:|---------:|---------:|------:|--------:|-------:|----------:|------------:|
-| Errors1                |   153.1 ns | 10.13 ns |  2.63 ns |  1.00 |    0.02 | 0.0162 |     136 B |        1.00 |
-| Errors3_UniqueTargets  |   343.8 ns |  9.14 ns |  2.37 ns |  2.25 |    0.04 | 0.0162 |     136 B |        1.00 |
-| Errors3_SharedTarget   |   301.0 ns |  7.81 ns |  2.03 ns |  1.97 |    0.03 | 0.0162 |     136 B |        1.00 |
-| Errors5_UniqueTargets  |   536.2 ns | 12.60 ns |  3.27 ns |  3.50 |    0.06 | 0.0162 |     136 B |        1.00 |
-| Errors5_SharedTargets  |   491.2 ns | 14.16 ns |  3.68 ns |  3.21 |    0.05 | 0.0162 |     136 B |        1.00 |
-| Errors10_UniqueTargets | 1,107.6 ns | 55.34 ns | 14.37 ns |  7.24 |    0.14 | 0.0153 |     136 B |        1.00 |
-| Errors10_SharedTargets |   900.7 ns | 47.45 ns | 12.32 ns |  5.89 |    0.12 | 0.0162 |     136 B |        1.00 |
+| Method                 |       Mean |    Error |  StdDev | Ratio | RatioSD |   Gen0 | Allocated | Alloc Ratio |
+|------------------------|-----------:|---------:|--------:|------:|--------:|-------:|----------:|------------:|
+| Errors1                |   154.9 ns |  1.88 ns | 0.49 ns |  1.00 |    0.00 | 0.0162 |     136 B |        1.00 |
+| Errors3_UniqueTargets  |   366.1 ns | 10.58 ns | 2.75 ns |  2.36 |    0.02 | 0.0162 |     136 B |        1.00 |
+| Errors3_SharedTarget   |   316.9 ns |  2.78 ns | 0.72 ns |  2.05 |    0.01 | 0.0162 |     136 B |        1.00 |
+| Errors5_UniqueTargets  |   580.4 ns |  5.14 ns | 0.79 ns |  3.75 |    0.01 | 0.0162 |     136 B |        1.00 |
+| Errors5_SharedTargets  |   522.6 ns | 13.76 ns | 3.57 ns |  3.37 |    0.02 | 0.0162 |     136 B |        1.00 |
+| Errors10_UniqueTargets | 1,258.1 ns |  1.30 ns | 0.20 ns |  8.12 |    0.02 | 0.0153 |     136 B |        1.00 |
+| Errors10_SharedTargets |   972.4 ns | 21.79 ns | 5.66 ns |  6.28 |    0.04 | 0.0153 |     136 B |        1.00 |

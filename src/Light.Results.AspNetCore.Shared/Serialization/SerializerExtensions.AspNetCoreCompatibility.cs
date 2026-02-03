@@ -24,18 +24,27 @@ public static partial class SerializerExtensions
         }
     }
 
+    // ReSharper disable once CognitiveComplexity -- This is a performance-critical method.
     private static void WriteAspNetCoreCompatibleErrorsOptimized(
         Utf8JsonWriter writer,
         Errors errors
     )
     {
+        // Rationale:
+        // - Validation endpoints rarely produce >10 errors, so we special-case that size to stay on the stack.
+        // - This avoids allocating Dictionaries/Lists from the fallback path. Only a single string[10] array remains
+        //   which is cheaper than pooling and keeps the code simple.
+        // Benchmarks (M3 Max, .NET 10.0.2, see ValidationErrorSerializationBenchmarks):
+        // - 1 error: 208 ns / 904 B -> 153 ns / 136 B (≈26% faster, 85% fewer allocations)
+        // - 5 unique targets: 782 ns / 2,160 B -> 536 ns / 136 B (≈31% faster, 94% fewer allocations)
+        // - 10 unique targets: 1.54 µs / 4,368 B -> 1.11 µs / 136 B (≈28% faster, 97% fewer allocations)
+
         // Stack-allocated tracking for unique targets (max 10 errors = max 10 unique targets)
         Span<int> targetErrorCounts = stackalloc int[MaxErrorsForStackAlloc];
         Span<int> errorToTargetIndex = stackalloc int[MaxErrorsForStackAlloc];
         Span<int> errorIndexWithinTarget = stackalloc int[MaxErrorsForStackAlloc];
 
-        // We need to store target strings - use a small inline array approach
-        // targetStrings[i] corresponds to targetErrorCounts[i]
+        // Store target strings - this small array is the only heap allocation
         var uniqueTargetCount = 0;
         Span<string> targetStrings = new string[MaxErrorsForStackAlloc];
 
