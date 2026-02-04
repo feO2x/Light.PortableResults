@@ -4,6 +4,9 @@ using Light.Results.Metadata;
 
 namespace Light.Results.AspNetCore.Shared;
 
+/// <summary>
+/// Configures how Light.Results responses are serialized for ASP.NET Core.
+/// </summary>
 public sealed record LightResultOptions
 {
     /// <summary>
@@ -33,6 +36,13 @@ public sealed record LightResultOptions
     /// </summary>
     public MetadataSerializationMode MetadataSerializationMode { get; set; } = MetadataSerializationMode.ErrorsOnly;
 
+    /// <summary>
+    /// Gets or sets the factory for creating <see cref="ProblemDetailsInfo" /> instances from errors and metadata.
+    /// </summary>
     public Func<Errors, MetadataObject?, ProblemDetailsInfo>? CreateProblemDetailsInfo { get; set; }
+
+    /// <summary>
+    /// Gets or sets the value indicating whether the first error category should be used as the leading category.
+    /// </summary>
     public bool FirstErrorCategoryIsLeadingCategory { get; set; } = true;
 }

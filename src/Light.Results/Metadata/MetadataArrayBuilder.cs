@@ -13,8 +13,16 @@ public struct MetadataArrayBuilder : IDisposable
     private MetadataValue[]? _buffer;
     private bool _built;
 
+    /// <summary>
+    /// Gets the number of items added to the builder.
+    /// </summary>
     public int Count { get; private set; }
 
+    /// <summary>
+    /// Creates a new <see cref="MetadataArrayBuilder" /> with the specified initial capacity.
+    /// </summary>
+    /// <param name="capacity">The initial capacity.</param>
+    /// <returns>The builder.</returns>
     public static MetadataArrayBuilder Create(int capacity = DefaultCapacity)
     {
         var builder = new MetadataArrayBuilder
@@ -26,6 +34,13 @@ public struct MetadataArrayBuilder : IDisposable
         return builder;
     }
 
+    /// <summary>
+    /// Adds a value to the builder.
+    /// </summary>
+    /// <param name="value">The value to add.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the builder has already been used to build an array.
+    /// </exception>
     public void Add(MetadataValue value)
     {
         ThrowIfBuilt();
@@ -33,6 +48,13 @@ public struct MetadataArrayBuilder : IDisposable
         _buffer![Count++] = value;
     }
 
+    /// <summary>
+    /// Adds a range of values to the builder.
+    /// </summary>
+    /// <param name="values">The values to add.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the builder has already been used to build an array.
+    /// </exception>
     public void AddRange(ReadOnlySpan<MetadataValue> values)
     {
         ThrowIfBuilt();
@@ -41,6 +63,13 @@ public struct MetadataArrayBuilder : IDisposable
         Count += values.Length;
     }
 
+    /// <summary>
+    /// Builds a <see cref="MetadataArray" /> from the collected values.
+    /// </summary>
+    /// <returns>The created array.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the builder has already been used to build an array.
+    /// </exception>
     public MetadataArray Build()
     {
         ThrowIfBuilt();
@@ -59,6 +88,9 @@ public struct MetadataArrayBuilder : IDisposable
         return new MetadataArray(new MetadataArrayData(result));
     }
 
+    /// <summary>
+    /// Returns the pooled buffer to the pool if it has not already been returned.
+    /// </summary>
     public void Dispose()
     {
         if (!_built)

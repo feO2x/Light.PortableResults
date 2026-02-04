@@ -111,6 +111,17 @@ public static partial class SerializerExtensions
         ((JsonConverter<MetadataObject>) metadataTypeInfo.Converter).Write(writer, metadata, serializerOptions);
     }
 
+    /// <summary>
+    /// Writes the serialized error payload for the specified <see cref="Errors" /> collection.
+    /// </summary>
+    /// <param name="writer">The UTF-8 JSON writer.</param>
+    /// <param name="errors">The errors to serialize.</param>
+    /// <param name="format">The validation problem serialization format.</param>
+    /// <param name="statusCode">The HTTP status code associated with the response.</param>
+    /// <param name="serializerOptions">The serializer options to use for nested serialization.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when validation errors are missing targets for HTTP 400/422 responses.
+    /// </exception>
     public static void WriteErrors(
         this Utf8JsonWriter writer,
         Errors errors,

@@ -47,5 +47,10 @@ public enum MetadataKind : byte
 /// </summary>
 public static class MetadataKindExtensions
 {
+    /// <summary>
+    /// Gets the value indicating whether the specified kind represents a primitive value.
+    /// </summary>
+    /// <param name="kind">The metadata kind.</param>
+    /// <returns><see langword="true" /> if the kind is primitive; otherwise, <see langword="false" />.</returns>
     public static bool IsPrimitive(this MetadataKind kind) => kind < MetadataKind.Array;
 }

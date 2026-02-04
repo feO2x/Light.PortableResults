@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -10,9 +11,21 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Light.Results.AspNetCore.MinimalApis;
 
+/// <summary>
+/// Base type for Minimal API results that wrap Light.Results values.
+/// </summary>
+/// <typeparam name="TResult">The result type.</typeparam>
 public abstract class BaseLightResult<TResult> : IResult
     where TResult : struct, IResultObject, ICanReplaceMetadata<TResult>
 {
+    /// <summary>
+    /// Initializes a new instance of <see cref="BaseLightResult{TResult}" />.
+    /// </summary>
+    /// <param name="result">The result to execute.</param>
+    /// <param name="successStatusCode">Optional success status code override.</param>
+    /// <param name="location">Optional Location header value.</param>
+    /// <param name="overrideOptions">Optional Light.Results options override.</param>
+    /// <param name="serializerOptions">Optional JSON serializer options override.</param>
     protected BaseLightResult(
         TResult result,
         HttpStatusCode? successStatusCode = null,
@@ -28,12 +41,40 @@ public abstract class BaseLightResult<TResult> : IResult
         SerializerOptions = serializerOptions;
     }
 
+    /// <summary>
+    /// Gets the received result instance.
+    /// </summary>
     public TResult ReceivedResult { get; }
+
+    /// <summary>
+    /// Gets the optional success status code override.
+    /// </summary>
     public HttpStatusCode? SuccessStatusCode { get; }
+
+    /// <summary>
+    /// Gets the optional Location header value.
+    /// </summary>
     public string? Location { get; }
+
+    /// <summary>
+    /// Gets the optional JSON serializer options override.
+    /// </summary>
     public JsonSerializerOptions? SerializerOptions { get; }
+
+    /// <summary>
+    /// Gets the optional Light.Results options override.
+    /// </summary>
     public LightResultOptions? OverrideOptions { get; }
 
+    /// <summary>
+    /// Executes the result against the supplied HTTP context.
+    /// </summary>
+    /// <param name="httpContext">The current HTTP context.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpContext" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when required services or options are not available.
+    /// </exception>
     public virtual Task ExecuteAsync(HttpContext httpContext)
     {
         var result = ReceivedResult;
@@ -47,6 +88,15 @@ public abstract class BaseLightResult<TResult> : IResult
         return WriteBodyAsync(result, httpContext);
     }
 
+    /// <summary>
+    /// Sets response headers based on the enriched result.
+    /// </summary>
+    /// <param name="enrichedResult">The enriched result.</param>
+    /// <param name="httpContext">The current HTTP context.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpContext" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when required services or options are not available.
+    /// </exception>
     protected virtual void SetHeaders(TResult enrichedResult, HttpContext httpContext)
     {
         var options = httpContext.ResolveLightResultOptions(OverrideOptions);
@@ -64,5 +114,11 @@ public abstract class BaseLightResult<TResult> : IResult
         }
     }
 
+    /// <summary>
+    /// Writes the response body for the enriched result.
+    /// </summary>
+    /// <param name="enrichedResult">The enriched result.</param>
+    /// <param name="httpContext">The current HTTP context.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     protected abstract Task WriteBodyAsync(TResult enrichedResult, HttpContext httpContext);
 }

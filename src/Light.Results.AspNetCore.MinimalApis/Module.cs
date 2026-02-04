@@ -12,14 +12,27 @@ using Microsoft.Extensions.Options;
 
 namespace Light.Results.AspNetCore.MinimalApis;
 
+/// <summary>
+/// Service registration helpers for Light.Results Minimal APIs.
+/// </summary>
 public static class Module
 {
+    /// <summary>
+    /// Registers all services required for Light.Results Minimal APIs.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddLightResultsForMinimalApis(this IServiceCollection services) =>
         services
            .AddLightResultOptions()
            .AddLightResultsHttpHeaderConversionService()
            .ConfigureMinimalApiJsonOptionsForLightResults();
 
+    /// <summary>
+    /// Registers <see cref="LightResultOptions" /> in the service container.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddLightResultOptions(this IServiceCollection services)
     {
         services.AddOptions<LightResultOptions>();
@@ -27,6 +40,11 @@ public static class Module
         return services;
     }
 
+    /// <summary>
+    /// Configures JSON options for Light.Results Minimal API responses.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection ConfigureMinimalApiJsonOptionsForLightResults(this IServiceCollection services)
     {
         services
@@ -40,6 +58,12 @@ public static class Module
         return services;
     }
 
+    /// <summary>
+    /// Adds the default JSON converters used by Light.Results.
+    /// </summary>
+    /// <param name="serializerOptions">The JSON serializer options to configure.</param>
+    /// <param name="options">The Light.Results options.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is <see langword="null" />.</exception>
     public static void AddDefaultLightResultsJsonConverters(
         this JsonSerializerOptions serializerOptions,
         LightResultOptions options
@@ -51,6 +75,15 @@ public static class Module
         serializerOptions.Converters.Add(new DefaultResultJsonConverterFactory(options));
     }
 
+    /// <summary>
+    /// Registers the HTTP header conversion service and converter registry.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="metadataKeyComparer">Optional metadata key comparer.</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when multiple converters register the same metadata key.
+    /// </exception>
     public static IServiceCollection AddLightResultsHttpHeaderConversionService(
         this IServiceCollection services,
         IEqualityComparer<string>? metadataKeyComparer = null

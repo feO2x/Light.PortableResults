@@ -18,8 +18,16 @@ public struct MetadataObjectBuilder : IDisposable
     private IEqualityComparer<string>? _keyComparer;
     private bool _built;
 
+    /// <summary>
+    /// Gets the number of entries added to the builder.
+    /// </summary>
     public int Count { get; private set; }
 
+    /// <summary>
+    /// Creates a new <see cref="MetadataObjectBuilder" /> with the specified initial capacity.
+    /// </summary>
+    /// <param name="capacity">The initial capacity.</param>
+    /// <returns>The builder.</returns>
     public static MetadataObjectBuilder Create(int capacity = DefaultCapacity)
     {
         var actualCapacity = Math.Max(capacity, DefaultCapacity);
@@ -32,6 +40,11 @@ public struct MetadataObjectBuilder : IDisposable
         return builder;
     }
 
+    /// <summary>
+    /// Creates a builder populated with the entries from the specified <see cref="MetadataObject" />.
+    /// </summary>
+    /// <param name="source">The source object.</param>
+    /// <returns>The builder.</returns>
     public static MetadataObjectBuilder From(MetadataObject source)
     {
         if (source.Data is null || source.Count == 0)
@@ -48,6 +61,16 @@ public struct MetadataObjectBuilder : IDisposable
         return builder;
     }
 
+    /// <summary>
+    /// Adds a key/value entry to the builder.
+    /// </summary>
+    /// <param name="key">The entry key.</param>
+    /// <param name="value">The entry value.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the builder has already been used to build an object.
+    /// </exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="key" /> is <see langword="null" />.</exception>
+    /// <exception cref="ArgumentException">Thrown when the key already exists.</exception>
     public void Add(string key, MetadataValue value)
     {
         ThrowIfBuilt();
@@ -75,6 +98,13 @@ public struct MetadataObjectBuilder : IDisposable
         Count++;
     }
 
+    /// <summary>
+    /// Attempts to get the value for the specified key.
+    /// </summary>
+    /// <param name="key">The key to look up.</param>
+    /// <param name="value">When this method returns, contains the value if the key was found.</param>
+    /// <returns><see langword="true" /> if the key was found; otherwise, <see langword="false" />.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="key" /> is <see langword="null" />.</exception>
     public bool TryGetValue(string key, out MetadataValue value)
     {
         if (key is null)
@@ -93,6 +123,12 @@ public struct MetadataObjectBuilder : IDisposable
         return false;
     }
 
+    /// <summary>
+    /// Determines whether the builder contains the specified key.
+    /// </summary>
+    /// <param name="key">The key to look up.</param>
+    /// <returns><see langword="true" /> if the key exists; otherwise, <see langword="false" />.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="key" /> is <see langword="null" />.</exception>
     public bool ContainsKey(string key)
     {
         if (key is null)
@@ -103,6 +139,16 @@ public struct MetadataObjectBuilder : IDisposable
         return FindIndex(key) >= 0;
     }
 
+    /// <summary>
+    /// Replaces the value for an existing key.
+    /// </summary>
+    /// <param name="key">The key to replace.</param>
+    /// <param name="value">The new value.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the builder has already been used to build an object.
+    /// </exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="key" /> is <see langword="null" />.</exception>
+    /// <exception cref="KeyNotFoundException">Thrown when the key does not exist.</exception>
     public void Replace(string key, MetadataValue value)
     {
         ThrowIfBuilt();
@@ -121,6 +167,15 @@ public struct MetadataObjectBuilder : IDisposable
         _entries![index] = new KeyValuePair<string, MetadataValue>(key, value);
     }
 
+    /// <summary>
+    /// Adds a key/value entry or replaces the value if the key already exists.
+    /// </summary>
+    /// <param name="key">The entry key.</param>
+    /// <param name="value">The entry value.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the builder has already been used to build an object.
+    /// </exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="key" /> is <see langword="null" />.</exception>
     public void AddOrReplace(string key, MetadataValue value)
     {
         ThrowIfBuilt();
@@ -152,12 +207,26 @@ public struct MetadataObjectBuilder : IDisposable
         Count++;
     }
 
+    /// <summary>
+    /// Sets the comparer used for key lookup.
+    /// </summary>
+    /// <param name="keyComparer">The comparer to use.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the builder has already been used to build an object.
+    /// </exception>
     public void SetKeyComparer(IEqualityComparer<string> keyComparer)
     {
         ThrowIfBuilt();
         _keyComparer = keyComparer;
     }
 
+    /// <summary>
+    /// Builds a <see cref="MetadataObject" /> from the collected entries.
+    /// </summary>
+    /// <returns>The created object.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the builder has already been used to build an object.
+    /// </exception>
     public MetadataObject Build()
     {
         ThrowIfBuilt();
@@ -178,6 +247,9 @@ public struct MetadataObjectBuilder : IDisposable
         return new MetadataObject(new MetadataObjectData(entries, _keyComparer));
     }
 
+    /// <summary>
+    /// Returns the pooled buffer to the pool if it has not already been returned.
+    /// </summary>
     public void Dispose()
     {
         if (_built)

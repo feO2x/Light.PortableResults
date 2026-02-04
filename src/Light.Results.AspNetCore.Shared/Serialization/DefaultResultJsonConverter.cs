@@ -4,19 +4,51 @@ using System.Text.Json.Serialization;
 
 namespace Light.Results.AspNetCore.Shared.Serialization;
 
+/// <summary>
+/// JSON converter for <see cref="Result" /> that either writes success HTTP response bodies or Problem Details
+/// responses, depending on the passed result.
+/// </summary>
 public sealed class DefaultResultJsonConverter : JsonConverter<Result>
 {
     private readonly LightResultOptions _options;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="DefaultResultJsonConverter" />.
+    /// </summary>
+    /// <param name="options">The Light.Results options.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is <see langword="null" />.</exception>
     public DefaultResultJsonConverter(LightResultOptions options) =>
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
+    /// <summary>
+    /// Reading is not supported for <see cref="Result" />.
+    /// </summary>
+    /// <exception cref="NotSupportedException">Always thrown.</exception>
     public override Result Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
         throw new NotSupportedException();
 
+    /// <summary>
+    /// Writes the JSON representation for the specified result.
+    /// </summary>
+    /// <param name="writer">The JSON writer.</param>
+    /// <param name="result">The result to serialize.</param>
+    /// <param name="options">The serializer options.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when required JSON type metadata is missing or when validation errors are missing targets.
+    /// </exception>
     public override void Write(Utf8JsonWriter writer, Result result, JsonSerializerOptions options) =>
         Serialize(writer, result, options);
 
+    /// <summary>
+    /// Serializes the specified result using the configured or overridden options.
+    /// </summary>
+    /// <param name="writer">The JSON writer.</param>
+    /// <param name="result">The result to serialize.</param>
+    /// <param name="serializerOptions">The serializer options.</param>
+    /// <param name="overrideOptions">Optional options that override the configured defaults.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when required JSON type metadata is missing or when validation errors are missing targets.
+    /// </exception>
     public void Serialize(
         Utf8JsonWriter writer,
         Result result,
@@ -53,13 +85,25 @@ public sealed class DefaultResultJsonConverter : JsonConverter<Result>
     }
 }
 
+/// <summary>
+/// JSON converter for <see cref="Result{T}" /> that honors <see cref="LightResultOptions" />.
+/// </summary>
 public sealed class DefaultResultJsonConverter<T> : JsonConverter<Result<T>>
 {
     private readonly LightResultOptions _options;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="DefaultResultJsonConverter{T}" />.
+    /// </summary>
+    /// <param name="options">The Light.Results options.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is <see langword="null" />.</exception>
     public DefaultResultJsonConverter(LightResultOptions options) =>
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
+    /// <summary>
+    /// Reading is not supported for <see cref="Result{T}" />.
+    /// </summary>
+    /// <exception cref="NotSupportedException">Always thrown.</exception>
     public override Result<T> Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
@@ -67,9 +111,28 @@ public sealed class DefaultResultJsonConverter<T> : JsonConverter<Result<T>>
     ) =>
         throw new NotSupportedException();
 
+    /// <summary>
+    /// Writes the JSON representation for the specified result.
+    /// </summary>
+    /// <param name="writer">The JSON writer.</param>
+    /// <param name="result">The result to serialize.</param>
+    /// <param name="serializerOptions">The serializer options.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when required JSON type metadata is missing or when validation errors are missing targets.
+    /// </exception>
     public override void Write(Utf8JsonWriter writer, Result<T> result, JsonSerializerOptions serializerOptions) =>
         Serialize(writer, result, serializerOptions);
 
+    /// <summary>
+    /// Serializes the specified result using the configured or overridden options.
+    /// </summary>
+    /// <param name="writer">The JSON writer.</param>
+    /// <param name="result">The result to serialize.</param>
+    /// <param name="serializerOptions">The serializer options.</param>
+    /// <param name="overrideOptions">Optional options that override the configured defaults.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when required JSON type metadata is missing or when validation errors are missing targets.
+    /// </exception>
     public void Serialize(
         Utf8JsonWriter writer,
         Result<T> result,
