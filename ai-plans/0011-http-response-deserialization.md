@@ -24,7 +24,7 @@
   - `HeaderSelectionMode` (None | All | AllowList | DenyList)
   - `HeaderAllowList` / `HeaderDenyList` (case-insensitive by default)
   - `MergeStrategy` for combining body/headers metadata (default `AddOrReplace`)
-  - `PreferSuccessPayload` (Auto | BareValue | WrappedValue) for disambiguating `{ "value": ... }` vs value objects
+  - `PreferSuccessPayload` (Auto | BareValue | WrappedValue) for disambiguating `{ "value": ... }` vs value objects. Auto rule: treat as wrapper only when the root object contains only `value` and optional `metadata`.
   - `TreatProblemDetailsAsFailure` (default: true)
   - `HeaderMetadataAnnotation` (default `SerializeInHttpHeader`)
   - Optional `IHttpHeaderConversionService`/`IHttpHeaderParsingService` override
@@ -51,7 +51,7 @@
 - If success:
   - For `Result<T>`:
     - If empty body and T is non-nullable => return a failure `Error` (message: "Response body was empty").
-    - Otherwise parse as either wrapped or bare value (based on `PreferSuccessPayload` + heuristics).
+    - Otherwise parse as either wrapped or bare value (based on `PreferSuccessPayload` + heuristics). Auto heuristic: wrapper only when root has only `value` and optional `metadata` properties.
   - For `Result`:
     - Empty body => `Result.Ok()`.
     - Object with `metadata` only => `Result.Ok(metadata)`.
@@ -79,7 +79,7 @@
 - **Integration tests (optional):** round-trip through Minimal API (server) + HttpClient (client) with headers/metadata.
 
 ## Open Questions / Decisions
-1. **Ambiguous success payloads:** Should `Auto` detection prefer wrapper if the JSON object contains `value`/`metadata`, even when `T` could legitimately have those properties? If not, do we require explicit `PreferSuccessPayload`?
+1. **Ambiguous success payloads:** Auto detection treats payloads as wrapper only when the root object contains `value` and optional `metadata` and no other properties. Callers can override with `PreferSuccessPayload` for deterministic behavior.
 2. **Header parsing contract:** Should we extend `HttpHeaderConverter` with a parse method (breaking change) or add a parallel parsing service?
 3. **Unknown problem-details extensions:** Should we capture additional top-level properties into metadata, or only `metadata`?
 4. **Empty body for `Result<T>`:** Should this be treated as an error or as `default(T)` success?
