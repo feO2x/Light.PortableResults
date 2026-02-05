@@ -122,13 +122,7 @@ public static class HttpExtensions
 
         foreach (var (key, metadataValue) in result.Metadata.Value)
         {
-            if (metadataValue.IsNull)
-            {
-                continue;
-            }
-
-            if ((metadataValue.Annotation | MetadataValueAnnotation.SerializeInHttpHeader) !=
-                MetadataValueAnnotation.SerializeInHttpHeader)
+            if (metadataValue.IsNull || !metadataValue.HasAnnotation(MetadataValueAnnotation.SerializeInHttpHeader))
             {
                 continue;
             }

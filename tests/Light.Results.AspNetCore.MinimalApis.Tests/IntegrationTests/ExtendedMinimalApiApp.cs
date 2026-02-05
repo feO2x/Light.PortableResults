@@ -53,6 +53,7 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
         App.MapGet("/api/extended/non-generic-header-only-metadata", GetNonGenericHeaderOnlyMetadata);
         App.MapGet("/api/extended/generic-header-only-metadata", GetGenericHeaderOnlyMetadata);
         App.MapGet("/api/extended/non-generic-null-header", GetNonGenericNullHeaderMetadata);
+        App.MapGet("/api/extended/generic-header-annotation-flags", GetGenericHeaderAnnotationFlagsMetadata);
     }
 
     public WebApplication App { get; }
@@ -210,6 +211,16 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
         );
 
         var result = Result.Ok(metadata);
+        return result.ToMinimalApiResult(overrideOptions: AlwaysSerializeMetadataOptions);
+    }
+
+    private static LightResult<string> GetGenericHeaderAnnotationFlagsMetadata()
+    {
+        var metadata = MetadataObject.Create(
+            ("X-HeaderAndBody", MetadataValue.FromString("both", MetadataValueAnnotation.SerializeInHttpHeaderAndBody)),
+            ("X-None", MetadataValue.FromString("none", MetadataValueAnnotation.None))
+        );
+        var result = Result<string>.Ok("ok", metadata);
         return result.ToMinimalApiResult(overrideOptions: AlwaysSerializeMetadataOptions);
     }
 

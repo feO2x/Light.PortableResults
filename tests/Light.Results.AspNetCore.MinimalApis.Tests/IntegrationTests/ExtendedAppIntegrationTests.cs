@@ -196,4 +196,23 @@ public sealed class ExtendedAppIntegrationTests
 
         await Verifier.Verify(response);
     }
+
+    [Fact]
+    public async Task ToMinimalApiResult_ShouldHonorHeaderAnnotationFlags_ForGenericResult()
+    {
+        using var httpClient = _fixture.CreateHttpClient();
+
+        using var response = await httpClient.GetAsync(
+            "/api/extended/generic-header-annotation-flags",
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");
+        response.Headers.TryGetValues("X-HeaderAndBody", out var headerValues).Should().BeTrue();
+        headerValues.Should().ContainSingle("both");
+        response.Headers.Contains("X-None").Should().BeFalse();
+
+        await Verifier.Verify(response);
+    }
 }
