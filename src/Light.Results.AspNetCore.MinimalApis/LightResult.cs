@@ -4,8 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using Light.Results.AspNetCore.MinimalApis.Serialization;
-using Light.Results.AspNetCore.Shared;
-using Light.Results.AspNetCore.Shared.Serialization;
+using Light.Results.Serialization;
 using Microsoft.AspNetCore.Http;
 
 namespace Light.Results.AspNetCore.MinimalApis;

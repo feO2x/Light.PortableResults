@@ -1,9 +1,8 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Light.Results.AspNetCore.Shared.Serialization;
+namespace Light.Results.Serialization;
 
 /// <summary>
 /// Creates <see cref="DefaultResultJsonConverter{T}" /> instances for <see cref="Result{T}" /> types.
@@ -19,7 +18,11 @@ public sealed class DefaultResultJsonConverterFactory : JsonConverterFactory
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is <see langword="null" />.</exception>
     public DefaultResultJsonConverterFactory(LightResultOptions options)
     {
-        ArgumentNullException.ThrowIfNull(options);
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
         _constructorArguments = [options];
     }
 
@@ -39,12 +42,6 @@ public sealed class DefaultResultJsonConverterFactory : JsonConverterFactory
     /// <param name="typeToConvert">The type to convert.</param>
     /// <param name="options">The serializer options.</param>
     /// <returns>The created converter.</returns>
-    [UnconditionalSuppressMessage(
-        "AOT",
-        "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.",
-        Justification =
-            "DefaultResultJsonConverter is not removed by the Trimmer as it is directly referenced in this factory."
-    )]
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var valueType = typeToConvert.GetGenericArguments()[0];

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Light.Results.Metadata;
 
-namespace Light.Results.AspNetCore.Shared.Serialization;
+namespace Light.Results.Serialization;
 
 public static partial class SerializerExtensions
 {

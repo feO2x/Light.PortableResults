@@ -1,4 +1,4 @@
-namespace Light.Results.AspNetCore.Shared;
+namespace Light.Results;
 
 /// <summary>
 /// Specifies when metadata should be serialized in HTTP responses.

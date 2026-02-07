@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Light.Results.Metadata;
 
-namespace Light.Results.AspNetCore.Shared.Serialization;
+namespace Light.Results.Serialization;
 
 /// <summary>
 /// JSON converter for <see cref="Result" /> that either writes success HTTP response bodies or Problem Details
@@ -22,11 +22,10 @@ public sealed class DefaultResultJsonConverter : JsonConverter<Result>
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
     /// <summary>
-    /// Reading is not supported for <see cref="Result" />.
+    /// Reads the JSON representation of a <see cref="Result" />.
     /// </summary>
-    /// <exception cref="NotSupportedException">Always thrown.</exception>
     public override Result Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        throw new NotSupportedException();
+        ResultJsonReader.ReadResult(ref reader);
 
     /// <summary>
     /// Writes the JSON representation for the specified result.
@@ -103,15 +102,14 @@ public sealed class DefaultResultJsonConverter<T> : JsonConverter<Result<T>>
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
     /// <summary>
-    /// Reading is not supported for <see cref="Result{T}" />.
+    /// Reads the JSON representation of a <see cref="Result{T}" />.
     /// </summary>
-    /// <exception cref="NotSupportedException">Always thrown.</exception>
     public override Result<T> Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions serializerOptions
     ) =>
-        throw new NotSupportedException();
+        ResultJsonReader.ReadResult<T>(ref reader, serializerOptions);
 
     /// <summary>
     /// Writes the JSON representation for the specified result.

@@ -9,7 +9,7 @@ using Light.Results.Metadata;
 
 // ReSharper disable ConvertToExtensionBlock
 
-namespace Light.Results.AspNetCore.Shared.Serialization;
+namespace Light.Results.Serialization;
 
 /// <summary>
 /// Provides extension methods to serialize and write types of Light.Results using System.Text.Json.
@@ -56,8 +56,15 @@ public static partial class SerializerExtensions
     /// </exception>
     public static void WriteGenericValue<T>(this Utf8JsonWriter writer, T? value, JsonSerializerOptions options)
     {
-        ArgumentNullException.ThrowIfNull(writer);
-        ArgumentNullException.ThrowIfNull(options);
+        if (writer is null)
+        {
+            throw new ArgumentNullException(nameof(writer));
+        }
+
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
 
         if (value is null)
         {
@@ -131,7 +138,7 @@ public static partial class SerializerExtensions
     )
     {
         // ASP.NET Core compatible format only applies to validation responses (400 and 422)
-        var isValidationResponse = statusCode is HttpStatusCode.BadRequest or HttpStatusCode.UnprocessableEntity;
+        var isValidationResponse = statusCode == HttpStatusCode.BadRequest || (int) statusCode == 422;
         if (format == ValidationProblemSerializationFormat.AspNetCoreCompatible && isValidationResponse)
         {
             WriteAspNetCoreCompatibleErrors(writer, errors);

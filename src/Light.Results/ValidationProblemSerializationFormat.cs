@@ -1,4 +1,4 @@
-namespace Light.Results.AspNetCore.Shared;
+namespace Light.Results;
 
 /// <summary>
 /// Specifies how validation errors are serialized in Problem Details responses

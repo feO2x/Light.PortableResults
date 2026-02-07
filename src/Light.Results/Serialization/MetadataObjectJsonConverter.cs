@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Light.Results.Metadata;
 
-namespace Light.Results.AspNetCore.Shared.Serialization;
+namespace Light.Results.Serialization;
 
 /// <summary>
 /// JSON converter for <see cref="MetadataObject" />.
@@ -11,13 +11,10 @@ namespace Light.Results.AspNetCore.Shared.Serialization;
 public sealed class MetadataObjectJsonConverter : JsonConverter<MetadataObject>
 {
     /// <summary>
-    /// Reading is not supported for <see cref="MetadataObject" />.
+    /// Reads the JSON representation of a <see cref="MetadataObject" />.
     /// </summary>
-    /// <exception cref="NotSupportedException">Always thrown.</exception>
-    public override MetadataObject Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-    {
-        throw new NotSupportedException("Deserialization of MetadataObject is not supported");
-    }
+    public override MetadataObject Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        MetadataJsonReader.ReadMetadataObject(ref reader);
 
     /// <summary>
     /// Writes the JSON representation for the specified metadata object.
@@ -25,8 +22,6 @@ public sealed class MetadataObjectJsonConverter : JsonConverter<MetadataObject>
     /// <param name="writer">The JSON writer.</param>
     /// <param name="value">The metadata object.</param>
     /// <param name="options">The serializer options.</param>
-    public override void Write(Utf8JsonWriter writer, MetadataObject value, JsonSerializerOptions options)
-    {
+    public override void Write(Utf8JsonWriter writer, MetadataObject value, JsonSerializerOptions options) =>
         MetadataValueJsonConverter.WriteMetadataObject(writer, value);
-    }
 }

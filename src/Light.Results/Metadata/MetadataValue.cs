@@ -38,6 +38,16 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     public static MetadataValue Null => new (MetadataKind.Null, default);
 
     /// <summary>
+    /// Creates a <see cref="MetadataValue" /> representing a null value with the specified annotation.
+    /// </summary>
+    /// <param name="annotation">The serialization annotation.</param>
+    /// <returns>The metadata value.</returns>
+    public static MetadataValue FromNull(
+        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
+    ) =>
+        new (MetadataKind.Null, default, annotation);
+
+    /// <summary>
     /// Creates a <see cref="MetadataValue" /> from a boolean.
     /// </summary>
     /// <param name="value">The boolean value.</param>

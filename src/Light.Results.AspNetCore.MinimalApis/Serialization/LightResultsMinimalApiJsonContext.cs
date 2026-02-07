@@ -8,7 +8,7 @@ namespace Light.Results.AspNetCore.MinimalApis.Serialization;
 /// </summary>
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-    GenerationMode = JsonSourceGenerationMode.Serialization
+    GenerationMode = JsonSourceGenerationMode.Metadata
 )]
 [JsonSerializable(typeof(MetadataValue))]
 [JsonSerializable(typeof(MetadataObject))]

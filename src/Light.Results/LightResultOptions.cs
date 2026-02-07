@@ -2,7 +2,7 @@ using System;
 using Light.Results.Http;
 using Light.Results.Metadata;
 
-namespace Light.Results.AspNetCore.Shared;
+namespace Light.Results;
 
 /// <summary>
 /// Configures how Light.Results responses are serialized for ASP.NET Core.
@@ -10,9 +10,16 @@ namespace Light.Results.AspNetCore.Shared;
 public sealed record LightResultOptions
 {
     /// <summary>
+    /// <para>
     /// Gets or sets the serialization format for validation errors in HTTP 400 Bad Request
     /// and HTTP 422 Unprocessable Content responses. For all other error responses,
     /// the rich format is always used regardless of this setting.
+    /// </para>
+    /// <para>
+    /// The default value is set to <see cref="ValidationProblemSerializationFormat.AspNetCoreCompatible" /> for
+    /// backwards-compatibility reasons. We encourage you to use
+    /// <see cref="ValidationProblemSerializationFormat.Rich" /> to get the most out of Light.Results.
+    /// </para>
     /// </summary>
     public ValidationProblemSerializationFormat ValidationProblemSerializationFormat { get; set; } =
         ValidationProblemSerializationFormat.AspNetCoreCompatible;
