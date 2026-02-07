@@ -14,6 +14,7 @@
     <File Path="ai-plans\0007-minimal-api-serialization.md" />
     <File Path="ai-plans\0009-minimal-api-metadata-for-success-results.md" />
     <File Path="ai-plans\0009-updated-minimal-api-integration.md" />
+    <File Path="ai-plans\0011-http-response-deserialization.md" />
     <File Path="ai-plans\AGENTS.md" />
   </Folder>
   <Folder Name="/benchmarks/">
