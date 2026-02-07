@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -387,6 +389,57 @@ public sealed class HttpResponseMessageExtensionsTests
         source.Should().Be("custom");
     }
 
+    [Fact]
+    public async Task ReadResultAsync_ShouldDeserializeUnknownLengthContent_ForGenericResult()
+    {
+        var options = new LightResultHttpReadOptions
+        {
+            HeaderSelectionMode = HeaderSelectionMode.None
+        };
+
+        using var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new UnknownLengthStringContent("42", "application/json")
+        };
+
+        var result = await response.ReadResultAsync<int>(options: options, cancellationToken: TestCancellationToken);
+
+        result.IsValid.Should().BeTrue();
+        result.Value.Should().Be(42);
+        result.Metadata.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ReadResultAsync_ShouldApplyEmptyBodyRules_WhenContentLengthIsUnknown()
+    {
+        var options = new LightResultHttpReadOptions
+        {
+            HeaderSelectionMode = HeaderSelectionMode.None
+        };
+
+        using var nonGenericResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new UnknownLengthStringContent(string.Empty, "application/json")
+        };
+
+        var nonGenericResult = await nonGenericResponse.ReadResultAsync(
+            options: options,
+            cancellationToken: TestCancellationToken
+        );
+
+        nonGenericResult.IsValid.Should().BeTrue();
+        nonGenericResult.Metadata.Should().BeNull();
+
+        using var genericResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new UnknownLengthStringContent(string.Empty, "application/json")
+        };
+
+        var act =
+            () => genericResponse.ReadResultAsync<int>(options: options, cancellationToken: TestCancellationToken);
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
     private sealed class TraceHeaderParser : HttpHeaderParser
     {
         public TraceHeaderParser() : base("traceId", ImmutableArray.Create("X-TraceId", "X-Correlation-Id")) { }
@@ -423,5 +476,28 @@ public sealed class HttpResponseMessageExtensionsTests
 
         public override void Write(Utf8JsonWriter writer, Result value, JsonSerializerOptions options) =>
             throw new NotSupportedException();
+    }
+
+    private sealed class UnknownLengthStringContent : HttpContent
+    {
+        private readonly byte[] _contentBytes;
+
+        public UnknownLengthStringContent(string content, string mediaType)
+        {
+            _contentBytes = Encoding.UTF8.GetBytes(content);
+            Headers.ContentType = new MediaTypeHeaderValue(mediaType)
+            {
+                CharSet = "utf-8"
+            };
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
+        }
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            stream.WriteAsync(_contentBytes, 0, _contentBytes.Length);
     }
 }
