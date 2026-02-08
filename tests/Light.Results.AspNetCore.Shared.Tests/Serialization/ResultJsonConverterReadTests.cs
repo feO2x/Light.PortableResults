@@ -1,7 +1,6 @@
 using System;
 using System.Text.Json;
 using FluentAssertions;
-using Light.Results.Http.Serialization;
 using Light.Results.Http.Writing;
 using Xunit;
 
@@ -35,8 +34,8 @@ public sealed class ResultJsonConverterReadTests
     {
         var lightResultOptions = new LightResultsHttpWriteOptions();
         var options = new JsonSerializerOptions();
-        options.Converters.Add(new MetadataObjectJsonConverter());
-        options.Converters.Add(new MetadataValueJsonConverter());
+        options.Converters.Add(new HttpWriteMetadataObjectJsonConverter());
+        options.Converters.Add(new HttpWriteMetadataValueJsonConverter());
         options.Converters.Add(new HttpWriteResultJsonConverter(lightResultOptions));
         options.Converters.Add(new HttpWriteResultJsonConverterFactory(lightResultOptions));
         return options;

@@ -3,12 +3,12 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Light.Results.Metadata;
 
-namespace Light.Results.Http.Serialization;
+namespace Light.Results.Http.Reading;
 
 /// <summary>
-/// JSON converter for <see cref="MetadataObject" />.
+/// JSON converter for reading <see cref="MetadataObject" /> payloads.
 /// </summary>
-public sealed class MetadataObjectJsonConverter : JsonConverter<MetadataObject>
+public sealed class HttpReadMetadataObjectJsonConverter : JsonConverter<MetadataObject>
 {
     /// <summary>
     /// Reads the JSON representation of a <see cref="MetadataObject" />.
@@ -17,11 +17,10 @@ public sealed class MetadataObjectJsonConverter : JsonConverter<MetadataObject>
         MetadataJsonReader.ReadMetadataObject(ref reader);
 
     /// <summary>
-    /// Writes the JSON representation for the specified metadata object.
+    /// Writing is not supported by this converter.
     /// </summary>
-    /// <param name="writer">The JSON writer.</param>
-    /// <param name="value">The metadata object.</param>
-    /// <param name="options">The serializer options.</param>
     public override void Write(Utf8JsonWriter writer, MetadataObject value, JsonSerializerOptions options) =>
-        MetadataValueJsonConverter.WriteMetadataObject(writer, value);
+        throw new NotSupportedException(
+            $"{nameof(HttpReadMetadataObjectJsonConverter)} supports deserialization only. Use a serialization converter for writing."
+        );
 }

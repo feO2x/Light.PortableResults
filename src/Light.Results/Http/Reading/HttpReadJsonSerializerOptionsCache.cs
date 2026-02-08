@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
-using Light.Results.Http.Serialization;
 
 namespace Light.Results.Http.Reading;
 
@@ -50,8 +49,8 @@ public static class HttpReadJsonSerializerOptionsCache
             TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
 
-        serializerOptions.Converters.Add(new MetadataObjectJsonConverter());
-        serializerOptions.Converters.Add(new MetadataValueJsonConverter());
+        serializerOptions.Converters.Add(new HttpReadMetadataObjectJsonConverter());
+        serializerOptions.Converters.Add(new HttpReadMetadataValueJsonConverter());
         serializerOptions.Converters.Add(new HttpReadResultJsonConverter());
         serializerOptions.Converters.Add(new HttpReadResultJsonConverterFactory(preference));
 

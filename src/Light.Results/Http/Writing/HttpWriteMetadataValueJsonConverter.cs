@@ -3,33 +3,30 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Light.Results.Metadata;
 
-namespace Light.Results.Http.Serialization;
+namespace Light.Results.Http.Writing;
 
 /// <summary>
-/// JSON converter for <see cref="MetadataValue" />.
+/// JSON converter for writing <see cref="MetadataValue" /> payloads.
 /// </summary>
-public sealed class MetadataValueJsonConverter : JsonConverter<MetadataValue>
+public sealed class HttpWriteMetadataValueJsonConverter : JsonConverter<MetadataValue>
 {
     /// <summary>
-    /// Reads the JSON representation of a <see cref="MetadataValue" />.
+    /// Reading is not supported by this converter.
     /// </summary>
     public override MetadataValue Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        MetadataJsonReader.ReadMetadataValue(ref reader);
+        throw new NotSupportedException(
+            $"{nameof(HttpWriteMetadataValueJsonConverter)} supports serialization only. Use a deserialization converter for reading."
+        );
 
     /// <summary>
     /// Writes the JSON representation for the specified metadata value.
     /// </summary>
-    /// <param name="writer">The JSON writer.</param>
-    /// <param name="value">The metadata value.</param>
-    /// <param name="options">The serializer options.</param>
     public override void Write(Utf8JsonWriter writer, MetadataValue value, JsonSerializerOptions options) =>
         WriteMetadataValue(writer, value);
 
     /// <summary>
     /// Writes the JSON representation for the specified metadata value.
     /// </summary>
-    /// <param name="writer">The JSON writer.</param>
-    /// <param name="value">The metadata value.</param>
     public static void WriteMetadataValue(Utf8JsonWriter writer, MetadataValue value)
     {
         switch (value.Kind)
@@ -70,8 +67,6 @@ public sealed class MetadataValueJsonConverter : JsonConverter<MetadataValue>
     /// <summary>
     /// Writes the JSON representation for the specified metadata array.
     /// </summary>
-    /// <param name="writer">The JSON writer.</param>
-    /// <param name="array">The metadata array.</param>
     public static void WriteMetadataArray(Utf8JsonWriter writer, MetadataArray array)
     {
         writer.WriteStartArray();
@@ -89,8 +84,6 @@ public sealed class MetadataValueJsonConverter : JsonConverter<MetadataValue>
     /// <summary>
     /// Writes the JSON representation for the specified metadata object.
     /// </summary>
-    /// <param name="writer">The JSON writer.</param>
-    /// <param name="metadataObject">The metadata object.</param>
     public static void WriteMetadataObject(Utf8JsonWriter writer, MetadataObject metadataObject)
     {
         writer.WriteStartObject();

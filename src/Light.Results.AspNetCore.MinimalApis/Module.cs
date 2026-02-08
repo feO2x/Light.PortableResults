@@ -3,7 +3,6 @@ using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Text.Json;
 using Light.Results.Http.Headers;
-using Light.Results.Http.Serialization;
 using Light.Results.Http.Writing;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
@@ -69,8 +68,8 @@ public static class Module
         LightResultsHttpWriteOptions options
     )
     {
-        serializerOptions.Converters.Add(new MetadataObjectJsonConverter());
-        serializerOptions.Converters.Add(new MetadataValueJsonConverter());
+        serializerOptions.Converters.Add(new HttpWriteMetadataObjectJsonConverter());
+        serializerOptions.Converters.Add(new HttpWriteMetadataValueJsonConverter());
         serializerOptions.Converters.Add(new HttpWriteResultJsonConverter(options));
         serializerOptions.Converters.Add(new HttpWriteResultJsonConverterFactory(options));
     }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
-using Light.Results.Http.Serialization;
 using Light.Results.Metadata;
 
 namespace Light.Results.Http.Writing;
@@ -151,7 +150,7 @@ public static partial class SerializerExtensions
             if (error.Metadata is { } metadata)
             {
                 writer.WritePropertyName("metadata");
-                MetadataValueJsonConverter.WriteMetadataObject(writer, metadata);
+                HttpWriteMetadataValueJsonConverter.WriteMetadataObject(writer, metadata);
             }
 
             writer.WriteEndObject();
@@ -303,7 +302,7 @@ public static partial class SerializerExtensions
         if (detail.Metadata.HasValue)
         {
             writer.WritePropertyName("metadata");
-            MetadataValueJsonConverter.WriteMetadataObject(writer, detail.Metadata.Value);
+            HttpWriteMetadataValueJsonConverter.WriteMetadataObject(writer, detail.Metadata.Value);
         }
 
         writer.WriteEndObject();
