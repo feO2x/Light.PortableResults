@@ -1,8 +1,8 @@
+using System;
 using System.Text.Json;
 using FluentAssertions;
 using Light.Results.Http.Serialization;
 using Light.Results.Http.Writing;
-using Light.Results.Metadata;
 using Xunit;
 
 namespace Light.Results.AspNetCore.Shared.Tests.Serialization;
@@ -10,53 +10,35 @@ namespace Light.Results.AspNetCore.Shared.Tests.Serialization;
 public sealed class ResultJsonConverterReadTests
 {
     [Fact]
-    public void ReadResult_ShouldDeserializeWrappedSuccess()
+    public void ReadResult_ShouldThrow_ForNonGenericWriteConverter()
     {
         var options = CreateOptions();
-        const string json = "{\"value\":\"ok\",\"metadata\":{\"note\":\"hi\"}}";
+        const string json = "{\"metadata\":{\"note\":\"hi\"}}";
 
-        var result = JsonSerializer.Deserialize<Result<string>>(json, options);
+        Action act = () => JsonSerializer.Deserialize<Result>(json, options);
 
-        var expectedMetadata = MetadataObject.Create(("note", MetadataValue.FromString("hi")));
-        var expectedResult = Result<string>.Ok("ok", expectedMetadata);
-        result.Should().Be(expectedResult);
+        act.Should().Throw<NotSupportedException>();
     }
 
     [Fact]
-    public void ReadResult_ShouldDeserializeProblemDetails()
+    public void ReadResult_ShouldThrow_ForGenericWriteConverter()
     {
         var options = CreateOptions();
-        const string json =
-            """
-            {
-                "type": "https://example.org/problems/not-found",
-                "title": "Not Found",
-                "status": 404,
-                "errors": [
-                    {
-                        "message": "Missing",
-                        "category": "NotFound"
-                    }
-                ]
-            }
-            """;
+        const string json = "{\"value\":\"ok\"}";
 
-        var result = JsonSerializer.Deserialize<Result<string>>(json, options);
+        Action act = () => JsonSerializer.Deserialize<Result<string>>(json, options);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Count.Should().Be(1);
-        result.FirstError.Message.Should().Be("Missing");
-        result.FirstError.Category.Should().Be(ErrorCategory.NotFound);
+        act.Should().Throw<NotSupportedException>();
     }
 
     private static JsonSerializerOptions CreateOptions()
     {
-        var lightResultOptions = new LightHttpWriteOptions();
+        var lightResultOptions = new LightResultsHttpWriteOptions();
         var options = new JsonSerializerOptions();
         options.Converters.Add(new MetadataObjectJsonConverter());
         options.Converters.Add(new MetadataValueJsonConverter());
-        options.Converters.Add(new DefaultResultJsonConverter(lightResultOptions));
-        options.Converters.Add(new DefaultResultJsonConverterFactory(lightResultOptions));
+        options.Converters.Add(new HttpWriteResultJsonConverter(lightResultOptions));
+        options.Converters.Add(new HttpWriteResultJsonConverterFactory(lightResultOptions));
         return options;
     }
 }

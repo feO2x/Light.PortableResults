@@ -1,7 +1,6 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Light.Results.Http.Serialization;
 using Light.Results.Metadata;
 
 namespace Light.Results.Http.Writing;
@@ -10,23 +9,25 @@ namespace Light.Results.Http.Writing;
 /// JSON converter for <see cref="Result" /> that either writes success HTTP response bodies or Problem Details
 /// responses, depending on the passed result.
 /// </summary>
-public sealed class DefaultResultJsonConverter : JsonConverter<Result>
+public sealed class HttpWriteResultJsonConverter : JsonConverter<Result>
 {
-    private readonly LightHttpWriteOptions _options;
+    private readonly LightResultsHttpWriteOptions _options;
 
     /// <summary>
-    /// Initializes a new instance of <see cref="DefaultResultJsonConverter" />.
+    /// Initializes a new instance of <see cref="HttpWriteResultJsonConverter" />.
     /// </summary>
     /// <param name="options">The Light.Results options.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is <see langword="null" />.</exception>
-    public DefaultResultJsonConverter(LightHttpWriteOptions options) =>
+    public HttpWriteResultJsonConverter(LightResultsHttpWriteOptions options) =>
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
     /// <summary>
     /// Reads the JSON representation of a <see cref="Result" />.
     /// </summary>
     public override Result Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        ResultJsonReader.ReadResult(ref reader);
+        throw new NotSupportedException(
+            $"{nameof(HttpWriteResultJsonConverter)} supports serialization only. Use a deserialization converter for reading."
+        );
 
     /// <summary>
     /// Writes the JSON representation for the specified result.
@@ -54,7 +55,7 @@ public sealed class DefaultResultJsonConverter : JsonConverter<Result>
         Utf8JsonWriter writer,
         Result result,
         JsonSerializerOptions serializerOptions,
-        LightHttpWriteOptions? overrideOptions = null
+        LightResultsHttpWriteOptions? overrideOptions = null
     )
     {
         var lightResultOptions = overrideOptions ?? _options;
@@ -88,18 +89,18 @@ public sealed class DefaultResultJsonConverter : JsonConverter<Result>
 }
 
 /// <summary>
-/// JSON converter for <see cref="Result{T}" /> that honors <see cref="LightHttpWriteOptions" />.
+/// JSON converter for <see cref="Result{T}" /> that honors <see cref="LightResultsHttpWriteOptions" />.
 /// </summary>
-public sealed class DefaultResultJsonConverter<T> : JsonConverter<Result<T>>
+public sealed class HttpWriteResultJsonConverter<T> : JsonConverter<Result<T>>
 {
-    private readonly LightHttpWriteOptions _options;
+    private readonly LightResultsHttpWriteOptions _options;
 
     /// <summary>
-    /// Initializes a new instance of <see cref="DefaultResultJsonConverter{T}" />.
+    /// Initializes a new instance of <see cref="HttpWriteResultJsonConverter{T}" />.
     /// </summary>
     /// <param name="options">The Light.Results options.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is <see langword="null" />.</exception>
-    public DefaultResultJsonConverter(LightHttpWriteOptions options) =>
+    public HttpWriteResultJsonConverter(LightResultsHttpWriteOptions options) =>
         _options = options ?? throw new ArgumentNullException(nameof(options));
 
     /// <summary>
@@ -110,7 +111,9 @@ public sealed class DefaultResultJsonConverter<T> : JsonConverter<Result<T>>
         Type typeToConvert,
         JsonSerializerOptions serializerOptions
     ) =>
-        ResultJsonReader.ReadResult<T>(ref reader, serializerOptions);
+        throw new NotSupportedException(
+            $"{nameof(HttpWriteResultJsonConverter<T>)} supports serialization only. Use a deserialization converter for reading."
+        );
 
     /// <summary>
     /// Writes the JSON representation for the specified result.
@@ -138,7 +141,7 @@ public sealed class DefaultResultJsonConverter<T> : JsonConverter<Result<T>>
         Utf8JsonWriter writer,
         Result<T> result,
         JsonSerializerOptions serializerOptions,
-        LightHttpWriteOptions? overrideOptions = null
+        LightResultsHttpWriteOptions? overrideOptions = null
     )
     {
         var lightResultOptions = overrideOptions ?? _options;

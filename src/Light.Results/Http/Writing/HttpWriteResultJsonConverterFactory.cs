@@ -5,18 +5,18 @@ using System.Text.Json.Serialization;
 namespace Light.Results.Http.Writing;
 
 /// <summary>
-/// Creates <see cref="DefaultResultJsonConverter{T}" /> instances for <see cref="Result{T}" /> types.
+/// Creates <see cref="HttpWriteResultJsonConverter{T}" /> instances for <see cref="Result{T}" /> types.
 /// </summary>
-public sealed class DefaultResultJsonConverterFactory : JsonConverterFactory
+public sealed class HttpWriteResultJsonConverterFactory : JsonConverterFactory
 {
     private readonly object[] _constructorArguments;
 
     /// <summary>
-    /// Initializes a new instance of <see cref="DefaultResultJsonConverterFactory" />.
+    /// Initializes a new instance of <see cref="HttpWriteResultJsonConverterFactory" />.
     /// </summary>
     /// <param name="options">The Light.Results options.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is <see langword="null" />.</exception>
-    public DefaultResultJsonConverterFactory(LightHttpWriteOptions options)
+    public HttpWriteResultJsonConverterFactory(LightResultsHttpWriteOptions options)
     {
         if (options is null)
         {
@@ -45,7 +45,7 @@ public sealed class DefaultResultJsonConverterFactory : JsonConverterFactory
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var valueType = typeToConvert.GetGenericArguments()[0];
-        var converterType = typeof(DefaultResultJsonConverter<>).MakeGenericType(valueType);
+        var converterType = typeof(HttpWriteResultJsonConverter<>).MakeGenericType(valueType);
         return (JsonConverter) Activator.CreateInstance(converterType, _constructorArguments)!;
     }
 }

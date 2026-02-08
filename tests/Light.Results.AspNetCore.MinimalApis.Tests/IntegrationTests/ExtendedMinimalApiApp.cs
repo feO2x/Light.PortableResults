@@ -23,7 +23,7 @@ namespace Light.Results.AspNetCore.MinimalApis.Tests.IntegrationTests;
 
 public sealed class ExtendedMinimalApiApp : IAsyncLifetime
 {
-    private static readonly LightHttpWriteOptions AlwaysSerializeMetadataOptions = new ()
+    private static readonly LightResultsHttpWriteOptions AlwaysSerializeMetadataOptions = new ()
     {
         MetadataSerializationMode = MetadataSerializationMode.Always
     };
@@ -224,7 +224,7 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
         return result.ToMinimalApiResult(overrideOptions: AlwaysSerializeMetadataOptions);
     }
 
-    private static LightHttpWriteOptions CreateRichValidationOptions() =>
+    private static LightResultsHttpWriteOptions CreateRichValidationOptions() =>
         new ()
         {
             ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich,

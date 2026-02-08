@@ -8,12 +8,12 @@ namespace Light.Results.Http.Reading;
 /// <summary>
 /// Options controlling how <see cref="System.Net.Http.HttpResponseMessage" /> responses are read into Light.Results.
 /// </summary>
-public sealed record LightHttpReadOptions
+public sealed record LightResultsHttpReadOptions
 {
     /// <summary>
     /// Gets the default options instance for HTTP response deserialization.
     /// </summary>
-    public static LightHttpReadOptions Default { get; } = new ();
+    public static LightResultsHttpReadOptions Default { get; } = new ();
 
     /// <summary>
     /// Gets or sets which headers should be read into metadata.

@@ -6,7 +6,7 @@ namespace Light.Results.Http.Writing;
 /// <summary>
 /// Configures how Light.Results responses are serialized for ASP.NET Core.
 /// </summary>
-public sealed record LightHttpWriteOptions
+public sealed record LightResultsHttpWriteOptions
 {
     /// <summary>
     /// <para>

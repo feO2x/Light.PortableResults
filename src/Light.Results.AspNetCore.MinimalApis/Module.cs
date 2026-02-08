@@ -29,14 +29,14 @@ public static class Module
            .ConfigureMinimalApiJsonOptionsForLightResults();
 
     /// <summary>
-    /// Registers <see cref="LightHttpWriteOptions" /> in the service container.
+    /// Registers <see cref="LightResultsHttpWriteOptions" /> in the service container.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddLightResultOptions(this IServiceCollection services)
     {
-        services.AddOptions<LightHttpWriteOptions>();
-        services.AddSingleton(sp => sp.GetRequiredService<IOptions<LightHttpWriteOptions>>().Value);
+        services.AddOptions<LightResultsHttpWriteOptions>();
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<LightResultsHttpWriteOptions>>().Value);
         return services;
     }
 
@@ -49,7 +49,7 @@ public static class Module
     {
         services
            .AddOptions<JsonOptions>()
-           .Configure<LightHttpWriteOptions>(
+           .Configure<LightResultsHttpWriteOptions>(
                 (jsonOptions, lightResultOptions) =>
                 {
                     jsonOptions.SerializerOptions.AddDefaultLightResultsJsonConverters(lightResultOptions);
@@ -66,13 +66,13 @@ public static class Module
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is <see langword="null" />.</exception>
     public static void AddDefaultLightResultsJsonConverters(
         this JsonSerializerOptions serializerOptions,
-        LightHttpWriteOptions options
+        LightResultsHttpWriteOptions options
     )
     {
         serializerOptions.Converters.Add(new MetadataObjectJsonConverter());
         serializerOptions.Converters.Add(new MetadataValueJsonConverter());
-        serializerOptions.Converters.Add(new DefaultResultJsonConverter(options));
-        serializerOptions.Converters.Add(new DefaultResultJsonConverterFactory(options));
+        serializerOptions.Converters.Add(new HttpWriteResultJsonConverter(options));
+        serializerOptions.Converters.Add(new HttpWriteResultJsonConverterFactory(options));
     }
 
     /// <summary>

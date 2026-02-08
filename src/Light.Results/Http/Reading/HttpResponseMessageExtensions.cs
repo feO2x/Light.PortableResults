@@ -35,7 +35,7 @@ public static class HttpResponseMessageExtensions
     /// <returns>The parsed result.</returns>
     public static async Task<Result> ReadResultAsync(
         this HttpResponseMessage response,
-        LightHttpReadOptions? options = null,
+        LightResultsHttpReadOptions? options = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -44,7 +44,7 @@ public static class HttpResponseMessageExtensions
             throw new ArgumentNullException(nameof(response));
         }
 
-        var resolvedOptions = options ?? LightHttpReadOptions.Default;
+        var resolvedOptions = options ?? LightResultsHttpReadOptions.Default;
         var serializerOptions = ResolveSerializerOptions(resolvedOptions);
 
         var isProblemDetails = CheckIfResponseContainsProblemDetails(response);
@@ -65,7 +65,7 @@ public static class HttpResponseMessageExtensions
     /// <returns>The parsed result.</returns>
     public static async Task<Result<T>> ReadResultAsync<T>(
         this HttpResponseMessage response,
-        LightHttpReadOptions? options = null,
+        LightResultsHttpReadOptions? options = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -74,7 +74,7 @@ public static class HttpResponseMessageExtensions
             throw new ArgumentNullException(nameof(response));
         }
 
-        var resolvedOptions = options ?? LightHttpReadOptions.Default;
+        var resolvedOptions = options ?? LightResultsHttpReadOptions.Default;
         var serializerOptions = ResolveSerializerOptions(resolvedOptions);
 
         var isProblemDetails = CheckIfResponseContainsProblemDetails(response);
@@ -257,12 +257,12 @@ public static class HttpResponseMessageExtensions
         return await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
     }
 
-    private static JsonSerializerOptions ResolveSerializerOptions(LightHttpReadOptions options) =>
+    private static JsonSerializerOptions ResolveSerializerOptions(LightResultsHttpReadOptions options) =>
         options.SerializerOptions ?? HttpReadJsonSerializerOptionsCache.GetByPreference(options.PreferSuccessPayload);
 
     private static TResult MergeHeaderMetadataIfNeeded<TResult>(
         HttpResponseMessage response,
-        LightHttpReadOptions options,
+        LightResultsHttpReadOptions options,
         TResult result
     )
         where TResult : struct, ICanReplaceMetadata<TResult>
@@ -282,7 +282,7 @@ public static class HttpResponseMessageExtensions
         return mergedMetadata == result.Metadata ? result : result.ReplaceMetadata(mergedMetadata);
     }
 
-    private static MetadataObject? ReadHeaderMetadata(HttpResponseMessage response, LightHttpReadOptions options)
+    private static MetadataObject? ReadHeaderMetadata(HttpResponseMessage response, LightResultsHttpReadOptions options)
     {
         if (options.HeaderSelectionMode == HeaderSelectionMode.None)
         {
@@ -317,7 +317,7 @@ public static class HttpResponseMessageExtensions
 
     private static void AppendHeaders(
         HttpHeaders headers,
-        LightHttpReadOptions options,
+        LightResultsHttpReadOptions options,
         IHttpHeaderParsingService parsingService,
         ref MetadataObjectBuilder builder,
         HashSet<string>? allowList,
@@ -354,7 +354,7 @@ public static class HttpResponseMessageExtensions
 
     private static bool ShouldIncludeHeader(
         string headerName,
-        LightHttpReadOptions options,
+        LightResultsHttpReadOptions options,
         HashSet<string>? allowList,
         HashSet<string>? denyList
     )

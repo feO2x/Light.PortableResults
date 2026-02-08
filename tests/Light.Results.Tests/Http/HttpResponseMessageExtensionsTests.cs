@@ -188,7 +188,7 @@ public sealed class HttpResponseMessageExtensionsTests
     public async Task ReadResultAsync_ShouldThrow_OnAliasConflictByDefault()
     {
         var parser = new TraceHeaderParser();
-        var options = new LightHttpReadOptions
+        var options = new LightResultsHttpReadOptions
         {
             HeaderParsingService = new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([parser]))
         };
@@ -210,7 +210,7 @@ public sealed class HttpResponseMessageExtensionsTests
     public async Task ReadResultAsync_ShouldAllowLastWriteWins_ForAliasConflicts()
     {
         var parser = new TraceHeaderParser();
-        var options = new LightHttpReadOptions
+        var options = new LightResultsHttpReadOptions
         {
             HeaderParsingService = new DefaultHttpHeaderParsingService(HttpHeaderParserRegistry.Create([parser])),
             HeaderConflictStrategy = HeaderConflictStrategy.LastWriteWins
@@ -232,7 +232,7 @@ public sealed class HttpResponseMessageExtensionsTests
     [Fact]
     public async Task ReadResultAsync_ShouldParseMultiValueHeaders()
     {
-        var options = new LightHttpReadOptions
+        var options = new LightResultsHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.AllowList,
             HeaderAllowList = ["X-Ids"]
@@ -257,7 +257,7 @@ public sealed class HttpResponseMessageExtensionsTests
     [Fact]
     public async Task ReadResultAsync_ShouldParsePrimitiveHeaderValues_WhenPrimitiveParsingIsEnabled()
     {
-        var options = new LightHttpReadOptions
+        var options = new LightResultsHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.AllowList,
             HeaderAllowList = ["X-Bool", "X-Int", "X-Double", "X-Text"]
@@ -287,7 +287,7 @@ public sealed class HttpResponseMessageExtensionsTests
     [Fact]
     public async Task ReadResultAsync_ShouldKeepHeaderValuesAsStrings_WhenStringOnlyParsingIsEnabled()
     {
-        var options = new LightHttpReadOptions
+        var options = new LightResultsHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.AllowList,
             HeaderAllowList = ["X-Bool", "X-Int", "X-Double"],
@@ -324,7 +324,7 @@ public sealed class HttpResponseMessageExtensionsTests
         };
         serializerOptions.Converters.Add(new CustomIntResultConverter());
 
-        var options = new LightHttpReadOptions
+        var options = new LightResultsHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.None,
             SerializerOptions = serializerOptions
@@ -349,7 +349,7 @@ public sealed class HttpResponseMessageExtensionsTests
         };
         serializerOptions.Converters.Add(new CustomIntResultConverter());
 
-        var options = new LightHttpReadOptions
+        var options = new LightResultsHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.None,
             SerializerOptions = serializerOptions
@@ -373,7 +373,7 @@ public sealed class HttpResponseMessageExtensionsTests
         };
         serializerOptions.Converters.Add(new CustomResultConverter());
 
-        var options = new LightHttpReadOptions
+        var options = new LightResultsHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.None,
             SerializerOptions = serializerOptions
@@ -393,7 +393,7 @@ public sealed class HttpResponseMessageExtensionsTests
     [Fact]
     public async Task ReadResultAsync_ShouldDeserializeUnknownLengthContent_ForGenericResult()
     {
-        var options = new LightHttpReadOptions
+        var options = new LightResultsHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.None
         };
@@ -413,7 +413,7 @@ public sealed class HttpResponseMessageExtensionsTests
     [Fact]
     public async Task ReadResultAsync_ShouldApplyEmptyBodyRules_WhenContentLengthIsUnknown()
     {
-        var options = new LightHttpReadOptions
+        var options = new LightResultsHttpReadOptions
         {
             HeaderSelectionMode = HeaderSelectionMode.None
         };

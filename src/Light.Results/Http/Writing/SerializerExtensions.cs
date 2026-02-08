@@ -231,7 +231,7 @@ public static partial class SerializerExtensions
         Errors errors,
         MetadataObject? metadata,
         JsonSerializerOptions serializerOptions,
-        LightHttpWriteOptions options
+        LightResultsHttpWriteOptions options
     )
     {
         var problemDetailsInfo =
