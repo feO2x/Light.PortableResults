@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Light.Results.Http.Reading;
 using Light.Results.Http.Reading.Headers;
+using Light.Results.Http.Reading.Json;
 using Light.Results.Metadata;
 using Xunit;
 
@@ -433,6 +434,136 @@ public sealed class HttpResponseMessageExtensionsTests
         var act =
             () => genericResponse.ReadResultAsync<int>(options: options, cancellationToken: TestCancellationToken);
         await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task ReadResultAsync_ShouldUseJsonSerializerContext_ForGenericSuccess()
+    {
+        var options = CreateContextBackedOptions();
+
+        using var response = new HttpResponseMessage(HttpStatusCode.OK);
+        response.Content = new StringContent(
+            """
+            {
+                "value": {
+                    "id": "6B8A4DCA-779D-4F36-8274-487FE3E86B5A",
+                    "name": "Contact A"
+                },
+                "metadata": {
+                    "source": "context"
+                }
+            }
+            """,
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        var result = await response.ReadResultAsync<HttpReadContactDto>(
+            options: options,
+            cancellationToken: TestCancellationToken
+        );
+
+        var expectedResult = Result<HttpReadContactDto>.Ok(
+            new HttpReadContactDto
+            {
+                Id = new Guid("6B8A4DCA-779D-4F36-8274-487FE3E86B5A"),
+                Name = "Contact A"
+            },
+            MetadataObject.Create(("source", MetadataValue.FromString("context")))
+        );
+        result.Should().Be(expectedResult);
+    }
+
+    [Fact]
+    public async Task ReadResultAsync_ShouldUseJsonSerializerContext_ForGenericFailure()
+    {
+        var options = CreateContextBackedOptions();
+
+        using var response = new HttpResponseMessage(HttpStatusCode.BadRequest);
+        response.Content = new StringContent(
+            """
+            {
+                "type": "https://example.org/problems/validation",
+                "title": "Validation failed",
+                "status": 400,
+                "errors": [
+                    {
+                        "message": "Name is required",
+                        "code": "NameRequired",
+                        "target": "name",
+                        "category": "Validation"
+                    }
+                ],
+                "metadata": {
+                    "source": "context"
+                }
+            }
+            """,
+            Encoding.UTF8,
+            "application/problem+json"
+        );
+
+        var result = await response.ReadResultAsync<HttpReadContactDto>(
+            options: options,
+            cancellationToken: TestCancellationToken
+        );
+
+        var expectedResult = Result<HttpReadContactDto>.Fail(
+            new Error
+            {
+                Message = "Name is required",
+                Code = "NameRequired",
+                Target = "name",
+                Category = ErrorCategory.Validation
+            },
+            MetadataObject.Create(("source", MetadataValue.FromString("context")))
+        );
+        result.Should().Be(expectedResult);
+    }
+
+    [Fact]
+    public async Task ReadResultAsync_ShouldUseJsonSerializerContext_ForNonGenericSuccess()
+    {
+        var options = CreateContextBackedOptions();
+
+        using var response = new HttpResponseMessage(HttpStatusCode.OK);
+        response.Content = new StringContent(
+            """
+            {
+                "metadata": {
+                    "note": "from-context"
+                }
+            }
+            """,
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        var result = await response.ReadResultAsync(options: options, cancellationToken: TestCancellationToken);
+
+        var expectedResult = Result.Ok(MetadataObject.Create(("note", MetadataValue.FromString("from-context"))));
+        result.Should().Be(expectedResult);
+    }
+
+    private static LightResultsHttpReadOptions CreateContextBackedOptions(
+        PreferSuccessPayload preferSuccessPayload = PreferSuccessPayload.Auto
+    )
+    {
+        var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        {
+            TypeInfoResolver = LightResultsHttpReadJsonContext.Default
+        };
+        serializerOptions.Converters.Add(new HttpReadMetadataObjectJsonConverter());
+        serializerOptions.Converters.Add(new HttpReadMetadataValueJsonConverter());
+        serializerOptions.Converters.Add(new HttpReadResultJsonConverter());
+        serializerOptions.Converters.Add(new HttpReadResultJsonConverterFactory(preferSuccessPayload));
+
+        return new LightResultsHttpReadOptions
+        {
+            HeaderSelectionMode = HeaderSelectionMode.None,
+            PreferSuccessPayload = preferSuccessPayload,
+            SerializerOptions = serializerOptions
+        };
     }
 
     private sealed class TraceHeaderParser : HttpHeaderParser
