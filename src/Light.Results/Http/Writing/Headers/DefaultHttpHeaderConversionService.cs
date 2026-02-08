@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Light.Results.Metadata;
 using Microsoft.Extensions.Primitives;
 
-namespace Light.Results.Http.Headers;
+namespace Light.Results.Http.Writing.Headers;
 
 /// <summary>
 /// Default implementation of <see cref="IHttpHeaderConversionService" /> using a converter registry.

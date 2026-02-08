@@ -2,7 +2,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Light.Results.Http.Reading;
+namespace Light.Results.Http.Reading.Json;
 
 /// <summary>
 /// JSON converter for reading <see cref="Result" /> payloads in HTTP client scenarios.

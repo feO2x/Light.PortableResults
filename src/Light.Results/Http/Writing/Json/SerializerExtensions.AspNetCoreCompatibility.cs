@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Light.Results.Metadata;
 
-namespace Light.Results.Http.Writing;
+namespace Light.Results.Http.Writing.Json;
 
 public static partial class SerializerExtensions
 {

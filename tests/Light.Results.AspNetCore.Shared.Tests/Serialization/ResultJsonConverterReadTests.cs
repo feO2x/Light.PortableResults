@@ -2,6 +2,7 @@ using System;
 using System.Text.Json;
 using FluentAssertions;
 using Light.Results.Http.Writing;
+using Light.Results.Http.Writing.Json;
 using Xunit;
 
 namespace Light.Results.AspNetCore.Shared.Tests.Serialization;

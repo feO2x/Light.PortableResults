@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Light.Results.Metadata;
 
-namespace Light.Results.Http.Reading;
+namespace Light.Results.Http.Reading.Json;
 
 /// <summary>
 /// Provides low-level JSON parsing helpers for Light.Results payloads.

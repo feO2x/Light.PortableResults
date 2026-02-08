@@ -2,7 +2,7 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 
-namespace Light.Results.Http.Headers;
+namespace Light.Results.Http.Reading.Headers;
 
 /// <summary>
 /// Provides helpers for building header parser registries.

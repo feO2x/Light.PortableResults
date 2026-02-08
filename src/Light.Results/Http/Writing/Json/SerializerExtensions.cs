@@ -8,7 +8,7 @@ using Light.Results.Metadata;
 
 // ReSharper disable ConvertToExtensionBlock
 
-namespace Light.Results.Http.Writing;
+namespace Light.Results.Http.Writing.Json;
 
 /// <summary>
 /// Provides extension methods to serialize and write types of Light.Results using System.Text.Json.

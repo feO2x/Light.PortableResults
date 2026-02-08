@@ -2,7 +2,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Light.Results.Http.Writing;
+namespace Light.Results.Http.Writing.Json;
 
 /// <summary>
 /// Creates <see cref="HttpWriteResultJsonConverter{T}" /> instances for <see cref="Result{T}" /> types.

@@ -1,4 +1,4 @@
-namespace Light.Results.Http.Headers;
+namespace Light.Results.Http.Reading;
 
 /// <summary>
 /// Specifies how header name conflicts are handled when multiple headers map to the same metadata key.

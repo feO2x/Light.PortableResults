@@ -1,8 +1,8 @@
 using System;
 using System.Net;
 using Light.Results.Http;
-using Light.Results.Http.Headers;
 using Light.Results.Http.Writing;
+using Light.Results.Http.Writing.Headers;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;

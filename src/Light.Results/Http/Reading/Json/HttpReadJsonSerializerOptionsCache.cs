@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
-namespace Light.Results.Http.Reading;
+namespace Light.Results.Http.Reading.Json;
 
 /// <summary>
 /// Provides cached <see cref="JsonSerializerOptions" /> instances tuned for the different

@@ -12,8 +12,8 @@ using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Light.Results.Http.Headers;
 using Light.Results.Http.Reading;
+using Light.Results.Http.Reading.Headers;
 using Light.Results.Metadata;
 using Xunit;
 

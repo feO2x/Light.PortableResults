@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Light.Results.Metadata;
 
-namespace Light.Results.Http.Headers;
+namespace Light.Results.Http.Reading.Headers;
 
 /// <summary>
 /// Default implementation of <see cref="IHttpHeaderParsingService" /> using a parser registry.

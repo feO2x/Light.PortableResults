@@ -4,6 +4,7 @@ using System.Text.Json;
 using BenchmarkDotNet.Attributes;
 using Light.Results;
 using Light.Results.Http.Writing;
+using Light.Results.Http.Writing.Json;
 
 namespace Benchmarks;
 

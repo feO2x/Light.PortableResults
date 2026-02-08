@@ -5,7 +5,8 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Light.Results.Http.Headers;
+using Light.Results.Http.Reading.Headers;
+using Light.Results.Http.Reading.Json;
 using Light.Results.Metadata;
 
 namespace Light.Results.Http.Reading;

@@ -1,7 +1,8 @@
-namespace Light.Results.Http.Headers;
+namespace Light.Results.Http.Reading;
 
 /// <summary>
-/// Specifies how header values are parsed when no custom <see cref="HttpHeaderParser" /> is registered.
+/// Specifies how header values are parsed when no custom
+/// <see cref="Light.Results.Http.Reading.Headers.HttpHeaderParser" /> is registered.
 /// </summary>
 public enum HeaderValueParsingMode
 {

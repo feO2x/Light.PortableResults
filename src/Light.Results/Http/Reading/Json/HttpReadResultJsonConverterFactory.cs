@@ -2,7 +2,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Light.Results.Http.Reading;
+namespace Light.Results.Http.Reading.Json;
 
 /// <summary>
 /// Creates <see cref="HttpReadResultJsonConverter{T}" /> instances for <see cref="Result{T}" />.

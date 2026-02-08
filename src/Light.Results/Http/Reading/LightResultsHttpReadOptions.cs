@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Text.Json;
-using Light.Results.Http.Headers;
+using Light.Results.Http.Reading.Headers;
 using Light.Results.Metadata;
 
 namespace Light.Results.Http.Reading;
