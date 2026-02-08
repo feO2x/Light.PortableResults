@@ -44,7 +44,7 @@ public static class HttpReadJsonSerializerOptionsCache
     /// <returns>A configured <see cref="JsonSerializerOptions" /> instance.</returns>
     private static JsonSerializerOptions Create(PreferSuccessPayload preference)
     {
-        var serializerOptions = new JsonSerializerOptions
+        var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
             TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
