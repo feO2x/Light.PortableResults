@@ -2,7 +2,6 @@ using System;
 using System.Text.Json;
 using FluentAssertions;
 using Light.Results.Http.Writing;
-using Light.Results.Http.Writing.Json;
 using Xunit;
 
 namespace Light.Results.AspNetCore.Shared.Tests.Serialization;
@@ -35,10 +34,7 @@ public sealed class ResultJsonConverterReadTests
     {
         var lightResultOptions = new LightResultsHttpWriteOptions();
         var options = new JsonSerializerOptions();
-        options.Converters.Add(new HttpWriteMetadataObjectJsonConverter());
-        options.Converters.Add(new HttpWriteMetadataValueJsonConverter());
-        options.Converters.Add(new HttpWriteResultJsonConverter(lightResultOptions));
-        options.Converters.Add(new HttpWriteResultJsonConverterFactory(lightResultOptions));
+        options.AddDefaultLightResultsJsonConverters(lightResultOptions);
         return options;
     }
 }
