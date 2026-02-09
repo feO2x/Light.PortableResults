@@ -6,11 +6,11 @@
   <ItemGroup>
     <PackageReference Include="IsExternalInit" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Bcl.HashCode" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Extensions.Primitives" />
     <PackageReference Include="Nullable" PrivateAssets="all" />
     <PackageReference Include="RequiredMemberAttribute" PrivateAssets="all" />
     <PackageReference Include="System.Collections.Immutable" />
     <PackageReference Include="System.Text.Json" />
-    <PackageReference Include="System.Threading.Tasks.Extensions" />
   </ItemGroup>
 </Project>

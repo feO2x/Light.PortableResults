@@ -2,13 +2,14 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using FluentAssertions;
+using Light.Results.Http.Writing;
 using Light.Results.Http.Writing.Headers;
 using Light.Results.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 using Xunit;
 
-namespace Light.Results.AspNetCore.MinimalApis.Tests;
+namespace Light.Results.Tests.Http.Writing;
 
 public sealed class ModuleTests
 {
