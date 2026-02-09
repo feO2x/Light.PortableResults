@@ -59,7 +59,7 @@ public sealed record LightResultsHttpReadOptions
     /// <summary>
     /// Gets or sets the header parsing service used to transform headers into metadata entries.
     /// </summary>
-    public IHttpHeaderParsingService HeaderParsingService { get; init; } = DefaultHttpHeaderParsingService.Empty;
+    public IHttpHeaderParsingService HeaderParsingService { get; init; } = DefaultHttpHeaderParsingService.Default;
 
     /// <summary>
     /// Gets or sets optional serializer options used to deserialize Result payloads.

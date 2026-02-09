@@ -11,10 +11,6 @@ namespace Light.Results.Http.Reading.Headers;
 /// </summary>
 public sealed class DefaultHttpHeaderParsingService : IHttpHeaderParsingService
 {
-    private static readonly FrozenDictionary<string, HttpHeaderParser> EmptyParsers =
-        new Dictionary<string, HttpHeaderParser>(StringComparer.OrdinalIgnoreCase)
-           .ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
-
     private readonly HeaderValueParsingMode _headerValueParsingMode;
 
     /// <summary>
@@ -33,9 +29,16 @@ public sealed class DefaultHttpHeaderParsingService : IHttpHeaderParsingService
     }
 
     /// <summary>
-    /// Gets an empty parsing service instance.
+    /// Gets a frozen dictionary containing no parsers.
     /// </summary>
-    public static DefaultHttpHeaderParsingService Empty { get; } = new (EmptyParsers);
+    public static FrozenDictionary<string, HttpHeaderParser> EmptyParsers { get; } =
+        new Dictionary<string, HttpHeaderParser>(StringComparer.OrdinalIgnoreCase)
+           .ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Gets the default parsing service instance, containing no parsers.
+    /// </summary>
+    public static DefaultHttpHeaderParsingService Default { get; } = new (EmptyParsers);
 
     /// <summary>
     /// Gets the parsers keyed by header name.
