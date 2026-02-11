@@ -60,7 +60,7 @@ public static class HttpResponseMessageExtensions
 
         var resolvedOptions = options ?? LightResultsHttpReadOptions.Default;
         var isFailure = DetermineIfFailureResponse(response, resolvedOptions);
-        var serializerOptions = HttpReadJsonSerializerOptionsCache.GetOrCreate(resolvedOptions.SerializerOptions);
+        var serializerOptions = Module.ResolveReadSerializerOptions(resolvedOptions.SerializerOptions);
 
         var result = await ReadBodyResultAsync(response, serializerOptions, isFailure, cancellationToken)
            .ConfigureAwait(false);
@@ -89,7 +89,7 @@ public static class HttpResponseMessageExtensions
 
         var resolvedOptions = options ?? LightResultsHttpReadOptions.Default;
         var isFailure = DetermineIfFailureResponse(response, resolvedOptions);
-        var serializerOptions = HttpReadJsonSerializerOptionsCache.GetOrCreate(resolvedOptions.SerializerOptions);
+        var serializerOptions = Module.ResolveReadSerializerOptions(resolvedOptions.SerializerOptions);
 
         var result = await ReadBodyGenericResultAsync<T>(
                 response,

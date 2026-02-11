@@ -43,36 +43,6 @@ public sealed class JsonConverterDirectionTests
     }
 
     [Fact]
-    public void HttpReadResultConverter_ShouldThrowOnWrite()
-    {
-        var converter = new HttpReadResultJsonConverter();
-        var options = new JsonSerializerOptions();
-
-        using var stream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(stream);
-
-        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
-        var act = () => converter.Write(writer, Result.Ok(), options);
-
-        act.Should().Throw<NotSupportedException>();
-    }
-
-    [Fact]
-    public void HttpReadGenericResultConverter_ShouldThrowOnWrite()
-    {
-        var converter = new HttpReadResultJsonConverter<int>();
-        var options = new JsonSerializerOptions();
-
-        using var stream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(stream);
-
-        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
-        var act = () => converter.Write(writer, Result<int>.Ok(1), options);
-
-        act.Should().Throw<NotSupportedException>();
-    }
-
-    [Fact]
     public void HttpReadFailurePayloadConverter_ShouldThrowOnWrite()
     {
         var converter = new HttpReadFailureResultPayloadJsonConverter();
@@ -83,6 +53,7 @@ public sealed class JsonConverterDirectionTests
 
         var payload = new HttpReadFailureResultPayload(new Errors(new Error { Message = "failure" }), null);
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         var act = () => converter.Write(writer, payload, options);
 
         act.Should().Throw<NotSupportedException>();
@@ -97,6 +68,7 @@ public sealed class JsonConverterDirectionTests
         using var stream = new MemoryStream();
         using var writer = new Utf8JsonWriter(stream);
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         var act = () => converter.Write(writer, new HttpReadSuccessResultPayload(null), options);
 
         act.Should().Throw<NotSupportedException>();
@@ -162,17 +134,6 @@ public sealed class JsonConverterDirectionTests
         };
 
         act.Should().Throw<NotSupportedException>();
-    }
-
-    [Fact]
-    public void ReadConverterFactory_ShouldMatchResultOfTOnly()
-    {
-        var factory = new HttpReadResultJsonConverterFactory();
-
-        factory.CanConvert(typeof(Result<int>)).Should().BeTrue();
-        factory.CanConvert(typeof(Result)).Should().BeFalse();
-        factory.CreateConverter(typeof(Result<int>), new JsonSerializerOptions())
-           .Should().BeOfType<HttpReadResultJsonConverter<int>>();
     }
 
     [Fact]
