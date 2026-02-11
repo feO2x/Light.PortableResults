@@ -18,8 +18,7 @@ public sealed class HttpReadFailureResultPayloadJsonConverter : JsonConverter<Ht
         JsonSerializerOptions options
     )
     {
-        var result = ResultJsonReader.ReadNonGenericFailureResult(ref reader);
-        return new HttpReadFailureResultPayload(result.Errors, result.Metadata);
+        return ResultJsonReader.ReadFailurePayload(ref reader);
     }
 
     /// <summary>

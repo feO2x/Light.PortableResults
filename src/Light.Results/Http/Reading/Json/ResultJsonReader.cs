@@ -7,68 +7,17 @@ using Light.Results.Metadata;
 namespace Light.Results.Http.Reading.Json;
 
 /// <summary>
-/// Provides low-level JSON parsing helpers for Light.Results payloads.
+/// Provides low-level JSON parsing helpers for HTTP read payloads.
 /// </summary>
 public static class ResultJsonReader
 {
     /// <summary>
-    /// Reads a <see cref="Result" /> from the current JSON token using auto-detection.
+    /// Reads a non-generic successful payload from the current JSON token.
     /// </summary>
     /// <param name="reader">The JSON reader.</param>
-    /// <returns>The parsed result.</returns>
-    public static Result ReadResult(ref Utf8JsonReader reader)
-    {
-        EnsureReaderHasToken(ref reader);
-
-        if (reader.TokenType != JsonTokenType.StartObject)
-        {
-            throw new JsonException("Non-generic results must be JSON objects.");
-        }
-
-        var inspection = InspectObject(ref reader);
-        return inspection.IsProblemDetails ? ReadNonGenericFailureResult(ref reader) : ReadSuccessResult(ref reader);
-    }
-
-    /// <summary>
-    /// Reads a <see cref="Result{T}" /> from the current JSON token using auto-detection.
-    /// </summary>
-    /// <param name="reader">The JSON reader.</param>
-    /// <param name="serializerOptions">The serializer options providing JSON type metadata.</param>
-    /// <param name="preferSuccessPayload">The preferred success payload interpretation.</param>
-    /// <typeparam name="T">The result value type.</typeparam>
-    /// <returns>The parsed result.</returns>
-    public static Result<T> ReadResult<T>(
-        ref Utf8JsonReader reader,
-        JsonSerializerOptions serializerOptions,
-        PreferSuccessPayload preferSuccessPayload = PreferSuccessPayload.Auto
-    )
-    {
-        if (serializerOptions is null)
-        {
-            throw new ArgumentNullException(nameof(serializerOptions));
-        }
-
-        EnsureReaderHasToken(ref reader);
-
-        if (reader.TokenType == JsonTokenType.StartObject)
-        {
-            var inspection = InspectObject(ref reader);
-            if (inspection.IsProblemDetails)
-            {
-                return ReadGenericFailureResult<T>(ref reader);
-            }
-        }
-
-        return ReadSuccessResult<T>(ref reader, serializerOptions, preferSuccessPayload);
-    }
-
-    /// <summary>
-    /// Reads a <see cref="Result" /> from the current JSON token using auto-detection.
-    /// </summary>
-    /// <param name="reader">The JSON reader.</param>
-    /// <returns>The parsed result.</returns>
-    /// <exception cref="JsonException">Thrown when the JSON is not a valid result.</exception>
-    public static Result ReadSuccessResult(ref Utf8JsonReader reader)
+    /// <returns>The parsed success payload.</returns>
+    /// <exception cref="JsonException">Thrown when the JSON is not a valid non-generic success payload.</exception>
+    public static HttpReadSuccessResultPayload ReadSuccessPayload(ref Utf8JsonReader reader)
     {
         EnsureReaderHasToken(ref reader);
 
@@ -122,87 +71,105 @@ public static class ResultJsonReader
             throw new JsonException("Non-generic results require an object with only the metadata property.");
         }
 
-        return Result.Ok(metadata);
+        return new HttpReadSuccessResultPayload(metadata);
     }
 
     /// <summary>
-    /// Reads a successful <see cref="Result{T}" /> from the provided <paramref name="reader" /> according to the
-    /// preferred payload shape. Supports both bare values and wrapper objects containing optional metadata.
+    /// Reads a failed payload from the current JSON token, interpreting the body as problem details.
     /// </summary>
-    /// <typeparam name="T">Type of the success payload.</typeparam>
+    /// <param name="reader">The JSON reader positioned at the failure payload.</param>
+    /// <returns>The parsed failure payload.</returns>
+    /// <exception cref="JsonException">Thrown when the payload cannot be parsed as problem details.</exception>
+    public static HttpReadFailureResultPayload ReadFailurePayload(ref Utf8JsonReader reader)
+    {
+        var payload = ReadProblemDetails(ref reader);
+        return new HttpReadFailureResultPayload(payload.Errors, payload.Metadata);
+    }
+
+    /// <summary>
+    /// Reads a successful payload interpreted as a bare value.
+    /// </summary>
+    /// <typeparam name="T">The payload value type.</typeparam>
     /// <param name="reader">The JSON reader positioned at the success payload.</param>
-    /// <param name="serializerOptions">Serializer options used when materializing wrapped values.</param>
-    /// <param name="preferSuccessPayload">Specifies whether to expect bare values, wrapper objects, or auto-detection.</param>
-    /// <returns>A successful <see cref="Result{T}" /> built from the JSON payload.</returns>
-    /// <exception cref="JsonException">
-    /// Thrown when the payload shape does not match the expectations or the success value is null.
-    /// </exception>
-    public static Result<T> ReadSuccessResult<T>(
+    /// <param name="serializerOptions">Serializer options used when deserializing the value.</param>
+    /// <returns>The parsed bare success payload.</returns>
+    public static HttpReadBareSuccessResultPayload<T> ReadBareSuccessPayload<T>(
         ref Utf8JsonReader reader,
-        JsonSerializerOptions serializerOptions,
-        PreferSuccessPayload preferSuccessPayload
+        JsonSerializerOptions serializerOptions
     )
     {
+        EnsureSerializerOptions(serializerOptions);
+        EnsureReaderHasToken(ref reader);
+        return ReadBareSuccessPayloadCore<T>(ref reader, serializerOptions);
+    }
+
+    /// <summary>
+    /// Reads a successful payload interpreted as a wrapper object with a required <c>value</c> property and optional
+    /// <c>metadata</c> property.
+    /// </summary>
+    /// <typeparam name="T">The payload value type.</typeparam>
+    /// <param name="reader">The JSON reader positioned at the success payload.</param>
+    /// <param name="serializerOptions">Serializer options used when deserializing the wrapped value.</param>
+    /// <returns>The parsed wrapped success payload.</returns>
+    public static HttpReadWrappedSuccessResultPayload<T> ReadWrappedSuccessPayload<T>(
+        ref Utf8JsonReader reader,
+        JsonSerializerOptions serializerOptions
+    )
+    {
+        EnsureSerializerOptions(serializerOptions);
+        EnsureReaderHasToken(ref reader);
+        return ReadWrappedSuccessPayloadCore<T>(ref reader, serializerOptions);
+    }
+
+    /// <summary>
+    /// Reads a successful payload using wrapper auto-detection.
+    /// </summary>
+    /// <typeparam name="T">The payload value type.</typeparam>
+    /// <param name="reader">The JSON reader positioned at the success payload.</param>
+    /// <param name="serializerOptions">Serializer options used when deserializing values.</param>
+    /// <returns>The parsed auto success payload.</returns>
+    public static HttpReadAutoSuccessResultPayload<T> ReadAutoSuccessPayload<T>(
+        ref Utf8JsonReader reader,
+        JsonSerializerOptions serializerOptions
+    )
+    {
+        EnsureSerializerOptions(serializerOptions);
         EnsureReaderHasToken(ref reader);
 
-        if (preferSuccessPayload == PreferSuccessPayload.BareValue || reader.TokenType != JsonTokenType.StartObject)
+        if (reader.TokenType != JsonTokenType.StartObject)
         {
-            var bareValue = ReadGenericValue<T>(ref reader, serializerOptions);
-            if (bareValue is null)
-            {
-                throw new JsonException("Result value cannot be null.");
-            }
-
-            return Result<T>.Ok(bareValue);
+            var barePayload = ReadBareSuccessPayloadCore<T>(ref reader, serializerOptions);
+            return new HttpReadAutoSuccessResultPayload<T>(barePayload.Value, metadata: null);
         }
 
-        var inspection = InspectObject(ref reader);
-        var wrapperCandidate = inspection.IsWrapperCandidate;
-
-        if (preferSuccessPayload == PreferSuccessPayload.WrappedValue)
+        if (IsWrappedSuccessPayloadCandidate(ref reader))
         {
-            return !wrapperCandidate ?
-                throw new JsonException("Expected wrapper object containing value and optional metadata.") :
-                ReadWrapperResult<T>(ref reader, serializerOptions);
+            var wrappedPayload = ReadWrappedSuccessPayloadCore<T>(ref reader, serializerOptions);
+            return new HttpReadAutoSuccessResultPayload<T>(wrappedPayload.Value, wrappedPayload.Metadata);
         }
 
-        if (wrapperCandidate)
-        {
-            return ReadWrapperResult<T>(ref reader, serializerOptions);
-        }
+        var fallbackBarePayload = ReadBareSuccessPayloadCore<T>(ref reader, serializerOptions);
+        return new HttpReadAutoSuccessResultPayload<T>(fallbackBarePayload.Value, metadata: null);
+    }
 
+    private static HttpReadBareSuccessResultPayload<T> ReadBareSuccessPayloadCore<T>(
+        ref Utf8JsonReader reader,
+        JsonSerializerOptions serializerOptions
+    )
+    {
         var value = ReadGenericValue<T>(ref reader, serializerOptions);
-        return value is null ? throw new JsonException("Result value cannot be null.") : Result<T>.Ok(value);
+        if (value is null)
+        {
+            throw new JsonException("Result value cannot be null.");
+        }
+
+        return new HttpReadBareSuccessResultPayload<T>(value);
     }
 
-    /// <summary>
-    /// Reads a failed non-generic <see cref="Result" /> from the provided <paramref name="reader" />,
-    /// interpreting the payload as problem details containing errors and optional metadata.
-    /// </summary>
-    /// <param name="reader">The JSON reader positioned at the failure payload.</param>
-    /// <returns>A failed <see cref="Result" /> populated with errors and metadata from the payload.</returns>
-    /// <exception cref="JsonException">Thrown when the payload cannot be parsed as problem details.</exception>
-    public static Result ReadNonGenericFailureResult(ref Utf8JsonReader reader)
-    {
-        var payload = ReadProblemDetails(ref reader);
-        return Result.Fail(payload.Errors, payload.Metadata);
-    }
-
-    /// <summary>
-    /// Reads a failed generic <see cref="Result{T}" /> from the provided <paramref name="reader" />,
-    /// interpreting the payload as problem details with errors and optional metadata.
-    /// </summary>
-    /// <typeparam name="T">Type of the expected success payload (unused for failures but required by the result).</typeparam>
-    /// <param name="reader">The JSON reader positioned at the failure payload.</param>
-    /// <returns>A failed <see cref="Result{T}" /> populated with errors and metadata from the payload.</returns>
-    /// <exception cref="JsonException">Thrown when the payload cannot be parsed as problem details.</exception>
-    public static Result<T> ReadGenericFailureResult<T>(ref Utf8JsonReader reader)
-    {
-        var payload = ReadProblemDetails(ref reader);
-        return Result<T>.Fail(payload.Errors, payload.Metadata);
-    }
-
-    private static Result<T> ReadWrapperResult<T>(ref Utf8JsonReader reader, JsonSerializerOptions serializerOptions)
+    private static HttpReadWrappedSuccessResultPayload<T> ReadWrappedSuccessPayloadCore<T>(
+        ref Utf8JsonReader reader,
+        JsonSerializerOptions serializerOptions
+    )
     {
         if (reader.TokenType != JsonTokenType.StartObject)
         {
@@ -268,7 +235,7 @@ public static class ResultJsonReader
             throw new JsonException("Result value cannot be null.");
         }
 
-        return Result<T>.Ok(value, metadata);
+        return new HttpReadWrappedSuccessResultPayload<T>(value, metadata);
     }
 
     private static ProblemDetailsPayload ReadProblemDetails(ref Utf8JsonReader reader)
@@ -781,9 +748,8 @@ public static class ResultJsonReader
         return JsonSerializer.Deserialize<T>(ref reader, serializerOptions);
     }
 
-    private static ObjectInspection InspectObject(ref Utf8JsonReader reader)
+    private static bool IsWrappedSuccessPayloadCandidate(ref Utf8JsonReader reader)
     {
-        var inspection = new ObjectInspection();
         var lookahead = reader;
 
         if (lookahead.TokenType == JsonTokenType.None && !lookahead.Read())
@@ -793,14 +759,14 @@ public static class ResultJsonReader
 
         if (lookahead.TokenType != JsonTokenType.StartObject)
         {
-            return inspection;
+            return false;
         }
 
         while (lookahead.Read())
         {
             if (lookahead.TokenType == JsonTokenType.EndObject)
             {
-                break;
+                return true;
             }
 
             if (lookahead.TokenType != JsonTokenType.PropertyName)
@@ -808,45 +774,9 @@ public static class ResultJsonReader
                 throw new JsonException("Expected property name in JSON object.");
             }
 
-            if (lookahead.ValueTextEquals("value"))
+            if (!lookahead.ValueTextEquals("value") && !lookahead.ValueTextEquals("metadata"))
             {
-                inspection.HasValue = true;
-            }
-            else if (lookahead.ValueTextEquals("metadata"))
-            {
-                inspection.HasMetadata = true;
-            }
-            else if (lookahead.ValueTextEquals("errors"))
-            {
-                inspection.HasErrors = true;
-            }
-            else if (lookahead.ValueTextEquals("type"))
-            {
-                inspection.HasType = true;
-            }
-            else if (lookahead.ValueTextEquals("title"))
-            {
-                inspection.HasTitle = true;
-            }
-            else if (lookahead.ValueTextEquals("status"))
-            {
-                inspection.HasStatus = true;
-            }
-            else if (lookahead.ValueTextEquals("detail"))
-            {
-                inspection.HasDetail = true;
-            }
-            else if (lookahead.ValueTextEquals("instance"))
-            {
-                inspection.HasInstance = true;
-            }
-            else if (lookahead.ValueTextEquals("errorDetails"))
-            {
-                inspection.HasErrorDetails = true;
-            }
-            else
-            {
-                inspection.HasOther = true;
+                return false;
             }
 
             if (!lookahead.Read())
@@ -857,7 +787,7 @@ public static class ResultJsonReader
             lookahead.Skip();
         }
 
-        return inspection;
+        throw new JsonException("Unexpected end of JSON while inspecting object.");
     }
 
     private static void EnsureReaderHasToken(ref Utf8JsonReader reader)
@@ -870,6 +800,14 @@ public static class ResultJsonReader
         if (!reader.Read())
         {
             throw new JsonException("Unexpected end of JSON.");
+        }
+    }
+
+    private static void EnsureSerializerOptions(JsonSerializerOptions serializerOptions)
+    {
+        if (serializerOptions is null)
+        {
+            throw new ArgumentNullException(nameof(serializerOptions));
         }
     }
 
@@ -940,32 +878,6 @@ public static class ResultJsonReader
         public string? Code { get; }
         public ErrorCategory? Category { get; }
         public MetadataObject? Metadata { get; }
-    }
-
-    private struct ObjectInspection
-    {
-        public bool HasValue { get; set; }
-        public bool HasMetadata { get; set; }
-        public bool HasErrors { get; set; }
-        public bool HasType { get; set; }
-        public bool HasTitle { get; set; }
-        public bool HasStatus { get; set; }
-        public bool HasDetail { get; set; }
-        public bool HasInstance { get; set; }
-        public bool HasErrorDetails { get; set; }
-        public bool HasOther { get; set; }
-
-        public bool IsProblemDetails => HasErrors && HasType && HasTitle && HasStatus;
-
-        public bool IsWrapperCandidate =>
-            !HasErrors &&
-            !HasType &&
-            !HasTitle &&
-            !HasStatus &&
-            !HasDetail &&
-            !HasInstance &&
-            !HasErrorDetails &&
-            !HasOther;
     }
 
     private enum ErrorFormat

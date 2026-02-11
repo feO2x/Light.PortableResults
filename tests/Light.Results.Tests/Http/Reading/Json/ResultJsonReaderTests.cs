@@ -2,7 +2,6 @@ using System;
 using System.Text;
 using System.Text.Json;
 using FluentAssertions;
-using Light.Results.Http.Reading;
 using Light.Results.Http.Reading.Json;
 using Light.Results.Metadata;
 using Xunit;
@@ -12,126 +11,132 @@ namespace Light.Results.Tests.Http.Reading.Json;
 public sealed class ResultJsonReaderTests
 {
     [Fact]
-    public void ReadResult_ShouldThrow_WhenPayloadIsNotObject()
+    public void ReadSuccessPayload_ShouldThrow_WhenPayloadIsNotObject()
     {
         Assert.Throws<JsonException>(
             () =>
             {
                 var reader = CreateReader("42");
-                ResultJsonReader.ReadResult(ref reader);
+                ResultJsonReader.ReadSuccessPayload(ref reader);
             }
         );
     }
 
     [Fact]
-    public void ReadSuccessResult_ShouldReadMetadataOnlyPayload()
+    public void ReadSuccessPayload_ShouldReadMetadataOnlyPayload()
     {
         var reader = CreateReader("""{"metadata":{"traceId":"abc"}}""");
 
-        var result = ResultJsonReader.ReadSuccessResult(ref reader);
+        var payload = ResultJsonReader.ReadSuccessPayload(ref reader);
 
-        var expectedResult = Result.Ok(MetadataObject.Create(("traceId", MetadataValue.FromString("abc"))));
-        result.Should().Be(expectedResult);
+        payload.Metadata.Should().Be(MetadataObject.Create(("traceId", MetadataValue.FromString("abc"))));
     }
 
     [Fact]
-    public void ReadSuccessResult_ShouldThrow_WhenUnexpectedPropertyIsPresent()
+    public void ReadSuccessPayload_ShouldThrow_WhenUnexpectedPropertyIsPresent()
     {
         Assert.Throws<JsonException>(
             () =>
             {
                 var reader = CreateReader("""{"metadata":{"traceId":"abc"},"extra":1}""");
-                ResultJsonReader.ReadSuccessResult(ref reader);
+                ResultJsonReader.ReadSuccessPayload(ref reader);
             }
         );
     }
 
     [Fact]
-    public void ReadResultOfT_ShouldThrow_WhenSerializerOptionsAreNull()
+    public void ReadBareSuccessPayload_ShouldThrow_WhenSerializerOptionsAreNull()
     {
         Assert.Throws<ArgumentNullException>(
             () =>
             {
                 var reader = CreateReader("42");
-                ResultJsonReader.ReadResult<int>(ref reader, null!);
+                ResultJsonReader.ReadBareSuccessPayload<int>(ref reader, null!);
             }
         );
     }
 
     [Fact]
-    public void ReadResultOfT_ShouldDetectFailurePayload_WithAutoDetection()
-    {
-        var reader = CreateReader(
-            """
-            {
-              "type": "https://example.org/problems/validation",
-              "title": "Validation failed",
-              "status": 400,
-              "errors": [
-                { "message": "Name required", "target": "name", "category": "Validation" }
-              ]
-            }
-            """
-        );
-
-        var result = ResultJsonReader.ReadResult<int>(
-            ref reader,
-            new JsonSerializerOptions()
-        );
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Count.Should().Be(1);
-        result.Errors[0].Message.Should().Be("Name required");
-    }
-
-    [Fact]
-    public void ReadSuccessResultOfT_ShouldReadBareValue_WhenBareValuePreferenceIsUsed()
+    public void ReadBareSuccessPayload_ShouldReadBareValue()
     {
         var reader = CreateReader("42");
 
-        var result = ResultJsonReader.ReadSuccessResult<int>(
-            ref reader,
-            new JsonSerializerOptions(),
-            PreferSuccessPayload.BareValue
-        );
+        var payload = ResultJsonReader.ReadBareSuccessPayload<int>(ref reader, new JsonSerializerOptions());
 
-        var expectedResult = Result<int>.Ok(42);
-        result.Should().Be(expectedResult);
+        payload.Value.Should().Be(42);
     }
 
     [Fact]
-    public void ReadSuccessResultOfT_ShouldThrow_WhenWrappedPreferenceIsUsedForNonWrapperObject()
+    public void ReadWrappedSuccessPayload_ShouldThrow_WhenPayloadIsNotObject()
+    {
+        Assert.Throws<JsonException>(
+            () =>
+            {
+                var reader = CreateReader("42");
+                ResultJsonReader.ReadWrappedSuccessPayload<int>(ref reader, new JsonSerializerOptions());
+            }
+        );
+    }
+
+    [Fact]
+    public void ReadWrappedSuccessPayload_ShouldThrow_WhenUnexpectedPropertyIsPresent()
     {
         Assert.Throws<JsonException>(
             () =>
             {
                 var reader = CreateReader("""{"count":42}""");
-                ResultJsonReader.ReadSuccessResult<int>(
-                    ref reader,
-                    new JsonSerializerOptions(),
-                    PreferSuccessPayload.WrappedValue
-                );
+                ResultJsonReader.ReadWrappedSuccessPayload<int>(ref reader, new JsonSerializerOptions());
             }
         );
     }
 
     [Fact]
-    public void ReadSuccessResultOfT_ShouldReadWrappedPayload_WithMetadata()
+    public void ReadWrappedSuccessPayload_ShouldReadWrappedPayload_WithMetadata()
     {
         var reader = CreateReader("""{"value":42,"metadata":{"source":"wrapped"}}""");
 
-        var result = ResultJsonReader.ReadSuccessResult<int>(
-            ref reader,
-            new JsonSerializerOptions(),
-            PreferSuccessPayload.Auto
-        );
+        var payload = ResultJsonReader.ReadWrappedSuccessPayload<int>(ref reader, new JsonSerializerOptions());
 
-        var expectedResult = Result<int>.Ok(42, MetadataObject.Create(("source", MetadataValue.FromString("wrapped"))));
-        result.Should().Be(expectedResult);
+        payload.Value.Should().Be(42);
+        payload.Metadata.Should().Be(MetadataObject.Create(("source", MetadataValue.FromString("wrapped"))));
     }
 
     [Fact]
-    public void ReadGenericFailureResult_ShouldCreateFallbackError_WhenErrorsAreMissing()
+    public void ReadAutoSuccessPayload_ShouldReadBareValue_WhenPayloadIsScalar()
+    {
+        var reader = CreateReader("42");
+
+        var payload = ResultJsonReader.ReadAutoSuccessPayload<int>(ref reader, new JsonSerializerOptions());
+
+        payload.Value.Should().Be(42);
+        payload.Metadata.Should().BeNull();
+    }
+
+    [Fact]
+    public void ReadAutoSuccessPayload_ShouldReadWrappedPayload_WhenOnlyAllowedPropertiesExist()
+    {
+        var reader = CreateReader("""{"value":42,"metadata":{"source":"auto"}}""");
+
+        var payload = ResultJsonReader.ReadAutoSuccessPayload<int>(ref reader, new JsonSerializerOptions());
+
+        payload.Value.Should().Be(42);
+        payload.Metadata.Should().Be(MetadataObject.Create(("source", MetadataValue.FromString("auto"))));
+    }
+
+    [Fact]
+    public void ReadAutoSuccessPayload_ShouldThrow_WhenWrapperCandidateIsMissingValue()
+    {
+        Assert.Throws<JsonException>(
+            () =>
+            {
+                var reader = CreateReader("""{"metadata":{"trace":"t-1"}}""");
+                ResultJsonReader.ReadAutoSuccessPayload<string>(ref reader, new JsonSerializerOptions());
+            }
+        );
+    }
+
+    [Fact]
+    public void ReadFailurePayload_ShouldCreateFallbackError_WhenErrorsAreMissing()
     {
         var reader = CreateReader(
             """
@@ -145,16 +150,16 @@ public sealed class ResultJsonReaderTests
             """
         );
 
-        var result = ResultJsonReader.ReadGenericFailureResult<int>(ref reader);
+        var payload = ResultJsonReader.ReadFailurePayload(ref reader);
 
-        var expectedError = new Error { Message = "Missing required field", Category = ErrorCategory.Validation };
-        var expectedMetadata = MetadataObject.Create(("trace", MetadataValue.FromString("abc")));
-        var expectedResult = Result<int>.Fail(expectedError, expectedMetadata);
-        result.Should().Be(expectedResult);
+        payload.Errors.Count.Should().Be(1);
+        payload.Errors[0].Message.Should().Be("Missing required field");
+        payload.Errors[0].Category.Should().Be(ErrorCategory.Validation);
+        payload.Metadata.Should().Be(MetadataObject.Create(("trace", MetadataValue.FromString("abc"))));
     }
 
     [Fact]
-    public void ReadGenericFailureResult_ShouldApplyAspNetErrorDetails()
+    public void ReadFailurePayload_ShouldApplyAspNetErrorDetails()
     {
         var reader = CreateReader(
             """
@@ -181,30 +186,22 @@ public sealed class ResultJsonReaderTests
             """
         );
 
-        var result = ResultJsonReader.ReadGenericFailureResult<int>(ref reader);
+        var payload = ResultJsonReader.ReadFailurePayload(ref reader);
 
         var expectedErrorMetadata = MetadataObject.Create(("source", MetadataValue.FromString("detail")));
-        var expectedError1 = new Error
-        {
-            Message = "Name required",
-            Category = ErrorCategory.Validation,
-            Target = "name"
-        };
-        var expectedError2 = new Error
-        {
-            Message = "Name too short",
-            Target = "name",
-            Code = "MinLength",
-            Category = ErrorCategory.Validation,
-            Metadata = expectedErrorMetadata
-        };
-        var expectedErrors = new Errors(new[] { expectedError1, expectedError2 });
-        var expectedResult = Result<int>.Fail(expectedErrors);
-        result.Should().Be(expectedResult);
+        payload.Errors.Count.Should().Be(2);
+        payload.Errors[0].Message.Should().Be("Name required");
+        payload.Errors[0].Code.Should().BeNull();
+        payload.Errors[0].Category.Should().Be(ErrorCategory.Validation);
+        payload.Errors[1].Message.Should().Be("Name too short");
+        payload.Errors[1].Target.Should().Be("name");
+        payload.Errors[1].Code.Should().Be("MinLength");
+        payload.Errors[1].Category.Should().Be(ErrorCategory.Validation);
+        payload.Errors[1].Metadata.Should().Be(expectedErrorMetadata);
     }
 
     [Fact]
-    public void ReadGenericFailureResult_ShouldThrow_WhenErrorDetailIndexIsOutOfRange()
+    public void ReadFailurePayload_ShouldThrow_WhenErrorDetailIndexIsOutOfRange()
     {
         Assert.Throws<JsonException>(
             () =>
@@ -229,13 +226,13 @@ public sealed class ResultJsonReaderTests
                     }
                     """
                 );
-                ResultJsonReader.ReadGenericFailureResult<int>(ref reader);
+                ResultJsonReader.ReadFailurePayload(ref reader);
             }
         );
     }
 
     [Fact]
-    public void ReadGenericFailureResult_ShouldThrow_WhenRichErrorCategoryIsUnknown()
+    public void ReadFailurePayload_ShouldThrow_WhenRichErrorCategoryIsUnknown()
     {
         Assert.Throws<JsonException>(
             () =>
@@ -255,13 +252,13 @@ public sealed class ResultJsonReaderTests
                     }
                     """
                 );
-                ResultJsonReader.ReadGenericFailureResult<int>(ref reader);
+                ResultJsonReader.ReadFailurePayload(ref reader);
             }
         );
     }
 
     [Fact]
-    public void ReadGenericFailureResult_ShouldThrow_WhenErrorDetailsReferenceUnknownTarget()
+    public void ReadFailurePayload_ShouldThrow_WhenErrorDetailsReferenceUnknownTarget()
     {
         Assert.Throws<JsonException>(
             () =>
@@ -286,45 +283,9 @@ public sealed class ResultJsonReaderTests
                     }
                     """
                 );
-                ResultJsonReader.ReadGenericFailureResult<int>(ref reader);
+                ResultJsonReader.ReadFailurePayload(ref reader);
             }
         );
-    }
-
-    [Fact]
-    public void ReadResult_ShouldParseProblemDetailsPayload()
-    {
-        var reader = CreateReader(
-            """
-            {
-              "type": "https://example.org/problems/validation",
-              "title": "Validation failed",
-              "status": 400,
-              "errors": [
-                {
-                  "message": "Name required",
-                  "target": "name",
-                  "category": "Validation"
-                }
-              ],
-              "metadata": {
-                "source": "reader"
-              }
-            }
-            """
-        );
-
-        var result = ResultJsonReader.ReadResult(ref reader);
-
-        var expectedError = new Error
-        {
-            Message = "Name required",
-            Target = "name",
-            Category = ErrorCategory.Validation
-        };
-        var expectedMetadata = MetadataObject.Create(("source", MetadataValue.FromString("reader")));
-        var expectedResult = Result.Fail(expectedError, expectedMetadata);
-        result.Should().Be(expectedResult);
     }
 
     private static Utf8JsonReader CreateReader(string json) => new (Encoding.UTF8.GetBytes(json));

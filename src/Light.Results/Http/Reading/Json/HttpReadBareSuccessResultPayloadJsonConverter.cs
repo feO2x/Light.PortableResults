@@ -20,8 +20,7 @@ public sealed class HttpReadBareSuccessResultPayloadJsonConverter<T> :
         JsonSerializerOptions options
     )
     {
-        var result = ResultJsonReader.ReadSuccessResult<T>(ref reader, options, PreferSuccessPayload.BareValue);
-        return new HttpReadBareSuccessResultPayload<T>(result.Value);
+        return ResultJsonReader.ReadBareSuccessPayload<T>(ref reader, options);
     }
 
     /// <summary>

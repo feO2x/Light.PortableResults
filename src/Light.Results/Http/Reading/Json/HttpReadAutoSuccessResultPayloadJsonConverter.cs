@@ -8,8 +8,8 @@ namespace Light.Results.Http.Reading.Json;
 /// JSON converter for reading <see cref="HttpReadAutoSuccessResultPayload{T}" /> payloads.
 /// </summary>
 /// <typeparam name="T">The payload value type.</typeparam>
-public sealed class
-    HttpReadAutoSuccessResultPayloadJsonConverter<T> : JsonConverter<HttpReadAutoSuccessResultPayload<T>>
+public sealed class HttpReadAutoSuccessResultPayloadJsonConverter<T> :
+    JsonConverter<HttpReadAutoSuccessResultPayload<T>>
 {
     /// <summary>
     /// Reads the JSON representation of a <see cref="HttpReadAutoSuccessResultPayload{T}" />.
@@ -20,8 +20,7 @@ public sealed class
         JsonSerializerOptions options
     )
     {
-        var result = ResultJsonReader.ReadSuccessResult<T>(ref reader, options, PreferSuccessPayload.Auto);
-        return new HttpReadAutoSuccessResultPayload<T>(result.Value, result.Metadata);
+        return ResultJsonReader.ReadAutoSuccessPayload<T>(ref reader, options);
     }
 
     /// <summary>

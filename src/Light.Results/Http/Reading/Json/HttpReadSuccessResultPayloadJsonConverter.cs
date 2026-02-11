@@ -18,8 +18,7 @@ public sealed class HttpReadSuccessResultPayloadJsonConverter : JsonConverter<Ht
         JsonSerializerOptions options
     )
     {
-        var result = ResultJsonReader.ReadSuccessResult(ref reader);
-        return new HttpReadSuccessResultPayload(result.Metadata);
+        return ResultJsonReader.ReadSuccessPayload(ref reader);
     }
 
     /// <summary>
