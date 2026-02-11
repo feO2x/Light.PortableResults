@@ -7,6 +7,7 @@ using Light.Results.Http.Writing;
 using Light.Results.Http.Writing.Json;
 using Light.Results.Metadata;
 using Xunit;
+using Module = Light.Results.Http.Reading.Module;
 
 namespace Light.Results.Tests.Http;
 
@@ -28,6 +29,18 @@ public sealed class JsonConverterDirectionTests
     }
 
     [Fact]
+    public void HttpReadMetadataObjectConverter_ShouldReadPayload()
+    {
+        var converter = new HttpReadMetadataObjectJsonConverter();
+        var options = new JsonSerializerOptions();
+        var reader = new Utf8JsonReader("""{"trace":"abc"}"""u8);
+
+        var metadata = converter.Read(ref reader, typeof(MetadataObject), options);
+
+        metadata.Should().Equal(MetadataObject.Create(("trace", MetadataValue.FromString("abc"))));
+    }
+
+    [Fact]
     public void HttpReadMetadataValueConverter_ShouldThrowOnWrite()
     {
         var converter = new HttpReadMetadataValueJsonConverter();
@@ -40,6 +53,19 @@ public sealed class JsonConverterDirectionTests
         var act = () => converter.Write(writer, MetadataValue.FromInt64(1), options);
 
         act.Should().Throw<NotSupportedException>();
+    }
+
+    [Fact]
+    public void HttpReadMetadataValueConverter_ShouldReadPayload()
+    {
+        var converter = new HttpReadMetadataValueJsonConverter();
+        var options = new JsonSerializerOptions();
+        var reader = new Utf8JsonReader("42"u8);
+
+        var value = converter.Read(ref reader, typeof(MetadataValue), options);
+
+        value.TryGetInt64(out var intValue).Should().BeTrue();
+        intValue.Should().Be(42);
     }
 
     [Fact]
@@ -70,6 +96,86 @@ public sealed class JsonConverterDirectionTests
 
         // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         var act = () => converter.Write(writer, new HttpReadSuccessResultPayload(null), options);
+
+        act.Should().Throw<NotSupportedException>();
+    }
+
+    [Fact]
+    public void HttpReadAutoSuccessPayloadConverter_ShouldReadPayload()
+    {
+        var converter = new HttpReadAutoSuccessResultPayloadJsonConverter<int>();
+        var options = Module.CreateDefaultSerializerOptions();
+        var reader = new Utf8JsonReader("""{"value":42,"metadata":{"source":"auto"}}"""u8);
+
+        var payload = converter.Read(ref reader, typeof(HttpReadAutoSuccessResultPayload<int>), options);
+
+        payload.Value.Should().Be(42);
+        payload.Metadata.Should().Be(MetadataObject.Create(("source", MetadataValue.FromString("auto"))));
+    }
+
+    [Fact]
+    public void HttpReadAutoSuccessPayloadConverter_ShouldThrowOnWrite()
+    {
+        var converter = new HttpReadAutoSuccessResultPayloadJsonConverter<int>();
+        var options = new JsonSerializerOptions();
+        using var stream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(stream);
+
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
+        var act = () => converter.Write(writer, new HttpReadAutoSuccessResultPayload<int>(42, null), options);
+
+        act.Should().Throw<NotSupportedException>();
+    }
+
+    [Fact]
+    public void HttpReadBareSuccessPayloadConverter_ShouldReadPayload()
+    {
+        var converter = new HttpReadBareSuccessResultPayloadJsonConverter<int>();
+        var options = Module.CreateDefaultSerializerOptions();
+        var reader = new Utf8JsonReader("42"u8);
+
+        var payload = converter.Read(ref reader, typeof(HttpReadBareSuccessResultPayload<int>), options);
+
+        payload.Value.Should().Be(42);
+    }
+
+    [Fact]
+    public void HttpReadBareSuccessPayloadConverter_ShouldThrowOnWrite()
+    {
+        var converter = new HttpReadBareSuccessResultPayloadJsonConverter<int>();
+        var options = new JsonSerializerOptions();
+        using var stream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(stream);
+
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
+        var act = () => converter.Write(writer, new HttpReadBareSuccessResultPayload<int>(42), options);
+
+        act.Should().Throw<NotSupportedException>();
+    }
+
+    [Fact]
+    public void HttpReadWrappedSuccessPayloadConverter_ShouldReadPayload()
+    {
+        var converter = new HttpReadWrappedSuccessResultPayloadJsonConverter<int>();
+        var options = Module.CreateDefaultSerializerOptions();
+        var reader = new Utf8JsonReader("""{"value":42,"metadata":{"source":"wrapped"}}"""u8);
+
+        var payload = converter.Read(ref reader, typeof(HttpReadWrappedSuccessResultPayload<int>), options);
+
+        payload.Value.Should().Be(42);
+        payload.Metadata.Should().Be(MetadataObject.Create(("source", MetadataValue.FromString("wrapped"))));
+    }
+
+    [Fact]
+    public void HttpReadWrappedSuccessPayloadConverter_ShouldThrowOnWrite()
+    {
+        var converter = new HttpReadWrappedSuccessResultPayloadJsonConverter<int>();
+        var options = new JsonSerializerOptions();
+        using var stream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(stream);
+
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
+        var act = () => converter.Write(writer, new HttpReadWrappedSuccessResultPayload<int>(42, null), options);
 
         act.Should().Throw<NotSupportedException>();
     }

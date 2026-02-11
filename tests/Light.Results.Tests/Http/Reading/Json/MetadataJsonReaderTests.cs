@@ -111,6 +111,22 @@ public sealed class MetadataJsonReaderTests
     }
 
     [Fact]
+    public void ReadMetadataValue_ShouldThrow_WhenInputIsIncompleteAndNoTokenIsAvailable()
+    {
+        Assert.Throws<JsonException>(
+            () =>
+            {
+                var reader = new Utf8JsonReader(
+                    Encoding.UTF8.GetBytes(string.Empty),
+                    isFinalBlock: false,
+                    state: default
+                );
+                MetadataJsonReader.ReadMetadataValue(ref reader);
+            }
+        );
+    }
+
+    [Fact]
     public void ReadMetadataValue_ShouldApplyAnnotation_ForPrimitiveValue()
     {
         var reader = CreateReader("true");
@@ -120,6 +136,17 @@ public sealed class MetadataJsonReaderTests
         value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInHttpHeader);
         value.TryGetBoolean(out var boolValue).Should().BeTrue();
         boolValue.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ReadMetadataValue_ShouldParseFalseBoolean()
+    {
+        var reader = CreateReader("false");
+
+        var value = MetadataJsonReader.ReadMetadataValue(ref reader);
+
+        value.TryGetBoolean(out var boolValue).Should().BeTrue();
+        boolValue.Should().BeFalse();
     }
 
     [Fact]
