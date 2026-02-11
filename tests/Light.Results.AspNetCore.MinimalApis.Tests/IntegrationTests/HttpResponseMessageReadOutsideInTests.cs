@@ -404,6 +404,7 @@ public sealed class HttpResponseMessageReadOutsideInTests
         {
             TypeInfoResolver = HttpReadJsonContext.Default
         };
+        serializerOptions.AddDefaultLightResultsHttpReadJsonConverters();
 
         return new LightResultsHttpReadOptions
         {

@@ -58,14 +58,13 @@ public static class HttpResponseMessageExtensions
             throw new ArgumentNullException(nameof(response));
         }
 
-        var resolvedOptions = options ?? LightResultsHttpReadOptions.Default;
-        var isFailure = DetermineIfFailureResponse(response, resolvedOptions);
-        var serializerOptions = Module.ResolveReadSerializerOptions(resolvedOptions.SerializerOptions);
+        options ??= LightResultsHttpReadOptions.Default;
+        var isFailure = DetermineIfFailureResponse(response, options);
 
-        var result = await ReadBodyResultAsync(response, serializerOptions, isFailure, cancellationToken)
+        var result = await ReadBodyResultAsync(response, options.SerializerOptions, isFailure, cancellationToken)
            .ConfigureAwait(false);
 
-        return MergeHeaderMetadataIfNeeded(response, resolvedOptions, result);
+        return MergeHeaderMetadataIfNeeded(response, options, result);
     }
 
     /// <summary>
@@ -87,20 +86,19 @@ public static class HttpResponseMessageExtensions
             throw new ArgumentNullException(nameof(response));
         }
 
-        var resolvedOptions = options ?? LightResultsHttpReadOptions.Default;
-        var isFailure = DetermineIfFailureResponse(response, resolvedOptions);
-        var serializerOptions = Module.ResolveReadSerializerOptions(resolvedOptions.SerializerOptions);
+        options ??= LightResultsHttpReadOptions.Default;
+        var isFailure = DetermineIfFailureResponse(response, options);
 
         var result = await ReadBodyGenericResultAsync<T>(
                 response,
-                serializerOptions,
+                options.SerializerOptions,
                 isFailure,
-                resolvedOptions.PreferSuccessPayload,
+                options.PreferSuccessPayload,
                 cancellationToken
             )
            .ConfigureAwait(false);
 
-        return MergeHeaderMetadataIfNeeded(response, resolvedOptions, result);
+        return MergeHeaderMetadataIfNeeded(response, options, result);
     }
 
     private static bool DetermineIfFailureResponse(HttpResponseMessage response, LightResultsHttpReadOptions options)
@@ -245,6 +243,7 @@ public static class HttpResponseMessageExtensions
     }
 
     private static TResult HandleEmptyBody<TResult>(
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local -- this is not a precondition check
         bool isFailure,
         Func<TResult>? createEmptySuccessResult,
         string? successEmptyBodyMessage
@@ -314,6 +313,7 @@ public static class HttpResponseMessageExtensions
         var deserialized = await JsonSerializer
            .DeserializeAsync<TPayload>(stream, serializerOptions, cancellationToken)
            .ConfigureAwait(false);
+
         if (deserialized is null)
         {
             throw new JsonException("Response body could not be deserialized to the expected payload type.");

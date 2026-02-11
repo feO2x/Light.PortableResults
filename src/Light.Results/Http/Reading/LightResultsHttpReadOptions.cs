@@ -36,7 +36,8 @@ public sealed record LightResultsHttpReadOptions
     public PreferSuccessPayload PreferSuccessPayload { get; init; } = PreferSuccessPayload.Auto;
 
     /// <summary>
-    /// Gets or sets whether problem details content types should be treated as failures even when status codes succeed.
+    /// Gets or sets whether problem details content types should be treated as failures even when the status code
+    /// of the HTTP response indicates success.
     /// </summary>
     public bool TreatProblemDetailsAsFailure { get; init; } = true;
 
@@ -53,7 +54,6 @@ public sealed record LightResultsHttpReadOptions
 
     /// <summary>
     /// Gets or sets serializer options used to deserialize Result payloads with <see cref="JsonSerializer" />.
-    /// When <see langword="null" />, the default HTTP-read serializer options are used.
     /// </summary>
-    public JsonSerializerOptions? SerializerOptions { get; init; }
+    public JsonSerializerOptions SerializerOptions { get; init; } = Module.DefaultSerializerOptions;
 }

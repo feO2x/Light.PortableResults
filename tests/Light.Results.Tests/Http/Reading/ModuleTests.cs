@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text.Json;
 using FluentAssertions;
 using Light.Results.Http.Reading;
@@ -20,29 +21,30 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddDefaultLightResultsHttpReadJsonConverters_ShouldAddConvertersOnce()
+    public void AddDefaultLightResultsHttpReadJsonConverters_ShouldAlwaysAddConverters()
     {
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
         serializerOptions.AddDefaultLightResultsHttpReadJsonConverters();
         serializerOptions.AddDefaultLightResultsHttpReadJsonConverters();
 
-        serializerOptions.Converters.Should()
-           .ContainSingle(converter => converter is HttpReadMetadataObjectJsonConverter);
-        serializerOptions.Converters.Should()
-           .ContainSingle(converter => converter is HttpReadMetadataValueJsonConverter);
-        serializerOptions.Converters.Should()
-           .ContainSingle(converter => converter is HttpReadFailureResultPayloadJsonConverter);
-        serializerOptions.Converters.Should()
-           .ContainSingle(converter => converter is HttpReadSuccessResultPayloadJsonConverter);
-        serializerOptions.Converters.Should()
-           .ContainSingle(converter => converter is HttpReadSuccessResultPayloadJsonConverterFactory);
+        serializerOptions.Converters.Should().HaveCount(10);
+        serializerOptions
+           .Converters.Count(converter => converter is HttpReadMetadataObjectJsonConverter).Should().Be(2);
+        serializerOptions
+           .Converters.Count(converter => converter is HttpReadMetadataValueJsonConverter).Should().Be(2);
+        serializerOptions
+           .Converters.Count(converter => converter is HttpReadFailureResultPayloadJsonConverter).Should().Be(2);
+        serializerOptions
+           .Converters.Count(converter => converter is HttpReadSuccessResultPayloadJsonConverter).Should().Be(2);
+        serializerOptions
+           .Converters.Count(converter => converter is HttpReadSuccessResultPayloadJsonConverterFactory).Should().Be(2);
     }
 
     [Fact]
     public void CreateDefaultLightResultsHttpReadJsonSerializerOptions_ShouldDeserializeGenericAutoPayload()
     {
-        var serializerOptions = Module.CreateDefaultLightResultsHttpReadJsonSerializerOptions();
+        var serializerOptions = Module.CreateDefaultSerializerOptions();
 
         var payload =
             JsonSerializer.Deserialize<HttpReadAutoSuccessResultPayload<int>>("{\"value\":42}", serializerOptions);
@@ -54,7 +56,7 @@ public sealed class ModuleTests
     [Fact]
     public void CreateDefaultLightResultsHttpReadJsonSerializerOptions_ShouldDeserializeNonGenericSuccessPayload()
     {
-        var serializerOptions = Module.CreateDefaultLightResultsHttpReadJsonSerializerOptions();
+        var serializerOptions = Module.CreateDefaultSerializerOptions();
 
         var payload = JsonSerializer.Deserialize<HttpReadSuccessResultPayload>(
             "{\"metadata\":{\"source\":\"module\"}}",
@@ -67,7 +69,7 @@ public sealed class ModuleTests
     [Fact]
     public void CreateDefaultLightResultsHttpReadJsonSerializerOptions_ShouldDeserializeFailurePayload()
     {
-        var serializerOptions = Module.CreateDefaultLightResultsHttpReadJsonSerializerOptions();
+        var serializerOptions = Module.CreateDefaultSerializerOptions();
 
         var payload = JsonSerializer.Deserialize<HttpReadFailureResultPayload>(
             """
@@ -102,5 +104,6 @@ public sealed class ModuleTests
         var options = provider.GetRequiredService<LightResultsHttpReadOptions>();
 
         options.Should().NotBeNull();
+        options.SerializerOptions.Should().BeSameAs(Module.DefaultSerializerOptions);
     }
 }
