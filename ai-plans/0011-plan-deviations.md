@@ -2,6 +2,7 @@
 
 This document compares `ai-plans/0011-http-response-deserialization.md` with the current implementation state on branch
 `11-http-response-message-integration`.
+It also tracks follow-up work from `ai-plans/0011-refactor-result-reading.md`.
 
 ## Deviations From Original Plan
 
@@ -51,6 +52,7 @@ This document compares `ai-plans/0011-http-response-deserialization.md` with the
 - Implemented:
     - `Content-Length` is checked first to avoid unnecessary stream allocations.
     - HTTP responses with body are deserialized from stream.
+  - Responses with unknown content length are treated as empty-body responses.
 
 7. Native AOT guidance was partially relaxed by design decision.
 - Planned:
@@ -60,6 +62,16 @@ This document compares `ai-plans/0011-http-response-deserialization.md` with the
   - This is an intentional tradeoff: the corresponding generic JsonConverter types will not be removed by the trimmer as
     they are referenced with the `typeof` keyword. Bound Reflection works perfectly fine in Native AOT. Users of the
     library do not have to deal with registering a converter instance of every T.
+
+8. `ResultJsonReader` became payload-oriented rather than `Result`-oriented.
+
+- Planned:
+    - Shared parsing helpers focused on reading `Result` / `Result<T>`.
+- Implemented:
+    - `ResultJsonReader` now exposes payload-first APIs:
+      `ReadSuccessPayload`, `ReadFailurePayload`, `ReadAutoSuccessPayload<T>`,
+      `ReadBareSuccessPayload<T>`, `ReadWrappedSuccessPayload<T>`.
+    - `Result` and `Result<T>` materialization remains at the `HttpResponseMessageExtensions` orchestration boundary.
 
 ## Additional Work Completed Beyond Initial Plan
 
@@ -75,3 +87,22 @@ This document compares `ai-plans/0011-http-response-deserialization.md` with the
 
 - Additional unit tests cover header selection strategies, parser registry behavior, parsing/conversion helpers, and
   JSON reader edge paths.
+
+4. Auto success wrapper detection was optimized in `ResultJsonReader`.
+
+- The wrapper inspection path now early-exits on the first non-wrapper property (`value`/`metadata`) instead of
+  collecting full object-shape flags.
+
+5. `HttpRead*PayloadJsonConverter` types now deserialize directly to payloads via `ResultJsonReader`.
+
+- The previous converter path that deserialized to `Result`/`Result<T>` and then remapped to payloads was removed.
+
+6. Deserialization micro benchmarks were added for HTTP read payload parsing.
+
+- `benchmarks/Benchmarks/HttpReadDeserializationBenchmarks.cs` compares optimized auto-success parsing against a legacy
+  full-scan wrapper detection baseline for bare and wrapped payloads.
+
+7. HTTP reading coverage was expanded substantially.
+
+- Added `HttpResponseMessageExtensionsTests` and `DefaultHttpHeaderParsingServiceTests`, plus additional converter and
+  `ResultJsonReader` tests for incomplete JSON, null-guard behavior, header conflicts, parsing modes, and cancellation.
