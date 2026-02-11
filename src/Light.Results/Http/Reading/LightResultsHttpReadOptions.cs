@@ -25,7 +25,8 @@ public sealed record LightResultsHttpReadOptions
     public HeaderConflictStrategy HeaderConflictStrategy { get; init; } = HeaderConflictStrategy.Throw;
 
     /// <summary>
-    /// Gets or sets the merge strategy for combining body and header metadata.
+    /// Gets or sets the merge strategy for combining header and body metadata. Headers will always be read first,
+    /// the body afterward. The default value is <see cref="MetadataMergeStrategy.AddOrReplace" />.
     /// </summary>
     public MetadataMergeStrategy MergeStrategy { get; init; } = MetadataMergeStrategy.AddOrReplace;
 
