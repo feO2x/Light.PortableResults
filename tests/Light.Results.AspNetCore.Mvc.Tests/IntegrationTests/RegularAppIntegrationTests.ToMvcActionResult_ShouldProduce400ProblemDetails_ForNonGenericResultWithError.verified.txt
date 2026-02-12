@@ -1,0 +1,28 @@
+﻿{
+  Status: 400 Bad Request,
+  Content: {
+    Headers: {
+      Content-Length: 284,
+      Content-Type: application/problem+json
+    },
+    Value: {
+      type: https://tools.ietf.org/html/rfc9110#section-15.5.1,
+      title: Bad Request,
+      status: 400,
+      detail: One or more validation errors occurred.,
+      errors: {
+        : [
+          Batch validation failed
+        ]
+      },
+      errorDetails: [
+        {
+          target: ,
+          index: 0,
+          code: BatchValidationError,
+          category: Validation
+        }
+      ]
+    }
+  }
+}

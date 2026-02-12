@@ -1,0 +1,30 @@
+﻿{
+  Status: 200 OK,
+  Content: {
+    Headers: {
+      Content-Length: 190,
+      Content-Type: application/json
+    },
+    Value: {
+      metadata: {
+        nullValue: null,
+        boolValue: true,
+        intValue: 42,
+        doubleValue: 12.5,
+        stringValue: sample,
+        arrayValue: [
+          true,
+          7,
+          1.5,
+          alpha,
+          {
+            inner: nested
+          }
+        ],
+        objectValue: {
+          inner: nested
+        }
+      }
+    }
+  }
+}

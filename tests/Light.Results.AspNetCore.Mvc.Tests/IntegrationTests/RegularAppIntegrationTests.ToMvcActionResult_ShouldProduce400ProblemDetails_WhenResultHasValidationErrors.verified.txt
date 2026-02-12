@@ -1,0 +1,37 @@
+﻿{
+  Status: 400 Bad Request,
+  Content: {
+    Headers: {
+      Content-Length: 384,
+      Content-Type: application/problem+json
+    },
+    Value: {
+      type: https://tools.ietf.org/html/rfc9110#section-15.5.1,
+      title: Bad Request,
+      status: 400,
+      detail: One or more validation errors occurred.,
+      errors: {
+        name: [
+          Name is required
+        ],
+        email: [
+          Email must be valid
+        ]
+      },
+      errorDetails: [
+        {
+          target: name,
+          index: 0,
+          code: NameRequired,
+          category: Validation
+        },
+        {
+          target: email,
+          index: 0,
+          code: EmailInvalid,
+          category: Validation
+        }
+      ]
+    }
+  }
+}

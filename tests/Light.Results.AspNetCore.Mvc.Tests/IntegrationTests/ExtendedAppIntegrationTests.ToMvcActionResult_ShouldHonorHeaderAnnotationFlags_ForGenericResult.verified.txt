@@ -1,0 +1,18 @@
+﻿{
+  Status: 200 OK,
+  Headers: {
+    X-HeaderAndBody: "both"
+  },
+  Content: {
+    Headers: {
+      Content-Length: 52,
+      Content-Type: application/json
+    },
+    Value: {
+      value: ok,
+      metadata: {
+        X-HeaderAndBody: both
+      }
+    }
+  }
+}

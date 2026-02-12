@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Light.Results.AspNetCore.Shared\Light.Results.AspNetCore.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

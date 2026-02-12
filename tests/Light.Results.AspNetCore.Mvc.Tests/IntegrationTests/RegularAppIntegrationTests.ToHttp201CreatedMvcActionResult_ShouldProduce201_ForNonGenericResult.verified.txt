@@ -1,0 +1,12 @@
+﻿{
+  Response: {
+    Status: 201 Created,
+    Headers: {
+      Location: /api/contacts/action/completed
+    }
+  },
+  Request: {
+    Method: POST,
+    Uri: http://localhost/api/contacts/action
+  }
+}

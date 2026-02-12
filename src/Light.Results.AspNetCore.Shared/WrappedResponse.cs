@@ -1,9 +1,8 @@
-namespace Light.Results.AspNetCore.MinimalApis;
+namespace Light.Results.AspNetCore.Shared;
 
 /// <summary>
 /// Schema-only type for OpenAPI documentation. Not used at runtime.
-/// This type has been moved to <see cref="WrappedResponse{TValue, TMetadata}" /> in
-/// <c>Light.Results.AspNetCore.Shared</c>. This type alias is kept for backward compatibility.
+/// Represents a wrapped response with a value and metadata.
 /// </summary>
 /// <typeparam name="TValue">The type of the value.</typeparam>
 /// <typeparam name="TMetadata">The type of the metadata.</typeparam>

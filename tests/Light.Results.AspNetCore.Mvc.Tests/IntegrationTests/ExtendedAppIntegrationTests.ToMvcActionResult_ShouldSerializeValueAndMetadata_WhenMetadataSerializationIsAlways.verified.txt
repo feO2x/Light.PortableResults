@@ -1,0 +1,15 @@
+﻿{
+  Status: 200 OK,
+  Content: {
+    Headers: {
+      Content-Length: 61,
+      Content-Type: application/json
+    },
+    Value: {
+      value: contact-42,
+      metadata: {
+        source: value-metadata
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+﻿{
+  Status: 201 Created,
+  Headers: {
+    Location: /api/contacts/36921058-446f-4515-8bd9-968893a94153
+  },
+  Content: {
+    Headers: {
+      Content-Length: 58,
+      Content-Type: application/json
+    },
+    Value: {
+      id: Guid_1,
+      name: Foo
+    }
+  }
+}

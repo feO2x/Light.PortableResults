@@ -1,0 +1,34 @@
+﻿{
+  Status: 400 Bad Request,
+  Content: {
+    Headers: {
+      Content-Length: 360,
+      Content-Type: application/problem+json
+    },
+    Value: {
+      type: https://example.org/problems/validation,
+      title: Validation failed,
+      status: 400,
+      instance: /instances/validation-rich,
+      errors: [
+        {
+          message: Name is required,
+          code: NameRequired,
+          target: ,
+          category: Validation,
+          metadata: {
+            minLength: 1
+          }
+        },
+        {
+          message: Email is required,
+          target: email,
+          category: Validation
+        }
+      ],
+      metadata: {
+        source: rich
+      }
+    }
+  }
+}

@@ -1,0 +1,124 @@
+﻿{
+  Status: 400 Bad Request,
+  Content: {
+    Headers: {
+      Content-Length: 1333,
+      Content-Type: application/problem+json
+    },
+    Value: {
+      type: https://tools.ietf.org/html/rfc9110#section-15.5.1,
+      title: Bad Request,
+      status: 400,
+      detail: One or more validation errors occurred.,
+      errors: {
+        field0: [
+          Validation error 0
+        ],
+        field1: [
+          Validation error 1
+        ],
+        field2: [
+          Validation error 2
+        ],
+        field3: [
+          Validation error 3
+        ],
+        field4: [
+          Validation error 4
+        ],
+        field5: [
+          Validation error 5
+        ],
+        field6: [
+          Validation error 6
+        ],
+        field7: [
+          Validation error 7
+        ],
+        field8: [
+          Validation error 8
+        ],
+        field9: [
+          Validation error 9
+        ],
+        field10: [
+          Validation error 10
+        ]
+      },
+      errorDetails: [
+        {
+          target: field0,
+          index: 0,
+          code: VAL0,
+          category: Validation
+        },
+        {
+          target: field1,
+          index: 0,
+          code: VAL1,
+          category: Validation
+        },
+        {
+          target: field2,
+          index: 0,
+          code: VAL2,
+          category: Validation
+        },
+        {
+          target: field3,
+          index: 0,
+          code: VAL3,
+          category: Validation
+        },
+        {
+          target: field4,
+          index: 0,
+          code: VAL4,
+          category: Validation
+        },
+        {
+          target: field5,
+          index: 0,
+          code: VAL5,
+          category: Validation,
+          metadata: {
+            index: 5
+          }
+        },
+        {
+          target: field6,
+          index: 0,
+          code: VAL6,
+          category: Validation
+        },
+        {
+          target: field7,
+          index: 0,
+          code: VAL7,
+          category: Validation
+        },
+        {
+          target: field8,
+          index: 0,
+          code: VAL8,
+          category: Validation
+        },
+        {
+          target: field9,
+          index: 0,
+          code: VAL9,
+          category: Validation
+        },
+        {
+          target: field10,
+          index: 0,
+          code: VAL10,
+          category: Validation
+        }
+      ],
+      metadata: {
+        enriched: true
+      }
+    }
+  }
+}

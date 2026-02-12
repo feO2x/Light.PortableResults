@@ -1,0 +1,22 @@
+﻿{
+  Status: 404 Not Found,
+  Content: {
+    Headers: {
+      Content-Length: 294,
+      Content-Type: application/problem+json
+    },
+    Value: {
+      type: https://tools.ietf.org/html/rfc9110#section-15.5.5,
+      title: Not Found,
+      status: 404,
+      detail: The requested resource was not found.,
+      errors: [
+        {
+          message: Contact with id 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' was not found,
+          code: ContactNotFound,
+          category: NotFound
+        }
+      ]
+    }
+  }
+}

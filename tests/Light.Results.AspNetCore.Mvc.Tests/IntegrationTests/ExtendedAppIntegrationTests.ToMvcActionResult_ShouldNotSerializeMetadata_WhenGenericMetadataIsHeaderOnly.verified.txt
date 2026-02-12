@@ -1,0 +1,15 @@
+﻿{
+  Status: 200 OK,
+  Headers: {
+    X-TraceId: "trace-43"
+  },
+  Content: {
+    Headers: {
+      Content-Length: 14,
+      Content-Type: application/json
+    },
+    Value: {
+      value: ok
+    }
+  }
+}
