@@ -34,7 +34,7 @@ public sealed class ResultJsonConverterReadTests
     {
         var lightResultOptions = new LightResultsHttpWriteOptions();
         var options = new JsonSerializerOptions();
-        options.AddDefaultLightResultsJsonConverters(lightResultOptions);
+        options.AddDefaultLightResultsHttpWriteJsonConverters(lightResultOptions);
         return options;
     }
 }

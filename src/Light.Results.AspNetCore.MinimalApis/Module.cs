@@ -16,7 +16,7 @@ public static class Module
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddLightResultsForMinimalApis(this IServiceCollection services) =>
         services
-           .AddLightResultOptions()
+           .AddLightResultHttpWriteOptions()
            .AddLightResultsHttpHeaderConversionService()
            .ConfigureMinimalApiJsonOptionsForLightResults();
 
@@ -32,7 +32,7 @@ public static class Module
            .Configure<LightResultsHttpWriteOptions>(
                 (jsonOptions, lightResultOptions) =>
                 {
-                    jsonOptions.SerializerOptions.AddDefaultLightResultsJsonConverters(lightResultOptions);
+                    jsonOptions.SerializerOptions.AddDefaultLightResultsHttpWriteJsonConverters(lightResultOptions);
                 }
             );
         return services;

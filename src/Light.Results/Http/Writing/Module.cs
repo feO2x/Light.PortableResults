@@ -20,7 +20,7 @@ public static class Module
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddLightResultOptions(this IServiceCollection services)
+    public static IServiceCollection AddLightResultHttpWriteOptions(this IServiceCollection services)
     {
         services.AddOptions<LightResultsHttpWriteOptions>();
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<LightResultsHttpWriteOptions>>().Value);
@@ -32,12 +32,19 @@ public static class Module
     /// </summary>
     /// <param name="serializerOptions">The JSON serializer options to configure.</param>
     /// <param name="options">The Light.Results options.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is <see langword="null" />.</exception>
-    public static void AddDefaultLightResultsJsonConverters(
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="serializerOptions" /> or <paramref name="options" /> are <see langword="null" />.
+    /// </exception>
+    public static void AddDefaultLightResultsHttpWriteJsonConverters(
         this JsonSerializerOptions serializerOptions,
         LightResultsHttpWriteOptions options
     )
     {
+        if (serializerOptions is null)
+        {
+            throw new ArgumentNullException(nameof(serializerOptions));
+        }
+
         serializerOptions.Converters.Add(new HttpWriteMetadataObjectJsonConverter());
         serializerOptions.Converters.Add(new HttpWriteMetadataValueJsonConverter());
         serializerOptions.Converters.Add(new HttpWriteResultJsonConverter(options));

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
+using System.Text.Json;
 using FluentAssertions;
 using Light.Results.Http.Writing;
 using Light.Results.Http.Writing.Headers;
@@ -39,6 +40,22 @@ public sealed class ModuleTests
         // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         Action act = () => provider.GetRequiredService<FrozenDictionary<string, HttpHeaderConverter>>();
         act.Should().Throw<InvalidOperationException>().WithMessage("Cannot add '*duplicate*'*");
+    }
+
+    [Fact]
+    public void AddDefaultLightResultsJsonConverters_ShouldThrow_WhenSerializerOptionsIsNull()
+    {
+        var act = () => Module.AddDefaultLightResultsHttpWriteJsonConverters(null!, new LightResultsHttpWriteOptions());
+
+        act.Should().Throw<ArgumentNullException>().Where(x => x.ParamName == "serializerOptions");
+    }
+
+    [Fact]
+    public void AddDefaultLightResultsJsonConverters_ShouldThrow_WhenOptionsIsNull()
+    {
+        var act = () => new JsonSerializerOptions().AddDefaultLightResultsHttpWriteJsonConverters(null!);
+
+        act.Should().Throw<ArgumentNullException>().Where(x => x.ParamName == "options");
     }
 
     private sealed class TestHeaderConverter : HttpHeaderConverter
