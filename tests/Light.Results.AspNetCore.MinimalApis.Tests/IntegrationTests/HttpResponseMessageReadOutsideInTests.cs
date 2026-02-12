@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Light.Results.Http.Reading;
 using Light.Results.Http.Reading.Headers;
+using Light.Results.Http.Reading.Json;
 using Light.Results.Metadata;
 using Xunit;
 
@@ -42,6 +43,32 @@ public sealed class HttpResponseMessageReadOutsideInTests
         );
 
         var result = await response.ReadResultAsync<string>(cancellationToken: TestContext.Current.CancellationToken);
+
+        var expectedResult = Result<string>.Ok(
+            "ok",
+            MetadataObject.Create(("trace", MetadataValue.FromString("t-1")))
+        );
+        result.Should().Be(expectedResult);
+    }
+
+    [Fact]
+    public async Task ReadResultAsync_ShouldParseWrappedValue_WhenPreferWrappedValueIsSet()
+    {
+        var options = new LightResultsHttpReadOptions
+        {
+            PreferSuccessPayload = PreferSuccessPayload.WrappedValue
+        };
+
+        using var httpClient = _fixture.CreateHttpClient();
+        using var response = await httpClient.GetAsync(
+            "/api/read/wrapped-string",
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+
+        var result = await response.ReadResultAsync<string>(
+            options: options,
+            cancellationToken: TestContext.Current.CancellationToken
+        );
 
         var expectedResult = Result<string>.Ok(
             "ok",
