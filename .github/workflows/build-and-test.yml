@@ -29,7 +29,6 @@ jobs:
           dotnet test ./Light.Results.slnx
           --configuration Release
           --no-build
-          --verbosity normal
           --settings ./coverage.runsettings
       - name: Merge coverage reports
         run: |
