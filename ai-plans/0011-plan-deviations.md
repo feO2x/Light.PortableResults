@@ -13,20 +13,29 @@ It also tracks follow-up work from `ai-plans/0011-refactor-result-reading.md`.
   - `ReadResultAsync(..., LightResultsHttpReadOptions? options = null, ...)`
   - Serializer options are provided through `LightResultsHttpReadOptions.SerializerOptions`.
 
-2. Header selection moved from mode/list options to Strategy Pattern.
+2. Header concerns were consolidated into `IHttpHeaderParsingService`.
 
 - Planned:
-    - `HeaderSelectionMode` + `HeaderAllowList` + `HeaderDenyList`.
+    - `HeaderSelectionMode` + `HeaderAllowList` + `HeaderDenyList` on the options type.
 - Implemented:
-    - `IHttpHeaderSelectionStrategy` with built-ins in `HttpHeaderSelectionStrategies`.
-    - `LightResultsHttpReadOptions.HeaderSelectionStrategy` is the single selection entry point.
+    - `IHttpHeaderParsingService` owns the full header-to-metadata pipeline: selection, parsing, conflict
+      resolution, and annotation.
+    - `DefaultHttpHeaderParsingService` accepts `IHttpHeaderSelectionStrategy`,
+      `FrozenDictionary<string, HttpHeaderParser>`,
+      `HeaderConflictStrategy`, `MetadataValueAnnotation`, and `HeaderValueParsingMode` via its constructor.
+    - `ParseNoHttpHeadersService` is the default (skips all headers).
+    - `LightResultsHttpReadOptions` only exposes `HeaderParsingService` — the three former header properties
+      (`HeaderSelectionStrategy`, `HeaderConflictStrategy`, `HeaderMetadataAnnotation`) were removed.
+    - `HttpResponseMessageExtensions` delegates entirely to the service; the `AppendHeaders` / `ReadHeaderMetadata`
+      helper methods were removed.
 
 3. Header parsing defaults changed to match HTTP round-trip expectations.
 - Planned:
     - Default parsing proposed JSON-first fallback behavior for header values.
 - Implemented:
     - Default header parsing is primitive-first (`bool` -> `Int64` -> finite `double` -> `string`).
-    - Header parsing is opt-in by default because `HeaderSelectionStrategy` defaults to `None`.
+  - Header parsing is opt-in because we do not write to HTTP headers in Minimal APIs and MVC. The default service is
+    `ParseNoHttpHeadersService`.
 
 4. Converters were split into explicit read/write converter sets.
 - Planned:
