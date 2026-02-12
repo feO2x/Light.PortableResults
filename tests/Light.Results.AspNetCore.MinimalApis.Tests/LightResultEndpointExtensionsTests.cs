@@ -1,5 +1,6 @@
 using System.Linq;
 using FluentAssertions;
+using Light.Results.AspNetCore.Shared;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
