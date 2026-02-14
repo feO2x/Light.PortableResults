@@ -91,6 +91,56 @@ public sealed class ReadOnlyMemoryCloudEventExtensionsTests
     }
 
     [Fact]
+    public void ReadResult_ShouldReadMetadata_WhenSuccessDataContainsMetadataObject()
+    {
+        var cloudEvent = CreateUtf8(
+            """
+            {
+                "specversion": "1.0",
+                "type": "app.success",
+                "source": "urn:test:source",
+                "id": "evt-3a",
+                "lroutcome": "success",
+                "data": {
+                    "metadata": {
+                        "traceid": "abc"
+                    }
+                }
+            }
+            """
+        );
+
+        var result = cloudEvent.ReadResult();
+
+        result.IsValid.Should().BeTrue();
+        result.Metadata.Should().NotBeNull();
+        result.Metadata!.Value.TryGetString("traceid", out var traceId).Should().BeTrue();
+        traceId.Should().Be("abc");
+        result.Metadata.Value["traceid"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+    }
+
+    [Fact]
+    public void ReadResult_ShouldThrow_WhenSuccessDataIsNotMetadataWrapperObject()
+    {
+        var cloudEvent = CreateUtf8(
+            """
+            {
+                "specversion": "1.0",
+                "type": "app.success",
+                "source": "urn:test:source",
+                "id": "evt-3b",
+                "lroutcome": "success",
+                "data": 42
+            }
+            """
+        );
+
+        var act = () => cloudEvent.ReadResult();
+
+        act.Should().Throw<JsonException>();
+    }
+
+    [Fact]
     public void ReadResult_ShouldThrow_WhenFailureEventHasNoData()
     {
         var cloudEvent = CreateUtf8(
@@ -217,6 +267,27 @@ public sealed class ReadOnlyMemoryCloudEventExtensionsTests
     }
 
     [Fact]
+    public void ReadResultOfT_ShouldThrow_WhenLrOutcomeIsNotAString()
+    {
+        var cloudEvent = CreateUtf8(
+            """
+            {
+                "specversion": "1.0",
+                "type": "app.success",
+                "source": "urn:test:source",
+                "id": "evt-9a",
+                "lroutcome": 123,
+                "data": 1
+            }
+            """
+        );
+
+        var act = () => cloudEvent.ReadResult<int>();
+
+        act.Should().Throw<JsonException>().WithMessage("*lroutcome*");
+    }
+
+    [Fact]
     public void ReadResultOfT_ShouldUseIsFailureTypeFallback_WhenLrOutcomeIsMissing()
     {
         var cloudEvent = CreateUtf8(
@@ -287,6 +358,49 @@ public sealed class ReadOnlyMemoryCloudEventExtensionsTests
         var act = () => cloudEvent.ReadResult<int>();
 
         act.Should().Throw<JsonException>().WithMessage("*source*");
+    }
+
+    [Fact]
+    public void ReadResultOfT_ShouldThrow_WhenRequiredStringAttributeHasWrongType()
+    {
+        var cloudEvent = CreateUtf8(
+            """
+            {
+                "specversion": "1.0",
+                "type": "app.success",
+                "source": 123,
+                "id": "evt-12a",
+                "lroutcome": "success",
+                "data": 1
+            }
+            """
+        );
+
+        var act = () => cloudEvent.ReadResult<int>();
+
+        act.Should().Throw<JsonException>().WithMessage("*source*");
+    }
+
+    [Fact]
+    public void ReadResultOfT_ShouldThrow_WhenOptionalStringAttributeHasWrongType()
+    {
+        var cloudEvent = CreateUtf8(
+            """
+            {
+                "specversion": "1.0",
+                "type": "app.success",
+                "source": "urn:test:source",
+                "subject": 123,
+                "id": "evt-12b",
+                "lroutcome": "success",
+                "data": 1
+            }
+            """
+        );
+
+        var act = () => cloudEvent.ReadResult<int>();
+
+        act.Should().Throw<JsonException>().WithMessage("*subject*");
     }
 
     [Fact]
@@ -380,6 +494,73 @@ public sealed class ReadOnlyMemoryCloudEventExtensionsTests
         result.Metadata.Should().NotBeNull();
         result.Metadata!.Value.TryGetString("traceid", out var traceId).Should().BeTrue();
         traceId.Should().Be("from-payload");
+    }
+
+    [Fact]
+    public void ReadResultOfT_ShouldParseComplexExtensionMetadata_WhenParsingServiceIsConfigured()
+    {
+        var cloudEvent = CreateUtf8(
+            """
+            {
+                "specversion": "1.0",
+                "type": "app.success",
+                "source": "urn:test:source",
+                "id": "evt-16",
+                "lroutcome": "success",
+                "context": {
+                    "nested": "x"
+                },
+                "data": 9
+            }
+            """
+        );
+
+        var options = new LightResultsCloudEventReadOptions
+        {
+            ParsingService = new DefaultCloudEventAttributeParsingService(),
+            PreferSuccessPayload = PreferSuccessPayload.BareValue,
+            MergeStrategy = MetadataMergeStrategy.AddOrReplace
+        };
+
+        var result = cloudEvent.ReadResult<int>(options);
+
+        result.IsValid.Should().BeTrue();
+        result.Value.Should().Be(9);
+        result.Metadata.Should().NotBeNull();
+        result.Metadata!.Value.TryGetObject("context", out var context).Should().BeTrue();
+        context.TryGetString("nested", out var nested).Should().BeTrue();
+        nested.Should().Be("x");
+        result.Metadata.Value["context"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
+    }
+
+    [Fact]
+    public void ReadResult_ShouldIgnoreLrOutcomeWhenMergingExtensionMetadata()
+    {
+        var cloudEvent = CreateUtf8(
+            """
+            {
+                "specversion": "1.0",
+                "type": "app.success",
+                "source": "urn:test:source",
+                "id": "evt-17",
+                "lroutcome": "success",
+                "data": {
+                    "metadata": null
+                }
+            }
+            """
+        );
+
+        var options = new LightResultsCloudEventReadOptions
+        {
+            ParsingService = new DefaultCloudEventAttributeParsingService(),
+            MergeStrategy = MetadataMergeStrategy.AddOrReplace
+        };
+
+        var result = cloudEvent.ReadResult(options);
+
+        result.IsValid.Should().BeTrue();
+        result.Metadata.Should().BeNull();
     }
 
     private static ReadOnlyMemory<byte> CreateUtf8(string json) => Encoding.UTF8.GetBytes(json);

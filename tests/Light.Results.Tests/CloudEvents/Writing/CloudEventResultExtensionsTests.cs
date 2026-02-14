@@ -309,6 +309,166 @@ public sealed class CloudEventResultExtensionsTests
         act.Should().Throw<ArgumentException>().WithMessage("*reserved*");
     }
 
+    [Fact]
+    public void ToCloudEvent_ShouldSerializeAllMetadataKinds_WhenWrittenToDataPayload()
+    {
+        var metadata = MetadataObject.Create(
+            ("nullValue", MetadataValue.FromNull(MetadataValueAnnotation.SerializeInCloudEventData)),
+            ("boolValue", MetadataValue.FromBoolean(true, MetadataValueAnnotation.SerializeInCloudEventData)),
+            ("intValue", MetadataValue.FromInt64(42, MetadataValueAnnotation.SerializeInCloudEventData)),
+            ("doubleValue", MetadataValue.FromDouble(12.5, MetadataValueAnnotation.SerializeInCloudEventData)),
+            ("stringValue", MetadataValue.FromString("abc", MetadataValueAnnotation.SerializeInCloudEventData)),
+            (
+                "arrayValue",
+                MetadataValue.FromArray(
+                    MetadataArray.Create(MetadataValue.FromInt64(1), MetadataValue.FromString("x")),
+                    MetadataValueAnnotation.SerializeInCloudEventData
+                )
+            ),
+            (
+                "objectValue",
+                MetadataValue.FromObject(
+                    MetadataObject.Create(("nested", MetadataValue.FromBoolean(true))),
+                    MetadataValueAnnotation.SerializeInCloudEventData
+                )
+            )
+        );
+        var result = Result.Ok(metadata);
+
+        var json = result.ToCloudEvent(
+            successType: "app.success",
+            failureType: "app.failure",
+            id: "evt-10",
+            source: "urn:test:source",
+            options: CreateWriteOptions()
+        );
+
+        using var document = JsonDocument.Parse(json);
+        var metadataElement = document.RootElement.GetProperty("data").GetProperty("metadata");
+
+        metadataElement.GetProperty("nullValue").ValueKind.Should().Be(JsonValueKind.Null);
+        metadataElement.GetProperty("boolValue").GetBoolean().Should().BeTrue();
+        metadataElement.GetProperty("intValue").GetInt64().Should().Be(42);
+        metadataElement.GetProperty("doubleValue").GetDouble().Should().Be(12.5);
+        metadataElement.GetProperty("stringValue").GetString().Should().Be("abc");
+        metadataElement.GetProperty("arrayValue")[0].GetInt64().Should().Be(1);
+        metadataElement.GetProperty("arrayValue")[1].GetString().Should().Be("x");
+        metadataElement.GetProperty("objectValue").GetProperty("nested").GetBoolean().Should().BeTrue();
+    }
+
+    [Fact]
+    public void ToCloudEvent_ShouldResolveAttributes_FromNonStringMetadataValues()
+    {
+        var metadata = MetadataObject.Create(
+            (
+                "type",
+                MetadataValue.FromBoolean(true, MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute)
+            ),
+            (
+                "source",
+                MetadataValue.FromInt64(42, MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute)
+            ),
+            (
+                "id",
+                MetadataValue.FromDouble(12.5, MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute)
+            )
+        );
+        var result = Result.Ok(metadata);
+
+        var json = result.ToCloudEvent(options: CreateWriteOptions(source: null));
+
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+
+        root.GetProperty("type").GetString().Should().Be("true");
+        root.GetProperty("source").GetString().Should().Be("42");
+        root.GetProperty("id").GetString().Should().Be("12.5");
+    }
+
+    [Fact]
+    public void ToCloudEvent_ShouldResolveTimeFromMetadata_WhenProvidedAsExtensionAttribute()
+    {
+        var expectedTime = new DateTimeOffset(2026, 2, 14, 18, 45, 0, TimeSpan.Zero);
+        var metadata = MetadataObject.Create(
+            (
+                "type",
+                MetadataValue.FromString(
+                    "app.success.from-metadata",
+                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                )
+            ),
+            (
+                "source",
+                MetadataValue.FromString(
+                    "urn:source:from-metadata",
+                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                )
+            ),
+            (
+                "id",
+                MetadataValue.FromString(
+                    "evt-from-metadata",
+                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                )
+            ),
+            (
+                "time",
+                MetadataValue.FromString(
+                    expectedTime.ToString("O"),
+                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                )
+            )
+        );
+        var result = Result.Ok(metadata);
+
+        var json = result.ToCloudEvent(options: CreateWriteOptions(source: null));
+
+        using var document = JsonDocument.Parse(json);
+        var actualTime = DateTimeOffset.Parse(document.RootElement.GetProperty("time").GetString()!);
+
+        actualTime.Should().Be(expectedTime);
+    }
+
+    [Fact]
+    public void ToCloudEvent_ShouldThrow_WhenTimeMetadataIsInvalid()
+    {
+        var metadata = MetadataObject.Create(
+            (
+                "type",
+                MetadataValue.FromString(
+                    "app.success.from-metadata",
+                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                )
+            ),
+            (
+                "source",
+                MetadataValue.FromString(
+                    "urn:source:from-metadata",
+                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                )
+            ),
+            (
+                "id",
+                MetadataValue.FromString(
+                    "evt-from-metadata",
+                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                )
+            ),
+            (
+                "time",
+                MetadataValue.FromString(
+                    "not-a-time",
+                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                )
+            )
+        );
+        var result = Result.Ok(metadata);
+
+        var act = () => result.ToCloudEvent(options: CreateWriteOptions(source: null));
+
+        act.Should().Throw<ArgumentException>().Where(exception => exception.ParamName == "time");
+    }
+
     private static LightResultsCloudEventWriteOptions CreateWriteOptions(string? source = "urn:test:source")
     {
         return new LightResultsCloudEventWriteOptions

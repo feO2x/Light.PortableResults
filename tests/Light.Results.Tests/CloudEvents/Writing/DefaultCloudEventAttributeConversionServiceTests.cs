@@ -1,0 +1,136 @@
+using System;
+using System.Collections.Frozen;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using FluentAssertions;
+using Light.Results.CloudEvents.Writing;
+using Light.Results.Metadata;
+using Xunit;
+
+namespace Light.Results.Tests.CloudEvents.Writing;
+
+public sealed class DefaultCloudEventAttributeConversionServiceTests
+{
+    [Fact]
+    public void Constructor_ShouldThrow_WhenConvertersAreNull()
+    {
+        Action act = () => _ = new DefaultCloudEventAttributeConversionService(null!);
+
+        act.Should().Throw<ArgumentNullException>().Where(exception => exception.ParamName == "converters");
+    }
+
+    [Fact]
+    public void PrepareCloudEventAttribute_ShouldThrow_WhenMetadataKeyIsNull()
+    {
+        var service = new DefaultCloudEventAttributeConversionService(CreateEmptyConverters());
+
+        Action act = () => service.PrepareCloudEventAttribute(null!, MetadataValue.FromString("value"));
+
+        act.Should().Throw<ArgumentNullException>().Where(exception => exception.ParamName == "metadataKey");
+    }
+
+    [Fact]
+    public void PrepareCloudEventAttribute_ShouldUseRegisteredConverter()
+    {
+        var converter = new TestConverter(ImmutableArray.Create("traceId"), "traceid");
+        var converters = new Dictionary<string, CloudEventAttributeConverter>(StringComparer.Ordinal)
+        {
+            ["traceId"] = converter
+        }.ToFrozenDictionary(StringComparer.Ordinal);
+        var service = new DefaultCloudEventAttributeConversionService(converters);
+
+        var converted = service.PrepareCloudEventAttribute("traceId", MetadataValue.FromString("abc"));
+
+        converted.Key.Should().Be("traceid");
+        converted.Value.TryGetString(out var value).Should().BeTrue();
+        value.Should().Be("abc");
+    }
+
+    [Fact]
+    public void PrepareCloudEventAttribute_ShouldAllowStandardAttributesEvenForObjectValues()
+    {
+        var service = new DefaultCloudEventAttributeConversionService(CreateEmptyConverters());
+        var objectValue = MetadataValue.FromObject(MetadataObject.Create(("inner", MetadataValue.FromString("value"))));
+
+        var converted = service.PrepareCloudEventAttribute("source", objectValue);
+
+        converted.Key.Should().Be("source");
+        converted.Value.Should().Be(objectValue);
+    }
+
+    [Fact]
+    public void PrepareCloudEventAttribute_ShouldThrow_WhenAttributeNameIsForbidden()
+    {
+        var service = new DefaultCloudEventAttributeConversionService(CreateEmptyConverters());
+
+        Action act = () => service.PrepareCloudEventAttribute("data", MetadataValue.FromString("value"));
+
+        act.Should().Throw<ArgumentException>().Where(exception => exception.ParamName == "attributeName");
+    }
+
+    [Fact]
+    public void PrepareCloudEventAttribute_ShouldThrow_WhenExtensionAttributeNameIsInvalid()
+    {
+        var service = new DefaultCloudEventAttributeConversionService(CreateEmptyConverters());
+
+        Action act = () => service.PrepareCloudEventAttribute("Trace-Id", MetadataValue.FromString("value"));
+
+        act.Should().Throw<ArgumentException>().Where(exception => exception.ParamName == "attributeName");
+    }
+
+    [Fact]
+    public void PrepareCloudEventAttribute_ShouldThrow_WhenExtensionValueIsComplex()
+    {
+        var service = new DefaultCloudEventAttributeConversionService(CreateEmptyConverters());
+        var objectValue = MetadataValue.FromObject(MetadataObject.Create(("inner", MetadataValue.FromString("value"))));
+
+        Action act = () => service.PrepareCloudEventAttribute("traceid", objectValue);
+
+        act.Should().Throw<ArgumentException>().Where(exception => exception.ParamName == "value");
+    }
+
+    [Fact]
+    public void PrepareCloudEventAttribute_ShouldAllowPrimitiveExtensionValues()
+    {
+        var service = new DefaultCloudEventAttributeConversionService(CreateEmptyConverters());
+
+        var converted = service.PrepareCloudEventAttribute("traceid", MetadataValue.FromInt64(7));
+
+        converted.Key.Should().Be("traceid");
+        converted.Value.Kind.Should().Be(MetadataKind.Int64);
+    }
+
+    [Fact]
+    public void Instance_ShouldBeUsableWithoutCustomConverters()
+    {
+        var converted = DefaultCloudEventAttributeConversionService.Instance.PrepareCloudEventAttribute(
+            "traceid",
+            MetadataValue.FromString("abc")
+        );
+
+        converted.Key.Should().Be("traceid");
+        converted.Value.TryGetString(out var value).Should().BeTrue();
+        value.Should().Be("abc");
+    }
+
+    private static FrozenDictionary<string, CloudEventAttributeConverter> CreateEmptyConverters()
+    {
+        return new Dictionary<string, CloudEventAttributeConverter>(StringComparer.Ordinal).ToFrozenDictionary(
+            StringComparer.Ordinal
+        );
+    }
+
+    private sealed class TestConverter : CloudEventAttributeConverter
+    {
+        private readonly string _targetAttributeName;
+
+        public TestConverter(ImmutableArray<string> supportedMetadataKeys, string targetAttributeName) :
+            base(supportedMetadataKeys) => _targetAttributeName = targetAttributeName;
+
+        public override KeyValuePair<string, MetadataValue> PrepareCloudEventAttribute(
+            string metadataKey,
+            MetadataValue value
+        ) =>
+            new (_targetAttributeName, value);
+    }
+}
