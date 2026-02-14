@@ -15,6 +15,11 @@ public static class ReadOnlyMemoryCloudEventExtensions
     /// <summary>
     /// Reads a non-generic <see cref="Result" /> from a CloudEvents JSON envelope.
     /// </summary>
+    /// <param name="cloudEvent">The serialized CloudEvents JSON envelope in a UTF-8 byte buffer.</param>
+    /// <param name="options">Optional settings that control parsing behavior, metadata merging, and failure detection.</param>
+    /// <returns>The deserialized <see cref="Result" /> created from the CloudEvent data section.</returns>
+    /// <exception cref="JsonException">Thrown when the CloudEvent envelope or data payload is malformed or violates the Light.Results expectations.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the outcome cannot be determined because neither the lroutcome extension nor <see cref="LightResultsCloudEventReadOptions.IsFailureType" /> is provided.</exception>
     public static Result ReadResult(
         this ReadOnlyMemory<byte> cloudEvent,
         LightResultsCloudEventReadOptions? options = null
@@ -28,6 +33,12 @@ public static class ReadOnlyMemoryCloudEventExtensions
     /// <summary>
     /// Reads a generic <see cref="Result{T}" /> from a CloudEvents JSON envelope.
     /// </summary>
+    /// <param name="cloudEvent">The serialized CloudEvents JSON envelope in a UTF-8 byte buffer.</param>
+    /// <param name="options">Optional settings that control parsing behavior, metadata merging, and failure detection.</param>
+    /// <typeparam name="T">The type of the success value stored in the <see cref="Result{T}" />.</typeparam>
+    /// <returns>The deserialized <see cref="Result{T}" /> created from the CloudEvent data section.</returns>
+    /// <exception cref="JsonException">Thrown when the CloudEvent envelope or data payload is malformed or violates the Light.Results expectations.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the outcome cannot be determined because neither the lroutcome extension nor <see cref="LightResultsCloudEventReadOptions.IsFailureType" /> is provided.</exception>
     public static Result<T> ReadResult<T>(
         this ReadOnlyMemory<byte> cloudEvent,
         LightResultsCloudEventReadOptions? options = null
@@ -41,6 +52,11 @@ public static class ReadOnlyMemoryCloudEventExtensions
     /// <summary>
     /// Reads a non-generic <see cref="CloudEventEnvelope" /> from a CloudEvents JSON envelope.
     /// </summary>
+    /// <param name="cloudEvent">The serialized CloudEvents JSON envelope in a UTF-8 byte buffer.</param>
+    /// <param name="options">Optional settings that control parsing behavior, metadata merging, and failure detection.</param>
+    /// <returns>The parsed <see cref="CloudEventEnvelope" /> containing the original CloudEvent attributes and a deserialized <see cref="Result" />.</returns>
+    /// <exception cref="JsonException">Thrown when the CloudEvent envelope or data payload is malformed or violates the Light.Results expectations.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the outcome cannot be determined because neither the lroutcome extension nor <see cref="LightResultsCloudEventReadOptions.IsFailureType" /> is provided.</exception>
     public static CloudEventEnvelope ReadResultWithCloudEventEnvelope(
         this ReadOnlyMemory<byte> cloudEvent,
         LightResultsCloudEventReadOptions? options = null
@@ -68,6 +84,12 @@ public static class ReadOnlyMemoryCloudEventExtensions
     /// <summary>
     /// Reads a generic <see cref="CloudEventEnvelope{T}" /> from a CloudEvents JSON envelope.
     /// </summary>
+    /// <param name="cloudEvent">The serialized CloudEvents JSON envelope in a UTF-8 byte buffer.</param>
+    /// <param name="options">Optional settings that control parsing behavior, metadata merging, and failure detection.</param>
+    /// <typeparam name="T">The type of the success value stored in the <see cref="Result{T}" />.</typeparam>
+    /// <returns>The parsed <see cref="CloudEventEnvelope{T}" /> containing the original CloudEvent attributes and a deserialized <see cref="Result{T}" />.</returns>
+    /// <exception cref="JsonException">Thrown when the CloudEvent envelope or data payload is malformed or violates the Light.Results expectations.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the outcome cannot be determined because neither the lroutcome extension nor <see cref="LightResultsCloudEventReadOptions.IsFailureType" /> is provided.</exception>
     public static CloudEventEnvelope<T> ReadResultWithCloudEventEnvelope<T>(
         this ReadOnlyMemory<byte> cloudEvent,
         LightResultsCloudEventReadOptions? options = null
