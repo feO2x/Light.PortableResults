@@ -4,6 +4,8 @@
 
 Light.Results provides serialization of `Result` and `Result<T>` for HTTP (writing to responses, reading from `HttpResponseMessage`). To support asynchronous messaging scenarios, we add a CloudEvents JSON serialization layer in the core `Light.Results` project. This enables callers to serialize results as CloudEvents-compliant JSON envelopes and deserialize them back, independent of any specific messaging library (MassTransit, Rebus, raw RabbitMQ, etc.). The implementation lives in `Light.Results` under the `Light.Results.CloudEvents` namespace, uses `System.Text.Json` directly (no dependency on `CloudNative.CloudEvents`), and follows the same patterns as the existing `Http/` namespace. Framework-specific integration packages (e.g. for MassTransit or Rebus) are out of scope for this issue and can be added later.
 
+The official CloudEvents specification can be found at https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/formats/json-format.md. Please read it before implementing this plan.
+
 ## Acceptance Criteria
 
 ### Writing
