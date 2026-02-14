@@ -1,5 +1,6 @@
 using System;
 using Light.Results.Metadata;
+using Light.Results.SharedJsonSerialization;
 
 namespace Light.Results.Http.Writing;
 
@@ -26,8 +27,8 @@ public sealed record LightResultsHttpWriteOptions
     /// <summary>
     /// <para>
     /// Gets or sets the value indicating whether metadata is serialized to the response body.
-    /// <see cref="MetadataSerializationMode.ErrorsOnly" /> will serialize metadata only for errors.
-    /// <see cref="MetadataSerializationMode.Always" /> will serialize metadata for both errors and success results.
+    /// <see cref="SharedJsonSerialization.MetadataSerializationMode.ErrorsOnly" /> will serialize metadata only for errors.
+    /// <see cref="SharedJsonSerialization.MetadataSerializationMode.Always" /> will serialize metadata for both errors and success results.
     /// </para>
     /// <para>
     /// PLEASE NOTE: this does not affect headers! When a metadata value is marked with

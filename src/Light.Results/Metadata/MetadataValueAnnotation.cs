@@ -3,7 +3,7 @@ using System;
 namespace Light.Results.Metadata;
 
 /// <summary>
-/// Specifies where a metadata value should be serialized in HTTP responses.
+/// Specifies where a metadata value should be serialized.
 /// </summary>
 [Flags]
 public enum MetadataValueAnnotation
@@ -27,5 +27,22 @@ public enum MetadataValueAnnotation
     /// <summary>
     /// Serialize this value in both the HTTP response body and as a header.
     /// </summary>
-    SerializeInHttpHeaderAndBody = SerializeInHttpResponseBody | SerializeInHttpHeader
+    SerializeInHttpHeaderAndBody = SerializeInHttpResponseBody | SerializeInHttpHeader,
+
+    /// <summary>
+    /// Serialize this value inside the CloudEvent <c>data</c> payload.
+    /// </summary>
+    SerializeInCloudEventData = 4,
+
+    /// <summary>
+    /// Serialize this value as a CloudEvent extension attribute.
+    /// Only valid for primitive types and arrays of primitives.
+    /// </summary>
+    SerializeAsCloudEventExtensionAttribute = 8,
+
+    /// <summary>
+    /// Serialize this value in both CloudEvent extension attributes and in the CloudEvent <c>data</c> payload.
+    /// </summary>
+    SerializeInCloudEventExtensionAttributeAndData =
+        SerializeInCloudEventData | SerializeAsCloudEventExtensionAttribute
 }

@@ -161,18 +161,39 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
             );
         }
 
+        if ((annotation & MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute) != 0)
+        {
+            throw new ArgumentException(
+                "Objects cannot be serialized as CloudEvent extension attributes. Use SerializeInCloudEventData instead.",
+                nameof(annotation)
+            );
+        }
+
         return new MetadataValue(MetadataKind.Object, new MetadataPayload(@object.Data), annotation);
     }
 
     private static void ValidateArrayAnnotation(MetadataArray array, MetadataValueAnnotation annotation)
     {
-        if ((annotation & MetadataValueAnnotation.SerializeInHttpHeader) == 0 || array.HasOnlyPrimitiveChildren)
+        if (array.HasOnlyPrimitiveChildren)
+        {
+            return;
+        }
+
+        if ((annotation & MetadataValueAnnotation.SerializeInHttpHeader) != 0)
+        {
+            throw new ArgumentException(
+                "Arrays containing nested arrays or objects cannot be serialized as HTTP headers.",
+                nameof(annotation)
+            );
+        }
+
+        if ((annotation & MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute) == 0)
         {
             return;
         }
 
         throw new ArgumentException(
-            "Arrays containing nested arrays or objects cannot be serialized as HTTP headers.",
+            "Arrays containing nested arrays or objects cannot be serialized as CloudEvent extension attributes.",
             nameof(annotation)
         );
     }

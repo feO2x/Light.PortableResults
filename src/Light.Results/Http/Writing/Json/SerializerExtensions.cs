@@ -2,9 +2,9 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Light.Results.Metadata;
+using Light.Results.SharedJsonSerialization;
 
 // ReSharper disable ConvertToExtensionBlock
 
@@ -26,7 +26,7 @@ public static partial class SerializerExtensions
     /// otherwise, <see langword="false" />.
     /// </returns>
     public static bool HasKnownPolymorphism(this JsonTypeInfo jsonTypeInfo) =>
-        jsonTypeInfo.Type.IsSealed || jsonTypeInfo.Type.IsValueType || jsonTypeInfo.PolymorphismOptions is not null;
+        SharedSerializerExtensions.HasKnownPolymorphism(jsonTypeInfo);
 
     /// <summary>
     /// Determines whether the specified <see cref="JsonTypeInfo" /> should be used to serialize
@@ -41,7 +41,7 @@ public static partial class SerializerExtensions
     /// otherwise, <see langword="false" />.
     /// </returns>
     public static bool ShouldUseWith(this JsonTypeInfo jsonTypeInfo, [NotNullWhen(false)] Type? runtimeType) =>
-        runtimeType is null || jsonTypeInfo.Type == runtimeType || jsonTypeInfo.HasKnownPolymorphism();
+        SharedSerializerExtensions.ShouldUseWith(jsonTypeInfo, runtimeType);
 
     /// <summary>
     /// Writes a generic value using System.Text.Json's <see cref="Utf8JsonWriter" />.
@@ -53,47 +53,8 @@ public static partial class SerializerExtensions
     /// <exception cref="InvalidOperationException">
     /// Thrown when no JSON type info is found for the runtime type of T.
     /// </exception>
-    public static void WriteGenericValue<T>(this Utf8JsonWriter writer, T? value, JsonSerializerOptions options)
-    {
-        if (writer is null)
-        {
-            throw new ArgumentNullException(nameof(writer));
-        }
-
-        if (options is null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
-
-        if (value is null)
-        {
-            writer.WriteNullValue();
-            return;
-        }
-
-        var valueTypeInfo = options.GetTypeInfo(typeof(T));
-        var runtimeType = value.GetType();
-        if (valueTypeInfo.ShouldUseWith(runtimeType))
-        {
-            ((JsonConverter<T>) valueTypeInfo.Converter).Write(writer, value, options);
-            return;
-        }
-
-        if (!options.TryGetTypeInfo(runtimeType, out valueTypeInfo))
-        {
-            throw new InvalidOperationException(
-                $"No JSON serialization metadata was found for type '{runtimeType}' - please ensure that JsonOptions are configured properly"
-            );
-        }
-
-        if (valueTypeInfo.Converter is JsonConverter<T> converter)
-        {
-            converter.Write(writer, value, options);
-            return;
-        }
-
-        JsonSerializer.Serialize(writer, value, valueTypeInfo);
-    }
+    public static void WriteGenericValue<T>(this Utf8JsonWriter writer, T? value, JsonSerializerOptions options) =>
+        SharedSerializerExtensions.WriteGenericValue(writer, value, options);
 
     /// <summary>
     /// Writes the metadata JSON object using System.Text.Json's <see cref="Utf8JsonWriter" /> in a JSON property named
@@ -106,16 +67,8 @@ public static partial class SerializerExtensions
         this Utf8JsonWriter writer,
         MetadataObject metadata,
         JsonSerializerOptions serializerOptions
-    )
-    {
-        var metadataTypeInfo =
-            serializerOptions.GetTypeInfo(typeof(MetadataObject)) ??
-            throw new InvalidOperationException(
-                $"No JSON serialization metadata was found for type '{typeof(MetadataObject)}' - please ensure that JsonOptions are configured properly"
-            );
-        writer.WritePropertyName("metadata");
-        ((JsonConverter<MetadataObject>) metadataTypeInfo.Converter).Write(writer, metadata, serializerOptions);
-    }
+    ) =>
+        SharedSerializerExtensions.WriteMetadataPropertyAndValue(writer, metadata, serializerOptions);
 
     /// <summary>
     /// Writes the serialized error payload for the specified <see cref="Errors" /> collection.
@@ -153,55 +106,8 @@ public static partial class SerializerExtensions
         Errors errors,
         bool isValidationResponse,
         JsonSerializerOptions serializerOptions
-    )
-    {
-        writer.WritePropertyName("errors");
-        writer.WriteStartArray();
-
-        for (var i = 0; i < errors.Count; i++)
-        {
-            var error = errors[i];
-            writer.WriteStartObject();
-
-            writer.WriteString("message", error.Message);
-
-            if (error.Code is not null)
-            {
-                writer.WriteString("code", error.Code);
-            }
-
-            // For validation responses, Target must be set and whitespace is normalized to empty string
-            if (isValidationResponse)
-            {
-                var target = GetNormalizedTargetForValidationResponse(error, i);
-                writer.WriteString("target", target);
-            }
-            else if (error.Target is not null)
-            {
-                writer.WriteString("target", error.Target);
-            }
-
-            if (error.Category != ErrorCategory.Unclassified)
-            {
-                writer.WriteString("category", error.Category.ToString());
-            }
-
-            if (error.Metadata.HasValue)
-            {
-                var metadataTypeInfo = serializerOptions.GetTypeInfo(typeof(MetadataObject));
-                writer.WritePropertyName("metadata");
-                ((JsonConverter<MetadataObject>) metadataTypeInfo.Converter).Write(
-                    writer,
-                    error.Metadata.Value,
-                    serializerOptions
-                );
-            }
-
-            writer.WriteEndObject();
-        }
-
-        writer.WriteEndArray();
-    }
+    ) =>
+        writer.WriteRichErrors(errors, isValidationResponse, serializerOptions);
 
     private static string GetNormalizedTargetForValidationResponse(Error error, int errorIndex)
     {

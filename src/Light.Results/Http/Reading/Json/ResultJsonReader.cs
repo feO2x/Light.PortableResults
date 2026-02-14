@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
 using Light.Results.Metadata;
+using Light.Results.SharedJsonSerialization;
 
 namespace Light.Results.Http.Reading.Json;
 
@@ -392,20 +393,11 @@ public static class ResultJsonReader
 
     private static void ReadRichErrors(ref Utf8JsonReader reader, List<ErrorBuilder> errors)
     {
-        while (reader.Read())
+        var parsedErrors = SharedResultJsonReader.ReadRichErrors(ref reader);
+        for (var i = 0; i < parsedErrors.Count; i++)
         {
-            if (reader.TokenType == JsonTokenType.EndArray)
-            {
-                break;
-            }
-
-            if (reader.TokenType != JsonTokenType.StartObject)
-            {
-                throw new JsonException("Each error must be a JSON object.");
-            }
-
-            var error = ReadRichErrorObject(ref reader);
-            errors.Add(error);
+            var error = parsedErrors[i];
+            errors.Add(new ErrorBuilder(error.Message, error.Code, error.Target, error.Category, error.Metadata));
         }
     }
 

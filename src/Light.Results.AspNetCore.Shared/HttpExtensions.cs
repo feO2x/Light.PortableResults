@@ -4,6 +4,7 @@ using Light.Results.Http;
 using Light.Results.Http.Writing;
 using Light.Results.Http.Writing.Headers;
 using Light.Results.Metadata;
+using Light.Results.SharedJsonSerialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

@@ -6,6 +6,7 @@ using System.Text.Json.Serialization.Metadata;
 using Light.Results.Http;
 using Light.Results.Http.Writing;
 using Light.Results.Metadata;
+using Light.Results.SharedJsonSerialization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Light.Results.AspNetCore.Mvc.Tests.IntegrationTests;

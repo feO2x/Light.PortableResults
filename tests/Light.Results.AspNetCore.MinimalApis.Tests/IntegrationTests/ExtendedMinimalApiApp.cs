@@ -10,6 +10,7 @@ using Light.Results.AspNetCore.Shared.Enrichment;
 using Light.Results.Http;
 using Light.Results.Http.Writing;
 using Light.Results.Metadata;
+using Light.Results.SharedJsonSerialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
