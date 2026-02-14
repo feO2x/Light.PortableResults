@@ -16,7 +16,7 @@ The official CloudEvents JSON format specification can be found at https://githu
 - [ ] The caller provides `successType` and `failureType` explicitly — Light.Results uses the appropriate one based on `result.IsValid`.
 - [ ] The caller always provides `id` (it may be an idempotency key). `source` can come from options (configured once) or be passed per call.
 - [ ] The optional `subject` and `dataschema` attributes are supported.
-- [ ] `source` and `dataschema` are validated strictly according to CloudEvents URI requirements. Invalid caller-supplied values throw `ArgumentException`.
+- [ ] `source` is validated as a URI-reference (may be relative, per RFC 3986). `dataschema` is validated as an absolute URI. Invalid caller-supplied values throw `ArgumentException`.
 - [ ] `specversion` is always written as `"1.0"`.
 - [ ] `time` is optional but defaults to `DateTimeOffset.UtcNow` on write. If `time` is not provided explicitly, the default value is written.
 - [ ] `lroutcome` is always written as a CloudEvents extension attribute with value `"success"` for valid results and `"failure"` for invalid results.
@@ -29,15 +29,15 @@ The official CloudEvents JSON format specification can be found at https://githu
 - [ ] The attribute conversion service enforces CloudEvents extension attribute name rules (lowercase alphanumeric, no reserved names including `data`, `data_base64`, and `lroutcome`) and allows only primitive JSON values for extension attributes (no arrays or objects).
 
 ### Reading
-- [ ] `ReadResultAsync` and `ReadResultAsync<T>` methods deserialize the `data` payload into `Result`/`Result<T>` without converting envelope attributes to metadata by default. Users can opt in to envelope-to-metadata conversion via options.
-- [ ] `ReadResultWithCloudEventEnvelopeAsync` and `ReadResultWithCloudEventEnvelopeAsync<T>` methods return `CloudEventEnvelope`/`CloudEventEnvelope<T>`, giving the caller access to both the result and the parsed envelope attributes.
+- [ ] `ReadResult` and `ReadResult<T>` extension methods on `ReadOnlyMemory<byte>` deserialize the `data` payload into `Result`/`Result<T>` without converting envelope attributes to metadata by default. Users can opt in to envelope-to-metadata conversion via options.
+- [ ] `ReadResultWithCloudEventEnvelope` and `ReadResultWithCloudEventEnvelope<T>` extension methods on `ReadOnlyMemory<byte>` return `CloudEventEnvelope`/`CloudEventEnvelope<T>`, giving the caller access to both the result and the parsed envelope attributes.
 - [ ] A parsing service (analogous to `DefaultHttpHeaderParsingService`) maps CloudEvents extension attribute keys/values back to metadata keys/values when the user opts in.
-- [ ] On read, a `JsonException` is thrown when required CloudEvents attributes (`specversion`, `type`, `source`, `id`) are missing, or when `specversion` is not `"1.0"`, or when `datacontenttype` indicates a non-JSON format, or when `data_base64` is present.
+- [ ] On read, a `JsonException` is thrown when required CloudEvents attributes (`specversion`, `type`, `source`, `id`) are missing, or when `specversion` is not `"1.0"`, or when `datacontenttype` is present and is neither `"application/json"` nor a media type with the `+json` suffix (e.g. `"application/vnd.myapp+json"`), or when `data_base64` is present.
 - [ ] Success/failure is determined by convention: `lroutcome = "success" | "failure"`. If `lroutcome` is present with any other value, throw `JsonException`.
 - [ ] If `lroutcome` is absent, `IsFailureType` (optional fallback callback) may classify based on `type`. If neither `lroutcome` nor `IsFailureType` can classify the event, throw `InvalidOperationException`.
 - [ ] On read, a `JsonException` is thrown when `data` is missing or `null` for `Result<T>` (successful or failed).
 - [ ] For non-generic `Result`, if `data` is missing or `null` and the event is classified as success, return `Result.Ok()` (assuming no metadata in `data`). If the event is classified as failure, throw `JsonException`.
-- [ ] On read, invalid `source` or `dataschema` URI values in the envelope cause a `JsonException`.
+- [ ] On read, `source` is validated as a URI-reference and `dataschema` as an absolute URI. Invalid values cause a `JsonException`.
 
 ### Shared
 - [ ] The `MetadataValueAnnotation` flags enum is extended with new CloudEvents flags. The XML doc on the enum is updated to no longer be HTTP-specific.
@@ -94,7 +94,7 @@ Envelope attributes are resolved from two sources (in priority order):
 Explicit parameters override metadata values. A **conversion service** (analogous to `DefaultHttpHeaderConversionService`) maps metadata keys/values to CloudEvents attribute keys/values. This decouples business logic from CloudEvents — domain code sets metadata, and the conversion service translates it to the correct envelope attributes.
 Metadata entries annotated with `SerializeAsCloudEventExtensionAttribute` can supply any envelope attribute (including standard ones such as `type`, `source`, or `id`) except `data`, `data_base64`, and `lroutcome`; explicit parameters still override.
 
-For required attributes (`type`, `source`, `id`): if the attribute cannot be resolved from either source, throw `InvalidOperationException`. `type` is resolved by selecting `successType` or `failureType` based on `result.IsValid`. `specversion` is always written as `"1.0"`. `time` is optional but defaults to `DateTimeOffset.UtcNow` when not provided explicitly. `subject` and `dataschema` are optional. `source` and `dataschema`, when present, must pass strict URI validation. `lroutcome` is reserved by Light.Results and is always written by the serializer as `"success"` or `"failure"`.
+For required attributes (`type`, `source`, `id`): if the attribute cannot be resolved from either source, throw `InvalidOperationException`. `type` is resolved by selecting `successType` or `failureType` based on `result.IsValid`. `specversion` is always written as `"1.0"`. `time` is optional but defaults to `DateTimeOffset.UtcNow` when not provided explicitly. `subject` and `dataschema` are optional. `source`, when present, must be a valid URI-reference (RFC 3986). `dataschema`, when present, must be a valid absolute URI. `lroutcome` is reserved by Light.Results and is always written by the serializer as `"success"` or `"failure"`.
 
 #### Data Payload Format
 
@@ -145,26 +145,26 @@ Update the enum's XML doc summary to be transport-agnostic (e.g. "Specifies wher
 
 Two tiers of reading methods are provided:
 
-#### Tier 1: `ReadResultAsync` / `ReadResultAsync<T>`
+#### Tier 1: `ReadResult` / `ReadResult<T>`
 
-Returns `Result` or `Result<T>` directly. By default, envelope attributes are **not** converted to metadata — only the `data` payload is deserialized. Users can opt in to envelope-to-metadata conversion via `LightResultsCloudEventReadOptions`, which uses a **parsing service** (analogous to `DefaultHttpHeaderParsingService`) to map extension attribute keys/values back to metadata keys/values.
+Extension methods on `ReadOnlyMemory<byte>`. Returns `Result` or `Result<T>` directly. By default, envelope attributes are **not** converted to metadata — only the `data` payload is deserialized. Users can opt in to envelope-to-metadata conversion via `LightResultsCloudEventReadOptions`, which uses a **parsing service** (analogous to `DefaultHttpHeaderParsingService`) to map extension attribute keys/values back to metadata keys/values.
 
 This tier is for consumers that handle CloudEvents-specific data at the process boundary and pass plain results to core logic.
 
-#### Tier 2: `ReadResultWithCloudEventEnvelopeAsync` / `ReadResultWithCloudEventEnvelopeAsync<T>`
+#### Tier 2: `ReadResultWithCloudEventEnvelope` / `ReadResultWithCloudEventEnvelope<T>`
 
-Returns `CloudEventEnvelope` or `CloudEventEnvelope<T>`, giving the caller access to both the deserialized result and all parsed envelope attributes as strongly-typed properties. Extension attributes are available as a `MetadataObject`.
+Extension methods on `ReadOnlyMemory<byte>`. Returns `CloudEventEnvelope` or `CloudEventEnvelope<T>`, giving the caller access to both the deserialized result and all parsed envelope attributes as strongly-typed properties. Extension attributes are available as a `MetadataObject`.
 
 This tier is for consumers that need access to the full CloudEvents context (e.g. for idempotency checks on `Id`, routing on `Type`, filtering on `Subject`).
 
 #### Parsing Algorithm
 
-Both tiers share the same parsing logic using `Utf8JsonReader`.
+Both tiers share the same synchronous parsing logic using `Utf8JsonReader` over the `ReadOnlyMemory<byte>` input. Messaging libraries typically provide message bodies as byte arrays or memory, so there is no need for async stream-based reading.
 
 The parser must:
 - Read top-level envelope attributes, collecting unknown keys as extension attributes.
 - Validate required CloudEvents attributes and `specversion == "1.0"`.
-- Reject unsupported combinations and formats (`data_base64` present, non-JSON `datacontenttype`, invalid URI values for `source` / `dataschema`).
+- Reject unsupported combinations and formats (`data_base64` present, `datacontenttype` that is neither `"application/json"` nor a media type with the `+json` suffix, `source` that is not a valid URI-reference, `dataschema` that is not a valid absolute URI).
 - Decide success/failure semantics using the following precedence: `lroutcome` extension attribute (`"success"` / `"failure"`), then optional `IsFailureType(type)` fallback callback. If neither can classify the event, throw `InvalidOperationException`.
 - Parse `data` into `Result`/`Result<T>` using existing JSON reader patterns, with these special rules:
   - `Result<T>` requires non-null `data`.
@@ -204,6 +204,7 @@ Candidates for extraction:
 - The rich error writing logic (message, code, target, category, metadata per error) — currently in `SerializerExtensions.WriteRichErrors`. Extract the transport-agnostic parts so that both HTTP and CloudEvents call the same helper, keeping the error array format consistent.
 - `MetadataJsonReader` — reading metadata from JSON.
 - Parts of `ResultJsonReader` that parse the error array format.
+- `MetadataSerializationMode` — currently in `Light.Results.Http.Writing`, this enum is used by both HTTP and CloudEvents options and should be moved to the shared location.
 
 The existing `Http/` code should be refactored to call into these shared helpers. This is a refactoring step that should be done first, with existing tests verifying no regressions.
 
@@ -211,14 +212,14 @@ The existing `Http/` code should be refactored to call into these shared helpers
 
 **`LightResultsCloudEventWriteOptions`:**
 - `Source` (string?) — default source URI, used when not provided per call.
-- `MetadataSerializationMode` — same enum as HTTP, but defaults to `Always` (unlike HTTP which defaults to `ErrorsOnly`). In messaging, metadata is expected to travel with messages, and silent data loss on success results would be surprising.
-- `ConversionService` (ICloudEventAttributeConversionService) — required service that maps metadata keys/values to CloudEvents attribute keys/values on write. Analogous to `IHttpHeaderConversionService`. Provide a default implementation that validates attribute names, rejects reserved names, and emits primitive JSON values.
+- `MetadataSerializationMode` — same enum as HTTP (relocated to `SharedJsonSerialization/`), but defaults to `Always` (unlike HTTP which defaults to `ErrorsOnly`). In messaging, metadata is expected to travel with messages, and silent data loss on success results would be surprising.
+- `ConversionService` (ICloudEventAttributeConversionService) — maps metadata keys/values to CloudEvents attribute keys/values on write. Analogous to `IHttpHeaderConversionService`. A default implementation (`DefaultCloudEventAttributeConversionService`) validates attribute names, rejects reserved names, and emits primitive JSON values. The property is pre-initialized with a singleton instance of the default implementation, so callers only need to replace it when custom conversion logic is required.
 
 **`LightResultsCloudEventReadOptions`:**
 - `SerializerOptions` (JsonSerializerOptions?) — for deserializing `data`.
 - `IsFailureType` (Func<string, bool>) — optional fallback callback to determine failure from the `type` attribute when the `lroutcome` extension attribute is absent.
 - `ParsingService` (ICloudEventAttributeParsingService?) — optional service that maps CloudEvents extension attribute keys/values back to metadata keys/values on read. Analogous to `IHttpHeaderParsingService`. Only used when the caller opts in to envelope-to-metadata conversion. When null, extension attributes are not converted to metadata (Tier 1 default behavior).
-- `MergeStrategy` — for combining extension attribute metadata with data payload metadata.
+- `MergeStrategy` (`MetadataMergeStrategy`) — controls how extension attribute metadata (from the envelope) is combined with metadata from the `data` payload when both are present. Reuses the existing `MetadataMergeStrategy` enum from `Light.Results.Metadata`. The default is `AddOrReplace`, matching the behavior of `LightResultsHttpReadOptions.MergeStrategy`: envelope extension attributes are processed first, then data payload metadata is merged second, so payload values overwrite envelope values on key conflicts.
 
 **`ICloudEventAttributeConversionService`:**
 Maps metadata entries to CloudEvents attribute key/value pairs. Follows the same pattern as `IHttpHeaderConversionService` / `DefaultHttpHeaderConversionService` — a converter registry keyed by metadata key, with a default implementation that uses a `FrozenDictionary<string, CloudEventAttributeConverter>`. The default implementation must reject attempts to map metadata to `data`, `data_base64`, or `lroutcome`.
