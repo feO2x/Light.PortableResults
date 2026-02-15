@@ -62,10 +62,9 @@ public static class ReadOnlyMemoryCloudEventExtensions
     )
     {
         var readOptions = options ?? LightResultsCloudEventReadOptions.Default;
-        var envelopeSerializerOptions = GetEnvelopeSerializerOptions(readOptions);
         var parsedEnvelope = JsonSerializer.Deserialize<CloudEventEnvelopePayload>(
             cloudEvent.Span,
-            envelopeSerializerOptions
+            readOptions.SerializerOptions
         );
         var isFailure = DetermineIsFailure(parsedEnvelope, readOptions);
 
@@ -99,10 +98,9 @@ public static class ReadOnlyMemoryCloudEventExtensions
     )
     {
         var readOptions = options ?? LightResultsCloudEventReadOptions.Default;
-        var envelopeSerializerOptions = GetEnvelopeSerializerOptions(readOptions);
         var parsedEnvelope = JsonSerializer.Deserialize<CloudEventEnvelopePayload>(
             cloudEvent.Span,
-            envelopeSerializerOptions
+            readOptions.SerializerOptions
         );
         var isFailure = DetermineIsFailure(parsedEnvelope, readOptions);
 
@@ -121,21 +119,6 @@ public static class ReadOnlyMemoryCloudEventExtensions
         );
     }
 
-    private static JsonSerializerOptions GetEnvelopeSerializerOptions(LightResultsCloudEventReadOptions options)
-    {
-        var serializerOptions = new JsonSerializerOptions(options.SerializerOptions);
-        serializerOptions.Converters.Add(new CloudEventEnvelopePayloadJsonConverter());
-        return serializerOptions;
-    }
-
-    private static JsonSerializerOptions GetDataSerializerOptions(LightResultsCloudEventReadOptions options)
-    {
-        var serializerOptions = new JsonSerializerOptions(options.SerializerOptions);
-        serializerOptions.Converters.Add(new CloudEventFailurePayloadJsonConverter());
-        serializerOptions.Converters.Add(new CloudEventSuccessPayloadJsonConverter());
-        serializerOptions.Converters.Add(new CloudEventSuccessPayloadJsonConverterFactory());
-        return serializerOptions;
-    }
 
     private static Result ParseResultPayload(
         CloudEventEnvelopePayload parsedEnvelope,
@@ -156,20 +139,19 @@ public static class ReadOnlyMemoryCloudEventExtensions
         }
 
         var dataBytes = parsedEnvelope.DataBytes!;
-        var dataSerializerOptions = GetDataSerializerOptions(options);
 
         if (isFailure)
         {
             var failurePayload = JsonSerializer.Deserialize<CloudEventFailurePayload>(
                 dataBytes.AsSpan(),
-                dataSerializerOptions
+                options.SerializerOptions
             );
             return Result.Fail(failurePayload.Errors, failurePayload.Metadata);
         }
 
         var successPayload = JsonSerializer.Deserialize<CloudEventSuccessPayload>(
             dataBytes.AsSpan(),
-            dataSerializerOptions
+            options.SerializerOptions
         );
         var metadata = successPayload.Metadata;
         if (metadata is not null)
@@ -195,13 +177,12 @@ public static class ReadOnlyMemoryCloudEventExtensions
         }
 
         var dataBytes = parsedEnvelope.DataBytes!;
-        var dataSerializerOptions = GetDataSerializerOptions(options);
 
         if (isFailure)
         {
             var failurePayload = JsonSerializer.Deserialize<CloudEventFailurePayload>(
                 dataBytes.AsSpan(),
-                dataSerializerOptions
+                options.SerializerOptions
             );
             return Result<T>.Fail(failurePayload.Errors, failurePayload.Metadata);
         }
@@ -215,7 +196,7 @@ public static class ReadOnlyMemoryCloudEventExtensions
         {
             var payload = JsonSerializer.Deserialize<CloudEventBareSuccessPayload<T>>(
                 dataBytes.AsSpan(),
-                dataSerializerOptions
+                options.SerializerOptions
             );
             return CreateSuccessfulGenericResult(payload.Value, metadata: null);
         }
@@ -224,7 +205,7 @@ public static class ReadOnlyMemoryCloudEventExtensions
         {
             var payload = JsonSerializer.Deserialize<CloudEventWrappedSuccessPayload<T>>(
                 dataBytes.AsSpan(),
-                dataSerializerOptions
+                options.SerializerOptions
             );
             var metadata = payload.Metadata;
             if (metadata is not null)
@@ -240,7 +221,7 @@ public static class ReadOnlyMemoryCloudEventExtensions
 
         var autoPayload = JsonSerializer.Deserialize<CloudEventAutoSuccessPayload<T>>(
             dataBytes.AsSpan(),
-            dataSerializerOptions
+            options.SerializerOptions
         );
         var autoMetadata = autoPayload.Metadata;
         if (autoMetadata is not null)

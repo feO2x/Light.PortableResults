@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
+using System.Text.Json;
+using Light.Results.CloudEvents.Reading.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -12,6 +14,11 @@ namespace Light.Results.CloudEvents.Reading;
 /// </summary>
 public static class Module
 {
+    /// <summary>
+    /// Gets the default serializer options used by Light.Results CloudEvent reading.
+    /// </summary>
+    public static JsonSerializerOptions DefaultSerializerOptions { get; } = CreateDefaultSerializerOptions();
+
     /// <summary>
     /// Registers <see cref="LightResultsCloudEventReadOptions" /> in the service container.
     /// </summary>
@@ -74,5 +81,34 @@ public static class Module
         );
 
         return services;
+    }
+
+    /// <summary>
+    /// Adds the default JSON converters used by Light.Results CloudEvent reading.
+    /// </summary>
+    /// <param name="serializerOptions">The JSON serializer options to configure.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="serializerOptions" /> is <c>null</c>.</exception>
+    public static void AddDefaultLightResultsCloudEventReadJsonConverters(this JsonSerializerOptions serializerOptions)
+    {
+        if (serializerOptions is null)
+        {
+            throw new ArgumentNullException(nameof(serializerOptions));
+        }
+
+        serializerOptions.Converters.Add(new CloudEventEnvelopePayloadJsonConverter());
+        serializerOptions.Converters.Add(new CloudEventFailurePayloadJsonConverter());
+        serializerOptions.Converters.Add(new CloudEventSuccessPayloadJsonConverter());
+        serializerOptions.Converters.Add(new CloudEventSuccessPayloadJsonConverterFactory());
+    }
+
+    /// <summary>
+    /// Creates a default <see cref="JsonSerializerOptions" /> instance for CloudEvent reading.
+    /// </summary>
+    /// <returns>A new default serializer options instance.</returns>
+    public static JsonSerializerOptions CreateDefaultSerializerOptions()
+    {
+        var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        serializerOptions.AddDefaultLightResultsCloudEventReadJsonConverters();
+        return serializerOptions;
     }
 }

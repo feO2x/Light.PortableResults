@@ -16,10 +16,10 @@ public sealed record LightResultsCloudEventReadOptions
     public static LightResultsCloudEventReadOptions Default { get; } = new ();
 
     /// <summary>
-    /// Gets or sets serializer options used to deserialize generic success values.
+    /// Gets or sets serializer options used to deserialize CloudEvent envelopes and data payloads.
     /// </summary>
     public JsonSerializerOptions SerializerOptions { get; init; } =
-        new (JsonSerializerDefaults.Web);
+        Module.DefaultSerializerOptions;
 
     /// <summary>
     /// Gets or sets how successful generic payloads are interpreted.
