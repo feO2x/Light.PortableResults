@@ -1,7 +1,8 @@
 using System;
+using System.Buffers;
 using System.Globalization;
-using System.IO;
 using System.Text.Json;
+using Light.Results.Http.Writing.Json;
 using Light.Results.Metadata;
 using Light.Results.SharedJsonSerialization;
 
@@ -27,11 +28,37 @@ public static class CloudEventResultExtensions
         LightResultsCloudEventWriteOptions? options = null
     )
     {
-        using var stream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(stream);
+        using var bufferWriter = new PooledByteBufferWriter();
+        using var writer = new Utf8JsonWriter(bufferWriter);
         result.WriteCloudEvent(writer, successType, failureType, id, source, subject, dataschema, time, options);
         writer.Flush();
-        return stream.ToArray();
+        return bufferWriter.ToArray();
+    }
+
+    /// <summary>
+    /// Writes a non-generic <see cref="Result" /> as a CloudEvents JSON envelope to the specified buffer writer.
+    /// </summary>
+    public static void WriteCloudEvent(
+        this Result result,
+        IBufferWriter<byte> bufferWriter,
+        string? successType = null,
+        string? failureType = null,
+        string? id = null,
+        string? source = null,
+        string? subject = null,
+        string? dataschema = null,
+        DateTimeOffset? time = null,
+        LightResultsCloudEventWriteOptions? options = null
+    )
+    {
+        if (bufferWriter is null)
+        {
+            throw new ArgumentNullException(nameof(bufferWriter));
+        }
+
+        using var writer = new Utf8JsonWriter(bufferWriter);
+        result.WriteCloudEvent(writer, successType, failureType, id, source, subject, dataschema, time, options);
+        writer.Flush();
     }
 
     /// <summary>
@@ -119,11 +146,37 @@ public static class CloudEventResultExtensions
         LightResultsCloudEventWriteOptions? options = null
     )
     {
-        using var stream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(stream);
+        using var bufferWriter = new PooledByteBufferWriter();
+        using var writer = new Utf8JsonWriter(bufferWriter);
         result.WriteCloudEvent(writer, successType, failureType, id, source, subject, dataschema, time, options);
         writer.Flush();
-        return stream.ToArray();
+        return bufferWriter.ToArray();
+    }
+
+    /// <summary>
+    /// Writes a generic <see cref="Result{T}" /> as a CloudEvents JSON envelope to the specified buffer writer.
+    /// </summary>
+    public static void WriteCloudEvent<T>(
+        this Result<T> result,
+        IBufferWriter<byte> bufferWriter,
+        string? successType = null,
+        string? failureType = null,
+        string? id = null,
+        string? source = null,
+        string? subject = null,
+        string? dataschema = null,
+        DateTimeOffset? time = null,
+        LightResultsCloudEventWriteOptions? options = null
+    )
+    {
+        if (bufferWriter is null)
+        {
+            throw new ArgumentNullException(nameof(bufferWriter));
+        }
+
+        using var writer = new Utf8JsonWriter(bufferWriter);
+        result.WriteCloudEvent(writer, successType, failureType, id, source, subject, dataschema, time, options);
+        writer.Flush();
     }
 
     /// <summary>
@@ -183,13 +236,13 @@ public static class CloudEventResultExtensions
             {
                 writer.WriteStartObject();
                 writer.WritePropertyName("value");
-                writer.WriteGenericValue(result.Value, serializerOptions);
+                SharedSerializerExtensions.WriteGenericValue(writer, result.Value, serializerOptions);
                 WriteMetadataPropertyAndValue(writer, successMetadata);
                 writer.WriteEndObject();
             }
             else
             {
-                writer.WriteGenericValue(result.Value, serializerOptions);
+                SharedSerializerExtensions.WriteGenericValue(writer, result.Value, serializerOptions);
             }
         }
         else
@@ -352,7 +405,7 @@ public static class CloudEventResultExtensions
             }
 
             writer.WritePropertyName(keyValuePair.Key);
-            WriteMetadataValue(writer, keyValuePair.Value);
+            HttpWriteMetadataValueJsonConverter.WriteMetadataValue(writer, keyValuePair.Value);
         }
     }
 
@@ -376,67 +429,14 @@ public static class CloudEventResultExtensions
     private static void WriteMetadataPropertyAndValue(Utf8JsonWriter writer, MetadataObject metadata)
     {
         writer.WritePropertyName("metadata");
-        WriteMetadataObject(writer, metadata);
-    }
-
-    private static void WriteMetadataObject(Utf8JsonWriter writer, MetadataObject metadataObject)
-    {
         writer.WriteStartObject();
-        foreach (var keyValuePair in metadataObject)
+        foreach (var keyValuePair in metadata)
         {
             writer.WritePropertyName(keyValuePair.Key);
-            WriteMetadataValue(writer, keyValuePair.Value);
+            HttpWriteMetadataValueJsonConverter.WriteMetadataValue(writer, keyValuePair.Value);
         }
 
         writer.WriteEndObject();
-    }
-
-    private static void WriteMetadataArray(Utf8JsonWriter writer, MetadataArray array)
-    {
-        writer.WriteStartArray();
-        for (var i = 0; i < array.Count; i++)
-        {
-            WriteMetadataValue(writer, array[i]);
-        }
-
-        writer.WriteEndArray();
-    }
-
-    private static void WriteMetadataValue(Utf8JsonWriter writer, MetadataValue value)
-    {
-        switch (value.Kind)
-        {
-            case MetadataKind.Null:
-                writer.WriteNullValue();
-                break;
-            case MetadataKind.Boolean:
-                value.TryGetBoolean(out var boolValue);
-                writer.WriteBooleanValue(boolValue);
-                break;
-            case MetadataKind.Int64:
-                value.TryGetInt64(out var int64Value);
-                writer.WriteNumberValue(int64Value);
-                break;
-            case MetadataKind.Double:
-                value.TryGetDouble(out var doubleValue);
-                writer.WriteNumberValue(doubleValue);
-                break;
-            case MetadataKind.String:
-                value.TryGetString(out var stringValue);
-                writer.WriteStringValue(stringValue);
-                break;
-            case MetadataKind.Array:
-                value.TryGetArray(out var arrayValue);
-                WriteMetadataArray(writer, arrayValue);
-                break;
-            case MetadataKind.Object:
-                value.TryGetObject(out var objectValue);
-                WriteMetadataObject(writer, objectValue);
-                break;
-            default:
-                writer.WriteNullValue();
-                break;
-        }
     }
 
     private static string? GetStringAttribute(MetadataObject? attributes, string attributeName)

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
-using System.Linq;
 using Light.Results.Metadata;
 
 namespace Light.Results.CloudEvents.Writing;
@@ -92,12 +91,18 @@ public sealed class DefaultCloudEventAttributeConversionService : ICloudEventAtt
         }
     }
 
-    private static bool IsValidExtensionAttributeName(string attributeName) =>
-        attributeName.All(
-            character =>
-                character is >= 'a' and <= 'z' ||
-                character is >= '0' and <= '9'
-        );
+    private static bool IsValidExtensionAttributeName(string attributeName)
+    {
+        foreach(var character in attributeName)
+        {
+            if (character is (< 'a' or > 'z') and (< '0' or > '9'))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     private static void ValidateAttributeValue(string attributeName, MetadataValue value)
     {
@@ -106,7 +111,7 @@ public sealed class DefaultCloudEventAttributeConversionService : ICloudEventAtt
             return;
         }
 
-        if (value.Kind == MetadataKind.Array || value.Kind == MetadataKind.Object)
+        if (!value.Kind.IsPrimitive())
         {
             throw new ArgumentException(
                 $"The CloudEvent extension attribute '{attributeName}' must be a primitive JSON value.",

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 
 namespace Light.Results.CloudEvents;
@@ -31,29 +32,29 @@ public static class CloudEventConstants
     /// <summary>
     /// Gets the set of reserved attribute names that cannot be populated from metadata conversion.
     /// </summary>
-    public static ISet<string> ForbiddenConvertedAttributeNames { get; } = new HashSet<string>(
-        StringComparer.Ordinal
-    )
-    {
-        "data",
-        "data_base64",
-        LightResultsOutcomeAttributeName
-    };
+    public static FrozenSet<string> ForbiddenConvertedAttributeNames { get; } =
+        new HashSet<string>(StringComparer.Ordinal)
+        {
+            "data",
+            "data_base64",
+            LightResultsOutcomeAttributeName
+        }.ToFrozenSet();
 
     /// <summary>
     /// Gets the set of standard CloudEvents attribute names.
     /// </summary>
-    public static ISet<string> StandardAttributeNames { get; } = new HashSet<string>(StringComparer.Ordinal)
-    {
-        "specversion",
-        "type",
-        "source",
-        "subject",
-        "id",
-        "time",
-        "datacontenttype",
-        "dataschema",
-        "data",
-        "data_base64"
-    };
+    public static FrozenSet<string> StandardAttributeNames { get; } =
+        new HashSet<string>(StringComparer.Ordinal)
+        {
+            "specversion",
+            "type",
+            "source",
+            "subject",
+            "id",
+            "time",
+            "datacontenttype",
+            "dataschema",
+            "data",
+            "data_base64"
+        }.ToFrozenSet();
 }

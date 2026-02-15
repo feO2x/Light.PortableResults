@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
+using System.Text.Json;
+using Light.Results.CloudEvents.Writing.Json;
+using Light.Results.Http.Writing.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -74,5 +77,34 @@ public static class Module
         );
 
         return services;
+    }
+
+    /// <summary>
+    /// Registers all CloudEvents write JSON converters on the specified <see cref="JsonSerializerOptions" />.
+    /// </summary>
+    /// <param name="serializerOptions">The serializer options to configure.</param>
+    /// <param name="options">The CloudEvent write options.</param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="serializerOptions" /> or <paramref name="options" /> is <see langword="null" />.
+    /// </exception>
+    public static void AddDefaultLightResultsCloudEventWriteJsonConverters(
+        this JsonSerializerOptions serializerOptions,
+        LightResultsCloudEventWriteOptions options
+    )
+    {
+        if (serializerOptions is null)
+        {
+            throw new ArgumentNullException(nameof(serializerOptions));
+        }
+
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
+        serializerOptions.Converters.Add(new HttpWriteMetadataObjectJsonConverter());
+        serializerOptions.Converters.Add(new HttpWriteMetadataValueJsonConverter());
+        serializerOptions.Converters.Add(new CloudEventWriteResultJsonConverter(options));
+        serializerOptions.Converters.Add(new CloudEventWriteResultJsonConverterFactory(options));
     }
 }

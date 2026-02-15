@@ -1,0 +1,147 @@
+// Validating benchmarks:
+// ***** BenchmarkRunner: Start   *****
+// ***** Found 2 benchmark(s) in total *****
+// ***** Building 1 exe(s) in Parallel: Start   *****
+// start dotnet  restore --nodeReuse:false /p:UseSharedCompilation=false /p:Deterministic=true /p:Optimize=true /p:ArtifactsPath="/home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/" /p:OutDir="/home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/bin/Release/net10.0/" /p:OutputPath="/home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/bin/Release/net10.0/" /p:PublishDir="/home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/publish/" in /home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1
+// command took 1.45 sec and exited with 0
+// start dotnet  build -c Release --no-restore --nodeReuse:false /p:UseSharedCompilation=false /p:Deterministic=true /p:Optimize=true /p:ArtifactsPath="/home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/" /p:OutDir="/home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/bin/Release/net10.0/" /p:OutputPath="/home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/bin/Release/net10.0/" /p:PublishDir="/home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/publish/" --output "/home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/bin/Release/net10.0/" in /home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1
+// command took 9.49 sec and exited with 0
+// ***** Done, took 00:00:10 (10.99 sec)   *****
+// Found 2 benchmarks:
+//   CloudEventWritingBenchmarks.ToCloudEvent_GenericSuccess: DefaultJob
+//   CloudEventWritingBenchmarks.ToCloudEvent_GenericSuccessWithMetadata: DefaultJob
+
+// **************************
+// Benchmark: CloudEventWritingBenchmarks.ToCloudEvent_GenericSuccess: DefaultJob
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet Benchmarks-DefaultJob-1.dll --anonymousPipes 129 130 --benchmarkName Benchmarks.CloudEventWritingBenchmarks.ToCloudEvent_GenericSuccess --job Default --benchmarkId 0 in /home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/bin/Release/net10.0
+// Failed to set up high priority (Permission denied). In order to run benchmarks with high priority, make sure you have the right permissions.
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.15.8
+// Runtime=.NET 10.0.3 (10.0.3, 10.0.326.7603), X64 RyuJIT x86-64-v3
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX2+BMI1+BMI2+F16C+FMA+LZCNT+MOVBE,AVX,SSE3+SSSE3+SSE4.1+SSE4.2+POPCNT,X86Base+SSE+SSE2,AES+PCLMUL VectorSize=256
+// Job: DefaultJob
+
+OverheadJitting  1: 1 op, 168745.00 ns, 168.7450 us/op
+
+System.Reflection.TargetInvocationException: Exception has been thrown by the target of an invocation.
+ ---> System.NotSupportedException: JsonTypeInfo metadata for type 'Benchmarks.CloudEventWritingBenchmarks+ContactDto' was not provided by TypeInfoResolver of type '<null>'. If using source generation, ensure that all root types passed to the serializer have been annotated with 'JsonSerializableAttribute', along with any types that might be serialized polymorphically.
+   at System.Text.Json.ThrowHelper.ThrowNotSupportedException_NoMetadataForType(Type type, IJsonTypeInfoResolver resolver)
+   at System.Text.Json.JsonSerializerOptions.GetTypeInfoInternal(Type type, Boolean ensureConfigured, Nullable`1 ensureNotNull, Boolean resolveIfMutable, Boolean fallBackToNearestAncestorType)
+   at Light.Results.SharedJsonSerialization.SharedSerializerExtensions.WriteGenericValue[T](Utf8JsonWriter writer, T value, JsonSerializerOptions options) in /home/kenny/Code/Light.Results/src/Light.Results/SharedJsonSerialization/SharedSerializerExtensions.cs:line 56
+   at Light.Results.CloudEvents.Writing.CloudEventResultExtensions.WriteCloudEvent[T](Result`1 result, Utf8JsonWriter writer, String successType, String failureType, String id, String source, String subject, String dataschema, Nullable`1 time, LightResultsCloudEventWriteOptions options) in /home/kenny/Code/Light.Results/src/Light.Results/CloudEvents/Writing/CloudEventResultExtensions.cs:line 244
+   at Light.Results.CloudEvents.Writing.CloudEventResultExtensions.ToCloudEvent[T](Result`1 result, String successType, String failureType, String id, String source, String subject, String dataschema, Nullable`1 time, LightResultsCloudEventWriteOptions options) in /home/kenny/Code/Light.Results/src/Light.Results/CloudEvents/Writing/CloudEventResultExtensions.cs:line 150
+   at Benchmarks.CloudEventWritingBenchmarks.ToCloudEvent_GenericSuccess() in /home/kenny/Code/Light.Results/benchmarks/Benchmarks/CloudEventWritingBenchmarks.cs:line 95
+   at BenchmarkDotNet.Autogenerated.Runnable_0.WorkloadActionNoUnroll(Int64 invokeCount) in /home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/Benchmarks-DefaultJob-1.notcs:line 313
+   at BenchmarkDotNet.Engines.Engine.Measure(Action`1 action, Int64 invokeCount)
+   at BenchmarkDotNet.Engines.Engine.RunIteration(IterationData data)
+   at BenchmarkDotNet.Engines.EngineFactory.Jit(Engine engine, Int32 jitIndex, Int32 invokeCount, Int32 unrollFactor)
+   at BenchmarkDotNet.Engines.EngineFactory.CreateReadyToRun(EngineParameters engineParameters)
+   at BenchmarkDotNet.Autogenerated.Runnable_0.Run(IHost host, String benchmarkName) in /home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/Benchmarks-DefaultJob-1.notcs:line 176
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+   --- End of inner exception stack trace ---
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+   at BenchmarkDotNet.Autogenerated.UniqueProgramName.AfterAssemblyLoadingAttached(String[] args) in /home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/Benchmarks-DefaultJob-1.notcs:line 57
+// AfterAll
+No Workload Results were obtained from the run.
+// Benchmark Process 64058 has exited with code 255.
+
+// ** Remained 1 (50.0 %) benchmark(s) to run. Estimated finish 2026-02-15 10:09 (0h 0m from now) **
+// **************************
+// Benchmark: CloudEventWritingBenchmarks.ToCloudEvent_GenericSuccessWithMetadata: DefaultJob
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet Benchmarks-DefaultJob-1.dll --anonymousPipes 129 130 --benchmarkName Benchmarks.CloudEventWritingBenchmarks.ToCloudEvent_GenericSuccessWithMetadata --job Default --benchmarkId 1 in /home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/bin/Release/net10.0
+// Failed to set up high priority (Permission denied). In order to run benchmarks with high priority, make sure you have the right permissions.
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.15.8
+// Runtime=.NET 10.0.3 (10.0.3, 10.0.326.7603), X64 RyuJIT x86-64-v3
+// GC=Concurrent Workstation
+// HardwareIntrinsics=AVX2+BMI1+BMI2+F16C+FMA+LZCNT+MOVBE,AVX,SSE3+SSSE3+SSE4.1+SSE4.2+POPCNT,X86Base+SSE+SSE2,AES+PCLMUL VectorSize=256
+// Job: DefaultJob
+
+OverheadJitting  1: 1 op, 170171.00 ns, 170.1710 us/op
+
+System.Reflection.TargetInvocationException: Exception has been thrown by the target of an invocation.
+ ---> System.ArgumentException: The CloudEvent extension attribute 'traceId' is invalid. Only lowercase alphanumeric names are allowed. (Parameter 'attributeName')
+   at Light.Results.CloudEvents.Writing.DefaultCloudEventAttributeConversionService.ValidateAttributeName(String attributeName) in /home/kenny/Code/Light.Results/src/Light.Results/CloudEvents/Writing/DefaultCloudEventAttributeConversionService.cs:line 88
+   at Light.Results.CloudEvents.Writing.DefaultCloudEventAttributeConversionService.PrepareCloudEventAttribute(String metadataKey, MetadataValue metadataValue) in /home/kenny/Code/Light.Results/src/Light.Results/CloudEvents/Writing/DefaultCloudEventAttributeConversionService.cs:line 57
+   at Light.Results.CloudEvents.Writing.CloudEventResultExtensions.ConvertMetadataToCloudEventAttributes(Nullable`1 metadata, ICloudEventAttributeConversionService conversionService) in /home/kenny/Code/Light.Results/src/Light.Results/CloudEvents/Writing/CloudEventResultExtensions.cs:line 273
+   at Light.Results.CloudEvents.Writing.CloudEventResultExtensions.WriteCloudEvent[T](Result`1 result, Utf8JsonWriter writer, String successType, String failureType, String id, String source, String subject, String dataschema, Nullable`1 time, LightResultsCloudEventWriteOptions options) in /home/kenny/Code/Light.Results/src/Light.Results/CloudEvents/Writing/CloudEventResultExtensions.cs:line 204
+   at Light.Results.CloudEvents.Writing.CloudEventResultExtensions.ToCloudEvent[T](Result`1 result, String successType, String failureType, String id, String source, String subject, String dataschema, Nullable`1 time, LightResultsCloudEventWriteOptions options) in /home/kenny/Code/Light.Results/src/Light.Results/CloudEvents/Writing/CloudEventResultExtensions.cs:line 150
+   at Benchmarks.CloudEventWritingBenchmarks.ToCloudEvent_GenericSuccessWithMetadata() in /home/kenny/Code/Light.Results/benchmarks/Benchmarks/CloudEventWritingBenchmarks.cs:line 117
+   at BenchmarkDotNet.Autogenerated.Runnable_1.WorkloadActionNoUnroll(Int64 invokeCount) in /home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/Benchmarks-DefaultJob-1.notcs:line 510
+   at BenchmarkDotNet.Engines.Engine.Measure(Action`1 action, Int64 invokeCount)
+   at BenchmarkDotNet.Engines.Engine.RunIteration(IterationData data)
+   at BenchmarkDotNet.Engines.EngineFactory.Jit(Engine engine, Int32 jitIndex, Int32 invokeCount, Int32 unrollFactor)
+   at BenchmarkDotNet.Engines.EngineFactory.CreateReadyToRun(EngineParameters engineParameters)
+   at BenchmarkDotNet.Autogenerated.Runnable_1.Run(IHost host, String benchmarkName) in /home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/Benchmarks-DefaultJob-1.notcs:line 373
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+   --- End of inner exception stack trace ---
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+   at BenchmarkDotNet.Autogenerated.UniqueProgramName.AfterAssemblyLoadingAttached(String[] args) in /home/kenny/Code/Light.Results/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-DefaultJob-1/Benchmarks-DefaultJob-1.notcs:line 57
+// AfterAll
+No Workload Results were obtained from the run.
+// Benchmark Process 64070 has exited with code 255.
+
+// ** Remained 0 (0.0 %) benchmark(s) to run. Estimated finish 2026-02-15 10:09 (0h 0m from now) **
+// ***** BenchmarkRunner: Finish  *****
+
+// * Export *
+  BenchmarkDotNet.Artifacts/results/Benchmarks.CloudEventWritingBenchmarks-report.csv
+  BenchmarkDotNet.Artifacts/results/Benchmarks.CloudEventWritingBenchmarks-report-github.md
+  BenchmarkDotNet.Artifacts/results/Benchmarks.CloudEventWritingBenchmarks-report.html
+
+// * Detailed results *
+CloudEventWritingBenchmarks.ToCloudEvent_GenericSuccess: DefaultJob
+Runtime = .NET 10.0.3 (10.0.3, 10.0.326.7603), X64 RyuJIT x86-64-v3; GC = Concurrent Workstation
+There are not any results runs
+
+CloudEventWritingBenchmarks.ToCloudEvent_GenericSuccessWithMetadata: DefaultJob
+Runtime = .NET 10.0.3 (10.0.3, 10.0.326.7603), X64 RyuJIT x86-64-v3; GC = Concurrent Workstation
+There are not any results runs
+
+// * Summary *
+
+BenchmarkDotNet v0.15.8, Linux Ubuntu 24.04.4 LTS (Noble Numbat)
+AMD Ryzen 9 5950X 3.40GHz, 1 CPU, 32 logical and 16 physical cores
+.NET SDK 10.0.103
+  [Host]     : .NET 10.0.3 (10.0.3, 10.0.326.7603), X64 RyuJIT x86-64-v3
+  DefaultJob : .NET 10.0.3 (10.0.3, 10.0.326.7603), X64 RyuJIT x86-64-v3
+
+
+| Method                                  | Mean | Error |
+|---------------------------------------- |-----:|------:|
+| ToCloudEvent_GenericSuccess             |   NA |    NA |
+| ToCloudEvent_GenericSuccessWithMetadata |   NA |    NA |
+
+Benchmarks with issues:
+  CloudEventWritingBenchmarks.ToCloudEvent_GenericSuccess: DefaultJob
+  CloudEventWritingBenchmarks.ToCloudEvent_GenericSuccessWithMetadata: DefaultJob
+
+// * Legends *
+  Mean  : Arithmetic mean of all measurements
+  Error : Half of 99.9% confidence interval
+  1 ns  : 1 Nanosecond (0.000000001 sec)
+
+// * Diagnostic Output - MemoryDiagnoser *
+
+
+// ***** BenchmarkRunner: End *****
+Run time: 00:00:00 (0.37 sec), executed benchmarks: 2
+
+Global total time: 00:00:11 (11.44 sec), executed benchmarks: 2
+// * Artifacts cleanup *
+Artifacts cleanup is finished

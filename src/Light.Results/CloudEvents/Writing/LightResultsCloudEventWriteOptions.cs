@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json;
 using Light.Results.SharedJsonSerialization;
 
@@ -33,4 +34,35 @@ public sealed record LightResultsCloudEventWriteOptions
     /// </summary>
     public ICloudEventAttributeConversionService ConversionService { get; set; } =
         DefaultCloudEventAttributeConversionService.Instance;
+
+    /// <summary>
+    /// Gets or sets the CloudEvent type for successful results. Used by STJ converters.
+    /// </summary>
+    public string? SuccessType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the CloudEvent type for failed results. Used by STJ converters.
+    /// </summary>
+    public string? FailureType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the CloudEvent subject. Used by STJ converters.
+    /// </summary>
+    public string? Subject { get; set; }
+
+    /// <summary>
+    /// Gets or sets the CloudEvent data schema URI. Used by STJ converters.
+    /// </summary>
+    public string? DataSchema { get; set; }
+
+    /// <summary>
+    /// Gets or sets the CloudEvent time. When null, UTC now is used. Used by STJ converters.
+    /// </summary>
+    public DateTimeOffset? Time { get; set; }
+
+    /// <summary>
+    /// Gets or sets a factory function to generate unique CloudEvent IDs.
+    /// Defaults to generating a new GUID string.
+    /// </summary>
+    public Func<string>? IdResolver { get; set; }
 }

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>Benchmarks.CloudEventWritingBenchmarks-20260215-101622</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.15.8, Linux Ubuntu 24.04.4 LTS (Noble Numbat)
+AMD Ryzen 9 5950X 3.40GHz, 1 CPU, 32 logical and 16 physical cores
+.NET SDK 10.0.103
+  [Host]     : .NET 10.0.3 (10.0.3, 10.0.326.7603), X64 RyuJIT x86-64-v3
+  DefaultJob : .NET 10.0.3 (10.0.3, 10.0.326.7603), X64 RyuJIT x86-64-v3
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>Method                           </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Ratio</th><th>RatioSD</th><th>Gen0</th><th>Allocated</th><th>Alloc Ratio</th>
+</tr>
+</thead><tbody><tr><td>ToCloudEvent_NonGenericSuccess</td><td>322.1 ns</td><td>1.73 ns</td><td>1.35 ns</td><td>1.00</td><td>0.01</td><td>0.0243</td><td>407 B</td><td>1.00</td>
+</tr><tr><td>ToCloudEvent_NonGenericFailure</td><td>572.9 ns</td><td>6.33 ns</td><td>5.92 ns</td><td>1.78</td><td>0.02</td><td>0.0334</td><td>568 B</td><td>1.40</td>
+</tr><tr><td>ToCloudEvent_GenericSuccess</td><td>561.6 ns</td><td>6.01 ns</td><td>5.62 ns</td><td>1.74</td><td>0.02</td><td>0.0324</td><td>544 B</td><td>1.34</td>
+</tr><tr><td>ToCloudEvent_GenericFailure</td><td>582.2 ns</td><td>6.65 ns</td><td>5.55 ns</td><td>1.81</td><td>0.02</td><td>0.0334</td><td>567 B</td><td>1.39</td>
+</tr><tr><td>ToCloudEvent_GenericSuccessWithMetadata</td><td>943.4 ns</td><td>12.35 ns</td><td>11.55 ns</td><td>2.93</td><td>0.04</td><td>0.0496</td><td>840 B</td><td>2.06</td>
+</tr></tbody></table>
+</body>
+</html>
