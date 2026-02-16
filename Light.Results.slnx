@@ -16,6 +16,11 @@
     <File Path="ai-plans\0009-updated-minimal-api-integration.md" />
     <File Path="ai-plans\0011-http-response-deserialization.md" />
     <File Path="ai-plans\0011-plan-deviations.md" />
+    <File Path="ai-plans\0013-mvc-integration.md" />
+    <File Path="ai-plans\0015-cloud-events-reading-performance-optimization.md" />
+    <File Path="ai-plans\0015-cloud-events-serialization.md" />
+    <File Path="ai-plans\0015-cloud-events-write-optimization.md" />
+    <File Path="ai-plans\0015-cloud-events-write-streamlining.md" />
     <File Path="ai-plans\AGENTS.md" />
   </Folder>
   <Folder Name="/benchmarks/">
