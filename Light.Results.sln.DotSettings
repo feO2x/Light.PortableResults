@@ -235,4 +235,5 @@
     <s:Boolean x:Key="/Default/UserDictionary/Words/=hmacsha/@EntryIndexedValue">True</s:Boolean>
     <s:Boolean x:Key="/Default/UserDictionary/Words/=lroutcome/@EntryIndexedValue">True</s:Boolean>
     <s:Boolean x:Key="/Default/UserDictionary/Words/=nupkg/@EntryIndexedValue">True</s:Boolean>
+    <s:Boolean x:Key="/Default/UserDictionary/Words/=specversion/@EntryIndexedValue">True</s:Boolean>
 </wpf:ResourceDictionary>
