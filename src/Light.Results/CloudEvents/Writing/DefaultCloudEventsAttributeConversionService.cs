@@ -6,17 +6,17 @@ using Light.Results.Metadata;
 namespace Light.Results.CloudEvents.Writing;
 
 /// <summary>
-/// Default implementation of <see cref="ICloudEventAttributeConversionService" /> using a converter registry.
+/// Default implementation of <see cref="ICloudEventsAttributeConversionService" /> using a converter registry.
 /// </summary>
-public sealed class DefaultCloudEventAttributeConversionService : ICloudEventAttributeConversionService
+public sealed class DefaultCloudEventsAttributeConversionService : ICloudEventsAttributeConversionService
 {
     /// <summary>
-    /// Initializes a new instance of <see cref="DefaultCloudEventAttributeConversionService" />.
+    /// Initializes a new instance of <see cref="DefaultCloudEventsAttributeConversionService" />.
     /// </summary>
     /// <param name="converters">The converters keyed by metadata key.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="converters" /> is <see langword="null" />.</exception>
-    public DefaultCloudEventAttributeConversionService(
-        FrozenDictionary<string, CloudEventAttributeConverter> converters
+    public DefaultCloudEventsAttributeConversionService(
+        FrozenDictionary<string, CloudEventsAttributeConverter> converters
     )
     {
         Converters = converters ?? throw new ArgumentNullException(nameof(converters));
@@ -25,8 +25,8 @@ public sealed class DefaultCloudEventAttributeConversionService : ICloudEventAtt
     /// <summary>
     /// Gets the singleton default conversion service without custom converters.
     /// </summary>
-    public static DefaultCloudEventAttributeConversionService Instance { get; } = new (
-        new Dictionary<string, CloudEventAttributeConverter>(StringComparer.Ordinal).ToFrozenDictionary(
+    public static DefaultCloudEventsAttributeConversionService Instance { get; } = new (
+        new Dictionary<string, CloudEventsAttributeConverter>(StringComparer.Ordinal).ToFrozenDictionary(
             StringComparer.Ordinal
         )
     );
@@ -34,7 +34,7 @@ public sealed class DefaultCloudEventAttributeConversionService : ICloudEventAtt
     /// <summary>
     /// Gets the converters keyed by metadata key.
     /// </summary>
-    public FrozenDictionary<string, CloudEventAttributeConverter> Converters { get; }
+    public FrozenDictionary<string, CloudEventsAttributeConverter> Converters { get; }
 
     /// <summary>
     /// Converts a metadata value into a CloudEvent attribute.
@@ -93,7 +93,7 @@ public sealed class DefaultCloudEventAttributeConversionService : ICloudEventAtt
 
     private static bool IsValidExtensionAttributeName(string attributeName)
     {
-        foreach(var character in attributeName)
+        foreach (var character in attributeName)
         {
             if (character is (< 'a' or > 'z') and (< '0' or > '9'))
             {

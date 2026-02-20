@@ -9,12 +9,12 @@ using Xunit;
 
 namespace Light.Results.Tests.CloudEvents.Writing;
 
-public sealed class DefaultCloudEventAttributeConversionServiceTests
+public sealed class DefaultCloudEventsAttributeConversionServiceTests
 {
     [Fact]
     public void Constructor_ShouldThrow_WhenConvertersAreNull()
     {
-        Action act = () => _ = new DefaultCloudEventAttributeConversionService(null!);
+        Action act = () => _ = new DefaultCloudEventsAttributeConversionService(null!);
 
         act.Should().Throw<ArgumentNullException>().Where(exception => exception.ParamName == "converters");
     }
@@ -22,7 +22,7 @@ public sealed class DefaultCloudEventAttributeConversionServiceTests
     [Fact]
     public void PrepareCloudEventAttribute_ShouldThrow_WhenMetadataKeyIsNull()
     {
-        var service = new DefaultCloudEventAttributeConversionService(CreateEmptyConverters());
+        var service = new DefaultCloudEventsAttributeConversionService(CreateEmptyConverters());
 
         Action act = () => service.PrepareCloudEventAttribute(null!, MetadataValue.FromString("value"));
 
@@ -33,11 +33,11 @@ public sealed class DefaultCloudEventAttributeConversionServiceTests
     public void PrepareCloudEventAttribute_ShouldUseRegisteredConverter()
     {
         var converter = new TestConverter(ImmutableArray.Create("traceId"), "traceid");
-        var converters = new Dictionary<string, CloudEventAttributeConverter>(StringComparer.Ordinal)
+        var converters = new Dictionary<string, CloudEventsAttributeConverter>(StringComparer.Ordinal)
         {
             ["traceId"] = converter
         }.ToFrozenDictionary(StringComparer.Ordinal);
-        var service = new DefaultCloudEventAttributeConversionService(converters);
+        var service = new DefaultCloudEventsAttributeConversionService(converters);
 
         var converted = service.PrepareCloudEventAttribute("traceId", MetadataValue.FromString("abc"));
 
@@ -49,7 +49,7 @@ public sealed class DefaultCloudEventAttributeConversionServiceTests
     [Fact]
     public void PrepareCloudEventAttribute_ShouldAllowStandardAttributesEvenForObjectValues()
     {
-        var service = new DefaultCloudEventAttributeConversionService(CreateEmptyConverters());
+        var service = new DefaultCloudEventsAttributeConversionService(CreateEmptyConverters());
         var objectValue = MetadataValue.FromObject(MetadataObject.Create(("inner", MetadataValue.FromString("value"))));
 
         var converted = service.PrepareCloudEventAttribute("source", objectValue);
@@ -61,7 +61,7 @@ public sealed class DefaultCloudEventAttributeConversionServiceTests
     [Fact]
     public void PrepareCloudEventAttribute_ShouldThrow_WhenAttributeNameIsForbidden()
     {
-        var service = new DefaultCloudEventAttributeConversionService(CreateEmptyConverters());
+        var service = new DefaultCloudEventsAttributeConversionService(CreateEmptyConverters());
 
         Action act = () => service.PrepareCloudEventAttribute("data", MetadataValue.FromString("value"));
 
@@ -71,7 +71,7 @@ public sealed class DefaultCloudEventAttributeConversionServiceTests
     [Fact]
     public void PrepareCloudEventAttribute_ShouldThrow_WhenExtensionAttributeNameIsInvalid()
     {
-        var service = new DefaultCloudEventAttributeConversionService(CreateEmptyConverters());
+        var service = new DefaultCloudEventsAttributeConversionService(CreateEmptyConverters());
 
         Action act = () => service.PrepareCloudEventAttribute("Trace-Id", MetadataValue.FromString("value"));
 
@@ -81,7 +81,7 @@ public sealed class DefaultCloudEventAttributeConversionServiceTests
     [Fact]
     public void PrepareCloudEventAttribute_ShouldThrow_WhenExtensionValueIsComplex()
     {
-        var service = new DefaultCloudEventAttributeConversionService(CreateEmptyConverters());
+        var service = new DefaultCloudEventsAttributeConversionService(CreateEmptyConverters());
         var objectValue = MetadataValue.FromObject(MetadataObject.Create(("inner", MetadataValue.FromString("value"))));
 
         Action act = () => service.PrepareCloudEventAttribute("traceid", objectValue);
@@ -92,7 +92,7 @@ public sealed class DefaultCloudEventAttributeConversionServiceTests
     [Fact]
     public void PrepareCloudEventAttribute_ShouldAllowPrimitiveExtensionValues()
     {
-        var service = new DefaultCloudEventAttributeConversionService(CreateEmptyConverters());
+        var service = new DefaultCloudEventsAttributeConversionService(CreateEmptyConverters());
 
         var converted = service.PrepareCloudEventAttribute("traceid", MetadataValue.FromInt64(7));
 
@@ -103,7 +103,7 @@ public sealed class DefaultCloudEventAttributeConversionServiceTests
     [Fact]
     public void Instance_ShouldBeUsableWithoutCustomConverters()
     {
-        var converted = DefaultCloudEventAttributeConversionService.Instance.PrepareCloudEventAttribute(
+        var converted = DefaultCloudEventsAttributeConversionService.Instance.PrepareCloudEventAttribute(
             "traceid",
             MetadataValue.FromString("abc")
         );
@@ -113,14 +113,14 @@ public sealed class DefaultCloudEventAttributeConversionServiceTests
         value.Should().Be("abc");
     }
 
-    private static FrozenDictionary<string, CloudEventAttributeConverter> CreateEmptyConverters()
+    private static FrozenDictionary<string, CloudEventsAttributeConverter> CreateEmptyConverters()
     {
-        return new Dictionary<string, CloudEventAttributeConverter>(StringComparer.Ordinal).ToFrozenDictionary(
+        return new Dictionary<string, CloudEventsAttributeConverter>(StringComparer.Ordinal).ToFrozenDictionary(
             StringComparer.Ordinal
         );
     }
 
-    private sealed class TestConverter : CloudEventAttributeConverter
+    private sealed class TestConverter : CloudEventsAttributeConverter
     {
         private readonly string _targetAttributeName;
 

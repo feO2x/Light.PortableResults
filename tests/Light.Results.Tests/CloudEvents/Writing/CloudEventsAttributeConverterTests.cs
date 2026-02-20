@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Light.Results.Tests.CloudEvents.Writing;
 
-public sealed class CloudEventAttributeConverterTests
+public sealed class CloudEventsAttributeConverterTests
 {
     [Fact]
     public void Constructor_ShouldThrow_WhenSupportedMetadataKeysAreDefaultOrEmpty()
@@ -16,8 +16,10 @@ public sealed class CloudEventAttributeConverterTests
         Action actWithDefault = () => _ = new TestConverter(default);
         Action actWithEmpty = () => _ = new TestConverter(ImmutableArray<string>.Empty);
 
-        actWithDefault.Should().Throw<ArgumentException>().Where(exception => exception.ParamName == "supportedMetadataKeys");
-        actWithEmpty.Should().Throw<ArgumentException>().Where(exception => exception.ParamName == "supportedMetadataKeys");
+        actWithDefault.Should().Throw<ArgumentException>()
+           .Where(exception => exception.ParamName == "supportedMetadataKeys");
+        actWithEmpty.Should().Throw<ArgumentException>()
+           .Where(exception => exception.ParamName == "supportedMetadataKeys");
     }
 
     [Fact]
@@ -40,7 +42,7 @@ public sealed class CloudEventAttributeConverterTests
         value.Should().Be("abc");
     }
 
-    private sealed class TestConverter : CloudEventAttributeConverter
+    private sealed class TestConverter : CloudEventsAttributeConverter
     {
         public TestConverter(ImmutableArray<string> supportedMetadataKeys) : base(supportedMetadataKeys) { }
 

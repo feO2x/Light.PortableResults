@@ -8,16 +8,16 @@ namespace Light.Results.CloudEvents.Writing;
 /// <summary>
 /// Base type for converting metadata values into CloudEvent attributes.
 /// </summary>
-public abstract class CloudEventAttributeConverter
+public abstract class CloudEventsAttributeConverter
 {
     /// <summary>
-    /// Initializes a new instance of <see cref="CloudEventAttributeConverter" />.
+    /// Initializes a new instance of <see cref="CloudEventsAttributeConverter" />.
     /// </summary>
     /// <param name="supportedMetadataKeys">The metadata keys supported by this converter.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="supportedMetadataKeys" /> is default or empty.
     /// </exception>
-    protected CloudEventAttributeConverter(ImmutableArray<string> supportedMetadataKeys)
+    protected CloudEventsAttributeConverter(ImmutableArray<string> supportedMetadataKeys)
     {
         if (supportedMetadataKeys.IsDefaultOrEmpty)
         {

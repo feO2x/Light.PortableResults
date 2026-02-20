@@ -3,7 +3,6 @@ using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Text.Json;
 using Light.Results.CloudEvents.Writing.Json;
-using Light.Results.Http.Writing.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -16,12 +15,17 @@ namespace Light.Results.CloudEvents.Writing;
 public static class Module
 {
     /// <summary>
-    /// Registers <see cref="LightResultsCloudEventWriteOptions" /> in the service container.
+    /// Gets the default serializer options used by Light.Results CloudEvent writing.
+    /// </summary>
+    public static JsonSerializerOptions DefaultSerializerOptions { get; } = CreateDefaultSerializerOptions();
+
+    /// <summary>
+    /// Registers <see cref="LightResultsCloudEventsWriteOptions" /> in the service container.
     /// </summary>
     public static IServiceCollection AddLightResultsCloudEventWriteOptions(this IServiceCollection services)
     {
-        services.AddOptions<LightResultsCloudEventWriteOptions>();
-        services.AddSingleton(sp => sp.GetRequiredService<IOptions<LightResultsCloudEventWriteOptions>>().Value);
+        services.AddOptions<LightResultsCloudEventsWriteOptions>();
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<LightResultsCloudEventsWriteOptions>>().Value);
         return services;
     }
 
@@ -39,11 +43,11 @@ public static class Module
         IEqualityComparer<string>? metadataKeyComparer = null
     )
     {
-        services.TryAddSingleton<FrozenDictionary<string, CloudEventAttributeConverter>>(
+        services.TryAddSingleton<FrozenDictionary<string, CloudEventsAttributeConverter>>(
             sp =>
             {
-                var converters = sp.GetServices<CloudEventAttributeConverter>();
-                var dictionary = new Dictionary<string, CloudEventAttributeConverter>(metadataKeyComparer);
+                var converters = sp.GetServices<CloudEventsAttributeConverter>();
+                var dictionary = new Dictionary<string, CloudEventsAttributeConverter>(metadataKeyComparer);
                 foreach (var converter in converters)
                 {
                     foreach (var supportedKey in converter.SupportedMetadataKeys)
@@ -68,11 +72,11 @@ public static class Module
                     dictionary.ToFrozenDictionary(metadataKeyComparer);
             }
         );
-        services.AddSingleton<ICloudEventAttributeConversionService, DefaultCloudEventAttributeConversionService>(
+        services.AddSingleton<ICloudEventsAttributeConversionService, DefaultCloudEventsAttributeConversionService>(
             sp =>
             {
-                var converters = sp.GetRequiredService<FrozenDictionary<string, CloudEventAttributeConverter>>();
-                return new DefaultCloudEventAttributeConversionService(converters);
+                var converters = sp.GetRequiredService<FrozenDictionary<string, CloudEventsAttributeConverter>>();
+                return new DefaultCloudEventsAttributeConversionService(converters);
             }
         );
 
@@ -83,28 +87,27 @@ public static class Module
     /// Registers all CloudEvents write JSON converters on the specified <see cref="JsonSerializerOptions" />.
     /// </summary>
     /// <param name="serializerOptions">The serializer options to configure.</param>
-    /// <param name="options">The CloudEvent write options.</param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="serializerOptions" /> or <paramref name="options" /> is <see langword="null" />.
-    /// </exception>
-    public static void AddDefaultLightResultsCloudEventWriteJsonConverters(
-        this JsonSerializerOptions serializerOptions,
-        LightResultsCloudEventWriteOptions options
-    )
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="serializerOptions" /> is <see langword="null" />.</exception>
+    public static void AddDefaultLightResultsCloudEventWriteJsonConverters(this JsonSerializerOptions serializerOptions)
     {
         if (serializerOptions is null)
         {
             throw new ArgumentNullException(nameof(serializerOptions));
         }
 
-        if (options is null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
+        serializerOptions.Converters.Add(new CloudEventsMetadataObjectJsonConverter());
+        serializerOptions.Converters.Add(new CloudEventEnvelopeForWritingJsonConverter());
+        serializerOptions.Converters.Add(new CloudEventEnvelopeForWritingJsonConverterFactory());
+    }
 
-        serializerOptions.Converters.Add(new HttpWriteMetadataObjectJsonConverter());
-        serializerOptions.Converters.Add(new HttpWriteMetadataValueJsonConverter());
-        serializerOptions.Converters.Add(new CloudEventWriteResultJsonConverter(options));
-        serializerOptions.Converters.Add(new CloudEventWriteResultJsonConverterFactory(options));
+    /// <summary>
+    /// Creates a default <see cref="JsonSerializerOptions" /> instance for CloudEvent writing.
+    /// </summary>
+    /// <returns>A new default serializer options instance.</returns>
+    public static JsonSerializerOptions CreateDefaultSerializerOptions()
+    {
+        var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        serializerOptions.AddDefaultLightResultsCloudEventWriteJsonConverters();
+        return serializerOptions;
     }
 }

@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization;
+using Light.Results.SharedJsonSerialization.Reading;
 
 namespace Light.Results.CloudEvents.Reading.Json;
 

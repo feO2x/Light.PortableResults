@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Light.Results.Metadata;
 
-namespace Light.Results.SharedJsonSerialization;
+namespace Light.Results.SharedJsonSerialization.Reading;
 
 /// <summary>
 /// Provides low-level JSON parsing helpers for metadata values.
@@ -43,6 +43,7 @@ public static class MetadataJsonReader
     /// <param name="reader">The JSON reader.</param>
     /// <param name="annotation">The annotation applied to parsed values.</param>
     /// <returns>The parsed metadata object.</returns>
+    // ReSharper disable once CognitiveComplexity -- Parsing can be complex
     public static MetadataObject ReadMetadataObject(
         ref Utf8JsonReader reader,
         MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody

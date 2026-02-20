@@ -18,7 +18,7 @@ public static class MetadataJsonReader
         ref Utf8JsonReader reader,
         MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
     ) =>
-        SharedJsonSerialization.MetadataJsonReader.ReadMetadataValue(ref reader, annotation);
+        SharedJsonSerialization.Reading.MetadataJsonReader.ReadMetadataValue(ref reader, annotation);
 
     /// <summary>
     /// Reads a <see cref="MetadataObject" /> from the current JSON token.
@@ -30,7 +30,7 @@ public static class MetadataJsonReader
         ref Utf8JsonReader reader,
         MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
     ) =>
-        SharedJsonSerialization.MetadataJsonReader.ReadMetadataObject(ref reader, annotation);
+        SharedJsonSerialization.Reading.MetadataJsonReader.ReadMetadataObject(ref reader, annotation);
 
     /// <summary>
     /// Reads a <see cref="MetadataArray" /> from the current JSON token.
@@ -42,5 +42,5 @@ public static class MetadataJsonReader
         ref Utf8JsonReader reader,
         MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
     ) =>
-        SharedJsonSerialization.MetadataJsonReader.ReadMetadataArray(ref reader, annotation);
+        SharedJsonSerialization.Reading.MetadataJsonReader.ReadMetadataArray(ref reader, annotation);
 }

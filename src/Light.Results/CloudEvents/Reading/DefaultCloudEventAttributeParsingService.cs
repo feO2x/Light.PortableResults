@@ -52,6 +52,11 @@ public sealed class DefaultCloudEventAttributeParsingService : ICloudEventAttrib
     /// </summary>
     public MetadataObject? ReadExtensionMetadata(MetadataObject extensionAttributes)
     {
+        if (extensionAttributes.Count == 0)
+        {
+            return null;
+        }
+
         using var builder = MetadataObjectBuilder.Create(extensionAttributes.Count);
         foreach (var keyValuePair in extensionAttributes)
         {

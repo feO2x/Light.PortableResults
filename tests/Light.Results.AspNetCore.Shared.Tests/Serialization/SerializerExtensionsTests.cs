@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using FluentAssertions;
-using Light.Results.Http.Writing.Json;
+using Light.Results.SharedJsonSerialization.Writing;
 using Xunit;
 
 namespace Light.Results.AspNetCore.Shared.Tests.Serialization;

@@ -9,12 +9,17 @@ namespace Light.Results.Metadata;
 /// </summary>
 public readonly struct MetadataValue : IEquatable<MetadataValue>
 {
+    /// <summary>
+    /// Gets the default annotation for metadata values, which is <see cref="MetadataValueAnnotation.SerializeInBodies" />.
+    /// </summary>
+    public const MetadataValueAnnotation DefaultAnnotation = MetadataValueAnnotation.SerializeInBodies;
+
     private readonly MetadataPayload _payload;
 
     private MetadataValue(
         MetadataKind kind,
         MetadataPayload payload,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
+        MetadataValueAnnotation annotation = DefaultAnnotation
     )
     {
         Kind = kind;
@@ -43,7 +48,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// <param name="annotation">The serialization annotation.</param>
     /// <returns>The metadata value.</returns>
     public static MetadataValue FromNull(
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
+        MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
         new (MetadataKind.Null, default, annotation);
 
@@ -55,7 +60,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// <returns>The metadata value.</returns>
     public static MetadataValue FromBoolean(
         bool value,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
+        MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
         new (MetadataKind.Boolean, new MetadataPayload(value ? 1L : 0L), annotation);
 
@@ -67,7 +72,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// <returns>The metadata value.</returns>
     public static MetadataValue FromInt64(
         long value,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
+        MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
         new (MetadataKind.Int64, new MetadataPayload(value), annotation);
 
@@ -82,7 +87,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// </exception>
     public static MetadataValue FromDouble(
         double value,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
+        MetadataValueAnnotation annotation = DefaultAnnotation
     )
     {
         if (double.IsNaN(value) || double.IsInfinity(value))
@@ -101,7 +106,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// <returns>The metadata value.</returns>
     public static MetadataValue FromString(
         string? value,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
+        MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
         value is null ? Null : new MetadataValue(MetadataKind.String, new MetadataPayload(value), annotation);
 
@@ -113,7 +118,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// <returns>The metadata value.</returns>
     public static MetadataValue FromDecimal(
         decimal value,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
+        MetadataValueAnnotation annotation = DefaultAnnotation
     )
     {
         var @string = value.ToString(CultureInfo.InvariantCulture);
@@ -132,7 +137,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// </exception>
     public static MetadataValue FromArray(
         MetadataArray array,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
+        MetadataValueAnnotation annotation = DefaultAnnotation
     )
     {
         ValidateArrayAnnotation(array, annotation);
@@ -150,7 +155,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// </exception>
     public static MetadataValue FromObject(
         MetadataObject @object,
-        MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInHttpResponseBody
+        MetadataValueAnnotation annotation = DefaultAnnotation
     )
     {
         if ((annotation & MetadataValueAnnotation.SerializeInHttpHeader) != 0)

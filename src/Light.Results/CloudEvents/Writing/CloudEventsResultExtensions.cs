@@ -2,16 +2,14 @@ using System;
 using System.Buffers;
 using System.Globalization;
 using System.Text.Json;
-using Light.Results.Http.Writing.Json;
 using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization;
 
 namespace Light.Results.CloudEvents.Writing;
 
 /// <summary>
 /// Provides extension methods to serialize <see cref="Result" /> and <see cref="Result{T}" /> values as CloudEvents JSON envelopes.
 /// </summary>
-public static class CloudEventResultExtensions
+public static class CloudEventsResultExtensions
 {
     /// <summary>
     /// Serializes a non-generic <see cref="Result" /> to a CloudEvents JSON envelope.
@@ -25,7 +23,7 @@ public static class CloudEventResultExtensions
         string? subject = null,
         string? dataschema = null,
         DateTimeOffset? time = null,
-        LightResultsCloudEventWriteOptions? options = null
+        LightResultsCloudEventsWriteOptions? options = null
     )
     {
         using var bufferWriter = new PooledByteBufferWriter();
@@ -33,32 +31,6 @@ public static class CloudEventResultExtensions
         result.WriteCloudEvent(writer, successType, failureType, id, source, subject, dataschema, time, options);
         writer.Flush();
         return bufferWriter.ToArray();
-    }
-
-    /// <summary>
-    /// Writes a non-generic <see cref="Result" /> as a CloudEvents JSON envelope to the specified buffer writer.
-    /// </summary>
-    public static void WriteCloudEvent(
-        this Result result,
-        IBufferWriter<byte> bufferWriter,
-        string? successType = null,
-        string? failureType = null,
-        string? id = null,
-        string? source = null,
-        string? subject = null,
-        string? dataschema = null,
-        DateTimeOffset? time = null,
-        LightResultsCloudEventWriteOptions? options = null
-    )
-    {
-        if (bufferWriter is null)
-        {
-            throw new ArgumentNullException(nameof(bufferWriter));
-        }
-
-        using var writer = new Utf8JsonWriter(bufferWriter);
-        result.WriteCloudEvent(writer, successType, failureType, id, source, subject, dataschema, time, options);
-        writer.Flush();
     }
 
     /// <summary>
@@ -74,7 +46,7 @@ public static class CloudEventResultExtensions
         string? subject = null,
         string? dataschema = null,
         DateTimeOffset? time = null,
-        LightResultsCloudEventWriteOptions? options = null
+        LightResultsCloudEventsWriteOptions? options = null
     )
     {
         if (writer is null)
@@ -82,13 +54,8 @@ public static class CloudEventResultExtensions
             throw new ArgumentNullException(nameof(writer));
         }
 
-        var serializerOptions = (options ?? LightResultsCloudEventWriteOptions.Default).SerializerOptions;
-        var resolvedOptions = options ?? LightResultsCloudEventWriteOptions.Default;
-        var convertedAttributes =
-            ConvertMetadataToCloudEventAttributes(result.Metadata, resolvedOptions.ConversionService);
-        var resolvedAttributes = ResolveAttributes(
-            result.IsValid,
-            convertedAttributes,
+        var resolvedOptions = options ?? LightResultsCloudEventsWriteOptions.Default;
+        var envelope = result.ToCloudEventEnvelopeForWriting(
             successType,
             failureType,
             id,
@@ -96,39 +63,55 @@ public static class CloudEventResultExtensions
             subject,
             dataschema,
             time,
+            resolvedOptions
+        );
+
+        JsonSerializer.Serialize(writer, envelope, resolvedOptions.SerializerOptions);
+    }
+
+    /// <summary>
+    /// Creates a non-generic <see cref="CloudEventEnvelopeForWriting" /> with resolved attributes and frozen write options.
+    /// </summary>
+    public static CloudEventEnvelopeForWriting ToCloudEventEnvelopeForWriting(
+        this Result result,
+        string? successType = null,
+        string? failureType = null,
+        string? id = null,
+        string? source = null,
+        string? subject = null,
+        string? dataschema = null,
+        DateTimeOffset? time = null,
+        LightResultsCloudEventsWriteOptions? options = null
+    )
+    {
+        var resolvedOptions = options ?? LightResultsCloudEventsWriteOptions.Default;
+        var convertedAttributes =
+            ConvertMetadataToCloudEventAttributes(result.Metadata, resolvedOptions.ConversionService);
+        var resolvedAttributes = ResolveAttributes(
+            result.IsValid,
+            convertedAttributes,
+            ResolveOptionalString(successType, resolvedOptions.SuccessType),
+            ResolveOptionalString(failureType, resolvedOptions.FailureType),
+            ResolveOptionalString(id, resolvedOptions.IdResolver?.Invoke()),
+            source,
+            subject ?? resolvedOptions.Subject,
+            dataschema ?? resolvedOptions.DataSchema,
+            time ?? resolvedOptions.Time,
             resolvedOptions.Source
         );
 
-        var metadataForData = SelectMetadataByAnnotation(
-            result.Metadata,
-            MetadataValueAnnotation.SerializeInCloudEventData
+        return new CloudEventEnvelopeForWriting(
+            resolvedAttributes.Type,
+            resolvedAttributes.Source,
+            resolvedAttributes.Id,
+            result,
+            new ResolvedCloudEventWriteOptions(resolvedOptions.MetadataSerializationMode),
+            resolvedAttributes.Subject,
+            resolvedAttributes.Time,
+            CloudEventConstants.JsonContentType,
+            resolvedAttributes.DataSchema,
+            convertedAttributes
         );
-        var includeData = !result.IsValid ||
-                          (
-                              resolvedOptions.MetadataSerializationMode == MetadataSerializationMode.Always &&
-                              metadataForData is not null
-                          );
-
-        writer.WriteStartObject();
-        WriteEnvelopeAttributes(writer, resolvedAttributes, result.IsValid, includeData);
-        WriteExtensionAttributes(writer, convertedAttributes);
-
-        if (includeData)
-        {
-            writer.WritePropertyName("data");
-            if (result.IsValid && metadataForData is { } successMetadata)
-            {
-                writer.WriteStartObject();
-                WriteMetadataPropertyAndValue(writer, successMetadata);
-                writer.WriteEndObject();
-            }
-            else
-            {
-                WriteFailurePayload(writer, result.Errors, metadataForData, serializerOptions);
-            }
-        }
-
-        writer.WriteEndObject();
     }
 
     /// <summary>
@@ -143,7 +126,7 @@ public static class CloudEventResultExtensions
         string? subject = null,
         string? dataschema = null,
         DateTimeOffset? time = null,
-        LightResultsCloudEventWriteOptions? options = null
+        LightResultsCloudEventsWriteOptions? options = null
     )
     {
         using var bufferWriter = new PooledByteBufferWriter();
@@ -166,7 +149,7 @@ public static class CloudEventResultExtensions
         string? subject = null,
         string? dataschema = null,
         DateTimeOffset? time = null,
-        LightResultsCloudEventWriteOptions? options = null
+        LightResultsCloudEventsWriteOptions? options = null
     )
     {
         if (bufferWriter is null)
@@ -192,7 +175,7 @@ public static class CloudEventResultExtensions
         string? subject = null,
         string? dataschema = null,
         DateTimeOffset? time = null,
-        LightResultsCloudEventWriteOptions? options = null
+        LightResultsCloudEventsWriteOptions? options = null
     )
     {
         if (writer is null)
@@ -200,13 +183,8 @@ public static class CloudEventResultExtensions
             throw new ArgumentNullException(nameof(writer));
         }
 
-        var resolvedOptions = options ?? LightResultsCloudEventWriteOptions.Default;
-        var serializerOptions = resolvedOptions.SerializerOptions;
-        var convertedAttributes =
-            ConvertMetadataToCloudEventAttributes(result.Metadata, resolvedOptions.ConversionService);
-        var resolvedAttributes = ResolveAttributes(
-            result.IsValid,
-            convertedAttributes,
+        var resolvedOptions = options ?? LightResultsCloudEventsWriteOptions.Default;
+        var envelope = result.ToCloudEventEnvelopeForWriting(
             successType,
             failureType,
             id,
@@ -214,54 +192,73 @@ public static class CloudEventResultExtensions
             subject,
             dataschema,
             time,
+            resolvedOptions
+        );
+
+        JsonSerializer.Serialize(writer, envelope, resolvedOptions.SerializerOptions);
+    }
+
+    /// <summary>
+    /// Creates a generic <see cref="CloudEventEnvelopeForWriting{T}" /> with resolved attributes and frozen write options.
+    /// </summary>
+    public static CloudEventEnvelopeForWriting<T> ToCloudEventEnvelopeForWriting<T>(
+        this Result<T> result,
+        string? successType = null,
+        string? failureType = null,
+        string? id = null,
+        string? source = null,
+        string? subject = null,
+        string? dataschema = null,
+        DateTimeOffset? time = null,
+        LightResultsCloudEventsWriteOptions? options = null
+    )
+    {
+        var resolvedOptions = options ?? LightResultsCloudEventsWriteOptions.Default;
+        var convertedAttributes =
+            ConvertMetadataToCloudEventAttributes(result.Metadata, resolvedOptions.ConversionService);
+        var resolvedAttributes = ResolveAttributes(
+            result.IsValid,
+            convertedAttributes,
+            ResolveOptionalString(successType, resolvedOptions.SuccessType),
+            ResolveOptionalString(failureType, resolvedOptions.FailureType),
+            ResolveOptionalString(id, resolvedOptions.IdResolver?.Invoke()),
+            source,
+            subject ?? resolvedOptions.Subject,
+            dataschema ?? resolvedOptions.DataSchema,
+            time ?? resolvedOptions.Time,
             resolvedOptions.Source
         );
 
-        var metadataForData = SelectMetadataByAnnotation(
-            result.Metadata,
-            MetadataValueAnnotation.SerializeInCloudEventData
+        return new CloudEventEnvelopeForWriting<T>(
+            resolvedAttributes.Type,
+            resolvedAttributes.Source,
+            resolvedAttributes.Id,
+            result,
+            new ResolvedCloudEventWriteOptions(resolvedOptions.MetadataSerializationMode),
+            resolvedAttributes.Subject,
+            resolvedAttributes.Time,
+            CloudEventConstants.JsonContentType,
+            resolvedAttributes.DataSchema,
+            convertedAttributes
         );
-        var includeWrappedSuccess = result.IsValid &&
-                                    resolvedOptions.MetadataSerializationMode == MetadataSerializationMode.Always &&
-                                    metadataForData is not null;
+    }
 
-        writer.WriteStartObject();
-        WriteEnvelopeAttributes(writer, resolvedAttributes, result.IsValid, includeData: true);
-        WriteExtensionAttributes(writer, convertedAttributes);
-
-        writer.WritePropertyName("data");
-        if (result.IsValid)
-        {
-            if (includeWrappedSuccess && metadataForData is { } successMetadata)
-            {
-                writer.WriteStartObject();
-                writer.WritePropertyName("value");
-                SharedSerializerExtensions.WriteGenericValue(writer, result.Value, serializerOptions);
-                WriteMetadataPropertyAndValue(writer, successMetadata);
-                writer.WriteEndObject();
-            }
-            else
-            {
-                SharedSerializerExtensions.WriteGenericValue(writer, result.Value, serializerOptions);
-            }
-        }
-        else
-        {
-            WriteFailurePayload(writer, result.Errors, metadataForData, serializerOptions);
-        }
-
-        writer.WriteEndObject();
+    private static string? ResolveOptionalString(string? primaryValue, string? fallbackValue)
+    {
+        return !string.IsNullOrWhiteSpace(primaryValue) ? primaryValue : fallbackValue;
     }
 
     private static MetadataObject? ConvertMetadataToCloudEventAttributes(
         MetadataObject? metadata,
-        ICloudEventAttributeConversionService conversionService
+        ICloudEventsAttributeConversionService conversionService
     )
     {
-        if (metadata is null)
+        if (metadata is null ||
+            !metadata.Value.HasAnyValuesWithAnnotation(MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute))
         {
             return null;
         }
+
 
         using var builder = MetadataObjectBuilder.Create(metadata.Value.Count);
         foreach (var keyValuePair in metadata.Value)
@@ -273,28 +270,6 @@ public static class CloudEventResultExtensions
 
             var preparedAttribute = conversionService.PrepareCloudEventAttribute(keyValuePair.Key, keyValuePair.Value);
             builder.AddOrReplace(preparedAttribute.Key, preparedAttribute.Value);
-        }
-
-        return builder.Count == 0 ? null : builder.Build();
-    }
-
-    private static MetadataObject? SelectMetadataByAnnotation(
-        MetadataObject? metadata,
-        MetadataValueAnnotation annotation
-    )
-    {
-        if (metadata is null)
-        {
-            return null;
-        }
-
-        using var builder = MetadataObjectBuilder.Create(metadata.Value.Count);
-        foreach (var keyValuePair in metadata.Value)
-        {
-            if (keyValuePair.Value.HasAnnotation(annotation))
-            {
-                builder.Add(keyValuePair.Key, keyValuePair.Value);
-            }
         }
 
         return builder.Count == 0 ? null : builder.Build();
@@ -323,9 +298,18 @@ public static class CloudEventResultExtensions
             GetStringAttribute(convertedAttributes, "source") ??
             defaultSource;
 
-        var resolvedId = !string.IsNullOrWhiteSpace(id) ?
-            id! :
-            GetStringAttribute(convertedAttributes, "id");
+        string resolvedId;
+        if (!string.IsNullOrWhiteSpace(id))
+        {
+            resolvedId = id!;
+        }
+        else
+        {
+            var idFromAttributes = GetStringAttribute(convertedAttributes, "id");
+            resolvedId = !string.IsNullOrWhiteSpace(idFromAttributes) ?
+                idFromAttributes! :
+                Guid.NewGuid().ToString();
+        }
 
         var resolvedSubject = subject ?? GetStringAttribute(convertedAttributes, "subject");
         var resolvedDataSchema = dataschema ?? GetStringAttribute(convertedAttributes, "dataschema");
@@ -341,102 +325,17 @@ public static class CloudEventResultExtensions
             throw new InvalidOperationException("CloudEvent attribute 'source' could not be resolved.");
         }
 
-        if (string.IsNullOrWhiteSpace(resolvedId))
-        {
-            throw new InvalidOperationException("CloudEvent attribute 'id' could not be resolved.");
-        }
-
         ValidateSourceUriReference(resolvedSource!);
         ValidateDataSchema(resolvedDataSchema);
 
         return new ResolvedAttributes(
             resolvedType!,
             resolvedSource!,
-            resolvedId!,
+            resolvedId,
             resolvedSubject,
             resolvedDataSchema,
             resolvedTime
         );
-    }
-
-    private static void WriteEnvelopeAttributes(
-        Utf8JsonWriter writer,
-        ResolvedAttributes attributes,
-        bool isSuccess,
-        bool includeData
-    )
-    {
-        writer.WriteString("specversion", CloudEventConstants.SpecVersion);
-        writer.WriteString("type", attributes.Type);
-        writer.WriteString("source", attributes.Source);
-        if (!string.IsNullOrWhiteSpace(attributes.Subject))
-        {
-            writer.WriteString("subject", attributes.Subject);
-        }
-
-        if (!string.IsNullOrWhiteSpace(attributes.DataSchema))
-        {
-            writer.WriteString("dataschema", attributes.DataSchema);
-        }
-
-        writer.WriteString("id", attributes.Id);
-        writer.WriteString("time", attributes.Time);
-        writer.WriteString(CloudEventConstants.LightResultsOutcomeAttributeName, isSuccess ? "success" : "failure");
-
-        if (includeData)
-        {
-            writer.WriteString("datacontenttype", CloudEventConstants.JsonContentType);
-        }
-    }
-
-    private static void WriteExtensionAttributes(Utf8JsonWriter writer, MetadataObject? convertedAttributes)
-    {
-        if (convertedAttributes is null)
-        {
-            return;
-        }
-
-        foreach (var keyValuePair in convertedAttributes.Value)
-        {
-            if (CloudEventConstants.StandardAttributeNames.Contains(keyValuePair.Key) ||
-                CloudEventConstants.ForbiddenConvertedAttributeNames.Contains(keyValuePair.Key))
-            {
-                continue;
-            }
-
-            writer.WritePropertyName(keyValuePair.Key);
-            HttpWriteMetadataValueJsonConverter.WriteMetadataValue(writer, keyValuePair.Value);
-        }
-    }
-
-    private static void WriteFailurePayload(
-        Utf8JsonWriter writer,
-        Errors errors,
-        MetadataObject? metadata,
-        JsonSerializerOptions serializerOptions
-    )
-    {
-        writer.WriteStartObject();
-        writer.WriteRichErrors(errors, isValidationResponse: false, serializerOptions);
-        if (metadata is not null)
-        {
-            WriteMetadataPropertyAndValue(writer, metadata.Value);
-        }
-
-        writer.WriteEndObject();
-    }
-
-    private static void WriteMetadataPropertyAndValue(Utf8JsonWriter writer, MetadataObject metadata)
-    {
-        writer.WritePropertyName("metadata");
-        writer.WriteStartObject();
-        foreach (var keyValuePair in metadata)
-        {
-            writer.WritePropertyName(keyValuePair.Key);
-            HttpWriteMetadataValueJsonConverter.WriteMetadataValue(writer, keyValuePair.Value);
-        }
-
-        writer.WriteEndObject();
     }
 
     private static string? GetStringAttribute(MetadataObject? attributes, string attributeName)

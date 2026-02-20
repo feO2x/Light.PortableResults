@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Light.Results.Metadata;
 
-namespace Light.Results.SharedJsonSerialization;
+namespace Light.Results.SharedJsonSerialization.Reading;
 
 /// <summary>
 /// Provides transport-agnostic JSON parsing helpers for result payload fragments.

@@ -44,7 +44,7 @@ public sealed class MetadataValueAnnotationTests
     {
         var value = MetadataValue.FromDecimal(123.45m);
 
-        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInHttpResponseBody);
+        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInBodies);
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public sealed class MetadataValueAnnotationTests
         var obj = MetadataObject.Create(("key", "value"));
         var value = MetadataValue.FromObject(obj);
 
-        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInHttpResponseBody);
+        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInBodies);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public sealed class MetadataValueAnnotationTests
     {
         MetadataValue value = "test";
 
-        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInHttpResponseBody);
+        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInBodies);
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public sealed class MetadataValueAnnotationTests
     {
         var value = MetadataValue.FromString("test");
 
-        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInHttpResponseBody);
+        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInBodies);
     }
 
     [Theory]

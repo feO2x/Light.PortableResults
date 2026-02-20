@@ -44,5 +44,10 @@ public enum MetadataValueAnnotation
     /// Serialize this value in both CloudEvent extension attributes and in the CloudEvent <c>data</c> payload.
     /// </summary>
     SerializeInCloudEventExtensionAttributeAndData =
-        SerializeInCloudEventData | SerializeAsCloudEventExtensionAttribute
+        SerializeInCloudEventData | SerializeAsCloudEventExtensionAttribute,
+
+    /// <summary>
+    /// Serialize this value in both HTTP response bodies and CloudEvent <c>data</c> payloads.
+    /// </summary>
+    SerializeInBodies = SerializeInHttpResponseBody | SerializeInCloudEventData
 }

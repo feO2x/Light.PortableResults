@@ -30,13 +30,18 @@ public struct MetadataObjectBuilder : IDisposable
     /// <returns>The builder.</returns>
     public static MetadataObjectBuilder Create(int capacity = DefaultCapacity)
     {
-        var actualCapacity = Math.Max(capacity, DefaultCapacity);
+        if (capacity < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(capacity));
+        }
+
         var builder = new MetadataObjectBuilder
         {
-            _entries = ArrayPool<KeyValuePair<string, MetadataValue>>.Shared.Rent(actualCapacity),
+            _entries = ArrayPool<KeyValuePair<string, MetadataValue>>.Shared.Rent(capacity),
             Count = 0,
             _built = false
         };
+
         return builder;
     }
 

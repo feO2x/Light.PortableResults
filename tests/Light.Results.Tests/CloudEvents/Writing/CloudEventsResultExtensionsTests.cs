@@ -1,6 +1,5 @@
 using System;
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using FluentAssertions;
 using Light.Results.CloudEvents.Writing;
 using Light.Results.Metadata;
@@ -9,10 +8,10 @@ using Xunit;
 
 namespace Light.Results.Tests.CloudEvents.Writing;
 
-public sealed class CloudEventResultExtensionsTests
+public sealed class CloudEventsResultExtensionsTests
 {
     [Fact]
-    public void ToCloudEvent_ForGenericSuccess_ShouldWriteRequiredEnvelopeAndBareData()
+    public void ToCloudEvent_ForGenericSuccess_ShouldWriteRequiredEnvelopeAndWrappedData()
     {
         var result = Result<int>.Ok(42);
         var time = new DateTimeOffset(2026, 2, 14, 12, 30, 0, TimeSpan.Zero);
@@ -35,15 +34,15 @@ public sealed class CloudEventResultExtensionsTests
         root.GetProperty("id").GetString().Should().Be("evt-1");
         root.GetProperty("lroutcome").GetString().Should().Be("success");
         root.GetProperty("datacontenttype").GetString().Should().Be("application/json");
-        root.GetProperty("data").GetInt32().Should().Be(42);
+        root.GetProperty("data").GetProperty("value").GetInt32().Should().Be(42);
         DateTimeOffset.Parse(root.GetProperty("time").GetString()!).Should().Be(time);
     }
 
     [Fact]
-    public void ToCloudEvent_ForNonGenericSuccessWithoutDataMetadata_ShouldOmitDataAndDataContentType()
+    public void ToCloudEvent_ForNonGenericSuccessWithoutDataMetadata_ShouldWriteNullDataAndDataContentType()
     {
         var result = Result.Ok();
-        var options = new LightResultsCloudEventWriteOptions
+        var options = new LightResultsCloudEventsWriteOptions
         {
             Source = "urn:test:source",
             MetadataSerializationMode = MetadataSerializationMode.ErrorsOnly
@@ -59,8 +58,8 @@ public sealed class CloudEventResultExtensionsTests
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
 
-        root.TryGetProperty("data", out _).Should().BeFalse();
-        root.TryGetProperty("datacontenttype", out _).Should().BeFalse();
+        root.GetProperty("datacontenttype").GetString().Should().Be("application/json");
+        root.GetProperty("data").ValueKind.Should().Be(JsonValueKind.Null);
         root.GetProperty("lroutcome").GetString().Should().Be("success");
     }
 
@@ -469,15 +468,90 @@ public sealed class CloudEventResultExtensionsTests
         act.Should().Throw<ArgumentException>().Where(exception => exception.ParamName == "time");
     }
 
-    private static LightResultsCloudEventWriteOptions CreateWriteOptions(string? source = "urn:test:source")
+    [Fact]
+    public void ToCloudEventEnvelopeForWriting_ShouldCreateEnvelopeWithFrozenOptionsAndConvertedExtensionAttributes()
     {
-        return new LightResultsCloudEventWriteOptions
+        var metadata = MetadataObject.Create(
+            (
+                "traceid",
+                MetadataValue.FromString(
+                    "abc",
+                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                )
+            ),
+            (
+                "id",
+                MetadataValue.FromString(
+                    "evt-from-metadata",
+                    MetadataValueAnnotation.SerializeAsCloudEventExtensionAttribute
+                )
+            )
+        );
+        var result = Result<int>.Ok(42, metadata);
+
+        var options = CreateWriteOptions(source: "urn:default:source");
+        options.SuccessType = "app.success";
+        options.FailureType = "app.failure";
+        options.MetadataSerializationMode = MetadataSerializationMode.ErrorsOnly;
+
+        var envelope = result.ToCloudEventEnvelopeForWriting(options: options);
+
+        envelope.Type.Should().Be("app.success");
+        envelope.Source.Should().Be("urn:default:source");
+        envelope.Id.Should().Be("evt-from-metadata");
+        envelope.ResolvedOptions.MetadataSerializationMode.Should().Be(MetadataSerializationMode.ErrorsOnly);
+        envelope.ExtensionAttributes.Should().NotBeNull();
+        envelope.ExtensionAttributes!.Value.ContainsKey("traceid").Should().BeTrue();
+    }
+
+    [Fact]
+    public void ToCloudEventEnvelopeForWriting_ShouldGenerateIdWhenNoneIsProvided()
+    {
+        var result = Result.Ok();
+
+        var envelope = result.ToCloudEventEnvelopeForWriting(
+            successType: "app.success",
+            failureType: "app.failure",
+            source: "urn:test:source",
+            options: CreateWriteOptions()
+        );
+
+        envelope.Id.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public void CloudEventEnvelopeForWritingConverter_ShouldThrowOnRead()
+    {
+        const string json =
+            "{\"specversion\":\"1.0\",\"type\":\"app.success\",\"source\":\"urn:test:source\",\"id\":\"evt-1\",\"data\":null}";
+
+        Action act = () => JsonSerializer.Deserialize<CloudEventEnvelopeForWriting>(
+            json,
+            LightResultsCloudEventsWriteOptions.Default.SerializerOptions
+        );
+
+        act.Should().Throw<NotSupportedException>();
+    }
+
+    [Fact]
+    public void CloudEventEnvelopeForWritingConverterGeneric_ShouldThrowOnRead()
+    {
+        const string json =
+            "{\"specversion\":\"1.0\",\"type\":\"app.success\",\"source\":\"urn:test:source\",\"id\":\"evt-1\",\"data\":null}";
+
+        Action act = () => JsonSerializer.Deserialize<CloudEventEnvelopeForWriting<int>>(
+            json,
+            LightResultsCloudEventsWriteOptions.Default.SerializerOptions
+        );
+
+        act.Should().Throw<NotSupportedException>();
+    }
+
+    private static LightResultsCloudEventsWriteOptions CreateWriteOptions(string? source = "urn:test:source")
+    {
+        return new LightResultsCloudEventsWriteOptions
         {
-            Source = source,
-            SerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
-            {
-                TypeInfoResolver = new DefaultJsonTypeInfoResolver()
-            }
+            Source = source
         };
     }
 }

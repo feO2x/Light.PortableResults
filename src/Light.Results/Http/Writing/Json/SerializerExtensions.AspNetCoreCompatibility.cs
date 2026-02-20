@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using Light.Results.Metadata;
+using Light.Results.SharedJsonSerialization.Writing;
 
 namespace Light.Results.Http.Writing.Json;
 
@@ -52,7 +53,7 @@ public static partial class SerializerExtensions
         for (var i = 0; i < errors.Count; i++)
         {
             var error = errors[i];
-            var target = GetNormalizedTargetForValidationResponse(error, i);
+            var target = error.GetNormalizedTargetForValidationResponse(i);
 
             // Find or add target
             var targetIndex = -1;
@@ -150,7 +151,7 @@ public static partial class SerializerExtensions
             if (error.Metadata is { } metadata)
             {
                 writer.WritePropertyName("metadata");
-                HttpWriteMetadataValueJsonConverter.WriteMetadataObject(writer, metadata);
+                writer.WriteMetadataObject(metadata, MetadataValueAnnotation.SerializeInHttpResponseBody);
             }
 
             writer.WriteEndObject();
@@ -204,7 +205,7 @@ public static partial class SerializerExtensions
         for (var i = 0; i < errors.Count; i++)
         {
             var error = errors[i];
-            var target = GetNormalizedTargetForValidationResponse(error, i);
+            var target = error.GetNormalizedTargetForValidationResponse(i);
 
             if (!groupedErrors.TryGetValue(target, out var messages))
             {
@@ -302,7 +303,7 @@ public static partial class SerializerExtensions
         if (detail.Metadata.HasValue)
         {
             writer.WritePropertyName("metadata");
-            HttpWriteMetadataValueJsonConverter.WriteMetadataObject(writer, detail.Metadata.Value);
+            writer.WriteMetadataObject(detail.Metadata.Value, MetadataValueAnnotation.SerializeInHttpResponseBody);
         }
 
         writer.WriteEndObject();

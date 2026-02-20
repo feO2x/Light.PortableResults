@@ -6,7 +6,7 @@ namespace Light.Results.CloudEvents.Writing;
 /// <summary>
 /// Converts metadata values into CloudEvent attributes.
 /// </summary>
-public interface ICloudEventAttributeConversionService
+public interface ICloudEventsAttributeConversionService
 {
     /// <summary>
     /// Converts a metadata value into a CloudEvent attribute.

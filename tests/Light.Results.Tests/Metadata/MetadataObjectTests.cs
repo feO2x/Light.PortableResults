@@ -1110,11 +1110,11 @@ public sealed class MetadataObjectTests
     }
 
     [Fact]
-    public void Builder_Create_WithZeroCapacity_ShouldUseDefaultCapacity()
+    public void Builder_Create_WithZeroCapacity_ShouldThrow()
     {
-        using var builder = MetadataObjectBuilder.Create(capacity: 0);
+        var act = () => _ = MetadataObjectBuilder.Create(capacity: 0);
 
-        builder.Count.Should().Be(0);
+        act.Should().Throw<ArgumentOutOfRangeException>().Where(x => x.ParamName == "capacity");
     }
 
     [Fact]

@@ -1,10 +1,8 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization;
+using Light.Results.SharedJsonSerialization.Writing;
 
 // ReSharper disable ConvertToExtensionBlock
 
@@ -15,61 +13,6 @@ namespace Light.Results.Http.Writing.Json;
 /// </summary>
 public static partial class SerializerExtensions
 {
-    /// <summary>
-    /// Determines whether the specified <see cref="JsonTypeInfo" /> has known polymorphism information
-    /// that allows the serializer to handle type resolution without requiring runtime type checks.
-    /// This method is copied from the .NET internal type Microsoft.AspNetCore.Http.JsonSerializerExtensions.
-    /// </summary>
-    /// <param name="jsonTypeInfo">The JSON type information to check.</param>
-    /// <returns>
-    /// <see langword="true" /> if the type is sealed, a value type, or has explicit polymorphism options configured;
-    /// otherwise, <see langword="false" />.
-    /// </returns>
-    public static bool HasKnownPolymorphism(this JsonTypeInfo jsonTypeInfo) =>
-        SharedSerializerExtensions.HasKnownPolymorphism(jsonTypeInfo);
-
-    /// <summary>
-    /// Determines whether the specified <see cref="JsonTypeInfo" /> should be used to serialize
-    /// an object of the given runtime type.
-    /// This method is copied from the .NET internal type Microsoft.AspNetCore.Http.JsonSerializerExtensions.
-    /// </summary>
-    /// <param name="jsonTypeInfo">The JSON type information to evaluate.</param>
-    /// <param name="runtimeType">The runtime type of the object to be serialized, or <see langword="null" />.</param>
-    /// <returns>
-    /// <see langword="true" /> if the <paramref name="runtimeType" /> is <see langword="null" />,
-    /// matches the <see cref="JsonTypeInfo.Type" />, or the type has known polymorphism;
-    /// otherwise, <see langword="false" />.
-    /// </returns>
-    public static bool ShouldUseWith(this JsonTypeInfo jsonTypeInfo, [NotNullWhen(false)] Type? runtimeType) =>
-        SharedSerializerExtensions.ShouldUseWith(jsonTypeInfo, runtimeType);
-
-    /// <summary>
-    /// Writes a generic value using System.Text.Json's <see cref="Utf8JsonWriter" />.
-    /// </summary>
-    /// <param name="writer">The writer object.</param>
-    /// <param name="value">The generic value to be serialized.</param>
-    /// <param name="options">The json serializer options providing JSON Type Infos.</param>
-    /// <typeparam name="T">The type of the value to be serialized.</typeparam>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when no JSON type info is found for the runtime type of T.
-    /// </exception>
-    public static void WriteGenericValue<T>(this Utf8JsonWriter writer, T? value, JsonSerializerOptions options) =>
-        SharedSerializerExtensions.WriteGenericValue(writer, value, options);
-
-    /// <summary>
-    /// Writes the metadata JSON object using System.Text.Json's <see cref="Utf8JsonWriter" /> in a JSON property named
-    /// "metadata". This should be called within the context of a JSON object.
-    /// </summary>
-    /// <param name="writer">The UTF-8 JSON writer.</param>
-    /// <param name="metadata">The metadata object to be written.</param>
-    /// <param name="serializerOptions">The JSON serializer options providing JSON Type Infos.</param>
-    public static void WriteMetadataPropertyAndValue(
-        this Utf8JsonWriter writer,
-        MetadataObject metadata,
-        JsonSerializerOptions serializerOptions
-    ) =>
-        SharedSerializerExtensions.WriteMetadataPropertyAndValue(writer, metadata, serializerOptions);
-
     /// <summary>
     /// Writes the serialized error payload for the specified <see cref="Errors" /> collection.
     /// </summary>
@@ -97,29 +40,8 @@ public static partial class SerializerExtensions
         }
         else
         {
-            WriteRichErrors(writer, errors, isValidationResponse, serializerOptions);
+            writer.WriteRichErrors(errors, isValidationResponse, serializerOptions);
         }
-    }
-
-    private static void WriteRichErrors(
-        Utf8JsonWriter writer,
-        Errors errors,
-        bool isValidationResponse,
-        JsonSerializerOptions serializerOptions
-    ) =>
-        writer.WriteRichErrors(errors, isValidationResponse, serializerOptions);
-
-    private static string GetNormalizedTargetForValidationResponse(Error error, int errorIndex)
-    {
-        if (error.Target is null)
-        {
-            throw new InvalidOperationException(
-                $"Error at index {errorIndex} does not have a Target set. For HTTP 400 Bad Request and HTTP 422 Unprocessable Content responses, all errors must have the Target property set. Use an empty string to indicate the root object."
-            );
-        }
-
-        // Normalize whitespace-only strings to empty string
-        return string.IsNullOrWhiteSpace(error.Target) ? "" : error.Target;
     }
 
     /// <summary>
