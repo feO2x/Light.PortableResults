@@ -145,7 +145,7 @@ public sealed class PooledByteBufferWriterTests
     }
 
     [Fact]
-    public void GetMemory_WithVeryLargeSizeHint_ShouldUseOverflowGuardPath()
+    public void GetMemory_WithVeryLargeSizeHint_ShouldNeverRentNegativeLength()
     {
         var pool = new OverflowAwareArrayPool(initialBufferLength: 2, resizedBufferLength: 8);
         var writer = new PooledByteBufferWriter(pool, initialCapacity: 2);
@@ -153,8 +153,21 @@ public sealed class PooledByteBufferWriterTests
         var act = () => _ = writer.GetMemory(int.MaxValue);
 
         act.Should().NotThrow();
-        pool.LastRentedMinimumLength.Should().BeLessThan(0);
+        pool.LastRentedMinimumLength.Should().Be(int.MaxValue);
         pool.ReturnedArrays.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void GetMemory_WithTooLargeRequiredLength_ShouldThrowArgumentOutOfRangeException()
+    {
+        var writer = new PooledByteBufferWriter(new TrackingByteArrayPool(), initialCapacity: 2);
+        writer.Advance(1);
+
+        var act = () => _ = writer.GetMemory(int.MaxValue);
+
+        act.Should().Throw<ArgumentOutOfRangeException>()
+           .WithParameterName("sizeHint")
+           .WithMessage("*too large*");
     }
 
     private sealed class TrackingByteArrayPool : ArrayPool<byte>
@@ -184,6 +197,11 @@ public sealed class PooledByteBufferWriterTests
 
         public override byte[] Rent(int minimumLength)
         {
+            if (minimumLength < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(minimumLength));
+            }
+
             LastRentedMinimumLength = minimumLength;
             if (_isFirstRent)
             {

@@ -140,13 +140,33 @@ public sealed class PooledByteBufferWriter : IBufferWriter<byte>
         }
 
         var currentLength = _buffer.Length;
-        var growBy = Math.Max(sizeHint, currentLength);
-        var newSize = currentLength + growBy;
-
-        if ((uint) newSize > int.MaxValue)
+        var minimumRequiredLength = (long) _index + sizeHint;
+        if (minimumRequiredLength > int.MaxValue)
         {
-            newSize = currentLength + sizeHint;
+            throw new ArgumentOutOfRangeException(
+                nameof(sizeHint),
+                "The requested size is too large for a single buffer."
+            );
         }
+
+        var growBy = Math.Max(sizeHint, currentLength);
+        long newSizeLong;
+        checked
+        {
+            newSizeLong = (long) currentLength + growBy;
+        }
+
+        if (newSizeLong < minimumRequiredLength)
+        {
+            newSizeLong = minimumRequiredLength;
+        }
+
+        if (newSizeLong > int.MaxValue)
+        {
+            newSizeLong = int.MaxValue;
+        }
+
+        var newSize = (int) newSizeLong;
 
         var newBuffer = _arrayPool.Rent(newSize);
         Array.Copy(_buffer, 0, newBuffer, 0, _index);
