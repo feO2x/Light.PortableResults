@@ -68,6 +68,16 @@ The original plan implied using `Guid.NewGuid()` (UUIDv4) to generate unique ide
 **Deviation:**
 To improve sortability and database insertion performance for consumers of these events, the implementation was updated to use the `Ulid` package. It now generates a UUIDv7 via `Ulid.NewUlid().ToGuid().ToString()` instead of a standard UUIDv4.
 
+## 7. MetadataValueAnnotation Flag Naming
+
+**Original Plan:**
+The plan specified `SerializeAsCloudEventExtensionAttribute = 8` for the flag indicating serialization into CloudEvents extension attributes, and `SerializeInCloudEventExtensionAttributeAndData` for the combination flag.
+
+**Deviation:**
+The implementation renamed these flags to better align with the existing `SerializeIn` prefix convention (used by `SerializeInHttpResponseBody`, `SerializeInHttpHeader`, etc.) and to use plural forms consistent with the CloudEvents specification name:
+- `SerializeAsCloudEventExtensionAttribute` → `SerializeInCloudEventsExtensionAttributes` (changed prefix from `SerializeAs` to `SerializeIn`, singular to plural `CloudEvents`, singular to plural `Attributes`)
+- `SerializeInCloudEventExtensionAttributeAndData` → `SerializeInCloudEventsExtensionAttributesAndData` (same plural adjustments)
+
 ## Summary
 The core requirements of the original plan (CloudEvents v1.0 compliance, attribute resolution, data payload formatting) remain fulfilled. The deviations are purely architectural improvements focused on:
 1. **Performance**: Zero-copy reading and reduced allocations during writing.
