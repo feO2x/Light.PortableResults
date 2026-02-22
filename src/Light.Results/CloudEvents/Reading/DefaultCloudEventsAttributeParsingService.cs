@@ -101,16 +101,9 @@ public sealed class DefaultCloudEventsAttributeParsingService : ICloudEventsAttr
             return new KeyValuePair<string, MetadataValue>(parser.MetadataKey, parsedValue);
         }
 
-        var defaultValue = IsPrimitive(value.Kind) ?
+        var defaultValue = value.Kind.IsPrimitive() ?
             MetadataValueAnnotationHelper.WithAnnotation(value, annotation) :
             MetadataValueAnnotationHelper.WithAnnotation(value, MetadataValueAnnotation.SerializeInCloudEventsData);
         return new KeyValuePair<string, MetadataValue>(attributeName, defaultValue);
     }
-
-    private static bool IsPrimitive(MetadataKind metadataKind) =>
-        metadataKind == MetadataKind.Null ||
-        metadataKind == MetadataKind.Boolean ||
-        metadataKind == MetadataKind.Int64 ||
-        metadataKind == MetadataKind.Double ||
-        metadataKind == MetadataKind.String;
 }

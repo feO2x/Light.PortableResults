@@ -196,20 +196,13 @@ public static class CloudEventsEnvelopeJsonReader
             MetadataValueAnnotation.SerializeInCloudEventsData
         );
 
-        return IsPrimitive(parsedValue.Kind) ?
+        return parsedValue.Kind.IsPrimitive() ?
             MetadataValueAnnotationHelper.WithAnnotation(
                 parsedValue,
                 MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
             ) :
             parsedValue;
     }
-
-    private static bool IsPrimitive(MetadataKind metadataKind) =>
-        metadataKind is MetadataKind.Null or
-                        MetadataKind.Boolean or
-                        MetadataKind.Int64 or
-                        MetadataKind.Double or
-                        MetadataKind.String;
 
     private static string ReadRequiredStringValue(ref Utf8JsonReader reader, string propertyName)
     {
