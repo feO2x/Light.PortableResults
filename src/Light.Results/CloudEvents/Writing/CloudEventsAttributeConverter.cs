@@ -41,7 +41,7 @@ public abstract class CloudEventsAttributeConverter
     /// <param name="metadataKey">The metadata key.</param>
     /// <param name="value">The metadata value.</param>
     /// <returns>The CloudEvents attribute key and value pair.</returns>
-    public abstract KeyValuePair<string, MetadataValue> PrepareCloudEventAttribute(
+    public abstract KeyValuePair<string, MetadataValue> PrepareCloudEventsAttribute(
         string metadataKey,
         MetadataValue value
     );

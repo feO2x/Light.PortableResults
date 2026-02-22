@@ -9,7 +9,7 @@ namespace Light.Results.Tests.CloudEvents;
 public sealed class CloudEventsEnvelopeTests
 {
     [Fact]
-    public void CloudEventEnvelope_ShouldExposeAllConfiguredValues()
+    public void CloudEventsEnvelope_ShouldExposeAllConfiguredValues()
     {
         var time = new DateTimeOffset(2026, 2, 14, 15, 20, 0, TimeSpan.Zero);
         var extensionAttributes = MetadataObject.Create(("traceid", MetadataValue.FromString("abc")));
@@ -40,7 +40,7 @@ public sealed class CloudEventsEnvelopeTests
     }
 
     [Fact]
-    public void CloudEventEnvelopeOfT_ShouldExposeAllConfiguredValues()
+    public void CloudEventsEnvelopeOfT_ShouldExposeAllConfiguredValues()
     {
         var time = new DateTimeOffset(2026, 2, 14, 15, 25, 0, TimeSpan.Zero);
         var extensionAttributes = MetadataObject.Create(("attempt", MetadataValue.FromInt64(2)));

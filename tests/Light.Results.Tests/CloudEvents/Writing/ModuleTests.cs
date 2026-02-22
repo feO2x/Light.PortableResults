@@ -16,10 +16,10 @@ namespace Light.Results.Tests.CloudEvents.Writing;
 public sealed class ModuleTests
 {
     [Fact]
-    public void AddLightResultsCloudEventWriteOptions_ShouldRegisterOptions()
+    public void AddLightResultsCloudEventsWriteOptions_ShouldRegisterOptions()
     {
         var services = new ServiceCollection();
-        services.AddLightResultsCloudEventWriteOptions();
+        services.AddLightResultsCloudEventsWriteOptions();
 
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<LightResultsCloudEventsWriteOptions>();
@@ -32,24 +32,24 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddDefaultLightResultsCloudEventWriteJsonConverters_ShouldRegisterEnvelopeConverters()
+    public void AddDefaultLightResultsCloudEventsWriteJsonConverters_ShouldRegisterEnvelopeConverters()
     {
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
-        serializerOptions.AddDefaultLightResultsCloudEventWriteJsonConverters();
+        serializerOptions.AddDefaultLightResultsCloudEventsWriteJsonConverters();
 
         serializerOptions.Converters.Should()
-           .ContainSingle(converter => converter is CloudEventEnvelopeForWritingJsonConverter);
+           .ContainSingle(converter => converter is CloudEventsEnvelopeForWritingJsonConverter);
         serializerOptions.Converters.Should()
-           .ContainSingle(converter => converter is CloudEventEnvelopeForWritingJsonConverterFactory);
+           .ContainSingle(converter => converter is CloudEventsEnvelopeForWritingJsonConverterFactory);
     }
 
     [Fact]
-    public void AddLightResultsCloudEventAttributeConversionService_ShouldUseComparerForKeys()
+    public void AddLightResultsCloudEventsAttributeConversionService_ShouldUseComparerForKeys()
     {
         var services = new ServiceCollection();
         services.AddSingleton<CloudEventsAttributeConverter>(new TestConverter("traceid"));
-        services.AddLightResultsCloudEventAttributeConversionService(StringComparer.OrdinalIgnoreCase);
+        services.AddLightResultsCloudEventsAttributeConversionService(StringComparer.OrdinalIgnoreCase);
 
         using var provider = services.BuildServiceProvider();
         var converters = provider.GetRequiredService<FrozenDictionary<string, CloudEventsAttributeConverter>>();
@@ -60,12 +60,12 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddLightResultsCloudEventAttributeConversionService_ShouldThrow_WhenDuplicateKeysExist()
+    public void AddLightResultsCloudEventsAttributeConversionService_ShouldThrow_WhenDuplicateKeysExist()
     {
         var services = new ServiceCollection();
         services.AddSingleton<CloudEventsAttributeConverter>(new TestConverter("duplicate"));
         services.AddSingleton<CloudEventsAttributeConverter>(new TestConverter("duplicate"));
-        services.AddLightResultsCloudEventAttributeConversionService();
+        services.AddLightResultsCloudEventsAttributeConversionService();
 
         using var provider = services.BuildServiceProvider();
 
@@ -78,7 +78,7 @@ public sealed class ModuleTests
     {
         public TestConverter(string metadataKey) : base(ImmutableArray.Create(metadataKey)) { }
 
-        public override KeyValuePair<string, MetadataValue> PrepareCloudEventAttribute(
+        public override KeyValuePair<string, MetadataValue> PrepareCloudEventsAttribute(
             string metadataKey,
             MetadataValue value
         ) =>

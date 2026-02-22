@@ -162,7 +162,7 @@ public static class CloudEventsResultExtensions
         }
 
         options ??= LightResultsCloudEventsWriteOptions.Default;
-        var envelope = result.ToCloudEventEnvelopeForWriting(
+        var envelope = result.ToCloudEventsEnvelopeForWriting(
             successType,
             failureType,
             id,
@@ -177,7 +177,7 @@ public static class CloudEventsResultExtensions
     }
 
     /// <summary>
-    /// Creates a non-generic <see cref="CloudEventEnvelopeForWriting" /> with resolved attributes and frozen write options that can be serialized later.
+    /// Creates a non-generic <see cref="CloudEventsEnvelopeForWriting" /> with resolved attributes and frozen write options that can be serialized later.
     /// </summary>
     /// <param name="result">The result that provides data and metadata for the cloud event.</param>
     /// <param name="successType">Optional CloudEvents <c>type</c> to use when the result is valid.</param>
@@ -202,7 +202,7 @@ public static class CloudEventsResultExtensions
     /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
-    public static CloudEventEnvelopeForWriting ToCloudEventEnvelopeForWriting(
+    public static CloudEventsEnvelopeForWriting ToCloudEventsEnvelopeForWriting(
         this Result result,
         string? successType = null,
         string? failureType = null,
@@ -216,7 +216,7 @@ public static class CloudEventsResultExtensions
     {
         options ??= LightResultsCloudEventsWriteOptions.Default;
         var convertedAttributes =
-            ConvertMetadataToCloudEventAttributes(result.Metadata, options.ConversionService);
+            ConvertMetadataToCloudEventsAttributes(result.Metadata, options.ConversionService);
         var resolvedAttributes = ResolveAttributes(
             result.IsValid,
             convertedAttributes,
@@ -230,7 +230,7 @@ public static class CloudEventsResultExtensions
             options.Source
         );
 
-        return new CloudEventEnvelopeForWriting(
+        return new CloudEventsEnvelopeForWriting(
             resolvedAttributes.Type,
             resolvedAttributes.Source,
             resolvedAttributes.Id,
@@ -394,7 +394,7 @@ public static class CloudEventsResultExtensions
         }
 
         var resolvedOptions = options ?? LightResultsCloudEventsWriteOptions.Default;
-        var envelope = result.ToCloudEventEnvelopeForWriting(
+        var envelope = result.ToCloudEventsEnvelopeForWriting(
             successType,
             failureType,
             id,
@@ -409,7 +409,7 @@ public static class CloudEventsResultExtensions
     }
 
     /// <summary>
-    /// Creates a generic <see cref="CloudEventEnvelopeForWriting{T}" /> with resolved attributes and frozen write options that can be serialized later.
+    /// Creates a generic <see cref="CloudEventsEnvelopeForWriting{T}" /> with resolved attributes and frozen write options that can be serialized later.
     /// </summary>
     /// <typeparam name="T">The value type carried by the result.</typeparam>
     /// <param name="result">The result that provides data and metadata for the cloud event.</param>
@@ -432,7 +432,7 @@ public static class CloudEventsResultExtensions
     /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
-    public static CloudEventEnvelopeForWriting<T> ToCloudEventEnvelopeForWriting<T>(
+    public static CloudEventsEnvelopeForWriting<T> ToCloudEventsEnvelopeForWriting<T>(
         this Result<T> result,
         string? successType = null,
         string? failureType = null,
@@ -446,7 +446,7 @@ public static class CloudEventsResultExtensions
     {
         var resolvedOptions = options ?? LightResultsCloudEventsWriteOptions.Default;
         var convertedAttributes =
-            ConvertMetadataToCloudEventAttributes(result.Metadata, resolvedOptions.ConversionService);
+            ConvertMetadataToCloudEventsAttributes(result.Metadata, resolvedOptions.ConversionService);
         var resolvedAttributes = ResolveAttributes(
             result.IsValid,
             convertedAttributes,
@@ -460,7 +460,7 @@ public static class CloudEventsResultExtensions
             resolvedOptions.Source
         );
 
-        return new CloudEventEnvelopeForWriting<T>(
+        return new CloudEventsEnvelopeForWriting<T>(
             resolvedAttributes.Type,
             resolvedAttributes.Source,
             resolvedAttributes.Id,
@@ -478,7 +478,7 @@ public static class CloudEventsResultExtensions
         return !string.IsNullOrWhiteSpace(primaryValue) ? primaryValue : fallbackValue;
     }
 
-    private static MetadataObject? ConvertMetadataToCloudEventAttributes(
+    private static MetadataObject? ConvertMetadataToCloudEventsAttributes(
         MetadataObject? metadata,
         ICloudEventsAttributeConversionService conversionService
     )
@@ -500,7 +500,7 @@ public static class CloudEventsResultExtensions
                 continue;
             }
 
-            var preparedAttribute = conversionService.PrepareCloudEventAttribute(keyValuePair.Key, keyValuePair.Value);
+            var preparedAttribute = conversionService.PrepareCloudEventsAttribute(keyValuePair.Key, keyValuePair.Value);
             builder.AddOrReplace(preparedAttribute.Key, preparedAttribute.Value);
         }
 

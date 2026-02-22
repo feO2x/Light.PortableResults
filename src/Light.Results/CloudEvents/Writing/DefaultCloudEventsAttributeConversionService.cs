@@ -39,7 +39,7 @@ public sealed class DefaultCloudEventsAttributeConversionService : ICloudEventsA
     /// <summary>
     /// Converts a metadata value into a CloudEvents attribute.
     /// </summary>
-    public KeyValuePair<string, MetadataValue> PrepareCloudEventAttribute(
+    public KeyValuePair<string, MetadataValue> PrepareCloudEventsAttribute(
         string metadataKey,
         MetadataValue metadataValue
     )
@@ -50,7 +50,7 @@ public sealed class DefaultCloudEventsAttributeConversionService : ICloudEventsA
         }
 
         var converted = Converters.TryGetValue(metadataKey, out var targetConverter) ?
-            targetConverter.PrepareCloudEventAttribute(metadataKey, metadataValue) :
+            targetConverter.PrepareCloudEventsAttribute(metadataKey, metadataValue) :
             new KeyValuePair<string, MetadataValue>(metadataKey, metadataValue);
 
         ValidateAttributeName(converted.Key);

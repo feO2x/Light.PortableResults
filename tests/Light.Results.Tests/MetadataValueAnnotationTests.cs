@@ -81,7 +81,7 @@ public sealed class MetadataValueAnnotationTests
     }
 
     [Fact]
-    public void FromArray_WithNestedArray_ThrowsOnCloudEventExtensionAnnotation()
+    public void FromArray_WithNestedArray_ThrowsOnCloudEventsExtensionAnnotation()
     {
         var innerArray = MetadataArray.Create(1, 2);
         var outerArray = MetadataArray.Create(innerArray);
@@ -97,7 +97,7 @@ public sealed class MetadataValueAnnotationTests
     }
 
     [Fact]
-    public void FromArray_WithPrimitiveValues_ThrowsOnCloudEventExtensionAnnotation()
+    public void FromArray_WithPrimitiveValues_ThrowsOnCloudEventsExtensionAnnotation()
     {
         var array = MetadataArray.Create(1, 2, 3);
 
@@ -112,7 +112,7 @@ public sealed class MetadataValueAnnotationTests
     }
 
     [Fact]
-    public void FromArray_WithNestedArray_AllowsCloudEventDataAnnotation()
+    public void FromArray_WithNestedArray_AllowsCloudEventsDataAnnotation()
     {
         var innerArray = MetadataArray.Create(1, 2);
         var outerArray = MetadataArray.Create(innerArray);
@@ -137,7 +137,7 @@ public sealed class MetadataValueAnnotationTests
     }
 
     [Fact]
-    public void FromObject_ThrowsOnCloudEventExtensionAnnotation()
+    public void FromObject_ThrowsOnCloudEventsExtensionAnnotation()
     {
         var obj = MetadataObject.Create(("key", "value"));
 

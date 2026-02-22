@@ -25,17 +25,17 @@ public sealed class CloudEventsAttributeConverterTests
     [Fact]
     public void Constructor_ShouldExposeSupportedMetadataKeys()
     {
-        var converter = new TestConverter(ImmutableArray.Create("traceId", "requestId"));
+        var converter = new TestConverter(["traceId", "requestId"]);
 
         converter.SupportedMetadataKeys.Should().Equal("traceId", "requestId");
     }
 
     [Fact]
-    public void PrepareCloudEventAttribute_ShouldReturnConvertedPair()
+    public void PrepareCloudEventsAttribute_ShouldReturnConvertedPair()
     {
-        var converter = new TestConverter(ImmutableArray.Create("traceId"));
+        var converter = new TestConverter(["traceId"]);
 
-        var pair = converter.PrepareCloudEventAttribute("traceId", MetadataValue.FromString("abc"));
+        var pair = converter.PrepareCloudEventsAttribute("traceId", MetadataValue.FromString("abc"));
 
         pair.Key.Should().Be("ce-traceId");
         pair.Value.TryGetString(out var value).Should().BeTrue();
@@ -46,7 +46,7 @@ public sealed class CloudEventsAttributeConverterTests
     {
         public TestConverter(ImmutableArray<string> supportedMetadataKeys) : base(supportedMetadataKeys) { }
 
-        public override KeyValuePair<string, MetadataValue> PrepareCloudEventAttribute(
+        public override KeyValuePair<string, MetadataValue> PrepareCloudEventsAttribute(
             string metadataKey,
             MetadataValue value
         ) =>

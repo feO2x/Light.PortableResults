@@ -14,5 +14,5 @@ public interface ICloudEventsAttributeConversionService
     /// <param name="metadataKey">The metadata key.</param>
     /// <param name="metadataValue">The metadata value.</param>
     /// <returns>The CloudEvents attribute key and value pair.</returns>
-    KeyValuePair<string, MetadataValue> PrepareCloudEventAttribute(string metadataKey, MetadataValue metadataValue);
+    KeyValuePair<string, MetadataValue> PrepareCloudEventsAttribute(string metadataKey, MetadataValue metadataValue);
 }

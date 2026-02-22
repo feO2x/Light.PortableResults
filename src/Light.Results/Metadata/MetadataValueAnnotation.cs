@@ -41,9 +41,9 @@ public enum MetadataValueAnnotation
     SerializeInCloudEventsExtensionAttributes = 8,
 
     /// <summary>
-    /// Serialize this value in both CloudEvents extension attributes and in the CloudEvent <c>data</c> payload.
+    /// Serialize this value in both CloudEvents extension attributes and in the CloudEvents <c>data</c> payload.
     /// </summary>
-    SerializeInCloudEventsExtensionAttributeAndData =
+    SerializeInCloudEventsExtensionAttributesAndData =
         SerializeInCloudEventsData | SerializeInCloudEventsExtensionAttributes,
 
     /// <summary>

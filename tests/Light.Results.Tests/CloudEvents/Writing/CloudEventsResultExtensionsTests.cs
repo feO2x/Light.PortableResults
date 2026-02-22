@@ -469,7 +469,7 @@ public sealed class CloudEventsResultExtensionsTests
     }
 
     [Fact]
-    public void ToCloudEventEnvelopeForWriting_ShouldCreateEnvelopeWithFrozenOptionsAndConvertedExtensionAttributes()
+    public void ToCloudEventsEnvelopeForWriting_ShouldCreateEnvelopeWithFrozenOptionsAndConvertedExtensionAttributes()
     {
         var metadata = MetadataObject.Create(
             (
@@ -494,7 +494,7 @@ public sealed class CloudEventsResultExtensionsTests
         options.FailureType = "app.failure";
         options.MetadataSerializationMode = MetadataSerializationMode.ErrorsOnly;
 
-        var envelope = result.ToCloudEventEnvelopeForWriting(options: options);
+        var envelope = result.ToCloudEventsEnvelopeForWriting(options: options);
 
         envelope.Type.Should().Be("app.success");
         envelope.Source.Should().Be("urn:default:source");
@@ -505,11 +505,11 @@ public sealed class CloudEventsResultExtensionsTests
     }
 
     [Fact]
-    public void ToCloudEventEnvelopeForWriting_ShouldGenerateIdWhenNoneIsProvided()
+    public void ToCloudEventsEnvelopeForWriting_ShouldGenerateIdWhenNoneIsProvided()
     {
         var result = Result.Ok();
 
-        var envelope = result.ToCloudEventEnvelopeForWriting(
+        var envelope = result.ToCloudEventsEnvelopeForWriting(
             successType: "app.success",
             failureType: "app.failure",
             source: "urn:test:source",
@@ -520,12 +520,12 @@ public sealed class CloudEventsResultExtensionsTests
     }
 
     [Fact]
-    public void CloudEventEnvelopeForWritingConverter_ShouldThrowOnRead()
+    public void CloudEventsEnvelopeForWritingConverter_ShouldThrowOnRead()
     {
         const string json =
             "{\"specversion\":\"1.0\",\"type\":\"app.success\",\"source\":\"urn:test:source\",\"id\":\"evt-1\",\"data\":null}";
 
-        Action act = () => JsonSerializer.Deserialize<CloudEventEnvelopeForWriting>(
+        Action act = () => JsonSerializer.Deserialize<CloudEventsEnvelopeForWriting>(
             json,
             LightResultsCloudEventsWriteOptions.Default.SerializerOptions
         );
@@ -534,12 +534,12 @@ public sealed class CloudEventsResultExtensionsTests
     }
 
     [Fact]
-    public void CloudEventEnvelopeForWritingConverterGeneric_ShouldThrowOnRead()
+    public void CloudEventsEnvelopeForWritingConverterGeneric_ShouldThrowOnRead()
     {
         const string json =
             "{\"specversion\":\"1.0\",\"type\":\"app.success\",\"source\":\"urn:test:source\",\"id\":\"evt-1\",\"data\":null}";
 
-        Action act = () => JsonSerializer.Deserialize<CloudEventEnvelopeForWriting<int>>(
+        Action act = () => JsonSerializer.Deserialize<CloudEventsEnvelopeForWriting<int>>(
             json,
             LightResultsCloudEventsWriteOptions.Default.SerializerOptions
         );

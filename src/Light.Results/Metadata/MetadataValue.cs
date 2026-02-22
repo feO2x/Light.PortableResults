@@ -170,7 +170,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         if ((annotation & MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes) != 0)
         {
             throw new ArgumentException(
-                "Objects cannot be serialized as CloudEvents extension attributes. Use SerializeInCloudEventData instead.",
+                "Objects cannot be serialized as CloudEvents extension attributes. Use SerializeInCloudEventsData instead.",
                 nameof(annotation)
             );
         }
@@ -183,7 +183,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         if ((annotation & MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes) != 0)
         {
             throw new ArgumentException(
-                "Arrays cannot be serialized as CloudEvents extension attributes. Use SerializeInCloudEventData instead.",
+                "Arrays cannot be serialized as CloudEvents extension attributes. Use SerializeInCloudEventsData instead.",
                 nameof(annotation)
             );
         }

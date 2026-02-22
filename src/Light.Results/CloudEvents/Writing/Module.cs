@@ -22,7 +22,7 @@ public static class Module
     /// <summary>
     /// Registers <see cref="LightResultsCloudEventsWriteOptions" /> in the service container.
     /// </summary>
-    public static IServiceCollection AddLightResultsCloudEventWriteOptions(this IServiceCollection services)
+    public static IServiceCollection AddLightResultsCloudEventsWriteOptions(this IServiceCollection services)
     {
         services.AddOptions<LightResultsCloudEventsWriteOptions>();
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<LightResultsCloudEventsWriteOptions>>().Value);
@@ -38,7 +38,7 @@ public static class Module
     /// <exception cref="InvalidOperationException">
     /// Thrown when multiple converters register the same metadata key.
     /// </exception>
-    public static IServiceCollection AddLightResultsCloudEventAttributeConversionService(
+    public static IServiceCollection AddLightResultsCloudEventsAttributeConversionService(
         this IServiceCollection services,
         IEqualityComparer<string>? metadataKeyComparer = null
     )
@@ -88,7 +88,9 @@ public static class Module
     /// </summary>
     /// <param name="serializerOptions">The serializer options to configure.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="serializerOptions" /> is <see langword="null" />.</exception>
-    public static void AddDefaultLightResultsCloudEventWriteJsonConverters(this JsonSerializerOptions serializerOptions)
+    public static void AddDefaultLightResultsCloudEventsWriteJsonConverters(
+        this JsonSerializerOptions serializerOptions
+    )
     {
         if (serializerOptions is null)
         {
@@ -96,8 +98,8 @@ public static class Module
         }
 
         serializerOptions.Converters.Add(new CloudEventsMetadataObjectJsonConverter());
-        serializerOptions.Converters.Add(new CloudEventEnvelopeForWritingJsonConverter());
-        serializerOptions.Converters.Add(new CloudEventEnvelopeForWritingJsonConverterFactory());
+        serializerOptions.Converters.Add(new CloudEventsEnvelopeForWritingJsonConverter());
+        serializerOptions.Converters.Add(new CloudEventsEnvelopeForWritingJsonConverterFactory());
     }
 
     /// <summary>
@@ -107,7 +109,7 @@ public static class Module
     public static JsonSerializerOptions CreateDefaultSerializerOptions()
     {
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        serializerOptions.AddDefaultLightResultsCloudEventWriteJsonConverters();
+        serializerOptions.AddDefaultLightResultsCloudEventsWriteJsonConverters();
         return serializerOptions;
     }
 }

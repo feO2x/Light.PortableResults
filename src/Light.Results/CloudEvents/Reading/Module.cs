@@ -20,12 +20,12 @@ public static class Module
     public static JsonSerializerOptions DefaultSerializerOptions { get; } = CreateDefaultSerializerOptions();
 
     /// <summary>
-    /// Registers <see cref="LightResultsCloudEventReadOptions" /> in the service container.
+    /// Registers <see cref="LightResultsCloudEventsReadOptions" /> in the service container.
     /// </summary>
-    public static IServiceCollection AddLightResultsCloudEventReadOptions(this IServiceCollection services)
+    public static IServiceCollection AddLightResultsCloudEventsReadOptions(this IServiceCollection services)
     {
-        services.AddOptions<LightResultsCloudEventReadOptions>();
-        services.AddSingleton(sp => sp.GetRequiredService<IOptions<LightResultsCloudEventReadOptions>>().Value);
+        services.AddOptions<LightResultsCloudEventsReadOptions>();
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<LightResultsCloudEventsReadOptions>>().Value);
         return services;
     }
 
@@ -38,16 +38,16 @@ public static class Module
     /// <exception cref="InvalidOperationException">
     /// Thrown when multiple parsers register the same extension attribute name.
     /// </exception>
-    public static IServiceCollection AddLightResultsCloudEventAttributeParsingService(
+    public static IServiceCollection AddLightResultsCloudEventsAttributeParsingService(
         this IServiceCollection services,
         IEqualityComparer<string>? attributeNameComparer = null
     )
     {
-        services.TryAddSingleton<FrozenDictionary<string, CloudEventAttributeParser>>(
+        services.TryAddSingleton<FrozenDictionary<string, CloudEventsAttributeParser>>(
             sp =>
             {
-                var parsers = sp.GetServices<CloudEventAttributeParser>();
-                var dictionary = new Dictionary<string, CloudEventAttributeParser>(attributeNameComparer);
+                var parsers = sp.GetServices<CloudEventsAttributeParser>();
+                var dictionary = new Dictionary<string, CloudEventsAttributeParser>(attributeNameComparer);
                 foreach (var parser in parsers)
                 {
                     foreach (var supportedAttribute in parser.SupportedAttributeNames)
@@ -72,11 +72,11 @@ public static class Module
                     dictionary.ToFrozenDictionary(attributeNameComparer);
             }
         );
-        services.AddSingleton<ICloudEventAttributeParsingService, DefaultCloudEventAttributeParsingService>(
+        services.AddSingleton<ICloudEventsAttributeParsingService, DefaultCloudEventsAttributeParsingService>(
             sp =>
             {
-                var parsers = sp.GetRequiredService<FrozenDictionary<string, CloudEventAttributeParser>>();
-                return new DefaultCloudEventAttributeParsingService(parsers);
+                var parsers = sp.GetRequiredService<FrozenDictionary<string, CloudEventsAttributeParser>>();
+                return new DefaultCloudEventsAttributeParsingService(parsers);
             }
         );
 
@@ -88,17 +88,17 @@ public static class Module
     /// </summary>
     /// <param name="serializerOptions">The JSON serializer options to configure.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="serializerOptions" /> is <c>null</c>.</exception>
-    public static void AddDefaultLightResultsCloudEventReadJsonConverters(this JsonSerializerOptions serializerOptions)
+    public static void AddDefaultLightResultsCloudEventsReadJsonConverters(this JsonSerializerOptions serializerOptions)
     {
         if (serializerOptions is null)
         {
             throw new ArgumentNullException(nameof(serializerOptions));
         }
 
-        serializerOptions.Converters.Add(new CloudEventEnvelopePayloadJsonConverter());
-        serializerOptions.Converters.Add(new CloudEventFailurePayloadJsonConverter());
-        serializerOptions.Converters.Add(new CloudEventSuccessPayloadJsonConverter());
-        serializerOptions.Converters.Add(new CloudEventSuccessPayloadJsonConverterFactory());
+        serializerOptions.Converters.Add(new CloudEventsEnvelopePayloadJsonConverter());
+        serializerOptions.Converters.Add(new CloudEventsFailurePayloadJsonConverter());
+        serializerOptions.Converters.Add(new CloudEventsSuccessPayloadJsonConverter());
+        serializerOptions.Converters.Add(new CloudEventsSuccessPayloadJsonConverterFactory());
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public static class Module
     public static JsonSerializerOptions CreateDefaultSerializerOptions()
     {
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        serializerOptions.AddDefaultLightResultsCloudEventReadJsonConverters();
+        serializerOptions.AddDefaultLightResultsCloudEventsReadJsonConverters();
         return serializerOptions;
     }
 }
