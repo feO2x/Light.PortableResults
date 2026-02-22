@@ -191,17 +191,15 @@ public static class CloudEventsEnvelopeJsonReader
 
     private static MetadataValue ReadExtensionAttributeValue(ref Utf8JsonReader reader)
     {
-        var parsedValue = MetadataJsonReader.ReadMetadataValue(
-            ref reader,
-            MetadataValueAnnotation.SerializeInCloudEventsData
-        );
+        if (reader.TokenType is JsonTokenType.StartObject or JsonTokenType.StartArray)
+        {
+            throw new JsonException("CloudEvents extension attributes must be primitive JSON values.");
+        }
 
-        return parsedValue.Kind.IsPrimitive() ?
-            MetadataValueAnnotationHelper.WithAnnotation(
-                parsedValue,
-                MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
-            ) :
-            parsedValue;
+        return MetadataJsonReader.ReadMetadataValue(
+            ref reader,
+            MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+        );
     }
 
     private static string ReadRequiredStringValue(ref Utf8JsonReader reader, string propertyName)

@@ -497,7 +497,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
     }
 
     [Fact]
-    public void ReadResultOfT_ShouldParseComplexExtensionMetadata_WhenParsingServiceIsConfigured()
+    public void ReadResultOfT_ShouldThrow_WhenExtensionAttributeIsComplex()
     {
         var cloudEvent = CreateUtf8(
             """
@@ -522,15 +522,10 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
             MergeStrategy = MetadataMergeStrategy.AddOrReplace
         };
 
-        var result = cloudEvent.ReadResult<int>(options);
+        var act = () => cloudEvent.ReadResult<int>(options);
 
-        result.IsValid.Should().BeTrue();
-        result.Value.Should().Be(9);
-        result.Metadata.Should().NotBeNull();
-        result.Metadata!.Value.TryGetObject("context", out var context).Should().BeTrue();
-        context.TryGetString("nested", out var nested).Should().BeTrue();
-        nested.Should().Be("x");
-        result.Metadata.Value["context"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsData);
+        act.Should().Throw<JsonException>()
+           .WithMessage("*extension attributes*primitive*");
     }
 
     [Fact]
