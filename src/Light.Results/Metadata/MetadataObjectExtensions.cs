@@ -44,6 +44,8 @@ public static class MetadataObjectExtensions
     /// <param name="incoming">The incoming metadata object.</param>
     /// <param name="strategy">The merge strategy to use.</param>
     /// <returns>The merged metadata object.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when <paramref name="strategy" /> is <see cref="MetadataMergeStrategy.FailOnConflict" /> and a duplicate key is found.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="strategy" /> is not a recognized value.</exception>
     public static MetadataObject Merge(
         this MetadataObject original,
         MetadataObject incoming,
@@ -120,6 +122,10 @@ public static class MetadataObjectExtensions
     /// <summary>
     /// Creates a new <see cref="MetadataObject" /> with an additional property.
     /// </summary>
+    /// <param name="metadata">The original metadata object.</param>
+    /// <param name="key">The key of the property to add or replace.</param>
+    /// <param name="value">The value of the property.</param>
+    /// <returns>A new <see cref="MetadataObject" /> with the additional property.</returns>
     public static MetadataObject With(this MetadataObject metadata, string key, MetadataValue value)
     {
         using var builder = MetadataObjectBuilder.From(metadata);
@@ -130,6 +136,9 @@ public static class MetadataObjectExtensions
     /// <summary>
     /// Creates a new <see cref="MetadataObject" /> with additional properties.
     /// </summary>
+    /// <param name="metadata">The original metadata object.</param>
+    /// <param name="properties">The properties to add or replace.</param>
+    /// <returns>A new <see cref="MetadataObject" /> with the additional properties.</returns>
     public static MetadataObject With(
         this MetadataObject metadata,
         params (string Key, MetadataValue Value)[]? properties

@@ -13,6 +13,9 @@ public sealed class DefaultCloudEventsAttributeParsingService : ICloudEventsAttr
     /// <summary>
     /// Initializes a new instance of <see cref="DefaultCloudEventsAttributeParsingService" />.
     /// </summary>
+    /// <param name="parsers">The optional frozen dictionary of parsers keyed by CloudEvents extension attribute name.</param>
+    /// <param name="conflictStrategy">How conflicts are handled when multiple attributes map to the same metadata key.</param>
+    /// <param name="metadataAnnotation">The annotation applied to metadata values originating from CloudEvents extension attributes.</param>
     public DefaultCloudEventsAttributeParsingService(
         FrozenDictionary<string, CloudEventsAttributeParser>? parsers = null,
         CloudEventsAttributeConflictStrategy conflictStrategy = CloudEventsAttributeConflictStrategy.Throw,
@@ -50,6 +53,9 @@ public sealed class DefaultCloudEventsAttributeParsingService : ICloudEventsAttr
     /// <summary>
     /// Parses all extension attributes into metadata.
     /// </summary>
+    /// <param name="extensionAttributes">The CloudEvents extension attributes to parse.</param>
+    /// <returns>A <see cref="MetadataObject" /> containing the parsed metadata, or <see langword="null" /> if no entries were produced.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when <see cref="ConflictStrategy" /> is <see cref="CloudEventsAttributeConflictStrategy.Throw" /> and multiple attributes map to the same metadata key.</exception>
     public MetadataObject? ReadExtensionMetadata(MetadataObject extensionAttributes)
     {
         if (extensionAttributes.Count == 0)
@@ -84,6 +90,11 @@ public sealed class DefaultCloudEventsAttributeParsingService : ICloudEventsAttr
     /// <summary>
     /// Parses a single CloudEvents extension attribute.
     /// </summary>
+    /// <param name="attributeName">The CloudEvents extension attribute name.</param>
+    /// <param name="value">The raw metadata value from the CloudEvents extension attribute.</param>
+    /// <param name="annotation">The annotation to apply to the parsed metadata value.</param>
+    /// <returns>The parsed metadata key and value pair.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="attributeName" /> is <see langword="null" />.</exception>
     public KeyValuePair<string, MetadataValue> ParseExtensionAttribute(
         string attributeName,
         MetadataValue value,

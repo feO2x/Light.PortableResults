@@ -14,5 +14,6 @@ public sealed class NoHeadersSelectionStrategy : IHttpHeaderSelectionStrategy
     /// Always returns <see langword="false" /> to indicate that no header should be included.
     /// </summary>
     /// <param name="headerName">The header name being evaluated.</param>
+    /// <returns>Always <see langword="false" />.</returns>
     public bool ShouldInclude(string headerName) => false;
 }

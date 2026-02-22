@@ -6,6 +6,7 @@ namespace Light.Results.CloudEvents.Writing;
 /// Defines the metadata-related members that a CloudEvents envelope must expose to participate in metadata-aware
 /// helper logic.
 /// </summary>
+/// <typeparam name="TResult">The type of the result associated with the CloudEvents payload.</typeparam>
 public interface ICloudEventsEnvelopeForWritingWithMetadata<out TResult>
     where TResult : IHasOptionalMetadata
 {

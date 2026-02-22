@@ -11,9 +11,7 @@ namespace Light.Results.Http.Reading.Json;
 public sealed class HttpReadWrappedSuccessResultPayloadJsonConverter<T> :
     JsonConverter<HttpReadWrappedSuccessResultPayload<T>>
 {
-    /// <summary>
-    /// Reads the JSON representation of a <see cref="HttpReadWrappedSuccessResultPayload{T}" />.
-    /// </summary>
+    /// <inheritdoc />
     public override HttpReadWrappedSuccessResultPayload<T> Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
@@ -23,9 +21,7 @@ public sealed class HttpReadWrappedSuccessResultPayloadJsonConverter<T> :
         return ResultJsonReader.ReadWrappedSuccessPayload<T>(ref reader, options);
     }
 
-    /// <summary>
-    /// Writing is not supported by this converter.
-    /// </summary>
+    /// <inheritdoc />
     public override void Write(
         Utf8JsonWriter writer,
         HttpReadWrappedSuccessResultPayload<T> value,

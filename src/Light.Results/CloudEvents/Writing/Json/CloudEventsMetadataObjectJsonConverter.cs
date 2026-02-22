@@ -11,9 +11,7 @@ namespace Light.Results.CloudEvents.Writing.Json;
 /// </summary>
 public sealed class CloudEventsMetadataObjectJsonConverter : JsonConverter<MetadataObject>
 {
-    /// <summary>
-    /// Reading is not supported by this converter.
-    /// </summary>
+    /// <inheritdoc />
     public override MetadataObject Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         throw new NotSupportedException(
@@ -21,9 +19,7 @@ public sealed class CloudEventsMetadataObjectJsonConverter : JsonConverter<Metad
         );
     }
 
-    /// <summary>
-    /// Writes the JSON representation for the specified metadata object.
-    /// </summary>
+    /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, MetadataObject value, JsonSerializerOptions options) =>
         writer.WriteMetadataObject(value, requiredAnnotation: MetadataValueAnnotation.SerializeInCloudEventsData);
 }

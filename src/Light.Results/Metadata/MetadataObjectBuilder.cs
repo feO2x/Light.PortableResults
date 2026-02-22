@@ -28,6 +28,7 @@ public struct MetadataObjectBuilder : IDisposable
     /// </summary>
     /// <param name="capacity">The initial capacity.</param>
     /// <returns>The builder.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="capacity" /> is less than 1.</exception>
     public static MetadataObjectBuilder Create(int capacity = DefaultCapacity)
     {
         if (capacity < 1)

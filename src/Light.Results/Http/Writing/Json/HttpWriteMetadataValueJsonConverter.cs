@@ -11,17 +11,13 @@ namespace Light.Results.Http.Writing.Json;
 /// </summary>
 public sealed class HttpWriteMetadataValueJsonConverter : JsonConverter<MetadataValue>
 {
-    /// <summary>
-    /// Reading is not supported by this converter.
-    /// </summary>
+    /// <inheritdoc />
     public override MetadataValue Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
         throw new NotSupportedException(
             $"{nameof(HttpWriteMetadataValueJsonConverter)} supports serialization only. Use a deserialization converter for reading."
         );
 
-    /// <summary>
-    /// Writes the JSON representation for the specified metadata value.
-    /// </summary>
+    /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, MetadataValue value, JsonSerializerOptions options) =>
         writer.WriteMetadataValue(value, requiredAnnotation: MetadataValueAnnotation.SerializeInHttpResponseBody);
 }

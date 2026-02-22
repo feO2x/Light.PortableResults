@@ -9,9 +9,7 @@ namespace Light.Results.CloudEvents.Reading.Json;
 /// </summary>
 public sealed class CloudEventsFailurePayloadJsonConverter : JsonConverter<CloudEventsFailurePayload>
 {
-    /// <summary>
-    /// Reads the JSON representation of a <see cref="CloudEventsFailurePayload" />.
-    /// </summary>
+    /// <inheritdoc />
     public override CloudEventsFailurePayload Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
@@ -21,9 +19,7 @@ public sealed class CloudEventsFailurePayloadJsonConverter : JsonConverter<Cloud
         return CloudEventsDataJsonReader.ReadFailurePayload(ref reader);
     }
 
-    /// <summary>
-    /// Writing is not supported by this converter.
-    /// </summary>
+    /// <inheritdoc />
     public override void Write(
         Utf8JsonWriter writer,
         CloudEventsFailurePayload value,

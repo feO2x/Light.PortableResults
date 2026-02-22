@@ -9,5 +9,6 @@ public interface IHttpHeaderSelectionStrategy
     /// Returns <see langword="true" /> when the specified header should be included.
     /// </summary>
     /// <param name="headerName">The HTTP header name.</param>
+    /// <returns><see langword="true" /> if the header should be included; otherwise, <see langword="false" />.</returns>
     bool ShouldInclude(string headerName);
 }

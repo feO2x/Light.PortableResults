@@ -50,5 +50,6 @@ public sealed class DenyListHeaderSelectionStrategy : IHttpHeaderSelectionStrate
     /// Returns <see langword="true" /> when the supplied header name is not present in the deny list.
     /// </summary>
     /// <param name="headerName">The header name being evaluated.</param>
+    /// <returns><see langword="true" /> if the header is not in the deny list; otherwise, <see langword="false" />.</returns>
     public bool ShouldInclude(string headerName) => !_deniedHeaderNames.Contains(headerName);
 }

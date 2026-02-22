@@ -13,6 +13,10 @@ public static class MetadataExtensions
     /// <summary>
     /// Writes the metadata JSON object in a property named <c>metadata</c>.
     /// </summary>
+    /// <param name="writer">The System.Text.Json writer instance which writes the target JSON document.</param>
+    /// <param name="metadata">The metadata object to serialize.</param>
+    /// <param name="serializerOptions">The JSON serializer options used to resolve the metadata converter.</param>
+    /// <exception cref="InvalidOperationException">Thrown when no JSON serialization metadata is found for <see cref="MetadataObject" />.</exception>
     public static void WriteMetadataPropertyAndValue(
         this Utf8JsonWriter writer,
         MetadataObject metadata,

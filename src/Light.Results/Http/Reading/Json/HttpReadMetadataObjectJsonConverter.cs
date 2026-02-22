@@ -10,15 +10,11 @@ namespace Light.Results.Http.Reading.Json;
 /// </summary>
 public sealed class HttpReadMetadataObjectJsonConverter : JsonConverter<MetadataObject>
 {
-    /// <summary>
-    /// Reads the JSON representation of a <see cref="MetadataObject" />.
-    /// </summary>
+    /// <inheritdoc />
     public override MetadataObject Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
         MetadataJsonReader.ReadMetadataObject(ref reader);
 
-    /// <summary>
-    /// Writing is not supported by this converter.
-    /// </summary>
+    /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, MetadataObject value, JsonSerializerOptions options) =>
         throw new NotSupportedException(
             $"{nameof(HttpReadMetadataObjectJsonConverter)} supports deserialization only. Use a serialization converter for writing."

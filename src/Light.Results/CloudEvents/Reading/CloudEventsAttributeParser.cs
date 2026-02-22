@@ -50,6 +50,10 @@ public abstract class CloudEventsAttributeParser
     /// <summary>
     /// Parses the specified CloudEvents extension attribute value into metadata.
     /// </summary>
+    /// <param name="attributeName">The CloudEvents extension attribute name.</param>
+    /// <param name="value">The raw metadata value from the CloudEvents extension attribute.</param>
+    /// <param name="annotation">The annotation to apply to the parsed metadata value.</param>
+    /// <returns>The parsed metadata value.</returns>
     public abstract MetadataValue ParseAttribute(
         string attributeName,
         MetadataValue value,

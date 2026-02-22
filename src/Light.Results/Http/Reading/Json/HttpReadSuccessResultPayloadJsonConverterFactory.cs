@@ -9,9 +9,7 @@ namespace Light.Results.Http.Reading.Json;
 /// </summary>
 public sealed class HttpReadSuccessResultPayloadJsonConverterFactory : JsonConverterFactory
 {
-    /// <summary>
-    /// Determines whether the factory can create a converter for the specified type.
-    /// </summary>
+    /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert)
     {
         if (!typeToConvert.IsGenericType)
@@ -25,9 +23,7 @@ public sealed class HttpReadSuccessResultPayloadJsonConverterFactory : JsonConve
                genericTypeDefinition == typeof(HttpReadWrappedSuccessResultPayload<>);
     }
 
-    /// <summary>
-    /// Creates a converter for the specified type.
-    /// </summary>
+    /// <inheritdoc />
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var valueType = typeToConvert.GetGenericArguments()[0];

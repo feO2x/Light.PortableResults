@@ -14,5 +14,6 @@ public sealed class AllHeadersSelectionStrategy : IHttpHeaderSelectionStrategy
     /// Always returns <see langword="true" /> to indicate that all headers should be included.
     /// </summary>
     /// <param name="headerName">The header name being evaluated.</param>
+    /// <returns>Always <see langword="true" />.</returns>
     public bool ShouldInclude(string headerName) => true;
 }

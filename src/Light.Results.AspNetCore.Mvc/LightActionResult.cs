@@ -75,6 +75,7 @@ public sealed class LightActionResult : BaseLightActionResult<Result>
 /// MVC action result for <see cref="Result{T}" /> which either writes success HTTP response bodies or Problem Details
 /// bodies, based on the given result.
 /// </summary>
+/// <typeparam name="T">The type of the success value in the result.</typeparam>
 public sealed class LightActionResult<T> : BaseLightActionResult<Result<T>>
 {
     /// <summary>

@@ -49,5 +49,6 @@ public sealed class AllowListHeaderSelectionStrategy : IHttpHeaderSelectionStrat
     /// Returns <see langword="true" /> when the supplied header name exists in the allow list.
     /// </summary>
     /// <param name="headerName">The header name being evaluated.</param>
+    /// <returns><see langword="true" /> if the header is in the allow list; otherwise, <see langword="false" />.</returns>
     public bool ShouldInclude(string headerName) => _allowedHeaderNames.Contains(headerName);
 }

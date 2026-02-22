@@ -44,6 +44,7 @@ public static class HttpResponseMessageExtensions
     /// <param name="options">Optional deserialization options.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The parsed result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="response" /> is <see langword="null" />.</exception>
     public static async Task<Result> ReadResultAsync(
         this HttpResponseMessage response,
         LightResultsHttpReadOptions? options = null,
@@ -72,6 +73,7 @@ public static class HttpResponseMessageExtensions
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="T">The result value type.</typeparam>
     /// <returns>The parsed result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="response" /> is <see langword="null" />.</exception>
     public static async Task<Result<T>> ReadResultAsync<T>(
         this HttpResponseMessage response,
         LightResultsHttpReadOptions? options = null,

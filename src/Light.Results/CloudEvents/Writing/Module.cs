@@ -22,6 +22,8 @@ public static class Module
     /// <summary>
     /// Registers <see cref="LightResultsCloudEventsWriteOptions" /> in the service container.
     /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddLightResultsCloudEventsWriteOptions(this IServiceCollection services)
     {
         services.AddOptions<LightResultsCloudEventsWriteOptions>();

@@ -9,9 +9,7 @@ namespace Light.Results.Http.Reading.Json;
 /// </summary>
 public sealed class HttpReadFailureResultPayloadJsonConverter : JsonConverter<HttpReadFailureResultPayload>
 {
-    /// <summary>
-    /// Reads the JSON representation of a <see cref="HttpReadFailureResultPayload" />.
-    /// </summary>
+    /// <inheritdoc />
     public override HttpReadFailureResultPayload Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
@@ -21,9 +19,7 @@ public sealed class HttpReadFailureResultPayloadJsonConverter : JsonConverter<Ht
         return ResultJsonReader.ReadFailurePayload(ref reader);
     }
 
-    /// <summary>
-    /// Writing is not supported by this converter.
-    /// </summary>
+    /// <inheritdoc />
     public override void Write(
         Utf8JsonWriter writer,
         HttpReadFailureResultPayload value,

@@ -149,6 +149,7 @@ public readonly record struct ProblemDetailsInfo
     /// <see cref="ErrorCategory.Unclassified" />. Defaults to true.
     /// </param>
     /// <returns>The problem details info containing values for Type, Status, Title and Detail.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="errors" /> is empty.</exception>
     public static ProblemDetailsInfo CreateDefault(Errors errors, bool firstCategoryIsLeadingCategory = true)
     {
         if (errors.IsEmpty)

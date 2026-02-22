@@ -24,7 +24,7 @@ public sealed class DefaultHttpHeaderParsingService : IHttpHeaderParsingService
     /// <param name="metadataAnnotation">The annotation applied to metadata values originating from headers.</param>
     /// <param name="headerValueParsingMode">The parsing mode for header values without a registered parser.</param>
     /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="selectionStrategy" /> or <paramref name="parsers" /> is <see langword="null" />.
+    /// Thrown when <paramref name="selectionStrategy" /> is <see langword="null" />.
     /// </exception>
     public DefaultHttpHeaderParsingService(
         IHttpHeaderSelectionStrategy selectionStrategy,
@@ -72,6 +72,10 @@ public sealed class DefaultHttpHeaderParsingService : IHttpHeaderParsingService
     /// Reads the headers from the specified response and content headers into a <see cref="MetadataObject" />.
     /// Returns <see langword="null" /> when no headers are selected or no metadata entries are produced.
     /// </summary>
+    /// <param name="responseHeaders">The HTTP response headers.</param>
+    /// <param name="contentHeaders">The optional HTTP content headers.</param>
+    /// <returns>A <see cref="MetadataObject" /> containing the parsed header metadata, or <see langword="null" /> if no metadata was produced.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when <see cref="ConflictStrategy" /> is <see cref="HeaderConflictStrategy.Throw" /> and multiple headers map to the same metadata key.</exception>
     public MetadataObject? ReadHeaderMetadata(
         HttpResponseHeaders responseHeaders,
         HttpContentHeaders? contentHeaders

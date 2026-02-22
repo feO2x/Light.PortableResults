@@ -9,9 +9,7 @@ namespace Light.Results.CloudEvents.Writing.Json;
 /// </summary>
 public sealed class CloudEventsEnvelopeForWritingJsonConverter : JsonConverter<CloudEventsEnvelopeForWriting>
 {
-    /// <summary>
-    /// Reading is not supported by this converter.
-    /// </summary>
+    /// <inheritdoc />
     public override CloudEventsEnvelopeForWriting Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
@@ -21,9 +19,7 @@ public sealed class CloudEventsEnvelopeForWritingJsonConverter : JsonConverter<C
             $"{nameof(CloudEventsEnvelopeForWritingJsonConverter)} supports serialization only. Use a deserialization converter for reading."
         );
 
-    /// <summary>
-    /// Writes the JSON representation for the specified envelope.
-    /// </summary>
+    /// <inheritdoc />
     public override void Write(
         Utf8JsonWriter writer,
         CloudEventsEnvelopeForWriting envelope,
@@ -37,9 +33,7 @@ public sealed class CloudEventsEnvelopeForWritingJsonConverter : JsonConverter<C
 /// </summary>
 public sealed class CloudEventsEnvelopeForWritingJsonConverter<T> : JsonConverter<CloudEventsEnvelopeForWriting<T>>
 {
-    /// <summary>
-    /// Reading is not supported by this converter.
-    /// </summary>
+    /// <inheritdoc />
     public override CloudEventsEnvelopeForWriting<T> Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
@@ -49,9 +43,7 @@ public sealed class CloudEventsEnvelopeForWritingJsonConverter<T> : JsonConverte
             $"{nameof(CloudEventsEnvelopeForWritingJsonConverter<>)} supports serialization only. Use a deserialization converter for reading."
         );
 
-    /// <summary>
-    /// Writes the JSON representation for the specified envelope.
-    /// </summary>
+    /// <inheritdoc />
     public override void Write(
         Utf8JsonWriter writer,
         CloudEventsEnvelopeForWriting<T> envelope,

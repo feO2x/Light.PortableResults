@@ -37,6 +37,7 @@ public static class CloudEventsResultExtensions
     /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="source" />, <paramref name="dataschema" />, or <paramref name="time" /> has an invalid format.</exception>
     public static byte[] ToCloudEvent(
         this Result result,
         string? successType = null,
@@ -88,6 +89,7 @@ public static class CloudEventsResultExtensions
     /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="source" />, <paramref name="dataschema" />, or <paramref name="time" /> has an invalid format.</exception>
     public static IRentedArray ToCloudEventPooled(
         this Result result,
         string? successType = null,
@@ -137,6 +139,7 @@ public static class CloudEventsResultExtensions
     /// <param name="options">Customization options for serialization and metadata conversion.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="source" />, <paramref name="dataschema" />, or <paramref name="time" /> has an invalid format.</exception>
     /// <remarks>
     /// The required CloudEvents attributes <c>type</c> and <c>source</c> are resolved from the supplied arguments, the result metadata,
     /// or the configured defaults in <paramref name="options" />. An <see cref="InvalidOperationException" /> is thrown when
@@ -202,6 +205,7 @@ public static class CloudEventsResultExtensions
     /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="source" />, <paramref name="dataschema" />, or <paramref name="time" /> has an invalid format.</exception>
     public static CloudEventsEnvelopeForWriting ToCloudEventsEnvelopeForWriting(
         this Result result,
         string? successType = null,
@@ -270,6 +274,7 @@ public static class CloudEventsResultExtensions
     /// to keep downstream consumers idempotent.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="source" />, <paramref name="dataschema" />, or <paramref name="time" /> has an invalid format.</exception>
     public static byte[] ToCloudEvent<T>(
         this Result<T> result,
         string? successType = null,
@@ -322,6 +327,7 @@ public static class CloudEventsResultExtensions
     /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="source" />, <paramref name="dataschema" />, or <paramref name="time" /> has an invalid format.</exception>
     public static IRentedArray ToCloudEventPooled<T>(
         this Result<T> result,
         string? successType = null,
@@ -369,6 +375,7 @@ public static class CloudEventsResultExtensions
     /// <param name="options">Customization options for serialization and metadata conversion.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="source" />, <paramref name="dataschema" />, or <paramref name="time" /> has an invalid format.</exception>
     /// <remarks>
     /// The required CloudEvents attributes <c>type</c> and <c>source</c> are resolved from the supplied arguments, the result metadata,
     /// or the configured defaults in <paramref name="options" />. An <see cref="InvalidOperationException" /> is thrown when
@@ -432,6 +439,7 @@ public static class CloudEventsResultExtensions
     /// to keep downstream consumers idempotent and support routing and observability.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="source" />, <paramref name="dataschema" />, or <paramref name="time" /> has an invalid format.</exception>
     public static CloudEventsEnvelopeForWriting<T> ToCloudEventsEnvelopeForWriting<T>(
         this Result<T> result,
         string? successType = null,

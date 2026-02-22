@@ -12,9 +12,7 @@ namespace Light.Results.CloudEvents.Reading.Json;
 public sealed class
     CloudEventsWrappedSuccessPayloadJsonConverter<T> : JsonConverter<CloudEventsWrappedSuccessPayload<T>>
 {
-    /// <summary>
-    /// Reads the JSON representation of a <see cref="CloudEventsWrappedSuccessPayload{T}" />.
-    /// </summary>
+    /// <inheritdoc />
     public override CloudEventsWrappedSuccessPayload<T> Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
@@ -25,9 +23,7 @@ public sealed class
         return new CloudEventsWrappedSuccessPayload<T>(httpPayload.Value, httpPayload.Metadata);
     }
 
-    /// <summary>
-    /// Writing is not supported by this converter.
-    /// </summary>
+    /// <inheritdoc />
     public override void Write(
         Utf8JsonWriter writer,
         CloudEventsWrappedSuccessPayload<T> value,

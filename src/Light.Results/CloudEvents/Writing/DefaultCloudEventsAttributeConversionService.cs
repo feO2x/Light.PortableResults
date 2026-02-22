@@ -39,6 +39,11 @@ public sealed class DefaultCloudEventsAttributeConversionService : ICloudEventsA
     /// <summary>
     /// Converts a metadata value into a CloudEvents attribute.
     /// </summary>
+    /// <param name="metadataKey">The metadata key to convert.</param>
+    /// <param name="metadataValue">The metadata value to convert.</param>
+    /// <returns>The CloudEvents attribute key and value pair.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="metadataKey" /> is <see langword="null" />.</exception>
+    /// <exception cref="ArgumentException">Thrown when the resulting attribute name is invalid, reserved, or the value is not a primitive type for extension attributes.</exception>
     public KeyValuePair<string, MetadataValue> PrepareCloudEventsAttribute(
         string metadataKey,
         MetadataValue metadataValue

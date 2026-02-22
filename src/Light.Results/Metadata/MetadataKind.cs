@@ -43,7 +43,7 @@ public enum MetadataKind : byte
 }
 
 /// <summary>
-/// Provides extension methods
+/// Provides extension methods for <see cref="MetadataKind" />.
 /// </summary>
 public static class MetadataKindExtensions
 {

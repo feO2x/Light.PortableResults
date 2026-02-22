@@ -11,9 +11,7 @@ namespace Light.Results.CloudEvents.Reading.Json;
 /// <typeparam name="T">The payload value type.</typeparam>
 public sealed class CloudEventsBareSuccessPayloadJsonConverter<T> : JsonConverter<CloudEventsBareSuccessPayload<T>>
 {
-    /// <summary>
-    /// Reads the JSON representation of a <see cref="CloudEventsBareSuccessPayload{T}" />.
-    /// </summary>
+    /// <inheritdoc />
     public override CloudEventsBareSuccessPayload<T> Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
@@ -24,9 +22,7 @@ public sealed class CloudEventsBareSuccessPayloadJsonConverter<T> : JsonConverte
         return new CloudEventsBareSuccessPayload<T>(httpPayload.Value);
     }
 
-    /// <summary>
-    /// Writing is not supported by this converter.
-    /// </summary>
+    /// <inheritdoc />
     public override void Write(
         Utf8JsonWriter writer,
         CloudEventsBareSuccessPayload<T> value,

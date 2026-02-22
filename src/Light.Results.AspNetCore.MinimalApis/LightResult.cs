@@ -75,6 +75,7 @@ public sealed class LightResult : BaseLightResult<Result>
 /// Minimal API result for <see cref="Result{T}" /> which either writes success HTTP response bodies or Problem Details
 /// bodies, based on the given result.
 /// </summary>
+/// <typeparam name="T">The type of the success value in the result.</typeparam>
 public sealed class LightResult<T> : BaseLightResult<Result<T>>
 {
     /// <summary>

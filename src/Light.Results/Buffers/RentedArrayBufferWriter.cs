@@ -34,6 +34,7 @@ public sealed class RentedArrayBufferWriter : IBufferWriter<byte>, IRentedArray
     /// </summary>
     /// <param name="arrayPool">The array pool instance where buffer arrays are rented from and returned to.</param>
     /// <param name="initialCapacity">The initial capacity of the buffer. Defaults to 2048.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="arrayPool" /> is <see langword="null" />.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="initialCapacity" /> is less than 0.</exception>
     public RentedArrayBufferWriter(ArrayPool<byte> arrayPool, int initialCapacity = DefaultInitialCapacity)
     {
@@ -92,6 +93,7 @@ public sealed class RentedArrayBufferWriter : IBufferWriter<byte>, IRentedArray
     /// </summary>
     /// <param name="sizeHint">The minimum size of the span to return. Defaults to 0.</param>
     /// <returns>A Span&lt;byte> that can be written to.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="sizeHint" /> is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when FinishWriting has already been called.</exception>
     public Span<byte> GetSpan(int sizeHint = 0)
     {
