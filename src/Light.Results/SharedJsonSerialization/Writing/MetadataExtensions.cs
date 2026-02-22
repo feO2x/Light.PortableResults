@@ -16,6 +16,8 @@ public static class MetadataExtensions
     /// <param name="writer">The System.Text.Json writer instance which writes the target JSON document.</param>
     /// <param name="metadata">The metadata object to serialize.</param>
     /// <param name="serializerOptions">The JSON serializer options used to resolve the metadata converter.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="serializerOptions" /> is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no JSON serialization metadata is found for <see cref="MetadataObject" />.</exception>
     public static void WriteMetadataPropertyAndValue(
         this Utf8JsonWriter writer,
@@ -23,6 +25,16 @@ public static class MetadataExtensions
         JsonSerializerOptions serializerOptions
     )
     {
+        if (writer is null)
+        {
+            throw new ArgumentNullException(nameof(writer));
+        }
+
+        if (serializerOptions is null)
+        {
+            throw new ArgumentNullException(nameof(serializerOptions));
+        }
+
         var metadataTypeInfo =
             serializerOptions.GetTypeInfo(typeof(MetadataObject)) ??
             throw new InvalidOperationException(

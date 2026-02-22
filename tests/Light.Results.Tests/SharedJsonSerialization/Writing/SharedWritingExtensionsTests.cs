@@ -55,6 +55,39 @@ public sealed class SharedWritingExtensionsTests
     }
 
     [Fact]
+    public void WriteMetadataPropertyAndValue_ShouldThrow_WhenWriterIsNull()
+    {
+        var options = new JsonSerializerOptions { TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
+
+        var act = () =>
+            Results.SharedJsonSerialization.Writing.MetadataExtensions.WriteMetadataPropertyAndValue(
+                null!,
+                MetadataObject.Empty,
+                options
+            );
+
+        act.Should().Throw<ArgumentNullException>()
+           .WithParameterName("writer");
+    }
+
+    [Fact]
+    public void WriteMetadataPropertyAndValue_ShouldThrow_WhenSerializerOptionsIsNull()
+    {
+        var act = () =>
+            Serialize(
+                writer =>
+                {
+                    writer.WriteStartObject();
+                    writer.WriteMetadataPropertyAndValue(MetadataObject.Empty, null!);
+                    writer.WriteEndObject();
+                }
+            );
+
+        act.Should().Throw<ArgumentNullException>()
+           .WithParameterName("serializerOptions");
+    }
+
+    [Fact]
     public void WriteMetadataArray_ShouldWriteOnlyValuesWithRequiredAnnotation()
     {
         var array = MetadataArray.Create(
