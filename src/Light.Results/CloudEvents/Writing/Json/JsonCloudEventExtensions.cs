@@ -2,7 +2,6 @@ using System;
 using System.Globalization;
 using System.Text.Json;
 using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization;
 using Light.Results.SharedJsonSerialization.Writing;
 
 namespace Light.Results.CloudEvents.Writing.Json;
@@ -31,6 +30,10 @@ public static class JsonCloudEventExtensions
             throw new ArgumentNullException(nameof(writer));
         }
 
+        var shouldWriteMetadataToCloudEventsDataSectionWhenResultIsValid =
+            envelope.CheckIfMetadataShouldBeWrittenForValidResult<CloudEventEnvelopeForWriting, Result>();
+        var shouldWriteData = !envelope.Data.IsValid || shouldWriteMetadataToCloudEventsDataSectionWhenResultIsValid;
+
         WriteEnvelopeStart(
             writer,
             envelope.Type,
@@ -40,37 +43,28 @@ public static class JsonCloudEventExtensions
             envelope.Time,
             envelope.DataSchema,
             envelope.ExtensionAttributes,
-            includeData: true,
+            includeData: shouldWriteData,
             envelope.Data.IsValid
         );
 
-        writer.WritePropertyName("data");
-        if (envelope.Data.IsValid)
+        if (shouldWriteData)
         {
-            // We first check if we should write metadata when the result is value
-            var result = envelope.Data;
-            if (envelope.ResolvedOptions.MetadataSerializationMode == MetadataSerializationMode.ErrorsOnly ||
-                result.Metadata is null ||
-                !result.Metadata.Value.HasAnyValuesWithAnnotation(MetadataValueAnnotation.SerializeInCloudEventData))
+            writer.WritePropertyName("data");
+            if (envelope.Data.IsValid)
             {
-                // If we end up here, we write null as there is no metadata to write
-                writer.WriteNullValue();
+                writer.WriteStartObject();
+                writer.WriteMetadataPropertyAndValue(envelope.Data.Metadata!.Value, serializerOptions);
+                writer.WriteEndObject();
             }
             else
             {
-                writer.WriteStartObject();
-                writer.WriteMetadataPropertyAndValue(result.Metadata.Value, serializerOptions);
-                writer.WriteEndObject();
+                WriteFailurePayload(
+                    writer,
+                    envelope.Data.Errors,
+                    envelope.Data.Metadata,
+                    serializerOptions
+                );
             }
-        }
-        else
-        {
-            WriteFailurePayload(
-                writer,
-                envelope.Data.Errors,
-                envelope.Data.Metadata,
-                serializerOptions
-            );
         }
 
         writer.WriteEndObject();
@@ -115,12 +109,9 @@ public static class JsonCloudEventExtensions
             writer.WriteStartObject();
             writer.WritePropertyName("value");
             writer.WriteGenericValue(envelope.Data.Value, serializerOptions);
-            var metadata = envelope.Data.Metadata;
-            if (envelope.ResolvedOptions.MetadataSerializationMode == MetadataSerializationMode.Always &&
-                metadata.HasValue &&
-                metadata.Value.HasAnyValuesWithAnnotation(MetadataValueAnnotation.SerializeInCloudEventData))
+            if (envelope.CheckIfMetadataShouldBeWrittenForValidResult<CloudEventEnvelopeForWriting<T>, Result<T>>())
             {
-                writer.WriteMetadataPropertyAndValue(metadata.Value, serializerOptions);
+                writer.WriteMetadataPropertyAndValue(envelope.Data.Metadata!.Value, serializerOptions);
             }
 
             writer.WriteEndObject();

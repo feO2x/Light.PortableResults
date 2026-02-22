@@ -39,7 +39,7 @@ public sealed class CloudEventsResultExtensionsTests
     }
 
     [Fact]
-    public void ToCloudEvent_ForNonGenericSuccessWithoutDataMetadata_ShouldWriteNullDataAndDataContentType()
+    public void ToCloudEvent_ForNonGenericSuccessWithoutDataMetadata_ShouldOmitDataAndDataContentType()
     {
         var result = Result.Ok();
         var options = new LightResultsCloudEventsWriteOptions
@@ -58,8 +58,8 @@ public sealed class CloudEventsResultExtensionsTests
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
 
-        root.GetProperty("datacontenttype").GetString().Should().Be("application/json");
-        root.GetProperty("data").ValueKind.Should().Be(JsonValueKind.Null);
+        root.TryGetProperty("datacontenttype", out _).Should().BeFalse();
+        root.TryGetProperty("data", out _).Should().BeFalse();
         root.GetProperty("lroutcome").GetString().Should().Be("success");
     }
 
