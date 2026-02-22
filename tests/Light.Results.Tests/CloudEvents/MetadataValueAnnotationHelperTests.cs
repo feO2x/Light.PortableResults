@@ -121,4 +121,15 @@ public sealed class MetadataValueAnnotationHelperTests
         rewritten["nested"].TryGetObject(out var nested).Should().BeTrue();
         nested["name"].Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventData);
     }
+
+    [Fact]
+    public void WithAnnotation_ForEmptyMetadataObject_ShouldReturnEmpty()
+    {
+        var rewritten = MetadataValueAnnotationHelper.WithAnnotation(
+            MetadataObject.Empty,
+            MetadataValueAnnotation.SerializeInCloudEventData
+        );
+
+        rewritten.Should().Equal(MetadataObject.Empty);
+    }
 }

@@ -46,6 +46,11 @@ public static class MetadataValueAnnotationHelper
     /// </summary>
     public static MetadataObject WithAnnotation(MetadataObject metadataObject, MetadataValueAnnotation annotation)
     {
+        if (metadataObject.Count == 0)
+        {
+            return MetadataObject.Empty;
+        }
+
         using var builder = MetadataObjectBuilder.Create(metadataObject.Count);
         foreach (var keyValuePair in metadataObject)
         {
