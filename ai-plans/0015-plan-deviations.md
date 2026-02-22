@@ -24,7 +24,6 @@ The original plan specified `ToCloudEvent` and `WriteCloudEvent` extension metho
 To align with the HTTP integration pattern and reduce memory pressure:
 - `ToCloudEvent` was updated to use `RentedArrayBufferWriter` (an `IBufferWriter<byte>`) instead of `MemoryStream` to avoid double-copy allocations.
 - The write path now finalizes pooled buffers through `FinishWriting()` and returns an `IRentedArray` handle for zero-copy handoff and deterministic pool return on disposal.
-- An overload `WriteCloudEvent(this Result result, IBufferWriter<byte> bufferWriter, ...)` was added for zero-copy scenarios.
 - Metadata filtering and extension attribute conversion were optimized to iterate and write directly inline, avoiding the allocation of intermediate `MetadataObject` instances where possible.
 
 ## 3. Writing Streamlining (Unified Envelope Converter)
