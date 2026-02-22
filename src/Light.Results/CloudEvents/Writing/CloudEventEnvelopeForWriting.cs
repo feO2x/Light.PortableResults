@@ -16,7 +16,6 @@ namespace Light.Results.CloudEvents.Writing;
 /// observability purposes.
 /// </param>
 /// <param name="Time">An optional timestamp representing when the event occurred.</param>
-/// <param name="DataContentType">The optional content type that describes the data payload.</param>
 /// <param name="DataSchema">An optional URI reference to the schema that the data adheres to.</param>
 /// <param name="ExtensionAttributes">Optional extension attributes to include with the cloud event.</param>
 public readonly record struct CloudEventEnvelopeForWriting(
@@ -27,7 +26,6 @@ public readonly record struct CloudEventEnvelopeForWriting(
     ResolvedCloudEventsWriteOptions ResolvedOptions,
     string? Subject = null,
     DateTimeOffset? Time = null,
-    string? DataContentType = null,
     string? DataSchema = null,
     MetadataObject? ExtensionAttributes = null
 ) : ICloudEventEnvelopeForWritingWithMetadata<Result>
@@ -51,7 +49,6 @@ public readonly record struct CloudEventEnvelopeForWriting(
 /// observability purposes.
 /// </param>
 /// <param name="Time">An optional timestamp representing when the event occurred.</param>
-/// <param name="DataContentType">The optional content type that describes the data payload.</param>
 /// <param name="DataSchema">An optional URI reference to the schema that the data adheres to.</param>
 /// <param name="ExtensionAttributes">Optional extension attributes to include with the cloud event.</param>
 public readonly record struct CloudEventEnvelopeForWriting<T>(
@@ -62,7 +59,6 @@ public readonly record struct CloudEventEnvelopeForWriting<T>(
     ResolvedCloudEventsWriteOptions ResolvedOptions,
     string? Subject = null,
     DateTimeOffset? Time = null,
-    string? DataContentType = null,
     string? DataSchema = null,
     MetadataObject? ExtensionAttributes = null
 ) : ICloudEventEnvelopeForWritingWithMetadata<Result<T>>

@@ -238,7 +238,6 @@ public static class CloudEventsResultExtensions
             new ResolvedCloudEventsWriteOptions(options.MetadataSerializationMode),
             resolvedAttributes.Subject,
             resolvedAttributes.Time,
-            CloudEventsConstants.JsonContentType,
             resolvedAttributes.DataSchema,
             convertedAttributes
         );
@@ -469,7 +468,6 @@ public static class CloudEventsResultExtensions
             new ResolvedCloudEventsWriteOptions(resolvedOptions.MetadataSerializationMode),
             resolvedAttributes.Subject,
             resolvedAttributes.Time,
-            CloudEventsConstants.JsonContentType,
             resolvedAttributes.DataSchema,
             convertedAttributes
         );
