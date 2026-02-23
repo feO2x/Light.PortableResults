@@ -16,7 +16,10 @@ public static class CloudEventsEnvelopeJsonReader
     /// </summary>
     /// <param name="reader">The JSON reader positioned at the envelope object.</param>
     /// <returns>The parsed envelope payload.</returns>
-    /// <exception cref="JsonException">Thrown when the envelope is malformed or violates CloudEvents requirements.</exception>
+    /// <exception cref="JsonException">
+    /// Thrown when the envelope is malformed, violates CloudEvents requirements,
+    /// or exceeds the maximum supported size of <see cref="int.MaxValue" /> bytes.
+    /// </exception>
     public static CloudEventsEnvelopePayload ReadEnvelope(ref Utf8JsonReader reader)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
@@ -104,7 +107,7 @@ public static class CloudEventsEnvelopeJsonReader
             }
             else if (reader.ValueTextEquals("data"))
             {
-                var positionBeforeDataValue = (int) reader.BytesConsumed;
+                var positionBeforeDataValue = CheckByteOffset(reader.BytesConsumed);
 
                 if (!reader.Read())
                 {
@@ -119,7 +122,7 @@ public static class CloudEventsEnvelopeJsonReader
                 else
                 {
                     reader.Skip();
-                    var positionAfterDataValue = (int) reader.BytesConsumed;
+                    var positionAfterDataValue = CheckByteOffset(reader.BytesConsumed);
                     dataStart = positionBeforeDataValue;
                     dataLength = positionAfterDataValue - positionBeforeDataValue;
                 }
@@ -284,5 +287,15 @@ public static class CloudEventsEnvelopeJsonReader
         throw new JsonException(
             "CloudEvents attribute 'datacontenttype' must be 'application/json' or a media type ending with '+json'."
         );
+    }
+
+    private static int CheckByteOffset(long bytesConsumed)
+    {
+        if (bytesConsumed > int.MaxValue)
+        {
+            throw new JsonException("CloudEvents envelope exceeds the maximum supported size.");
+        }
+
+        return (int) bytesConsumed;
     }
 }
