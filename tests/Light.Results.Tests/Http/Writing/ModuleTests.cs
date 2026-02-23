@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
-using System.Text.Json;
 using FluentAssertions;
 using Light.Results.Http.Writing;
 using Light.Results.Http.Writing.Headers;
@@ -45,17 +44,9 @@ public sealed class ModuleTests
     [Fact]
     public void AddDefaultLightResultsJsonConverters_ShouldThrow_WhenSerializerOptionsIsNull()
     {
-        var act = () => Module.AddDefaultLightResultsHttpWriteJsonConverters(null!, new LightResultsHttpWriteOptions());
+        var act = () => Module.AddDefaultLightResultsHttpWriteJsonConverters(null!);
 
         act.Should().Throw<ArgumentNullException>().Where(x => x.ParamName == "serializerOptions");
-    }
-
-    [Fact]
-    public void AddDefaultLightResultsJsonConverters_ShouldThrow_WhenOptionsIsNull()
-    {
-        var act = () => new JsonSerializerOptions().AddDefaultLightResultsHttpWriteJsonConverters(null!);
-
-        act.Should().Throw<ArgumentNullException>().Where(x => x.ParamName == "options");
     }
 
     private sealed class TestHeaderConverter : HttpHeaderConverter

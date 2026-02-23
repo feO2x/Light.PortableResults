@@ -31,13 +31,11 @@ public static class Module
     /// Adds the default JSON converters used by Light.Results.
     /// </summary>
     /// <param name="serializerOptions">The JSON serializer options to configure.</param>
-    /// <param name="options">The Light.Results options.</param>
     /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="serializerOptions" /> or <paramref name="options" /> are <see langword="null" />.
+    /// Thrown when <paramref name="serializerOptions" /> is <see langword="null" />.
     /// </exception>
     public static void AddDefaultLightResultsHttpWriteJsonConverters(
-        this JsonSerializerOptions serializerOptions,
-        LightResultsHttpWriteOptions options
+        this JsonSerializerOptions serializerOptions
     )
     {
         if (serializerOptions is null)
@@ -47,8 +45,8 @@ public static class Module
 
         serializerOptions.Converters.Add(new HttpWriteMetadataObjectJsonConverter());
         serializerOptions.Converters.Add(new HttpWriteMetadataValueJsonConverter());
-        serializerOptions.Converters.Add(new HttpWriteResultJsonConverter(options));
-        serializerOptions.Converters.Add(new HttpWriteResultJsonConverterFactory(options));
+        serializerOptions.Converters.Add(new HttpResultForWritingJsonConverter());
+        serializerOptions.Converters.Add(new HttpResultForWritingJsonConverterFactory());
     }
 
     /// <summary>

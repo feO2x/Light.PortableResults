@@ -1,8 +1,9 @@
-using System;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Light.Results.Http.Writing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -12,61 +13,61 @@ namespace Light.Results.AspNetCore.MinimalApis.Tests;
 public sealed class LightResultSerializationTests
 {
     [Fact]
-    public async Task ExecuteAsync_ShouldThrow_WhenResultTypeInfoIsMissing()
+    public async Task ExecuteAsync_ShouldSerializeWithCustomSerializerOptions()
     {
         var services = new ServiceCollection();
         services.AddLightResultsForMinimalApis();
 
         await using var provider = services.BuildServiceProvider();
-        var httpContext = new DefaultHttpContext { RequestServices = provider };
+        var responseBody = new MemoryStream();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = provider,
+            Response = { Body = responseBody }
+        };
 
         var serializerOptions = new JsonSerializerOptions
         {
-            TypeInfoResolver = new NullJsonTypeInfoResolver()
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
+        serializerOptions.AddDefaultLightResultsHttpWriteJsonConverters();
 
         var lightResult = new LightResult(Result.Ok(), serializerOptions: serializerOptions);
 
-        var act = () => lightResult.ExecuteAsync(httpContext);
+        await lightResult.ExecuteAsync(httpContext);
 
-        await act
-           .Should().ThrowAsync<InvalidOperationException>()
-           .WithMessage("There is no JsonTypeInfo for '*Result*'*");
+        httpContext.Response.StatusCode.Should().Be(200);
     }
 
     [Fact]
-    public async Task ExecuteAsync_ShouldThrow_WhenGenericResultTypeInfoIsMissing()
+    public async Task ExecuteAsync_ShouldSerializeGenericResultWithCustomSerializerOptions()
     {
         var services = new ServiceCollection();
         services.AddLightResultsForMinimalApis();
 
         await using var provider = services.BuildServiceProvider();
-        var httpContext = new DefaultHttpContext { RequestServices = provider };
+        var responseBody = new MemoryStream();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = provider,
+            Response = { Body = responseBody }
+        };
 
         var serializerOptions = new JsonSerializerOptions
         {
-            TypeInfoResolver = new NullJsonTypeInfoResolver()
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
+        serializerOptions.AddDefaultLightResultsHttpWriteJsonConverters();
 
-        var contact = new ContactDto
-        {
-            Id = new Guid("6EF48A22-9B92-4E5F-A519-5C3C0A06C8C8"),
-            Name = "MissingTypeInfo"
-        };
-
-        var lightResult = new LightResult<ContactDto>(
-            Result<ContactDto>.Ok(contact),
+        var lightResult = new LightResult<string>(
+            Result<string>.Ok("hello"),
             serializerOptions: serializerOptions
         );
 
-        var act = () => lightResult.ExecuteAsync(httpContext);
+        await lightResult.ExecuteAsync(httpContext);
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
-           .WithMessage("There is no JsonTypeInfo for '*Result*'*");
-    }
-
-    private sealed class NullJsonTypeInfoResolver : IJsonTypeInfoResolver
-    {
-        public JsonTypeInfo? GetTypeInfo(Type type, JsonSerializerOptions options) => null;
+        httpContext.Response.StatusCode.Should().Be(200);
     }
 }

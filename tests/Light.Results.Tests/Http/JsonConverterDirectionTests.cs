@@ -211,32 +211,30 @@ public sealed class JsonConverterDirectionTests
     }
 
     [Fact]
-    public void HttpWriteResultConverter_ShouldThrowOnRead()
+    public void HttpResultForWritingConverter_ShouldThrowOnRead()
     {
-        var writeOptions = new LightResultsHttpWriteOptions();
-        var converter = new HttpWriteResultJsonConverter(writeOptions);
+        var converter = new HttpResultForWritingJsonConverter();
         var serializerOptions = new JsonSerializerOptions();
 
         var act = () =>
         {
             var reader = new Utf8JsonReader("{}"u8);
-            converter.Read(ref reader, typeof(Result), serializerOptions);
+            converter.Read(ref reader, typeof(HttpResultForWriting), serializerOptions);
         };
 
         act.Should().Throw<NotSupportedException>();
     }
 
     [Fact]
-    public void HttpWriteGenericResultConverter_ShouldThrowOnRead()
+    public void HttpResultForWritingGenericConverter_ShouldThrowOnRead()
     {
-        var writeOptions = new LightResultsHttpWriteOptions();
-        var converter = new HttpWriteResultJsonConverter<int>(writeOptions);
+        var converter = new HttpResultForWritingJsonConverter<int>();
         var serializerOptions = new JsonSerializerOptions();
 
         var act = () =>
         {
             var reader = new Utf8JsonReader("{}"u8);
-            converter.Read(ref reader, typeof(Result<int>), serializerOptions);
+            converter.Read(ref reader, typeof(HttpResultForWriting<int>), serializerOptions);
         };
 
         act.Should().Throw<NotSupportedException>();
@@ -260,21 +258,13 @@ public sealed class JsonConverterDirectionTests
     }
 
     [Fact]
-    public void WriteConverterFactory_ShouldMatchResultOfTOnly()
+    public void HttpResultForWritingConverterFactory_ShouldMatchHttpResultForWritingOfTOnly()
     {
-        var factory = new HttpWriteResultJsonConverterFactory(new LightResultsHttpWriteOptions());
+        var factory = new HttpResultForWritingJsonConverterFactory();
 
-        factory.CanConvert(typeof(Result<int>)).Should().BeTrue();
-        factory.CanConvert(typeof(Result)).Should().BeFalse();
-        factory.CreateConverter(typeof(Result<int>), new JsonSerializerOptions())
-           .Should().BeOfType<HttpWriteResultJsonConverter<int>>();
-    }
-
-    [Fact]
-    public void WriteConverterFactory_ShouldThrow_WhenOptionsAreNull()
-    {
-        Action act = () => _ = new HttpWriteResultJsonConverterFactory(null!);
-
-        act.Should().Throw<ArgumentNullException>();
+        factory.CanConvert(typeof(HttpResultForWriting<int>)).Should().BeTrue();
+        factory.CanConvert(typeof(HttpResultForWriting)).Should().BeFalse();
+        factory.CreateConverter(typeof(HttpResultForWriting<int>), new JsonSerializerOptions())
+           .Should().BeOfType<HttpResultForWritingJsonConverter<int>>();
     }
 }

@@ -1,6 +1,6 @@
 using System;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Light.Results.Metadata;
 
 namespace Light.Results.SharedJsonSerialization.Writing;
@@ -69,13 +69,10 @@ public static class ErrorsExtensions
 
             if (error.Metadata.HasValue)
             {
-                var metadataTypeInfo = serializerOptions.GetTypeInfo(typeof(MetadataObject));
+                var metadataTypeInfo =
+                    (JsonTypeInfo<MetadataObject>) serializerOptions.GetTypeInfo(typeof(MetadataObject));
                 writer.WritePropertyName("metadata");
-                ((JsonConverter<MetadataObject>) metadataTypeInfo.Converter).Write(
-                    writer,
-                    error.Metadata.Value,
-                    serializerOptions
-                );
+                JsonSerializer.Serialize(writer, error.Metadata.Value, metadataTypeInfo);
             }
 
             writer.WriteEndObject();

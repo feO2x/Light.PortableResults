@@ -1,6 +1,5 @@
 using System;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Light.Results.Metadata;
 
 namespace Light.Results.SharedJsonSerialization.Writing;
@@ -15,14 +14,14 @@ public static class MetadataExtensions
     /// </summary>
     /// <param name="writer">The System.Text.Json writer instance which writes the target JSON document.</param>
     /// <param name="metadata">The metadata object to serialize.</param>
-    /// <param name="serializerOptions">The JSON serializer options used to resolve the metadata converter.</param>
+    /// <param name="requiredAnnotation">
+    /// The annotation that must be present on metadata values so that they are included in the JSON document.
+    /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is null.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="serializerOptions" /> is null.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when no JSON serialization metadata is found for <see cref="MetadataObject" />.</exception>
     public static void WriteMetadataPropertyAndValue(
         this Utf8JsonWriter writer,
         MetadataObject metadata,
-        JsonSerializerOptions serializerOptions
+        MetadataValueAnnotation requiredAnnotation
     )
     {
         if (writer is null)
@@ -30,18 +29,8 @@ public static class MetadataExtensions
             throw new ArgumentNullException(nameof(writer));
         }
 
-        if (serializerOptions is null)
-        {
-            throw new ArgumentNullException(nameof(serializerOptions));
-        }
-
-        var metadataTypeInfo =
-            serializerOptions.GetTypeInfo(typeof(MetadataObject)) ??
-            throw new InvalidOperationException(
-                $"No JSON serialization metadata was found for type '{typeof(MetadataObject)}' - please ensure that JsonOptions are configured properly"
-            );
         writer.WritePropertyName("metadata");
-        ((JsonConverter<MetadataObject>) metadataTypeInfo.Converter).Write(writer, metadata, serializerOptions);
+        writer.WriteMetadataObject(metadata, requiredAnnotation);
     }
 
     /// <summary>

@@ -89,8 +89,10 @@ public abstract class BaseLightActionResult<TResult> : IActionResult
             result = enricher.Enrich(result, httpContext);
         }
 
-        SetHeaders(result, httpContext);
-        return WriteBodyAsync(result, httpContext);
+        var options = httpContext.ResolveLightResultOptions(OverrideOptions);
+        var resolvedOptions = options.ToResolvedHttpWriteOptions();
+        SetHeaders(result, httpContext, resolvedOptions);
+        return WriteBodyAsync(result, httpContext, resolvedOptions);
     }
 
     /// <summary>
@@ -98,21 +100,25 @@ public abstract class BaseLightActionResult<TResult> : IActionResult
     /// </summary>
     /// <param name="enrichedResult">The enriched result.</param>
     /// <param name="httpContext">The current HTTP context.</param>
+    /// <param name="resolvedOptions">The frozen options for this request.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpContext" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when required services or options are not available.
     /// </exception>
-    protected virtual void SetHeaders(TResult enrichedResult, HttpContext httpContext)
+    protected virtual void SetHeaders(
+        TResult enrichedResult,
+        HttpContext httpContext,
+        ResolvedHttpWriteOptions resolvedOptions
+    )
     {
-        var options = httpContext.ResolveLightResultOptions(OverrideOptions);
         var conversionService = httpContext.RequestServices.GetRequiredService<IHttpHeaderConversionService>();
         httpContext.Response.SetStatusCodeFromResult(
             enrichedResult,
             SuccessStatusCode,
-            options.FirstErrorCategoryIsLeadingCategory
+            resolvedOptions.FirstErrorCategoryIsLeadingCategory
         );
-        httpContext.Response.SetContentTypeFromResult(enrichedResult, options.MetadataSerializationMode);
-        httpContext.Response.SetMetadataValuesAsHeadersIfNecessary(enrichedResult, options, conversionService);
+        httpContext.Response.SetContentTypeFromResult(enrichedResult, resolvedOptions.MetadataSerializationMode);
+        httpContext.Response.SetMetadataValuesAsHeadersIfNecessary(enrichedResult, conversionService);
         if (!string.IsNullOrWhiteSpace(Location))
         {
             httpContext.Response.Headers.Location = Location;
@@ -124,6 +130,11 @@ public abstract class BaseLightActionResult<TResult> : IActionResult
     /// </summary>
     /// <param name="enrichedResult">The enriched result.</param>
     /// <param name="httpContext">The current HTTP context.</param>
+    /// <param name="resolvedOptions">The frozen options for this request.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    protected abstract Task WriteBodyAsync(TResult enrichedResult, HttpContext httpContext);
+    protected abstract Task WriteBodyAsync(
+        TResult enrichedResult,
+        HttpContext httpContext,
+        ResolvedHttpWriteOptions resolvedOptions
+    );
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
 namespace Light.Results.SharedJsonSerialization.Writing;
@@ -72,7 +71,7 @@ public static class SystemTextJsonWritingExtensions
         var runtimeType = value.GetType();
         if (valueTypeInfo.ShouldUseWith(runtimeType))
         {
-            ((JsonConverter<T>) valueTypeInfo.Converter).Write(writer, value, options);
+            JsonSerializer.Serialize(writer, value, (JsonTypeInfo<T>) valueTypeInfo);
             return;
         }
 

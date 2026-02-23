@@ -98,7 +98,7 @@ public sealed class ExtendedAppIntegrationTests
         using var httpClient = _fixture.CreateHttpClient();
 
         using var response = await httpClient.GetAsync(
-            "/api/extended/custom-converter",
+            "/api/extended/custom-options",
             cancellationToken: TestContext.Current.CancellationToken
         );
 
@@ -114,7 +114,7 @@ public sealed class ExtendedAppIntegrationTests
         using var httpClient = _fixture.CreateHttpClient();
 
         using var response = await httpClient.GetAsync(
-            "/api/extended/custom-converter-generic",
+            "/api/extended/custom-options-generic",
             cancellationToken: TestContext.Current.CancellationToken
         );
 

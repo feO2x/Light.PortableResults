@@ -57,34 +57,15 @@ public sealed class SharedWritingExtensionsTests
     [Fact]
     public void WriteMetadataPropertyAndValue_ShouldThrow_WhenWriterIsNull()
     {
-        var options = new JsonSerializerOptions { TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
-
         var act = () =>
             Results.SharedJsonSerialization.Writing.MetadataExtensions.WriteMetadataPropertyAndValue(
                 null!,
                 MetadataObject.Empty,
-                options
+                MetadataValueAnnotation.SerializeInHttpResponseBody
             );
 
         act.Should().Throw<ArgumentNullException>()
            .WithParameterName("writer");
-    }
-
-    [Fact]
-    public void WriteMetadataPropertyAndValue_ShouldThrow_WhenSerializerOptionsIsNull()
-    {
-        var act = () =>
-            Serialize(
-                writer =>
-                {
-                    writer.WriteStartObject();
-                    writer.WriteMetadataPropertyAndValue(MetadataObject.Empty, null!);
-                    writer.WriteEndObject();
-                }
-            );
-
-        act.Should().Throw<ArgumentNullException>()
-           .WithParameterName("serializerOptions");
     }
 
     [Fact]
@@ -118,22 +99,23 @@ public sealed class SharedWritingExtensionsTests
     }
 
     [Fact]
-    public void WriteMetadataPropertyAndValue_ShouldThrow_WhenMetadataTypeInfoIsMissing()
+    public void WriteMetadataPropertyAndValue_ShouldWriteMetadataWithAnnotation()
     {
-        var metadata = MetadataObject.Create(("traceId", MetadataValue.FromString("abc")));
-        var options = new JsonSerializerOptions { TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
+        var metadata = MetadataObject.Create(
+            ("traceId", MetadataValue.FromString("abc", MetadataValueAnnotation.SerializeInHttpResponseBody)),
+            ("secret", MetadataValue.FromString("hidden", MetadataValueAnnotation.SerializeInHttpHeader))
+        );
 
-        var act = () =>
-            Serialize(
-                writer =>
-                {
-                    writer.WriteStartObject();
-                    writer.WriteMetadataPropertyAndValue(metadata, options);
-                    writer.WriteEndObject();
-                }
-            );
+        var json = Serialize(
+            writer =>
+            {
+                writer.WriteStartObject();
+                writer.WriteMetadataPropertyAndValue(metadata, MetadataValueAnnotation.SerializeInHttpResponseBody);
+                writer.WriteEndObject();
+            }
+        );
 
-        act.Should().Throw<NotSupportedException>();
+        json.Should().Be("{\"metadata\":{\"traceId\":\"abc\"}}");
     }
 
     [Fact]

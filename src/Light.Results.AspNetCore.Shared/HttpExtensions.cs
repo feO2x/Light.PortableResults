@@ -99,23 +99,20 @@ public static class HttpExtensions
     /// </summary>
     /// <param name="httpResponse">The HTTP response receiving the headers.</param>
     /// <param name="result">The Light result containing optional metadata.</param>
-    /// <param name="options">Light result options controlling metadata serialization.</param>
     /// <param name="conversionService">Service translating metadata entries into HTTP headers.</param>
     /// <typeparam name="TResult">The concrete result struct implementing <see cref="IResultObject" />.</typeparam>
     /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="httpResponse" />, <paramref name="options" />, or
+    /// Thrown when <paramref name="httpResponse" /> or
     /// <paramref name="conversionService" /> is <c>null</c>.
     /// </exception>
     public static void SetMetadataValuesAsHeadersIfNecessary<TResult>(
         this HttpResponse httpResponse,
         TResult result,
-        LightResultsHttpWriteOptions options,
         IHttpHeaderConversionService conversionService
     )
         where TResult : struct, IResultObject
     {
         ArgumentNullException.ThrowIfNull(httpResponse);
-        ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(conversionService);
 
         if (result.Metadata is null)
@@ -151,6 +148,8 @@ public static class HttpExtensions
         ArgumentNullException.ThrowIfNull(httpContext);
         return overrideOptions ??
                httpContext.RequestServices.GetService<IOptions<LightResultsHttpWriteOptions>>()?.Value ??
-               throw new InvalidOperationException("No LightHttpWriteOptions are configured in the DI container");
+               throw new InvalidOperationException(
+                   "No LightResultsHttpWriteOptions are configured in the DI container"
+               );
     }
 }
