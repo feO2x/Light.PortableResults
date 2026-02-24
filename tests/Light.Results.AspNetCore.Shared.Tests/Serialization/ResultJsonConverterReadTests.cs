@@ -9,32 +9,31 @@ namespace Light.Results.AspNetCore.Shared.Tests.Serialization;
 public sealed class ResultJsonConverterReadTests
 {
     [Fact]
-    public void ReadResult_ShouldThrow_ForNonGenericWriteConverter()
+    public void ReadHttpResultForWriting_ShouldThrow_ForNonGenericWriteConverter()
     {
         var options = CreateOptions();
         const string json = "{\"metadata\":{\"note\":\"hi\"}}";
 
-        Action act = () => JsonSerializer.Deserialize<Result>(json, options);
+        Action act = () => JsonSerializer.Deserialize<HttpResultForWriting>(json, options);
 
         act.Should().Throw<NotSupportedException>();
     }
 
     [Fact]
-    public void ReadResult_ShouldThrow_ForGenericWriteConverter()
+    public void ReadHttpResultForWriting_ShouldThrow_ForGenericWriteConverter()
     {
         var options = CreateOptions();
         const string json = "{\"value\":\"ok\"}";
 
-        Action act = () => JsonSerializer.Deserialize<Result<string>>(json, options);
+        Action act = () => JsonSerializer.Deserialize<HttpResultForWriting<string>>(json, options);
 
         act.Should().Throw<NotSupportedException>();
     }
 
     private static JsonSerializerOptions CreateOptions()
     {
-        var lightResultOptions = new LightResultsHttpWriteOptions();
         var options = new JsonSerializerOptions();
-        options.AddDefaultLightResultsHttpWriteJsonConverters(lightResultOptions);
+        options.AddDefaultLightResultsHttpWriteJsonConverters();
         return options;
     }
 }

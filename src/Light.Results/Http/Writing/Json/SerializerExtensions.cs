@@ -47,24 +47,24 @@ public static partial class SerializerExtensions
     /// <summary>
     /// Serializes a <see cref="ProblemDetailsInfo" />, the provided <paramref name="errors" /> collection,
     /// and optional <paramref name="metadata" /> into the supplied <paramref name="writer" /> according to the
-    /// configured <paramref name="serializerOptions" /> and <paramref name="options" />.
+    /// configured <paramref name="serializerOptions" /> and <paramref name="resolvedOptions" />.
     /// </summary>
     /// <param name="writer">The <see cref="Utf8JsonWriter" /> to write the JSON payload to.</param>
     /// <param name="errors">The errors that determine the serialized problem details and error content.</param>
     /// <param name="metadata">Optional metadata object to append to the JSON output.</param>
     /// <param name="serializerOptions">The serializer options to use for nested object serialization.</param>
-    /// <param name="options">The Light.Results options controlling problem details creation and error formatting.</param>
+    /// <param name="resolvedOptions">The frozen options controlling problem details creation and error formatting.</param>
     public static void SerializeProblemDetailsAndMetadata(
         this Utf8JsonWriter writer,
         Errors errors,
         MetadataObject? metadata,
         JsonSerializerOptions serializerOptions,
-        LightResultsHttpWriteOptions options
+        ResolvedHttpWriteOptions resolvedOptions
     )
     {
         var problemDetailsInfo =
-            options.CreateProblemDetailsInfo?.Invoke(errors, metadata) ??
-            ProblemDetailsInfo.CreateDefault(errors, options.FirstErrorCategoryIsLeadingCategory);
+            resolvedOptions.CreateProblemDetailsInfo?.Invoke(errors, metadata) ??
+            ProblemDetailsInfo.CreateDefault(errors, resolvedOptions.FirstErrorCategoryIsLeadingCategory);
 
         writer.WriteStartObject();
         writer.WriteString("type", problemDetailsInfo.Type);
@@ -83,14 +83,14 @@ public static partial class SerializerExtensions
 
         writer.WriteErrors(
             errors,
-            options.ValidationProblemSerializationFormat,
+            resolvedOptions.ValidationProblemSerializationFormat,
             problemDetailsInfo.Status,
             serializerOptions
         );
 
         if (metadata.HasValue)
         {
-            writer.WriteMetadataPropertyAndValue(metadata.Value, serializerOptions);
+            writer.WriteMetadataPropertyAndValue(metadata.Value, MetadataValueAnnotation.SerializeInHttpResponseBody);
         }
 
         writer.WriteEndObject();

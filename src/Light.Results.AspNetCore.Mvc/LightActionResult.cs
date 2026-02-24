@@ -5,7 +5,6 @@ using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using Light.Results.AspNetCore.Mvc.Serialization;
 using Light.Results.Http.Writing;
-using Light.Results.Http.Writing.Json;
 using Microsoft.AspNetCore.Http;
 
 namespace Light.Results.AspNetCore.Mvc;
@@ -37,37 +36,31 @@ public sealed class LightActionResult : BaseLightActionResult<Result>
     /// </summary>
     /// <param name="enrichedResult">The enriched result.</param>
     /// <param name="httpContext">The current HTTP context.</param>
+    /// <param name="resolvedOptions">The frozen options for this request.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when JSON type metadata cannot be resolved.
-    /// </exception>
-    protected override async Task WriteBodyAsync(Result enrichedResult, HttpContext httpContext)
+    protected override Task WriteBodyAsync(
+        Result enrichedResult,
+        HttpContext httpContext,
+        ResolvedHttpWriteOptions resolvedOptions
+    )
     {
         var serializerOptions = httpContext.RequestServices.ResolveMvcJsonSerializerOptions(SerializerOptions);
-        if (!serializerOptions.TryGetTypeInfo(typeof(Result), out var foundTypeInfo))
+        var wrapper = enrichedResult.ToHttpResultForWriting(resolvedOptions);
+
+        var typeInfo = serializerOptions.GetTypeInfo(typeof(HttpResultForWriting));
+        if (typeInfo is not JsonTypeInfo<HttpResultForWriting> castTypeInfo)
         {
             throw new InvalidOperationException(
-                "There is no JsonTypeInfo for 'Result' - please check the Microsoft.AspNetCore.Mvc.JsonOptions of your app"
+                "Could not resolve 'JsonTypeInfo<HttpResultForWriting>'. Please ensure that your JsonSerializerOptions are configured correctly. The AddDefaultLightResultsHttpWriteJsonConverters extension method can help you with this."
             );
         }
 
-        await using var writer = new Utf8JsonWriter(httpContext.Response.BodyWriter);
-
-        // Prefer the strongly typed JsonTypeInfo<T> when available (source-gen / reflection).
-        if (foundTypeInfo.Converter is HttpWriteResultJsonConverter defaultResultJsonConverter)
-        {
-            defaultResultJsonConverter.Serialize(writer, enrichedResult, serializerOptions, OverrideOptions);
-            return;
-        }
-
-        if (foundTypeInfo is JsonTypeInfo<Result> castTypeInfo)
-        {
-            JsonSerializer.Serialize(writer, enrichedResult, castTypeInfo);
-            return;
-        }
-
-        // Fallback: still works if the resolver returned a non-generic JsonTypeInfo instance.
-        JsonSerializer.Serialize(writer, enrichedResult, foundTypeInfo);
+        return JsonSerializer.SerializeAsync(
+            httpContext.Response.BodyWriter,
+            wrapper,
+            castTypeInfo,
+            httpContext.RequestAborted
+        );
     }
 }
 
@@ -99,36 +92,30 @@ public sealed class LightActionResult<T> : BaseLightActionResult<Result<T>>
     /// </summary>
     /// <param name="enrichedResult">The enriched result.</param>
     /// <param name="httpContext">The current HTTP context.</param>
+    /// <param name="resolvedOptions">The frozen options for this request.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when JSON type metadata cannot be resolved.
-    /// </exception>
-    protected override async Task WriteBodyAsync(Result<T> enrichedResult, HttpContext httpContext)
+    protected override async Task WriteBodyAsync(
+        Result<T> enrichedResult,
+        HttpContext httpContext,
+        ResolvedHttpWriteOptions resolvedOptions
+    )
     {
         var serializerOptions = httpContext.RequestServices.ResolveMvcJsonSerializerOptions(SerializerOptions);
-        if (!serializerOptions.TryGetTypeInfo(typeof(Result<T>), out var foundTypeInfo))
+        var wrapper = enrichedResult.ToHttpResultForWriting(resolvedOptions);
+
+        var typeInfo = serializerOptions.GetTypeInfo(typeof(HttpResultForWriting<T>));
+        if (typeInfo is not JsonTypeInfo<HttpResultForWriting<T>> castTypeInfo)
         {
             throw new InvalidOperationException(
-                $"There is no JsonTypeInfo for '{typeof(Result<T>)}' - please check the Microsoft.AspNetCore.Mvc.JsonOptions of your app"
+                $"Could not resolve 'JsonTypeInfo<HttpResultForWriting<{nameof(T)}>>'. Please ensure that your JsonSerializerOptions are configured correctly. The AddDefaultLightResultsHttpWriteJsonConverters extension method can help you with this."
             );
         }
 
-        await using var writer = new Utf8JsonWriter(httpContext.Response.BodyWriter);
-
-        // Prefer the strongly typed JsonTypeInfo<T> when available (source-gen / reflection).
-        if (foundTypeInfo.Converter is HttpWriteResultJsonConverter<T> defaultConverter)
-        {
-            defaultConverter.Serialize(writer, enrichedResult, serializerOptions, OverrideOptions);
-            return;
-        }
-
-        if (foundTypeInfo is JsonTypeInfo<Result<T>> castTypeInfo)
-        {
-            JsonSerializer.Serialize(writer, enrichedResult, castTypeInfo);
-            return;
-        }
-
-        // Fallback: still works if the resolver returned a non-generic JsonTypeInfo instance.
-        JsonSerializer.Serialize(writer, enrichedResult, foundTypeInfo);
+        await JsonSerializer.SerializeAsync(
+            httpContext.Response.BodyWriter,
+            wrapper,
+            castTypeInfo,
+            httpContext.RequestAborted
+        );
     }
 }

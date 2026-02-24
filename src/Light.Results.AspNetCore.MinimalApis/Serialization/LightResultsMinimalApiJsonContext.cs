@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Light.Results.Http.Writing;
 using Light.Results.Metadata;
 
 namespace Light.Results.AspNetCore.MinimalApis.Serialization;
@@ -12,5 +13,5 @@ namespace Light.Results.AspNetCore.MinimalApis.Serialization;
 )]
 [JsonSerializable(typeof(MetadataValue))]
 [JsonSerializable(typeof(MetadataObject))]
-[JsonSerializable(typeof(Result))]
+[JsonSerializable(typeof(HttpResultForWriting))]
 public sealed partial class LightResultsMinimalApiJsonContext : JsonSerializerContext;

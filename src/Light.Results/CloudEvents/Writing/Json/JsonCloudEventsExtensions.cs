@@ -53,7 +53,10 @@ public static class JsonCloudEventsExtensions
             if (envelope.Data.IsValid)
             {
                 writer.WriteStartObject();
-                writer.WriteMetadataPropertyAndValue(envelope.Data.Metadata!.Value, serializerOptions);
+                writer.WriteMetadataPropertyAndValue(
+                    envelope.Data.Metadata!.Value,
+                    MetadataValueAnnotation.SerializeInCloudEventsData
+                );
                 writer.WriteEndObject();
             }
             else
@@ -111,7 +114,10 @@ public static class JsonCloudEventsExtensions
             writer.WriteGenericValue(envelope.Data.Value, serializerOptions);
             if (envelope.CheckIfMetadataShouldBeWrittenForValidResult<CloudEventsEnvelopeForWriting<T>, Result<T>>())
             {
-                writer.WriteMetadataPropertyAndValue(envelope.Data.Metadata!.Value, serializerOptions);
+                writer.WriteMetadataPropertyAndValue(
+                    envelope.Data.Metadata!.Value,
+                    MetadataValueAnnotation.SerializeInCloudEventsData
+                );
             }
 
             writer.WriteEndObject();
@@ -181,7 +187,7 @@ public static class JsonCloudEventsExtensions
         if (metadata is not null &&
             metadata.Value.HasAnyValuesWithAnnotation(MetadataValueAnnotation.SerializeInCloudEventsData))
         {
-            writer.WriteMetadataPropertyAndValue(metadata.Value, serializerOptions);
+            writer.WriteMetadataPropertyAndValue(metadata.Value, MetadataValueAnnotation.SerializeInCloudEventsData);
         }
 
         writer.WriteEndObject();

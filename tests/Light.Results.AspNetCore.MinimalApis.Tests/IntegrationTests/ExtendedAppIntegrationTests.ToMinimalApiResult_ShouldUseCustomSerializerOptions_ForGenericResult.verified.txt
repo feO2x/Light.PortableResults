@@ -2,15 +2,12 @@
   Status: 200 OK,
   Content: {
     Headers: {
-      Content-Length: 81,
+      Content-Length: 61,
       Content-Type: application/json
     },
     Value: {
-      ok: true,
-      value: {
-        id: Guid_1,
-        name: Custom
-      }
+      id: Guid_1,
+      name: Custom
     }
   }
 }

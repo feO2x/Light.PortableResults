@@ -1,7 +1,6 @@
 using System;
 using System.Net;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Light.Results.Http;
 using Light.Results.Http.Writing;
@@ -104,7 +103,7 @@ public sealed class ExtendedMvcController : ControllerBase
         return result.ToMvcActionResult();
     }
 
-    [HttpGet("custom-converter")]
+    [HttpGet("custom-options")]
     public LightActionResult GetCustomSerializedResult()
     {
         var result = Result.Ok(MetadataObject.Create(("custom", MetadataValue.FromString("true"))));
@@ -115,7 +114,7 @@ public sealed class ExtendedMvcController : ControllerBase
         );
     }
 
-    [HttpGet("custom-converter-generic")]
+    [HttpGet("custom-options-generic")]
     public LightActionResult<ContactDto> GetCustomSerializedGenericResult()
     {
         var contact = new ContactDto
@@ -231,8 +230,8 @@ public sealed class ExtendedMvcController : ControllerBase
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
+        options.AddDefaultLightResultsHttpWriteJsonConverters();
 
-        options.Converters.Add(new CustomResultJsonConverter());
         return options;
     }
 
@@ -243,40 +242,8 @@ public sealed class ExtendedMvcController : ControllerBase
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
+        options.AddDefaultLightResultsHttpWriteJsonConverters();
 
-        options.Converters.Add(new CustomResultJsonConverter<ContactDto>());
         return options;
-    }
-
-    public sealed class CustomResultJsonConverter : JsonConverter<Result>
-    {
-        public override Result Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-            throw new NotSupportedException();
-
-        public override void Write(Utf8JsonWriter writer, Result value, JsonSerializerOptions options)
-        {
-            writer.WriteStartObject();
-            writer.WriteBoolean("ok", value.IsValid);
-            writer.WriteEndObject();
-        }
-    }
-
-    public sealed class CustomResultJsonConverter<T> : JsonConverter<Result<T>>
-    {
-        public override Result<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-            throw new NotSupportedException();
-
-        public override void Write(Utf8JsonWriter writer, Result<T> value, JsonSerializerOptions options)
-        {
-            writer.WriteStartObject();
-            writer.WriteBoolean("ok", value.IsValid);
-            if (value.IsValid)
-            {
-                writer.WritePropertyName("value");
-                JsonSerializer.Serialize(writer, value.Value, options);
-            }
-
-            writer.WriteEndObject();
-        }
     }
 }

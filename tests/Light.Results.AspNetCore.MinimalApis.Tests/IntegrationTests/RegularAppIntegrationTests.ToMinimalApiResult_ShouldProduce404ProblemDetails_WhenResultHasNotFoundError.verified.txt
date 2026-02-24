@@ -2,7 +2,7 @@
   Status: 404 Not Found,
   Content: {
     Headers: {
-      Content-Length: 294,
+      Content-Length: 284,
       Content-Type: application/problem+json
     },
     Value: {

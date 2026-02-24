@@ -29,10 +29,10 @@ public static class Module
     {
         services
            .AddOptions<JsonOptions>()
-           .Configure<LightResultsHttpWriteOptions>(
-                (jsonOptions, lightResultOptions) =>
+           .Configure(
+                jsonOptions =>
                 {
-                    jsonOptions.JsonSerializerOptions.AddDefaultLightResultsHttpWriteJsonConverters(lightResultOptions);
+                    jsonOptions.JsonSerializerOptions.AddDefaultLightResultsHttpWriteJsonConverters();
                 }
             );
         return services;

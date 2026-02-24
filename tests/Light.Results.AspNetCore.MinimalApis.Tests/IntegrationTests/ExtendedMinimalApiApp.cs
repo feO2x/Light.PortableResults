@@ -2,7 +2,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using Light.Results.AspNetCore.MinimalApis.Serialization;
 using Light.Results.AspNetCore.MinimalApis.Tests.IntegrationTests;
@@ -48,8 +48,8 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
         App.MapGet("/api/extended/non-generic-metadata", GetNonGenericMetadata);
         App.MapGet("/api/extended/validation-rich", GetValidationErrorsRich);
         App.MapGet("/api/extended/validation-fallback", GetValidationErrorsFallback);
-        App.MapGet("/api/extended/custom-converter", GetCustomSerializedResult);
-        App.MapGet("/api/extended/custom-converter-generic", GetCustomSerializedGenericResult);
+        App.MapGet("/api/extended/custom-options", GetCustomSerializedResult);
+        App.MapGet("/api/extended/custom-options-generic", GetCustomSerializedGenericResult);
         App.MapGet("/api/extended/enriched-error", GetEnrichedError);
         App.MapGet("/api/extended/non-generic-header-only-metadata", GetNonGenericHeaderOnlyMetadata);
         App.MapGet("/api/extended/generic-header-only-metadata", GetGenericHeaderOnlyMetadata);
@@ -267,9 +267,9 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
+        options.AddDefaultLightResultsHttpWriteJsonConverters();
 
         ConfigureTypeInfoResolver(options);
-        options.Converters.Add(new CustomResultJsonConverter());
         return options;
     }
 
@@ -279,9 +279,9 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
+        options.AddDefaultLightResultsHttpWriteJsonConverters();
 
         ConfigureTypeInfoResolver(options);
-        options.Converters.Add(new CustomResultJsonConverter<ContactDto>());
         return options;
     }
 
@@ -289,6 +289,7 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
     {
         options.TypeInfoResolverChain.Insert(0, ExtendedMinimalApiJsonContext.Default);
         options.TypeInfoResolverChain.Insert(1, LightResultsMinimalApiJsonContext.Default);
+        options.TypeInfoResolverChain.Add(new DefaultJsonTypeInfoResolver());
     }
 
     private sealed class StaticMetadataEnricher : IHttpResultEnricher
@@ -303,38 +304,6 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
 
             var metadata = MetadataObject.Create(("enriched", MetadataValue.FromString("true")));
             return result.ReplaceMetadata(metadata);
-        }
-    }
-
-    private sealed class CustomResultJsonConverter : JsonConverter<Result>
-    {
-        public override Result Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-            throw new NotSupportedException();
-
-        public override void Write(Utf8JsonWriter writer, Result value, JsonSerializerOptions options)
-        {
-            writer.WriteStartObject();
-            writer.WriteBoolean("ok", value.IsValid);
-            writer.WriteEndObject();
-        }
-    }
-
-    private sealed class CustomResultJsonConverter<T> : JsonConverter<Result<T>>
-    {
-        public override Result<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-            throw new NotSupportedException();
-
-        public override void Write(Utf8JsonWriter writer, Result<T> value, JsonSerializerOptions options)
-        {
-            writer.WriteStartObject();
-            writer.WriteBoolean("ok", value.IsValid);
-            if (value.IsValid)
-            {
-                writer.WritePropertyName("value");
-                JsonSerializer.Serialize(writer, value.Value, options);
-            }
-
-            writer.WriteEndObject();
         }
     }
 }

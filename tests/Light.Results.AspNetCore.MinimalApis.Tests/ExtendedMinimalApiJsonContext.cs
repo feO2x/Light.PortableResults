@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Light.Results.Http.Writing;
 
 namespace Light.Results.AspNetCore.MinimalApis.Tests;
 
@@ -6,7 +7,7 @@ namespace Light.Results.AspNetCore.MinimalApis.Tests;
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     GenerationMode = JsonSourceGenerationMode.Default
 )]
-[JsonSerializable(typeof(Result<string>))]
-[JsonSerializable(typeof(Result<ContactDto>))]
+[JsonSerializable(typeof(HttpResultForWriting<string>))]
+[JsonSerializable(typeof(HttpResultForWriting<ContactDto>))]
 [JsonSerializable(typeof(ContactDto))]
 public sealed partial class ExtendedMinimalApiJsonContext : JsonSerializerContext;
