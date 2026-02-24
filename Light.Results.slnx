@@ -36,6 +36,7 @@
     <File Path="global.json" />
     <File Path="LICENSE" />
     <File Path="Light.Results.sln.DotSettings" />
+    <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
     <File Path="src\AGENTS.md" />

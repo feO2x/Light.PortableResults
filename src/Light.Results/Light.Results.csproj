@@ -1,6 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Description>The Light.Results package implements the core functionality: Results, Errors, Metadata, Functional Extensions, and serialization support for various formats like HTTP and CloudEvents. Compatible with Native AOT. Check out the integration packages Light.Results.AspNetCore.MinimalApis or Light.Results.AspNetCore.Mvc.</Description>
+    <PackageReleaseNotes>
+      Light.Results 0.1.0
+      ---------------------------------
+
+      - Initial release 🚀
+      - Contains core functionality: Results, Errors, Metadata, Functional Extensions, and JSON serialization support for HTTP and CloudEvents.
+      - Compatible with Native AOT.
+    </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
