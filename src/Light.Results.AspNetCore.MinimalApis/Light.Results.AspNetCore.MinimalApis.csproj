@@ -8,7 +8,7 @@
       ---------------------------------
 
       - Initial release 🚀
-      - LightResult and LightResult&lt;T> and corresponding extension methods to turn result instances into HTTP success responses or RFC 9457 (and RFC 7807) compatbile Problem Details responses.
+      - LightResult and LightResult&lt;T> and corresponding extension methods to turn result instances into HTTP success responses or RFC 9457 (and RFC 7807) compatible Problem Details responses.
       - Easy integration into ASP.NET Core's composition root via IServiceCollection.AddLightResultsForMinimalApis.
     </PackageReleaseNotes>
   </PropertyGroup>

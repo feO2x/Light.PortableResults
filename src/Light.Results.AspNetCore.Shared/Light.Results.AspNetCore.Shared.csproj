@@ -9,7 +9,7 @@
 
       - Initial release 🚀
       - Result enrichment with ASP.NET Core's HttpContext
-      - Shared logic for Minimal API's and MVC's composition root
+      - Shared logic for Minimal APIs and MVC's composition root
     </PackageReleaseNotes>
   </PropertyGroup>
 

@@ -13,9 +13,9 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <PackageTags>streaming;memory-management;form-file</PackageTags>
+    <PackageTags>result-pattern;error-handling;functional-programming;aspnetcore;cloudevents</PackageTags>
     <PackageIcon>light-logo.png</PackageIcon>
-    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
