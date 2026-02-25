@@ -4,12 +4,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BenchmarkDotNet.Attributes;
-using Light.Results;
-using Light.Results.CloudEvents;
-using Light.Results.CloudEvents.Writing;
-using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization;
-using Light.Results.SharedJsonSerialization.Writing;
+using Light.PortableResults;
+using Light.PortableResults.CloudEvents;
+using Light.PortableResults.CloudEvents.Writing;
+using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization;
+using Light.PortableResults.SharedJsonSerialization.Writing;
 
 namespace Benchmarks;
 
@@ -23,7 +23,7 @@ public class CloudEventsWritingBenchmarks
     private Result<ContactDto> _genericSuccessWithMetadataResult;
     private Result _nonGenericFailureResult;
     private Result _nonGenericSuccessResult;
-    private LightResultsCloudEventsWriteOptions _options = null!;
+    private PortableResultsCloudEventsWriteOptions _options = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -31,7 +31,7 @@ public class CloudEventsWritingBenchmarks
         var serializerOptions = Module.CreateDefaultSerializerOptions();
         serializerOptions.TypeInfoResolverChain.Add(CloudEventsWritingBenchmarksJsonContext.Default);
 
-        _options = new LightResultsCloudEventsWriteOptions
+        _options = new PortableResultsCloudEventsWriteOptions
         {
             Source = "/benchmarks",
             SerializerOptions = serializerOptions
@@ -368,7 +368,7 @@ public class CloudEventsWritingBenchmarks
             writer.WriteString("time", time.Value);
         }
 
-        writer.WriteString(CloudEventsConstants.LightResultsOutcomeAttributeName, isSuccess ? "success" : "failure");
+        writer.WriteString(CloudEventsConstants.PortableResultsOutcomeAttributeName, isSuccess ? "success" : "failure");
         if (includeData)
         {
             writer.WriteString("datacontenttype", CloudEventsConstants.JsonContentType);

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCompatible>true</IsAotCompatible>
+    <Description>Integration package for turning result instances into Minimal API's IResult instances. Compatible with Native AOT. Compatible with RFC 9457 (and RFC 7807) Problem Details responses.</Description>
+    <PackageReleaseNotes>
+      Light.PortableResults.AspNetCore.MinimalApis 0.1.0
+      ---------------------------------
+
+      - Initial release 🚀
+      - LightResult and LightResult&lt;T> and corresponding extension methods to turn result instances into HTTP success responses or RFC 9457 (and RFC 7807) compatible Problem Details responses.
+      - Easy integration into ASP.NET Core's composition root via IServiceCollection.AddPortableResultsForMinimalApis.
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Light.PortableResults.AspNetCore.Shared\Light.PortableResults.AspNetCore.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

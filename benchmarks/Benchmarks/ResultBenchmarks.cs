@@ -1,6 +1,6 @@
 using BenchmarkDotNet.Attributes;
-using Light.Results;
-using Light.Results.FunctionalExtensions;
+using Light.PortableResults;
+using Light.PortableResults.FunctionalExtensions;
 
 namespace Benchmarks;
 

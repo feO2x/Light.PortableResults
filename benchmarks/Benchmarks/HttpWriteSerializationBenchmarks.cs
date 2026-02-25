@@ -5,11 +5,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using BenchmarkDotNet.Attributes;
-using Light.Results;
-using Light.Results.Http.Writing;
-using Light.Results.Http.Writing.Json;
-using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization;
+using Light.PortableResults;
+using Light.PortableResults.Http.Writing;
+using Light.PortableResults.Http.Writing.Json;
+using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization;
 
 namespace Benchmarks;
 
@@ -40,9 +40,9 @@ public class HttpWriteSerializationBenchmarks
                 new DefaultJsonTypeInfoResolver()
             )
         };
-        _serializerOptions.AddDefaultLightResultsHttpWriteJsonConverters();
+        _serializerOptions.AddDefaultPortableResultsHttpWriteJsonConverters();
 
-        _resolvedOptions = new LightResultsHttpWriteOptions().ToResolvedHttpWriteOptions();
+        _resolvedOptions = new PortableResultsHttpWriteOptions().ToResolvedHttpWriteOptions();
 
         _nonGenericSuccess = Result.Ok();
 

@@ -1,0 +1,64 @@
+<Solution>
+  <Folder Name="/.github/" />
+  <Folder Name="/.github/actions/" />
+  <Folder Name="/.github/actions/cache-nuget/">
+    <File Path=".github\actions\cache-nuget\action.yml" />
+  </Folder>
+  <Folder Name="/.github/workflows/">
+    <File Path=".github\workflows\build-and-test.yml" />
+    <File Path=".github\workflows\release-on-nuget.yml" />
+  </Folder>
+  <Folder Name="/ai-plans/">
+    <File Path="ai-plans\0001-metadata.md" />
+    <File Path="ai-plans\0003-result-optimization.md" />
+    <File Path="ai-plans\0005-functional-extensions.md" />
+    <File Path="ai-plans\0007-minimal-api-serialization.md" />
+    <File Path="ai-plans\0009-minimal-api-metadata-for-success-results.md" />
+    <File Path="ai-plans\0009-updated-minimal-api-integration.md" />
+    <File Path="ai-plans\0011-http-response-deserialization.md" />
+    <File Path="ai-plans\0011-plan-deviations.md" />
+    <File Path="ai-plans\0013-mvc-integration.md" />
+    <File Path="ai-plans\0015-cloud-events-reading-performance-optimization.md" />
+    <File Path="ai-plans\0015-cloud-events-serialization.md" />
+    <File Path="ai-plans\0015-cloud-events-write-optimization.md" />
+    <File Path="ai-plans\0015-cloud-events-write-streamlining.md" />
+    <File Path="ai-plans\0015-final-code-review.md" />
+    <File Path="ai-plans\0017-HTTP-write-integration-streamlining.md" />
+    <File Path="ai-plans\0022-rename-summary.md" />
+    <File Path="ai-plans\AGENTS.md" />
+  </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Benchmarks/Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/solution-items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="AGENTS.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="LICENSE" />
+    <File Path="Light.PortableResults.Public.snk" />
+    <File Path="Light.PortableResults.sln.DotSettings" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <File Path="src\AGENTS.md" />
+    <File Path="src\Directory.Build.props" />
+    <Project Path="src\Light.PortableResults.AspNetCore.Mvc\Light.PortableResults.AspNetCore.Mvc.csproj" />
+    <Project
+      Path="src\Light.PortableResults.AspNetCore.MinimalApis\Light.PortableResults.AspNetCore.MinimalApis.csproj" />
+    <Project Path="src\Light.PortableResults.AspNetCore.Shared\Light.PortableResults.AspNetCore.Shared.csproj" />
+    <Project Path="src\Light.PortableResults\Light.PortableResults.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <File Path="tests\AGENTS.md" />
+    <Project
+      Path="tests\Light.PortableResults.AspNetCore.Mvc.Tests\Light.PortableResults.AspNetCore.Mvc.Tests.csproj" />
+    <Project
+      Path="tests\Light.PortableResults.AspNetCore.MinimalApis.Tests\Light.PortableResults.AspNetCore.MinimalApis.Tests.csproj" />
+    <Project
+      Path="tests\Light.PortableResults.AspNetCore.Shared.Tests\Light.PortableResults.AspNetCore.Shared.Tests.csproj" />
+    <Project Path="tests\Light.PortableResults.Tests\Light.PortableResults.Tests.csproj" />
+  </Folder>
+</Solution>

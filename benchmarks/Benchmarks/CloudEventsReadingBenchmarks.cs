@@ -2,9 +2,9 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using BenchmarkDotNet.Attributes;
-using Light.Results;
-using Light.Results.CloudEvents;
-using Light.Results.CloudEvents.Reading;
+using Light.PortableResults;
+using Light.PortableResults.CloudEvents;
+using Light.PortableResults.CloudEvents.Reading;
 
 namespace Benchmarks;
 
@@ -16,13 +16,13 @@ public class CloudEventsReadingBenchmarks
     private ReadOnlyMemory<byte> _failureCloudEvents;
     private ReadOnlyMemory<byte> _largeSuccessCloudEvents;
     private ReadOnlyMemory<byte> _mediumSuccessCloudEvents;
-    private LightResultsCloudEventsReadOptions _options = null!;
+    private PortableResultsCloudEventsReadOptions _options = null!;
     private ReadOnlyMemory<byte> _smallSuccessCloudEvents;
 
     [GlobalSetup]
     public void Setup()
     {
-        _options = new LightResultsCloudEventsReadOptions
+        _options = new PortableResultsCloudEventsReadOptions
         {
             SerializerOptions = Module.CreateDefaultSerializerOptions()
         };
@@ -35,7 +35,7 @@ public class CloudEventsReadingBenchmarks
               "type": "com.example.success",
               "source": "/test",
               "id": "event-1",
-              "lroutcome": "success",
+              "lproutcome": "success",
               "data": {
                 "value": {
                   "id": "6B8A4DCA-779D-4F36-8274-487FE3E86B5A",
@@ -60,7 +60,7 @@ public class CloudEventsReadingBenchmarks
               "type": "com.example.failure",
               "source": "/test",
               "id": "event-2",
-              "lroutcome": "failure",
+              "lproutcome": "failure",
               "data": {
                 "errors": [
                   {
@@ -135,7 +135,7 @@ public class CloudEventsReadingBenchmarks
                    "type": "com.example.success",
                    "source": "/test",
                    "id": "event-medium",
-                   "lroutcome": "success",
+                   "lproutcome": "success",
                    "data": {
                      "value": {
                        "id": "6B8A4DCA-779D-4F36-8274-487FE3E86B5A",
@@ -171,7 +171,7 @@ public class CloudEventsReadingBenchmarks
                    "type": "com.example.success",
                    "source": "/test",
                    "id": "event-large",
-                   "lroutcome": "success",
+                   "lproutcome": "success",
                    "data": {
                      "value": {
                        "id": "6B8A4DCA-779D-4F36-8274-487FE3E86B5A",

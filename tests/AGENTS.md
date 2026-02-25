@@ -8,7 +8,9 @@
 - Do not write test methods in nested classes. Test classes can have nested types, typically for types that represent
   test doubles, but test methods should always be placed in a top-level class residing directly in a C# namespace.
 - Try to avoid code duplication across several test methods. Refactor code by using, for example, data-driven tests, test fixtures, or factory methods. Honor the DRY and the Single Point of Truth principles.
-- Many types of Light.Results are DDD Value Objects. In the assertion phase of a test, try to create a single expected instance to be compared with the actual SUT instead of calling `Should()` several times on properties of the SUT. 
+- Many types of Light.PortableResults are DDD Value Objects. In the assertion phase of a test, try to create a single
+  expected instance to be compared with the actual SUT instead of calling `Should()` several times on properties of the
+  SUT.
 
 ## How to Structure Tests
 

@@ -1,0 +1,20 @@
+using System;
+using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization;
+
+namespace Light.PortableResults.Http.Writing;
+
+/// <summary>
+/// Represents frozen, per-request HTTP write options derived from <see cref="PortableResultsHttpWriteOptions" />.
+/// This struct is created once at the top of a request and passed to both header-setting and body-writing methods.
+/// </summary>
+/// <param name="ValidationProblemSerializationFormat">The format for validation error serialization.</param>
+/// <param name="MetadataSerializationMode">The mode controlling when metadata is serialized.</param>
+/// <param name="CreateProblemDetailsInfo">Optional factory for creating custom problem details.</param>
+/// <param name="FirstErrorCategoryIsLeadingCategory">Whether the first error category is the leading category.</param>
+public readonly record struct ResolvedHttpWriteOptions(
+    ValidationProblemSerializationFormat ValidationProblemSerializationFormat,
+    MetadataSerializationMode MetadataSerializationMode,
+    Func<Errors, MetadataObject?, ProblemDetailsInfo>? CreateProblemDetailsInfo,
+    bool FirstErrorCategoryIsLeadingCategory
+);

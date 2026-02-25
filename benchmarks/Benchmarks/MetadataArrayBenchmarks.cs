@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using BenchmarkDotNet.Attributes;
-using Light.Results.Metadata;
+using Light.PortableResults.Metadata;
 
 namespace Benchmarks;
 

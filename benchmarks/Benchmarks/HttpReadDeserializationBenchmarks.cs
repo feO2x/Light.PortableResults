@@ -3,8 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BenchmarkDotNet.Attributes;
-using Light.Results.Http.Reading;
-using Light.Results.Http.Reading.Json;
+using Light.PortableResults.Http.Reading;
+using Light.PortableResults.Http.Reading.Json;
 
 namespace Benchmarks;
 
@@ -25,7 +25,7 @@ public class HttpReadDeserializationBenchmarks
         _optimizedOptions = Module.CreateDefaultSerializerOptions();
 
         _legacyOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        _legacyOptions.AddDefaultLightResultsHttpReadJsonConverters();
+        _legacyOptions.AddDefaultPortableResultsHttpReadJsonConverters();
         _legacyOptions.Converters.Insert(0, new LegacyAutoContactPayloadJsonConverter());
 
         _autoBareJson =

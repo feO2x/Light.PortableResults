@@ -2,9 +2,9 @@ using System.Buffers;
 using System.Net;
 using System.Text.Json;
 using BenchmarkDotNet.Attributes;
-using Light.Results;
-using Light.Results.Http.Writing;
-using Light.Results.Http.Writing.Json;
+using Light.PortableResults;
+using Light.PortableResults.Http.Writing;
+using Light.PortableResults.Http.Writing.Json;
 
 namespace Benchmarks;
 
