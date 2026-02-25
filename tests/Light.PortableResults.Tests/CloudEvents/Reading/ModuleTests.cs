@@ -16,7 +16,7 @@ public sealed class ModuleTests
     public void AddLightResultsCloudEventsReadOptions_ShouldRegisterOptions()
     {
         var services = new ServiceCollection();
-        services.AddLightResultsCloudEventsReadOptions();
+        services.AddPortableResultsCloudEventsReadOptions();
 
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<PortableResultsCloudEventsReadOptions>();
@@ -30,7 +30,7 @@ public sealed class ModuleTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<CloudEventsAttributeParser>(new TestParser("traceId", ImmutableArray.Create("traceid")));
-        services.AddLightResultsCloudEventsAttributeParsingService(StringComparer.OrdinalIgnoreCase);
+        services.AddPortableResultsCloudEventsAttributeParsingService(StringComparer.OrdinalIgnoreCase);
 
         using var provider = services.BuildServiceProvider();
         var registry = provider.GetRequiredService<FrozenDictionary<string, CloudEventsAttributeParser>>();
@@ -46,7 +46,7 @@ public sealed class ModuleTests
         var services = new ServiceCollection();
         services.AddSingleton<CloudEventsAttributeParser>(new TestParser("a", ImmutableArray.Create("duplicate")));
         services.AddSingleton<CloudEventsAttributeParser>(new TestParser("b", ImmutableArray.Create("duplicate")));
-        services.AddLightResultsCloudEventsAttributeParsingService();
+        services.AddPortableResultsCloudEventsAttributeParsingService();
 
         using var provider = services.BuildServiceProvider();
 

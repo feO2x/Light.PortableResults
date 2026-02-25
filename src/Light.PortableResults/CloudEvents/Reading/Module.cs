@@ -24,7 +24,7 @@ public static class Module
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddLightResultsCloudEventsReadOptions(this IServiceCollection services)
+    public static IServiceCollection AddPortableResultsCloudEventsReadOptions(this IServiceCollection services)
     {
         services.AddOptions<PortableResultsCloudEventsReadOptions>();
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<PortableResultsCloudEventsReadOptions>>().Value);
@@ -40,7 +40,7 @@ public static class Module
     /// <exception cref="InvalidOperationException">
     /// Thrown when multiple parsers register the same extension attribute name.
     /// </exception>
-    public static IServiceCollection AddLightResultsCloudEventsAttributeParsingService(
+    public static IServiceCollection AddPortableResultsCloudEventsAttributeParsingService(
         this IServiceCollection services,
         IEqualityComparer<string>? attributeNameComparer = null
     )
@@ -90,7 +90,9 @@ public static class Module
     /// </summary>
     /// <param name="serializerOptions">The JSON serializer options to configure.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="serializerOptions" /> is <c>null</c>.</exception>
-    public static void AddDefaultLightResultsCloudEventsReadJsonConverters(this JsonSerializerOptions serializerOptions)
+    public static void AddDefaultPortableResultsCloudEventsReadJsonConverters(
+        this JsonSerializerOptions serializerOptions
+    )
     {
         if (serializerOptions is null)
         {
@@ -110,7 +112,7 @@ public static class Module
     public static JsonSerializerOptions CreateDefaultSerializerOptions()
     {
         var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        serializerOptions.AddDefaultLightResultsCloudEventsReadJsonConverters();
+        serializerOptions.AddDefaultPortableResultsCloudEventsReadJsonConverters();
         return serializerOptions;
     }
 }
