@@ -1,21 +1,25 @@
-# Light.Results
+# Light.PortableResults
 
 *A lightweight .NET library implementing the Result Pattern where each result is serializable and deserializable. Comes
 with integrations for ASP.NET Core Minimal APIs and MVC, `HttpResponseMessage`, and CloudEvents JSON format.*
 
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://github.com/feO2x/Light.Results/blob/main/LICENSE)
-[![NuGet](https://img.shields.io/badge/NuGet-0.1.0-blue.svg?style=for-the-badge)](https://www.nuget.org/packages/Light.Results/0.1.0/)
-[![Documentation](https://img.shields.io/badge/Docs-Changelog-yellowgreen.svg?style=for-the-badge)](https://github.com/feO2x/Light.Results/releases)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/blob/main/LICENSE)
+[![NuGet](https://img.shields.io/badge/NuGet-0.1.0-blue.svg?style=for-the-badge)](https://www.nuget.org/packages/Light.PortableResults/0.1.0/)
+[![Documentation](https://img.shields.io/badge/Docs-Changelog-yellowgreen.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/releases)
 
 ## ✨ Key Features
 
 - 🧱 **Zero-boilerplate result model** — `Result` / `Result<T>` is either a success value or one or more structured errors. No exceptions for expected failures.
 - 📝 **Rich, machine-readable errors** — every `Error` carries a human-readable `Message`, stable `Code`, input `Target`, and `Category` — ready for API contracts and frontend mapping.
-- 🗂️ **Serialize-safe metadata** — metadata uses dedicated JSON-like types instead of `Dictionary<string, object>`, so results serialize reliably across any protocol.
+- 🗂️ **Serialization-safe metadata** — metadata uses a dedicated JSON-like type system instead of
+  `Dictionary<string, object>`, so results serialize reliably across any protocol.
 - 🔁 **Full functional operator suite** — `Map`, `Bind`, `Match`, `Ensure`, `Tap`, `Switch`, and their `Async` variants let you build clean, chainable pipelines.
-- 🌐 **HTTP-native** — serialize results as RFC-9457 Problem Details and deserialize `HttpResponseMessage` back into typed `Result<T>`, round-trip included.
-- ☁️ **CloudEvents JSON support** — publish and consume results as CloudEvents Spec 1.0 payloads for reliable async messaging.
-- 🧩 **ASP.NET Core ready** — Minimal APIs and MVC packages translate `Result<T>` directly to `IResult` / `IActionResult` with automatic HTTP status mapping.
+- 🌐 **HTTP-native** — serialize results as HTTP response, including automatic support for RFC-9457 Problem Details, and
+  deserialize `HttpResponseMessage` back into typed `Result` / `Result<T>`. Full round-trip support included.
+- 🧩 **ASP.NET Core ready** — Minimal APIs and MVC packages translate `Result` and `Result<T>` directly to `IResult` /
+  `IActionResult` with automatic HTTP status mapping and RFC-9457 Problem Details support.
+- ☁️ **CloudEvents JSON support** — publish and consume results as CloudEvents Spec 1.0 payloads for reliable async
+  messaging. Full round-trip support included.
 - ⚡ **Allocation-minimal by design** — pooled buffers, struct-friendly internals, and fast paths keep GC pressure near zero even at high throughput.
 
 ## 📦 Installation
@@ -25,22 +29,22 @@ Install only the packages you need for your scenario.
 - Core Result Pattern, Metadata, Functional Operators, and serialization support for HTTP and CloudEvents:
 
 ```bash
-dotnet add package Light.Results
+dotnet add package Light.PortableResults
 ```
 
 - ASP.NET Core Minimal APIs integration with support for Dependency Injection and `IResult`:
 
 ```bash
-dotnet add package Light.Results.AspNetCore.MinimalApis
+dotnet add package Light.PortableResults.AspNetCore.MinimalApis
 ```
 
 - ASP.NET Core MVC integration with support for Dependency Injection and `IActionResult`:
 
 ```bash
-dotnet add package Light.Results.AspNetCore.Mvc
+dotnet add package Light.PortableResults.AspNetCore.Mvc
 ```
 
-If you only need the Result Pattern itself, install `Light.Results` only.
+If you only need the Result Pattern itself, install `Light.PortableResults` only.
 
 ## 🚀 HTTP Quick Start
 
@@ -49,8 +53,8 @@ If you only need the Result Pattern itself, install `Light.Results` only.
 ```csharp
 using System;
 using System.Collections.Generic;
-using Light.Results;
-using Light.Results.AspNetCore.MinimalApis;
+using Light.PortableResults;
+using Light.PortableResults.AspNetCore.MinimalApis;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLightResultsForMinimalApis();
@@ -122,8 +126,8 @@ public sealed record UserDto
 ```csharp
 using System;
 using System.Collections.Generic;
-using Light.Results;
-using Light.Results.AspNetCore.Mvc;
+using Light.PortableResults;
+using Light.PortableResults.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -270,8 +274,8 @@ Content-Type: application/problem+json
 using System;
 using System.Net.Http;
 using System.Net.Http.Json;
-using Light.Results;
-using Light.Results.Http.Reading;
+using Light.PortableResults;
+using Light.PortableResults.Http.Reading;
 
 using var httpClient = new HttpClient
 {
@@ -308,9 +312,9 @@ The following example uses `RabbitMQ.Client` to publish and consume a CloudEvent
 
 ```csharp
 using System;
-using Light.Results;
-using Light.Results.CloudEvents;
-using Light.Results.CloudEvents.Writing;
+using Light.PortableResults;
+using Light.PortableResults.CloudEvents;
+using Light.PortableResults.CloudEvents.Writing;
 using RabbitMQ.Client;
 
 var factory = new ConnectionFactory { HostName = "localhost" };
@@ -347,8 +351,8 @@ await channel.BasicPublishAsync(
 ### Consume from RabbitMQ
 
 ```csharp
-using Light.Results;
-using Light.Results.CloudEvents.Reading;
+using Light.PortableResults;
+using Light.PortableResults.CloudEvents.Reading;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -389,7 +393,7 @@ If you are new to the Result Pattern, think of it like this:
 - Instead of throwing exceptions for expected failures (validation, not found, conflicts), the method returns a value that explicitly describes the outcome.
 - Callers must handle both paths on purpose, which makes control flow easier to read and test.
 
-With Light.Results:
+With Light.PortableResults:
 
 - `Result<T>` means: either a success value of type `T`, or one or more errors.
 - `Result` (non-generic) means: success/failure without a return value (corresponds to `void`).
@@ -415,7 +419,7 @@ This keeps exceptions exceptional, and keeps business outcomes explicit.
 ### Create success and failure results
 
 ```csharp
-using Light.Results;
+using Light.PortableResults;
 
 Result<int> success = Result<int>.Ok(42);
 
@@ -433,7 +437,7 @@ Result<int> failure = Result<int>.Fail(error);
 ### Use non-generic `Result` for command-style operations
 
 ```csharp
-using Light.Results;
+using Light.PortableResults;
 
 static Result DeleteUser(Guid id)
 {
@@ -456,7 +460,7 @@ static Result DeleteUser(Guid id)
 
 ```csharp
 using System.Collections.Generic;
-using Light.Results;
+using Light.PortableResults;
 
 static Result<string> ValidateUser(string? name, string? email)
 {
@@ -495,13 +499,14 @@ static Result<string> ValidateUser(string? name, string? email)
 
 ### Consume a result safely
 
-`Result<T>.Value` is only valid when `IsValid` is `true`, otherwise an exception is thrown. Light.Results supports both imperative and functional styles.
+`Result<T>.Value` is only valid when `IsValid` is `true`, otherwise an exception is thrown. Light.PortableResults
+supports both imperative and functional styles.
 
 Imperative / structured programming (`if/else`):
 
 ```csharp
 using System;
-using Light.Results;
+using Light.PortableResults;
 
 Result<int> result = GetCount();
 
@@ -521,8 +526,8 @@ else
 Functional style (`Match`):
 
 ```csharp
-using Light.Results;
-using Light.Results.FunctionalExtensions;
+using Light.PortableResults;
+using Light.PortableResults.FunctionalExtensions;
 
 Result<int> result = GetCount();
 
@@ -547,8 +552,8 @@ All operators also provide async variants with the `Async` suffix (for example `
 Example pipeline:
 
 ```csharp
-using Light.Results;
-using Light.Results.FunctionalExtensions;
+using Light.PortableResults;
+using Light.PortableResults.FunctionalExtensions;
 
 Result<string> message = GetUser(userId)
 	.Ensure(user => user.IsActive, new Error
@@ -579,12 +584,12 @@ Using a consistent error shape early will make your APIs and message consumers e
 
 ### HTTP write options (`LightResultsHttpWriteOptions`)
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `ValidationProblemSerializationFormat` | `AspNetCoreCompatible` | Controls how validation errors are serialized for HTTP 400/422 responses. Defaults to `AspNetCoreCompatible` for backwards-compatibility, we encourage you to use `Rich`. |
-| `MetadataSerializationMode` | `ErrorsOnly` | Controls whether metadata is serialized in response bodies (`ErrorsOnly` or `Always`). |
-| `CreateProblemDetailsInfo` | `null` | Optional custom factory for generating Problem Details fields (`type`, `title`, `detail`, etc.). |
-| `FirstErrorCategoryIsLeadingCategory` | `true` | If `true`, the first error category decides the HTTP status code for failures. If `false`, Light.Results checks if all errors have the same category and chooses `Unclassified` when they differ. |
+| Option                                 | Default                | Description                                                                                                                                                                                               |
+|----------------------------------------|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ValidationProblemSerializationFormat` | `AspNetCoreCompatible` | Controls how validation errors are serialized for HTTP 400/422 responses. Defaults to `AspNetCoreCompatible` for backwards-compatibility, we encourage you to use `Rich`.                                 |
+| `MetadataSerializationMode`            | `ErrorsOnly`           | Controls whether metadata is serialized in response bodies (`ErrorsOnly` or `Always`).                                                                                                                    |
+| `CreateProblemDetailsInfo`             | `null`                 | Optional custom factory for generating Problem Details fields (`type`, `title`, `detail`, etc.).                                                                                                          |
+| `FirstErrorCategoryIsLeadingCategory`  | `true`                 | If `true`, the first error category decides the HTTP status code for failures. If `false`, Light.PortableResults checks if all errors have the same category and chooses `Unclassified` when they differ. |
 
 ### HTTP read options (`LightResultsHttpReadOptions`)
 
@@ -626,8 +631,8 @@ Using a consistent error shape early will make your APIs and message consumers e
 ### Configure HTTP behavior
 
 ```csharp
-using Light.Results.Http.Writing;
-using Light.Results.SharedJsonSerialization;
+using Light.PortableResults.Http.Writing;
+using Light.PortableResults.SharedJsonSerialization;
 
 builder.Services.Configure<LightResultsHttpWriteOptions>(options =>
 {
@@ -638,9 +643,9 @@ builder.Services.Configure<LightResultsHttpWriteOptions>(options =>
 ```
 
 ```csharp
-using Light.Results.Http.Reading;
-using Light.Results.Http.Reading.Headers;
-using Light.Results.Http.Reading.Json;
+using Light.PortableResults.Http.Reading;
+using Light.PortableResults.Http.Reading.Headers;
+using Light.PortableResults.Http.Reading.Json;
 
 var readOptions = new LightResultsHttpReadOptions
 {
@@ -655,8 +660,8 @@ Result<UserDto> result = await response.ReadResultAsync<UserDto>(readOptions);
 ### Configure CloudEvents behavior
 
 ```csharp
-using Light.Results.CloudEvents.Writing;
-using Light.Results.SharedJsonSerialization;
+using Light.PortableResults.CloudEvents.Writing;
+using Light.PortableResults.SharedJsonSerialization;
 
 builder.Services.Configure<LightResultsCloudEventsWriteOptions>(options =>
 {
@@ -669,8 +674,8 @@ builder.Services.Configure<LightResultsCloudEventsWriteOptions>(options =>
 
 ```csharp
 using System;
-using Light.Results.CloudEvents.Reading;
-using Light.Results.Http.Reading.Json;
+using Light.PortableResults.CloudEvents.Reading;
+using Light.PortableResults.Http.Reading.Json;
 
 var cloudReadOptions = new LightResultsCloudEventsReadOptions
 {
