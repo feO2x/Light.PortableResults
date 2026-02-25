@@ -2,7 +2,7 @@ using Light.Results.Http.Writing;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Light.Results.AspNetCore.MinimalApis;
+namespace Light.PortableResults.AspNetCore.MinimalApis;
 
 /// <summary>
 /// Service registration helpers for Light.Results Minimal APIs.

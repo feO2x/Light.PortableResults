@@ -4,7 +4,6 @@ using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Light.Results;
-using Light.Results.AspNetCore.MinimalApis;
 using Light.Results.Http.Writing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;

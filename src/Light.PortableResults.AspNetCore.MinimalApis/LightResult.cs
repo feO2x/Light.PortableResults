@@ -3,11 +3,12 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
-using Light.Results.AspNetCore.MinimalApis.Serialization;
+using Light.PortableResults.AspNetCore.MinimalApis.Serialization;
+using Light.Results;
 using Light.Results.Http.Writing;
 using Microsoft.AspNetCore.Http;
 
-namespace Light.Results.AspNetCore.MinimalApis;
+namespace Light.PortableResults.AspNetCore.MinimalApis;
 
 /// <summary>
 /// Minimal API result for <see cref="Result" /> which either writes success HTTP response bodies or Problem Details

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Light.Results.AspNetCore.MinimalApis.Serialization;
+namespace Light.PortableResults.AspNetCore.MinimalApis.Serialization;
 
 /// <summary>
 /// Provides helper APIs for retrieving consistent <see cref="JsonSerializerOptions" />

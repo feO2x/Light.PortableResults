@@ -2,7 +2,7 @@ using Light.Results.AspNetCore.Shared;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
-namespace Light.Results.AspNetCore.MinimalApis;
+namespace Light.PortableResults.AspNetCore.MinimalApis;
 
 /// <summary>
 /// Extension methods for configuring OpenAPI metadata for Light.Results endpoints.

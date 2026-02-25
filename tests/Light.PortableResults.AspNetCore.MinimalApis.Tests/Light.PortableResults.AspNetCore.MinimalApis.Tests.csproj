@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Light.Results.AspNetCore.MinimalApis\Light.Results.AspNetCore.MinimalApis.csproj" />
+    <ProjectReference Include="..\..\src\Light.PortableResults.AspNetCore.MinimalApis\Light.PortableResults.AspNetCore.MinimalApis.csproj" />
     <ProjectReference Include="..\..\src\Light.Results.AspNetCore.Shared\Light.Results.AspNetCore.Shared.csproj" />
   </ItemGroup>
 

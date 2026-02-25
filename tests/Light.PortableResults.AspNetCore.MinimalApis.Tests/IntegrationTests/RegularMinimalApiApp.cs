@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Light.PortableResults.AspNetCore.MinimalApis.Tests.IntegrationTests;
 using Light.Results;
-using Light.Results.AspNetCore.MinimalApis;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;

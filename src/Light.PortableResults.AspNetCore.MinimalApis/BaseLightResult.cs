@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Light.Results;
 using Light.Results.AspNetCore.Shared;
 using Light.Results.AspNetCore.Shared.Enrichment;
 using Light.Results.Http.Writing;
@@ -10,7 +11,7 @@ using Light.Results.Metadata;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Light.Results.AspNetCore.MinimalApis;
+namespace Light.PortableResults.AspNetCore.MinimalApis;
 
 /// <summary>
 /// Base type for Minimal API results that wrap Light.Results values.

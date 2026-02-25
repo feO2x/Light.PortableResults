@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 using Light.Results.Http.Writing;
 using Light.Results.Metadata;
 
-namespace Light.Results.AspNetCore.MinimalApis.Serialization;
+namespace Light.PortableResults.AspNetCore.MinimalApis.Serialization;
 
 /// <summary>
 /// Source-generated JSON serializer context for Light.Results for Minimal APIs.
