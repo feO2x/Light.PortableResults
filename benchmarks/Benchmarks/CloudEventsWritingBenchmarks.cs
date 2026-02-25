@@ -368,7 +368,7 @@ public class CloudEventsWritingBenchmarks
             writer.WriteString("time", time.Value);
         }
 
-        writer.WriteString(CloudEventsConstants.LightResultsOutcomeAttributeName, isSuccess ? "success" : "failure");
+        writer.WriteString(CloudEventsConstants.PortableResultsOutcomeAttributeName, isSuccess ? "success" : "failure");
         if (includeData)
         {
             writer.WriteString("datacontenttype", CloudEventsConstants.JsonContentType);

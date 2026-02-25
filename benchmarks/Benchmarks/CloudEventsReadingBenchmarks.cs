@@ -35,7 +35,7 @@ public class CloudEventsReadingBenchmarks
               "type": "com.example.success",
               "source": "/test",
               "id": "event-1",
-              "lroutcome": "success",
+              "lproutcome": "success",
               "data": {
                 "value": {
                   "id": "6B8A4DCA-779D-4F36-8274-487FE3E86B5A",
@@ -60,7 +60,7 @@ public class CloudEventsReadingBenchmarks
               "type": "com.example.failure",
               "source": "/test",
               "id": "event-2",
-              "lroutcome": "failure",
+              "lproutcome": "failure",
               "data": {
                 "errors": [
                   {
@@ -135,7 +135,7 @@ public class CloudEventsReadingBenchmarks
                    "type": "com.example.success",
                    "source": "/test",
                    "id": "event-medium",
-                   "lroutcome": "success",
+                   "lproutcome": "success",
                    "data": {
                      "value": {
                        "id": "6B8A4DCA-779D-4F36-8274-487FE3E86B5A",
@@ -171,7 +171,7 @@ public class CloudEventsReadingBenchmarks
                    "type": "com.example.success",
                    "source": "/test",
                    "id": "event-large",
-                   "lroutcome": "success",
+                   "lproutcome": "success",
                    "data": {
                      "value": {
                        "id": "6B8A4DCA-779D-4F36-8274-487FE3E86B5A",

@@ -165,7 +165,7 @@ public static class JsonCloudEventsExtensions
             writer.WriteString("time", time.Value.ToString("O", CultureInfo.InvariantCulture));
         }
 
-        writer.WriteString(CloudEventsConstants.LightResultsOutcomeAttributeName, isSuccess ? "success" : "failure");
+        writer.WriteString(CloudEventsConstants.PortableResultsOutcomeAttributeName, isSuccess ? "success" : "failure");
 
         if (includeData)
         {

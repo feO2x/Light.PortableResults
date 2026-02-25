@@ -32,7 +32,7 @@ public sealed class CloudEventsResultExtensionsTests
         root.GetProperty("type").GetString().Should().Be("app.success");
         root.GetProperty("source").GetString().Should().Be("urn:test:source");
         root.GetProperty("id").GetString().Should().Be("evt-1");
-        root.GetProperty("lroutcome").GetString().Should().Be("success");
+        root.GetProperty("lproutcome").GetString().Should().Be("success");
         root.GetProperty("datacontenttype").GetString().Should().Be("application/json");
         root.GetProperty("data").GetProperty("value").GetInt32().Should().Be(42);
         DateTimeOffset.Parse(root.GetProperty("time").GetString()!).Should().Be(time);
@@ -60,7 +60,7 @@ public sealed class CloudEventsResultExtensionsTests
 
         root.TryGetProperty("datacontenttype", out _).Should().BeFalse();
         root.TryGetProperty("data", out _).Should().BeFalse();
-        root.GetProperty("lroutcome").GetString().Should().Be("success");
+        root.GetProperty("lproutcome").GetString().Should().Be("success");
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public sealed class CloudEventsResultExtensionsTests
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
 
-        root.GetProperty("lroutcome").GetString().Should().Be("failure");
+        root.GetProperty("lproutcome").GetString().Should().Be("failure");
         root.GetProperty("type").GetString().Should().Be("app.failure");
         root.GetProperty("data").GetProperty("errors")[0].GetProperty("message").GetString().Should().Be("failed");
         root.GetProperty("data").GetProperty("metadata").GetProperty("traceId").GetString().Should().Be("abc");

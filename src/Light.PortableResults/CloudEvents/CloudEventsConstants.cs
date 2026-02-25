@@ -27,7 +27,7 @@ public static class CloudEventsConstants
     /// <summary>
     /// The reserved extension attribute used by Light.PortableResults to classify outcomes.
     /// </summary>
-    public const string LightResultsOutcomeAttributeName = "lroutcome";
+    public const string PortableResultsOutcomeAttributeName = "lproutcome";
 
     /// <summary>
     /// Gets the set of reserved attribute names that cannot be populated from metadata conversion.
@@ -37,7 +37,7 @@ public static class CloudEventsConstants
         {
             "data",
             "data_base64",
-            LightResultsOutcomeAttributeName
+            PortableResultsOutcomeAttributeName
         }.ToFrozenSet();
 
     /// <summary>

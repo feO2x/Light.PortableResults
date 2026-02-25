@@ -22,7 +22,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "source": "urn:test:source",
                 "id": "evt-1",
                 "time": "2026-02-14T12:00:00Z",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "datacontenttype": "application/json",
                 "data": 42
             }
@@ -44,7 +44,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.failure",
                 "source": "urn:test:source",
                 "id": "evt-2",
-                "lroutcome": "failure",
+                "lproutcome": "failure",
                 "data": {
                     "errors": [
                         {
@@ -80,7 +80,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": "urn:test:source",
                 "id": "evt-3",
-                "lroutcome": "success"
+                "lproutcome": "success"
             }
             """
         );
@@ -100,7 +100,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": "urn:test:source",
                 "id": "evt-3a",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "data": {
                     "metadata": {
                         "traceid": "abc"
@@ -129,7 +129,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": "urn:test:source",
                 "id": "evt-3b",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "data": 42
             }
             """
@@ -150,7 +150,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.failure",
                 "source": "urn:test:source",
                 "id": "evt-4",
-                "lroutcome": "failure"
+                "lproutcome": "failure"
             }
             """
         );
@@ -170,7 +170,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": "urn:test:source",
                 "id": "evt-5",
-                "lroutcome": "success"
+                "lproutcome": "success"
             }
             """
         );
@@ -190,7 +190,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": "urn:test:source",
                 "id": "evt-6",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "data": 1
             }
             """
@@ -211,7 +211,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": "urn:test:source",
                 "id": "evt-7",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "datacontenttype": "text/plain",
                 "data": 1
             }
@@ -233,7 +233,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": "urn:test:source",
                 "id": "evt-8",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "data_base64": "AQ==",
                 "data": 1
             }
@@ -246,7 +246,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
     }
 
     [Fact]
-    public void ReadResultOfT_ShouldThrow_WhenLrOutcomeIsInvalid()
+    public void ReadResultOfT_ShouldThrow_WhenLprOutcomeIsInvalid()
     {
         var cloudEvent = CreateUtf8(
             """
@@ -255,7 +255,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": "urn:test:source",
                 "id": "evt-9",
-                "lroutcome": "maybe",
+                "lproutcome": "maybe",
                 "data": 1
             }
             """
@@ -263,11 +263,11 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
 
         var act = () => cloudEvent.ReadResult<int>();
 
-        act.Should().Throw<JsonException>().WithMessage("*lroutcome*");
+        act.Should().Throw<JsonException>().WithMessage("*lproutcome*");
     }
 
     [Fact]
-    public void ReadResultOfT_ShouldThrow_WhenLrOutcomeIsNotAString()
+    public void ReadResultOfT_ShouldThrow_WhenLprOutcomeIsNotAString()
     {
         var cloudEvent = CreateUtf8(
             """
@@ -276,7 +276,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": "urn:test:source",
                 "id": "evt-9a",
-                "lroutcome": 123,
+                "lproutcome": 123,
                 "data": 1
             }
             """
@@ -284,11 +284,11 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
 
         var act = () => cloudEvent.ReadResult<int>();
 
-        act.Should().Throw<JsonException>().WithMessage("*lroutcome*");
+        act.Should().Throw<JsonException>().WithMessage("*lproutcome*");
     }
 
     [Fact]
-    public void ReadResultOfT_ShouldUseIsFailureTypeFallback_WhenLrOutcomeIsMissing()
+    public void ReadResultOfT_ShouldUseIsFailureTypeFallback_WhenLprOutcomeIsMissing()
     {
         var cloudEvent = CreateUtf8(
             """
@@ -349,7 +349,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": "http://[invalid",
                 "id": "evt-12",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "data": 1
             }
             """
@@ -370,7 +370,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": 123,
                 "id": "evt-12a",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "data": 1
             }
             """
@@ -392,7 +392,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "source": "urn:test:source",
                 "subject": 123,
                 "id": "evt-12b",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "data": 1
             }
             """
@@ -414,7 +414,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "source": "urn:test:source",
                 "id": "evt-13",
                 "dataschema": "relative/path",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "data": 1
             }
             """
@@ -438,7 +438,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "id": "evt-14",
                 "time": "2026-02-14T12:00:00Z",
                 "dataschema": "https://example.org/schema",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "traceid": "abc",
                 "data": 5
             }
@@ -468,7 +468,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": "urn:test:source",
                 "id": "evt-15",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "traceid": "from-envelope",
                 "data": {
                     "value": 9,
@@ -506,7 +506,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": "urn:test:source",
                 "id": "evt-16",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "context": {
                     "nested": "x"
                 },
@@ -529,7 +529,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
     }
 
     [Fact]
-    public void ReadResult_ShouldIgnoreLrOutcomeWhenMergingExtensionMetadata()
+    public void ReadResult_ShouldIgnoreLprOutcomeWhenMergingExtensionMetadata()
     {
         var cloudEvent = CreateUtf8(
             """
@@ -538,7 +538,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
                 "type": "app.success",
                 "source": "urn:test:source",
                 "id": "evt-17",
-                "lroutcome": "success",
+                "lproutcome": "success",
                 "data": {
                     "metadata": null
                 }
