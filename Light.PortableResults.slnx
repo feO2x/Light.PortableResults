@@ -53,8 +53,9 @@
     <Project Path="tests/Light.Results.Tests/Light.Results.Tests.csproj" />
     <Project
       Path="tests\Light.PortableResults.AspNetCore.Mvc.Tests\Light.PortableResults.AspNetCore.Mvc.Tests.csproj" />
-    <Project Path="tests\Light.Results.AspNetCore.Shared.Tests\Light.Results.AspNetCore.Shared.Tests.csproj" />
     <Project
       Path="tests\Light.PortableResults.AspNetCore.MinimalApis.Tests\Light.PortableResults.AspNetCore.MinimalApis.Tests.csproj" />
+    <Project
+      Path="tests\Light.PortableResults.AspNetCore.Shared.Tests\Light.PortableResults.AspNetCore.Shared.Tests.csproj" />
   </Folder>
 </Solution>

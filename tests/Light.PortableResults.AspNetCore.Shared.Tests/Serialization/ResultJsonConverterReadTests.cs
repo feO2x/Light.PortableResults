@@ -4,7 +4,7 @@ using FluentAssertions;
 using Light.Results.Http.Writing;
 using Xunit;
 
-namespace Light.Results.AspNetCore.Shared.Tests.Serialization;
+namespace Light.PortableResults.AspNetCore.Shared.Tests.Serialization;
 
 public sealed class ResultJsonConverterReadTests
 {

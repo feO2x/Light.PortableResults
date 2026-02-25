@@ -6,7 +6,7 @@ using FluentAssertions;
 using Light.Results.SharedJsonSerialization.Writing;
 using Xunit;
 
-namespace Light.Results.AspNetCore.Shared.Tests.Serialization;
+namespace Light.PortableResults.AspNetCore.Shared.Tests.Serialization;
 
 public sealed class SerializerExtensionsTests
 {
