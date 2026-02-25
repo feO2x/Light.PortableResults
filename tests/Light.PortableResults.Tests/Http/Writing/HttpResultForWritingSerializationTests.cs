@@ -15,12 +15,12 @@ namespace Light.PortableResults.Tests.Http.Writing;
 public sealed class HttpResultForWritingSerializationTests
 {
     private static readonly ResolvedHttpWriteOptions DefaultOptions =
-        new LightResultsHttpWriteOptions().ToResolvedHttpWriteOptions();
+        new PortableResultsHttpWriteOptions().ToResolvedHttpWriteOptions();
 
     [Fact]
     public void ToResolvedHttpWriteOptions_ShouldCaptureAllFields()
     {
-        var mutableOptions = new LightResultsHttpWriteOptions
+        var mutableOptions = new PortableResultsHttpWriteOptions
         {
             ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich,
             MetadataSerializationMode = MetadataSerializationMode.Always,
@@ -42,7 +42,7 @@ public sealed class HttpResultForWritingSerializationTests
     public void ToHttpResultForWriting_ShouldWrapResultWithResolvedOptions()
     {
         var result = Result.Ok();
-        var options = new LightResultsHttpWriteOptions();
+        var options = new PortableResultsHttpWriteOptions();
 
         var wrapper = result.ToHttpResultForWriting(options);
 
@@ -54,7 +54,7 @@ public sealed class HttpResultForWritingSerializationTests
     public void ToHttpResultForWriting_Generic_ShouldWrapResultWithResolvedOptions()
     {
         var result = Result<int>.Ok(42);
-        var options = new LightResultsHttpWriteOptions();
+        var options = new PortableResultsHttpWriteOptions();
 
         var wrapper = result.ToHttpResultForWriting(options);
 

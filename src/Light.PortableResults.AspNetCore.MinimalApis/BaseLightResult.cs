@@ -31,7 +31,7 @@ public abstract class BaseLightResult<TResult> : IResult
         TResult result,
         HttpStatusCode? successStatusCode = null,
         string? location = null,
-        LightResultsHttpWriteOptions? overrideOptions = null,
+        PortableResultsHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     )
     {
@@ -65,7 +65,7 @@ public abstract class BaseLightResult<TResult> : IResult
     /// <summary>
     /// Gets the optional Light.PortableResults options override.
     /// </summary>
-    public LightResultsHttpWriteOptions? OverrideOptions { get; }
+    public PortableResultsHttpWriteOptions? OverrideOptions { get; }
 
     /// <summary>
     /// Executes the result against the supplied HTTP context.

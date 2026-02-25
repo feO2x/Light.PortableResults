@@ -7,7 +7,7 @@ namespace Light.PortableResults.Http.Writing;
 /// <summary>
 /// Configures how Light.PortableResults responses are serialized for ASP.NET Core.
 /// </summary>
-public sealed record LightResultsHttpWriteOptions
+public sealed record PortableResultsHttpWriteOptions
 {
     /// <summary>
     /// <para>

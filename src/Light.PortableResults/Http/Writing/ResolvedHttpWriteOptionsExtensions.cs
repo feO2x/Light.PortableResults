@@ -1,7 +1,7 @@
 namespace Light.PortableResults.Http.Writing;
 
 /// <summary>
-/// Provides extension methods for converting <see cref="LightResultsHttpWriteOptions" /> to
+/// Provides extension methods for converting <see cref="PortableResultsHttpWriteOptions" /> to
 /// <see cref="ResolvedHttpWriteOptions" />.
 /// </summary>
 public static class ResolvedHttpWriteOptionsExtensions
@@ -12,7 +12,7 @@ public static class ResolvedHttpWriteOptionsExtensions
     /// </summary>
     /// <param name="options">The mutable options to freeze.</param>
     /// <returns>A frozen snapshot of the options.</returns>
-    public static ResolvedHttpWriteOptions ToResolvedHttpWriteOptions(this LightResultsHttpWriteOptions options) =>
+    public static ResolvedHttpWriteOptions ToResolvedHttpWriteOptions(this PortableResultsHttpWriteOptions options) =>
         new (
             options.ValidationProblemSerializationFormat,
             options.MetadataSerializationMode,

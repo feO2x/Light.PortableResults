@@ -16,14 +16,14 @@ namespace Light.PortableResults.Http.Writing;
 public static class Module
 {
     /// <summary>
-    /// Registers <see cref="LightResultsHttpWriteOptions" /> in the service container.
+    /// Registers <see cref="PortableResultsHttpWriteOptions" /> in the service container.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddLightResultHttpWriteOptions(this IServiceCollection services)
     {
-        services.AddOptions<LightResultsHttpWriteOptions>();
-        services.AddSingleton(sp => sp.GetRequiredService<IOptions<LightResultsHttpWriteOptions>>().Value);
+        services.AddOptions<PortableResultsHttpWriteOptions>();
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<PortableResultsHttpWriteOptions>>().Value);
         return services;
     }
 

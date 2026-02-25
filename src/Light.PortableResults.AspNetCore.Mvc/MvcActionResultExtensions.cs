@@ -22,7 +22,7 @@ public static class MvcActionResultExtensions
         this Result result,
         HttpStatusCode? successStatusCode = null,
         string? location = null,
-        LightResultsHttpWriteOptions? overrideOptions = null,
+        PortableResultsHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) =>
         new (result, successStatusCode, location, overrideOptions, serializerOptions);
@@ -41,7 +41,7 @@ public static class MvcActionResultExtensions
         this Result<T> result,
         HttpStatusCode? successStatusCode = null,
         string? location = null,
-        LightResultsHttpWriteOptions? overrideOptions = null,
+        PortableResultsHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) =>
         new (result, successStatusCode, location, overrideOptions, serializerOptions);
@@ -57,7 +57,7 @@ public static class MvcActionResultExtensions
     public static LightActionResult ToHttp201CreatedMvcActionResult(
         this Result result,
         string? location = null,
-        LightResultsHttpWriteOptions? overrideOptions = null,
+        PortableResultsHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) =>
         new (result, HttpStatusCode.Created, location, overrideOptions, serializerOptions);
@@ -74,7 +74,7 @@ public static class MvcActionResultExtensions
     public static LightActionResult<T> ToHttp201CreatedMvcActionResult<T>(
         this Result<T> result,
         string? location = null,
-        LightResultsHttpWriteOptions? overrideOptions = null,
+        PortableResultsHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) =>
         new (result, HttpStatusCode.Created, location, overrideOptions, serializerOptions);

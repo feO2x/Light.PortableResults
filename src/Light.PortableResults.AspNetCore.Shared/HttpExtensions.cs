@@ -137,17 +137,17 @@ public static class HttpExtensions
     /// </summary>
     /// <param name="httpContext">The active HTTP context.</param>
     /// <param name="overrideOptions">Optional options instance to use instead of the registered one.</param>
-    /// <returns>The resolved <see cref="LightResultsHttpWriteOptions" /> instance.</returns>
+    /// <returns>The resolved <see cref="PortableResultsHttpWriteOptions" /> instance.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no options can be resolved.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpContext" /> is <c>null</c>.</exception>
-    public static LightResultsHttpWriteOptions ResolveLightResultOptions(
+    public static PortableResultsHttpWriteOptions ResolveLightResultOptions(
         this HttpContext httpContext,
-        LightResultsHttpWriteOptions? overrideOptions = null
+        PortableResultsHttpWriteOptions? overrideOptions = null
     )
     {
         ArgumentNullException.ThrowIfNull(httpContext);
         return overrideOptions ??
-               httpContext.RequestServices.GetService<IOptions<LightResultsHttpWriteOptions>>()?.Value ??
+               httpContext.RequestServices.GetService<IOptions<PortableResultsHttpWriteOptions>>()?.Value ??
                throw new InvalidOperationException(
                    "No LightResultsHttpWriteOptions are configured in the DI container"
                );

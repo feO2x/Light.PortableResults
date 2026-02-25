@@ -5,7 +5,7 @@ using Light.PortableResults.SharedJsonSerialization;
 namespace Light.PortableResults.Http.Writing;
 
 /// <summary>
-/// Represents frozen, per-request HTTP write options derived from <see cref="LightResultsHttpWriteOptions" />.
+/// Represents frozen, per-request HTTP write options derived from <see cref="PortableResultsHttpWriteOptions" />.
 /// This struct is created once at the top of a request and passed to both header-setting and body-writing methods.
 /// </summary>
 /// <param name="ValidationProblemSerializationFormat">The format for validation error serialization.</param>

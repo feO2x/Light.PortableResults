@@ -27,7 +27,7 @@ public sealed class LightResult : BaseLightResult<Result>
         Result result,
         HttpStatusCode? successStatusCode = null,
         string? location = null,
-        LightResultsHttpWriteOptions? overrideOptions = null,
+        PortableResultsHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) : base(result, successStatusCode, location, overrideOptions, serializerOptions) { }
 
@@ -83,7 +83,7 @@ public sealed class LightResult<T> : BaseLightResult<Result<T>>
         Result<T> result,
         HttpStatusCode? successStatusCode = null,
         string? location = null,
-        LightResultsHttpWriteOptions? overrideOptions = null,
+        PortableResultsHttpWriteOptions? overrideOptions = null,
         JsonSerializerOptions? serializerOptions = null
     ) : base(result, successStatusCode, location, overrideOptions, serializerOptions) { }
 

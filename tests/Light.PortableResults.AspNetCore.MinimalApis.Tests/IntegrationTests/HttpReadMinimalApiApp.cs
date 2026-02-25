@@ -21,12 +21,12 @@ namespace Light.PortableResults.AspNetCore.MinimalApis.Tests.IntegrationTests;
 
 public sealed class HttpReadMinimalApiApp : IAsyncLifetime
 {
-    private static readonly LightResultsHttpWriteOptions AlwaysSerializeMetadataOptions = new ()
+    private static readonly PortableResultsHttpWriteOptions AlwaysSerializeMetadataOptions = new ()
     {
         MetadataSerializationMode = MetadataSerializationMode.Always
     };
 
-    private static readonly LightResultsHttpWriteOptions RichValidationOptions = new ()
+    private static readonly PortableResultsHttpWriteOptions RichValidationOptions = new ()
     {
         ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich,
         CreateProblemDetailsInfo = (_, _) => new ProblemDetailsInfo

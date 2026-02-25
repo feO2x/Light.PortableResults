@@ -42,7 +42,7 @@ public class HttpWriteSerializationBenchmarks
         };
         _serializerOptions.AddDefaultLightResultsHttpWriteJsonConverters();
 
-        _resolvedOptions = new LightResultsHttpWriteOptions().ToResolvedHttpWriteOptions();
+        _resolvedOptions = new PortableResultsHttpWriteOptions().ToResolvedHttpWriteOptions();
 
         _nonGenericSuccess = Result.Ok();
 

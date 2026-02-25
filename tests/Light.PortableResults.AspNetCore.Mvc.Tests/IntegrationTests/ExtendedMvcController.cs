@@ -14,7 +14,7 @@ namespace Light.PortableResults.AspNetCore.Mvc.Tests.IntegrationTests;
 [Route("api/extended")]
 public sealed class ExtendedMvcController : ControllerBase
 {
-    private static readonly LightResultsHttpWriteOptions AlwaysSerializeMetadataOptions = new ()
+    private static readonly PortableResultsHttpWriteOptions AlwaysSerializeMetadataOptions = new ()
     {
         MetadataSerializationMode = MetadataSerializationMode.Always
     };
@@ -187,7 +187,7 @@ public sealed class ExtendedMvcController : ControllerBase
         return result.ToMvcActionResult(overrideOptions: AlwaysSerializeMetadataOptions);
     }
 
-    private static LightResultsHttpWriteOptions CreateRichValidationOptions() =>
+    private static PortableResultsHttpWriteOptions CreateRichValidationOptions() =>
         new ()
         {
             ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich,

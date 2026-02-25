@@ -14,7 +14,7 @@ public static class HttpResultForWritingExtensions
     /// <returns>The wrapper struct ready for JSON serialization.</returns>
     public static HttpResultForWriting ToHttpResultForWriting(
         this Result result,
-        LightResultsHttpWriteOptions options
+        PortableResultsHttpWriteOptions options
     ) =>
         new (result, options.ToResolvedHttpWriteOptions());
 
@@ -27,7 +27,7 @@ public static class HttpResultForWritingExtensions
     /// <returns>The wrapper struct ready for JSON serialization.</returns>
     public static HttpResultForWriting<T> ToHttpResultForWriting<T>(
         this Result<T> result,
-        LightResultsHttpWriteOptions options
+        PortableResultsHttpWriteOptions options
     ) =>
         new (result, options.ToResolvedHttpWriteOptions());
 
