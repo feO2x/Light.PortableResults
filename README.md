@@ -57,7 +57,7 @@ using Light.PortableResults;
 using Light.PortableResults.AspNetCore.MinimalApis;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddLightResultsForMinimalApis();
+builder.Services.AddPortableResultsForMinimalApis();
 
 var app = builder.Build();
 
@@ -196,7 +196,7 @@ MVC setup in `Program.cs`:
 
 ```csharp
 builder.Services.AddControllers();
-builder.Services.AddLightResultsForMvc();
+builder.Services.AddPortableResultsForMvc();
 
 var app = builder.Build();
 app.MapControllers();
@@ -332,7 +332,7 @@ var result = Result<UserDto>.Ok(new UserDto
 byte[] cloudEvent = result.ToCloudEvent(
 	successType: "users.updated",
 	failureType: "users.update.failed",
-	source: "urn:light-results:sample:user-service",
+	source: "urn:light-portable-results:sample:user-service",
 	subject: "users/6b8a4dca-779d-4f36-8274-487fe3e86b5a"
 );
 
@@ -582,7 +582,7 @@ Using a consistent error shape early will make your APIs and message consumers e
 
 ## ⚙️ Configuration
 
-### HTTP write options (`LightResultsHttpWriteOptions`)
+### HTTP write options (`PortableResultsHttpWriteOptions`)
 
 | Option                                 | Default                | Description                                                                                                                                                                                               |
 |----------------------------------------|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -591,7 +591,7 @@ Using a consistent error shape early will make your APIs and message consumers e
 | `CreateProblemDetailsInfo`             | `null`                 | Optional custom factory for generating Problem Details fields (`type`, `title`, `detail`, etc.).                                                                                                          |
 | `FirstErrorCategoryIsLeadingCategory`  | `true`                 | If `true`, the first error category decides the HTTP status code for failures. If `false`, Light.PortableResults checks if all errors have the same category and chooses `Unclassified` when they differ. |
 
-### HTTP read options (`LightResultsHttpReadOptions`)
+### HTTP read options (`PortableResultsHttpReadOptions`)
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -601,7 +601,7 @@ Using a consistent error shape early will make your APIs and message consumers e
 | `TreatProblemDetailsAsFailure` | `true` | If `true`, `application/problem+json` is treated as failure even for 2xx status codes. |
 | `SerializerOptions` | `Module.DefaultSerializerOptions` | System.Text.JSON serializer options used for deserialization. |
 
-### CloudEvents write options (`LightResultsCloudEventsWriteOptions`)
+### CloudEvents write options (`PortableResultsCloudEventsWriteOptions`)
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -618,7 +618,7 @@ Using a consistent error shape early will make your APIs and message consumers e
 | `ArrayPool` | `ArrayPool<byte>.Shared` | Buffer pool used for CloudEvents serialization. |
 | `PooledArrayInitialCapacity` | `RentedArrayBufferWriter.DefaultInitialCapacity` | Initial buffer size used for pooled serialization, which is 2048 bytes. |
 
-### CloudEvents read options (`LightResultsCloudEventsReadOptions`)
+### CloudEvents read options (`PortableResultsCloudEventsReadOptions`)
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -634,7 +634,7 @@ Using a consistent error shape early will make your APIs and message consumers e
 using Light.PortableResults.Http.Writing;
 using Light.PortableResults.SharedJsonSerialization;
 
-builder.Services.Configure<LightResultsHttpWriteOptions>(options =>
+builder.Services.Configure<PortableResultsHttpWriteOptions>(options =>
 {
 	options.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich;
 	options.MetadataSerializationMode = MetadataSerializationMode.Always;
@@ -647,7 +647,7 @@ using Light.PortableResults.Http.Reading;
 using Light.PortableResults.Http.Reading.Headers;
 using Light.PortableResults.Http.Reading.Json;
 
-var readOptions = new LightResultsHttpReadOptions
+var readOptions = new PortableResultsHttpReadOptions
 {
 	HeaderParsingService = new DefaultHttpHeaderParsingService(new AllHeadersSelectionStrategy()),
 	PreferSuccessPayload = PreferSuccessPayload.Auto,
@@ -663,9 +663,9 @@ Result<UserDto> result = await response.ReadResultAsync<UserDto>(readOptions);
 using Light.PortableResults.CloudEvents.Writing;
 using Light.PortableResults.SharedJsonSerialization;
 
-builder.Services.Configure<LightResultsCloudEventsWriteOptions>(options =>
+builder.Services.Configure<PortableResultsCloudEventsWriteOptions>(options =>
 {
-	options.Source = "urn:light-results:sample:user-service";
+	options.Source = "urn:light-portable-results:sample:user-service";
 	options.SuccessType = "users.updated";
 	options.FailureType = "users.update.failed";
 	options.MetadataSerializationMode = MetadataSerializationMode.Always;
@@ -677,7 +677,7 @@ using System;
 using Light.PortableResults.CloudEvents.Reading;
 using Light.PortableResults.Http.Reading.Json;
 
-var cloudReadOptions = new LightResultsCloudEventsReadOptions
+var cloudReadOptions = new PortableResultsCloudEventsReadOptions
 {
 	IsFailureType = eventType => eventType.EndsWith(".failed", StringComparison.Ordinal),
 	PreferSuccessPayload = PreferSuccessPayload.Auto
