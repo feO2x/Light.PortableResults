@@ -18,15 +18,17 @@ jobs:
           global-json-file: ./global.json
       - name: Cache NuGet packages
         uses: ./.github/actions/cache-nuget
-      - name: Prepare SNK file
+      - name: Create signed NuGet packages
         env:
           SNK: ${{ secrets.SNK }}
-        run: echo "$SNK" | base64 --decode > Light.Results.snk
-      - name: Create NuGet packages
-        # AssemblyOriginatorKeyFile must be a relative path from the csproj file that is being built, hence the ../../
-        run: dotnet pack ./Light.Results.slnx --configuration Release /p:SignAssembly=true /p:AssemblyOriginatorKeyFile=../../Light.Results.snk /p:ContinuousIntegrationBuild=true
-      - name: Delete SNK file
-        run: rm ./Light.Results.snk
+        shell: bash
+        run: |
+          set -euo pipefail
+          SNK_PATH=./Light.PortableResults.snk
+          trap 'rm -f "$SNK_PATH"' EXIT
+          echo "$SNK" | base64 --decode > "$SNK_PATH"
+          # AssemblyOriginatorKeyFile must be a relative path from the csproj file that is being built, hence the ../../
+          dotnet pack ./Light.PortableResults.slnx --configuration Release /p:SignAssembly=true /p:AssemblyOriginatorKeyFile=../../Light.PortableResults.snk /p:ContinuousIntegrationBuild=true
       - name: Push NuGet packages
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
