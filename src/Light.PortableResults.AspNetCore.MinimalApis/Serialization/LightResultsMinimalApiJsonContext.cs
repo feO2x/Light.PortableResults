@@ -1,11 +1,11 @@
 using System.Text.Json.Serialization;
-using Light.Results.Http.Writing;
-using Light.Results.Metadata;
+using Light.PortableResults.Http.Writing;
+using Light.PortableResults.Metadata;
 
 namespace Light.PortableResults.AspNetCore.MinimalApis.Serialization;
 
 /// <summary>
-/// Source-generated JSON serializer context for Light.Results for Minimal APIs.
+/// Source-generated JSON serializer context for Light.PortableResults for Minimal APIs.
 /// </summary>
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,

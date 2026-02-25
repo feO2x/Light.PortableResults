@@ -2,13 +2,12 @@ using System;
 using System.IO;
 using System.Text.Json;
 using FluentAssertions;
-using Light.Results;
-using Light.Results.Http.Reading.Json;
-using Light.Results.Http.Writing;
-using Light.Results.Http.Writing.Json;
-using Light.Results.Metadata;
+using Light.PortableResults.Http.Reading.Json;
+using Light.PortableResults.Http.Writing;
+using Light.PortableResults.Http.Writing.Json;
+using Light.PortableResults.Metadata;
 using Xunit;
-using Module = Light.Results.Http.Reading.Module;
+using Module = Light.PortableResults.Http.Reading.Module;
 
 namespace Light.PortableResults.Tests.Http;
 

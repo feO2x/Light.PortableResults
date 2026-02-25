@@ -1,16 +1,16 @@
-using Light.Results.Http.Writing;
+using Light.PortableResults.Http.Writing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Light.PortableResults.AspNetCore.Mvc;
 
 /// <summary>
-/// Service registration helpers for Light.Results MVC.
+/// Service registration helpers for Light.PortableResults MVC.
 /// </summary>
 public static class Module
 {
     /// <summary>
-    /// Registers all services required for Light.Results MVC.
+    /// Registers all services required for Light.PortableResults MVC.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
@@ -21,7 +21,7 @@ public static class Module
            .ConfigureMvcJsonOptionsForLightResults();
 
     /// <summary>
-    /// Configures JSON options for Light.Results MVC responses.
+    /// Configures JSON options for Light.PortableResults MVC responses.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>

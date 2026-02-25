@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <ProjectReference Include="..\Light.Results\Light.Results.csproj" />
+    <ProjectReference Include="..\Light.PortableResults\Light.PortableResults.csproj" />
   </ItemGroup>
 
 </Project>

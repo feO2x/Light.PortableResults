@@ -2,9 +2,9 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Immutable;
 using FluentAssertions;
-using Light.Results.CloudEvents.Reading;
-using Light.Results.Http.Reading.Json;
-using Light.Results.Metadata;
+using Light.PortableResults.CloudEvents.Reading;
+using Light.PortableResults.Http.Reading.Json;
+using Light.PortableResults.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 

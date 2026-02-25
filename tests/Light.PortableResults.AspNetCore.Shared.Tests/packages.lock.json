@@ -226,19 +226,19 @@
           "xunit.v3.runner.common": "[3.2.2]"
         }
       },
-      "light.portableresults.aspnetcore.shared": {
-        "type": "Project",
-        "dependencies": {
-          "Light.Results": "[0.1.0, )"
-        }
-      },
-      "light.results": {
+      "light.portableresults": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Bcl.HashCode": "[6.0.0, )",
           "Microsoft.Extensions.Options": "[10.0.2, )",
           "Microsoft.Extensions.Primitives": "[10.0.2, )",
           "Ulid": "[1.4.1, )"
+        }
+      },
+      "light.portableresults.aspnetcore.shared": {
+        "type": "Project",
+        "dependencies": {
+          "Light.PortableResults": "[0.1.0, )"
         }
       },
       "Microsoft.Bcl.HashCode": {

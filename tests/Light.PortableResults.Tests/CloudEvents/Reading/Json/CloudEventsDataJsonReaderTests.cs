@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using System.Text.Json;
 using FluentAssertions;
-using Light.Results.CloudEvents.Reading.Json;
+using Light.PortableResults.CloudEvents.Reading.Json;
 using Xunit;
 
 namespace Light.PortableResults.Tests.CloudEvents.Reading.Json;

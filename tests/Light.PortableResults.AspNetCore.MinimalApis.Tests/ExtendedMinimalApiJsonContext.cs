@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Light.Results.Http.Writing;
+using Light.PortableResults.Http.Writing;
 
 namespace Light.PortableResults.AspNetCore.MinimalApis.Tests;
 

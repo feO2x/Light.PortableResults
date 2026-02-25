@@ -1,7 +1,7 @@
 using System.Linq;
 using FluentAssertions;
 using Light.PortableResults.AspNetCore.Shared;
-using Light.Results.Metadata;
+using Light.PortableResults.Metadata;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Xunit;

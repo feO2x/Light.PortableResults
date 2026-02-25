@@ -1,7 +1,6 @@
 using FluentAssertions;
-using Light.Results;
-using Light.Results.Metadata;
-using Light.Results.MetadataExtensions;
+using Light.PortableResults.Metadata;
+using Light.PortableResults.MetadataExtensions;
 using Xunit;
 
 namespace Light.PortableResults.Tests.MetadataExtensions;

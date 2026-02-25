@@ -1,9 +1,8 @@
 using System.Net;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Light.Results;
-using Light.Results.Http.Reading;
-using Light.Results.Metadata;
+using Light.PortableResults.Http.Reading;
+using Light.PortableResults.Metadata;
 using Xunit;
 
 namespace Light.PortableResults.AspNetCore.MinimalApis.Tests.IntegrationTests;

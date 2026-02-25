@@ -1,5 +1,4 @@
 using FluentAssertions;
-using Light.Results;
 using Xunit;
 
 namespace Light.PortableResults.Tests;

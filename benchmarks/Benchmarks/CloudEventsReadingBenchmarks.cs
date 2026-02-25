@@ -2,9 +2,9 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using BenchmarkDotNet.Attributes;
-using Light.Results;
-using Light.Results.CloudEvents;
-using Light.Results.CloudEvents.Reading;
+using Light.PortableResults;
+using Light.PortableResults.CloudEvents;
+using Light.PortableResults.CloudEvents.Reading;
 
 namespace Benchmarks;
 

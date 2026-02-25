@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Immutable;
 using FluentAssertions;
-using Light.Results.CloudEvents.Reading;
-using Light.Results.Metadata;
+using Light.PortableResults.CloudEvents.Reading;
+using Light.PortableResults.Metadata;
 using Xunit;
 
 namespace Light.PortableResults.Tests.CloudEvents.Reading;

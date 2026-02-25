@@ -1,16 +1,16 @@
-using Light.Results.Http.Writing;
+using Light.PortableResults.Http.Writing;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Light.PortableResults.AspNetCore.MinimalApis;
 
 /// <summary>
-/// Service registration helpers for Light.Results Minimal APIs.
+/// Service registration helpers for Light.PortableResults Minimal APIs.
 /// </summary>
 public static class Module
 {
     /// <summary>
-    /// Registers all services required for Light.Results Minimal APIs.
+    /// Registers all services required for Light.PortableResults Minimal APIs.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
@@ -21,7 +21,7 @@ public static class Module
            .ConfigureMinimalApiJsonOptionsForLightResults();
 
     /// <summary>
-    /// Configures JSON options for Light.Results Minimal API responses.
+    /// Configures JSON options for Light.PortableResults Minimal API responses.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>

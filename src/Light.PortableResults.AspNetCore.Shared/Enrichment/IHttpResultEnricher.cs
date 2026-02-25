@@ -1,5 +1,4 @@
-using Light.Results;
-using Light.Results.Metadata;
+using Light.PortableResults.Metadata;
 using Microsoft.AspNetCore.Http;
 
 namespace Light.PortableResults.AspNetCore.Shared.Enrichment;

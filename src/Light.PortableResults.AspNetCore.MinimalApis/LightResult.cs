@@ -4,8 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using Light.PortableResults.AspNetCore.MinimalApis.Serialization;
-using Light.Results;
-using Light.Results.Http.Writing;
+using Light.PortableResults.Http.Writing;
 using Microsoft.AspNetCore.Http;
 
 namespace Light.PortableResults.AspNetCore.MinimalApis;
@@ -22,7 +21,7 @@ public sealed class LightResult : BaseLightResult<Result>
     /// <param name="result">The result to execute.</param>
     /// <param name="successStatusCode">Optional success status code override.</param>
     /// <param name="location">Optional Location header value.</param>
-    /// <param name="overrideOptions">Optional Light.Results options override.</param>
+    /// <param name="overrideOptions">Optional Light.PortableResults options override.</param>
     /// <param name="serializerOptions">Optional JSON serializer options override.</param>
     public LightResult(
         Result result,
@@ -78,7 +77,7 @@ public sealed class LightResult<T> : BaseLightResult<Result<T>>
     /// <param name="result">The result to execute.</param>
     /// <param name="successStatusCode">Optional success status code override.</param>
     /// <param name="location">Optional Location header value.</param>
-    /// <param name="overrideOptions">Optional Light.Results options override.</param>
+    /// <param name="overrideOptions">Optional Light.PortableResults options override.</param>
     /// <param name="serializerOptions">Optional JSON serializer options override.</param>
     public LightResult(
         Result<T> result,

@@ -1,8 +1,7 @@
 using System;
 using FluentAssertions;
-using Light.Results;
-using Light.Results.CloudEvents;
-using Light.Results.Metadata;
+using Light.PortableResults.CloudEvents;
+using Light.PortableResults.Metadata;
 using Xunit;
 
 namespace Light.PortableResults.Tests.CloudEvents;

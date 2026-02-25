@@ -11,11 +11,10 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Light.Results;
-using Light.Results.Http.Reading;
-using Light.Results.Http.Reading.Headers;
-using Light.Results.Http.Reading.Json;
-using Light.Results.Metadata;
+using Light.PortableResults.Http.Reading;
+using Light.PortableResults.Http.Reading.Headers;
+using Light.PortableResults.Http.Reading.Json;
+using Light.PortableResults.Metadata;
 using Xunit;
 
 namespace Light.PortableResults.Tests.Http.Reading;

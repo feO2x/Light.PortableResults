@@ -4,10 +4,9 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Light.PortableResults.AspNetCore.Shared;
 using Light.PortableResults.AspNetCore.Shared.Enrichment;
-using Light.Results;
-using Light.Results.Http.Writing;
-using Light.Results.Http.Writing.Headers;
-using Light.Results.Metadata;
+using Light.PortableResults.Http.Writing;
+using Light.PortableResults.Http.Writing.Headers;
+using Light.PortableResults.Metadata;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Light.PortableResults.AspNetCore.Mvc;
 
 /// <summary>
-/// Base type for MVC action results that wrap Light.Results values.
+/// Base type for MVC action results that wrap Light.PortableResults values.
 /// </summary>
 /// <typeparam name="TResult">The result type.</typeparam>
 public abstract class BaseLightActionResult<TResult> : IActionResult
@@ -27,7 +26,7 @@ public abstract class BaseLightActionResult<TResult> : IActionResult
     /// <param name="result">The result to execute.</param>
     /// <param name="successStatusCode">Optional success status code override.</param>
     /// <param name="location">Optional Location header value.</param>
-    /// <param name="overrideOptions">Optional Light.Results options override.</param>
+    /// <param name="overrideOptions">Optional Light.PortableResults options override.</param>
     /// <param name="serializerOptions">Optional JSON serializer options override.</param>
     protected BaseLightActionResult(
         TResult result,
@@ -65,7 +64,7 @@ public abstract class BaseLightActionResult<TResult> : IActionResult
     public JsonSerializerOptions? SerializerOptions { get; }
 
     /// <summary>
-    /// Gets the optional Light.Results options override.
+    /// Gets the optional Light.PortableResults options override.
     /// </summary>
     public LightResultsHttpWriteOptions? OverrideOptions { get; }
 

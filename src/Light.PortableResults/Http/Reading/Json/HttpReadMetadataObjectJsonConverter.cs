@@ -1,0 +1,22 @@
+using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Light.PortableResults.Metadata;
+
+namespace Light.PortableResults.Http.Reading.Json;
+
+/// <summary>
+/// JSON converter for reading <see cref="MetadataObject" /> payloads.
+/// </summary>
+public sealed class HttpReadMetadataObjectJsonConverter : JsonConverter<MetadataObject>
+{
+    /// <inheritdoc />
+    public override MetadataObject Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        MetadataJsonReader.ReadMetadataObject(ref reader);
+
+    /// <inheritdoc />
+    public override void Write(Utf8JsonWriter writer, MetadataObject value, JsonSerializerOptions options) =>
+        throw new NotSupportedException(
+            $"{nameof(HttpReadMetadataObjectJsonConverter)} supports deserialization only. Use a serialization converter for writing."
+        );
+}

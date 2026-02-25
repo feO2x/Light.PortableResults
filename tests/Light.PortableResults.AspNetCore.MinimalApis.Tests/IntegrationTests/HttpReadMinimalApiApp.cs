@@ -4,11 +4,10 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Light.PortableResults.AspNetCore.MinimalApis.Serialization;
 using Light.PortableResults.AspNetCore.MinimalApis.Tests.IntegrationTests;
-using Light.Results;
-using Light.Results.Http;
-using Light.Results.Http.Writing;
-using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization;
+using Light.PortableResults.Http;
+using Light.PortableResults.Http.Writing;
+using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Json;
@@ -63,10 +62,10 @@ public sealed class HttpReadMinimalApiApp : IAsyncLifetime
         App.MapGet("/api/read/failure-aspnet", GetAspNetCompatibleFailure);
         App.MapGet("/api/read/header-alias", GetHeaderAliasPayload);
         App.MapGet("/api/read/header-values", GetPrimitiveHeaderPayload);
-        App.MapGet("/api/read/empty-success", static () => Microsoft.AspNetCore.Http.Results.Empty);
+        App.MapGet("/api/read/empty-success", static () => Results.Empty);
         App.MapGet(
             "/api/read/empty-failure",
-            static () => Microsoft.AspNetCore.Http.Results.StatusCode(StatusCodes.Status400BadRequest)
+            static () => Results.StatusCode(StatusCodes.Status400BadRequest)
         );
         App.MapGet("/api/read/context-success", GetContextSuccess);
         App.MapGet("/api/read/context-failure", GetContextFailure);
@@ -115,13 +114,13 @@ public sealed class HttpReadMinimalApiApp : IAsyncLifetime
             }
             """;
 
-        return Microsoft.AspNetCore.Http.Results.Text(json, contentType: "application/json");
+        return Results.Text(json, contentType: "application/json");
     }
 
     private static IResult GetWrapperMissingValuePayload()
     {
         const string json = """{"metadata":{"trace":"t-1"}}""";
-        return Microsoft.AspNetCore.Http.Results.Text(json, contentType: "application/json");
+        return Results.Text(json, contentType: "application/json");
     }
 
     private static LightResult GetNonGenericMetadata()
@@ -134,7 +133,7 @@ public sealed class HttpReadMinimalApiApp : IAsyncLifetime
     private static IResult GetNonGenericUnexpectedPayload()
     {
         const string json = """{"value":"ok"}""";
-        return Microsoft.AspNetCore.Http.Results.Text(json, contentType: "application/json");
+        return Results.Text(json, contentType: "application/json");
     }
 
     private static LightResult<ContactDto> GetRichFailure()
@@ -213,7 +212,7 @@ public sealed class HttpReadMinimalApiApp : IAsyncLifetime
             }
             """;
 
-        return Microsoft.AspNetCore.Http.Results.Text(json, contentType: "application/json");
+        return Results.Text(json, contentType: "application/json");
     }
 
     private static IResult GetContextFailure()
@@ -238,7 +237,7 @@ public sealed class HttpReadMinimalApiApp : IAsyncLifetime
             }
             """;
 
-        return Microsoft.AspNetCore.Http.Results.Text(
+        return Results.Text(
             json,
             contentType: "application/problem+json",
             statusCode: StatusCodes.Status400BadRequest

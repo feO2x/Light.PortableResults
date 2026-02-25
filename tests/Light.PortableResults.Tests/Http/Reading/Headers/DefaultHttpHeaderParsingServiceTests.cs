@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using FluentAssertions;
-using Light.Results.Http.Reading.Headers;
-using Light.Results.Metadata;
+using Light.PortableResults.Http.Reading.Headers;
+using Light.PortableResults.Metadata;
 using Xunit;
 
 namespace Light.PortableResults.Tests.Http.Reading.Headers;

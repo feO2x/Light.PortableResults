@@ -1,8 +1,7 @@
 using System;
 using System.Net;
 using FluentAssertions;
-using Light.Results;
-using Light.Results.Http;
+using Light.PortableResults.Http;
 using Xunit;
 
 namespace Light.PortableResults.Tests.Http;

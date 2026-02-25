@@ -3,8 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BenchmarkDotNet.Attributes;
-using Light.Results.Http.Reading;
-using Light.Results.Http.Reading.Json;
+using Light.PortableResults.Http.Reading;
+using Light.PortableResults.Http.Reading.Json;
 
 namespace Benchmarks;
 

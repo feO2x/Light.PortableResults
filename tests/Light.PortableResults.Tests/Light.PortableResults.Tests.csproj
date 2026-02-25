@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Light.Results\Light.Results.csproj" />
+    <ProjectReference Include="..\..\src\Light.PortableResults\Light.PortableResults.csproj" />
   </ItemGroup>
 
 </Project>

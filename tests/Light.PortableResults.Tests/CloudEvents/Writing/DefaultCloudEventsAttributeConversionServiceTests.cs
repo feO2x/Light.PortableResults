@@ -3,8 +3,8 @@ using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using FluentAssertions;
-using Light.Results.CloudEvents.Writing;
-using Light.Results.Metadata;
+using Light.PortableResults.CloudEvents.Writing;
+using Light.PortableResults.Metadata;
 using Xunit;
 
 namespace Light.PortableResults.Tests.CloudEvents.Writing;

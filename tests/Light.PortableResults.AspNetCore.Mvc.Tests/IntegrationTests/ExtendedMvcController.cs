@@ -2,11 +2,10 @@ using System;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
-using Light.Results;
-using Light.Results.Http;
-using Light.Results.Http.Writing;
-using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization;
+using Light.PortableResults.Http;
+using Light.PortableResults.Http.Writing;
+using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Light.PortableResults.AspNetCore.Mvc.Tests.IntegrationTests;

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 namespace Light.PortableResults.AspNetCore.MinimalApis;
 
 /// <summary>
-/// Extension methods for configuring OpenAPI metadata for Light.Results endpoints.
+/// Extension methods for configuring OpenAPI metadata for Light.PortableResults endpoints.
 /// </summary>
 public static class LightResultEndpointExtensions
 {

@@ -4,9 +4,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using FluentAssertions;
-using Light.Results;
-using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization.Writing;
+using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization.Writing;
 using Xunit;
 
 namespace Light.PortableResults.Tests.SharedJsonSerialization.Writing;
@@ -17,7 +16,7 @@ public sealed class SharedWritingExtensionsTests
     public void WriteMetadataValue_ShouldThrow_WhenWriterIsNull()
     {
         var act = () =>
-            Results.SharedJsonSerialization.Writing.MetadataExtensions.WriteMetadataValue(
+            PortableResults.SharedJsonSerialization.Writing.MetadataExtensions.WriteMetadataValue(
                 null!,
                 MetadataValue.Null,
                 MetadataValueAnnotation.SerializeInBodies
@@ -31,7 +30,7 @@ public sealed class SharedWritingExtensionsTests
     public void WriteMetadataArray_ShouldThrow_WhenWriterIsNull()
     {
         var act = () =>
-            Results.SharedJsonSerialization.Writing.MetadataExtensions.WriteMetadataArray(
+            PortableResults.SharedJsonSerialization.Writing.MetadataExtensions.WriteMetadataArray(
                 null!,
                 MetadataArray.Empty,
                 MetadataValueAnnotation.SerializeInBodies
@@ -45,7 +44,7 @@ public sealed class SharedWritingExtensionsTests
     public void WriteMetadataObject_ShouldThrow_WhenWriterIsNull()
     {
         var act = () =>
-            Results.SharedJsonSerialization.Writing.MetadataExtensions.WriteMetadataObject(
+            PortableResults.SharedJsonSerialization.Writing.MetadataExtensions.WriteMetadataObject(
                 null!,
                 MetadataObject.Empty,
                 MetadataValueAnnotation.SerializeInBodies
@@ -59,7 +58,7 @@ public sealed class SharedWritingExtensionsTests
     public void WriteMetadataPropertyAndValue_ShouldThrow_WhenWriterIsNull()
     {
         var act = () =>
-            Results.SharedJsonSerialization.Writing.MetadataExtensions.WriteMetadataPropertyAndValue(
+            PortableResults.SharedJsonSerialization.Writing.MetadataExtensions.WriteMetadataPropertyAndValue(
                 null!,
                 MetadataObject.Empty,
                 MetadataValueAnnotation.SerializeInHttpResponseBody

@@ -4,12 +4,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BenchmarkDotNet.Attributes;
-using Light.Results;
-using Light.Results.CloudEvents;
-using Light.Results.CloudEvents.Writing;
-using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization;
-using Light.Results.SharedJsonSerialization.Writing;
+using Light.PortableResults;
+using Light.PortableResults.CloudEvents;
+using Light.PortableResults.CloudEvents.Writing;
+using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization;
+using Light.PortableResults.SharedJsonSerialization.Writing;
 
 namespace Benchmarks;
 

@@ -1,12 +1,11 @@
 using System.Net;
 using System.Text.Json;
-using Light.Results;
-using Light.Results.Http.Writing;
+using Light.PortableResults.Http.Writing;
 
 namespace Light.PortableResults.AspNetCore.Mvc;
 
 /// <summary>
-/// Extension methods for converting Light.Results to MVC action results.
+/// Extension methods for converting Light.PortableResults to MVC action results.
 /// </summary>
 public static class MvcActionResultExtensions
 {
@@ -16,7 +15,7 @@ public static class MvcActionResultExtensions
     /// <param name="result">The result to convert.</param>
     /// <param name="successStatusCode">Optional success status code override.</param>
     /// <param name="location">Optional Location header value.</param>
-    /// <param name="overrideOptions">Optional Light.Results options override.</param>
+    /// <param name="overrideOptions">Optional Light.PortableResults options override.</param>
     /// <param name="serializerOptions">Optional JSON serializer options override.</param>
     /// <returns>The MVC action result.</returns>
     public static LightActionResult ToMvcActionResult(
@@ -35,7 +34,7 @@ public static class MvcActionResultExtensions
     /// <param name="result">The result to convert.</param>
     /// <param name="successStatusCode">Optional success status code override.</param>
     /// <param name="location">Optional Location header value.</param>
-    /// <param name="overrideOptions">Optional Light.Results options override.</param>
+    /// <param name="overrideOptions">Optional Light.PortableResults options override.</param>
     /// <param name="serializerOptions">Optional JSON serializer options override.</param>
     /// <returns>The MVC action result.</returns>
     public static LightActionResult<T> ToMvcActionResult<T>(
@@ -52,7 +51,7 @@ public static class MvcActionResultExtensions
     /// </summary>
     /// <param name="result">The result to convert.</param>
     /// <param name="location">Optional Location header value.</param>
-    /// <param name="overrideOptions">Optional Light.Results options override.</param>
+    /// <param name="overrideOptions">Optional Light.PortableResults options override.</param>
     /// <param name="serializerOptions">Optional JSON serializer options override.</param>
     /// <returns>The MVC action result.</returns>
     public static LightActionResult ToHttp201CreatedMvcActionResult(
@@ -69,7 +68,7 @@ public static class MvcActionResultExtensions
     /// <typeparam name="T">The value type.</typeparam>
     /// <param name="result">The result to convert.</param>
     /// <param name="location">Optional Location header value.</param>
-    /// <param name="overrideOptions">Optional Light.Results options override.</param>
+    /// <param name="overrideOptions">Optional Light.PortableResults options override.</param>
     /// <param name="serializerOptions">Optional JSON serializer options override.</param>
     /// <returns>The MVC action result.</returns>
     public static LightActionResult<T> ToHttp201CreatedMvcActionResult<T>(

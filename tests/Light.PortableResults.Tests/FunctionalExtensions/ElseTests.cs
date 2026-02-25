@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using FluentAssertions;
-using Light.Results;
-using Light.Results.FunctionalExtensions;
+using Light.PortableResults.FunctionalExtensions;
 using Xunit;
 
 namespace Light.PortableResults.Tests.FunctionalExtensions;

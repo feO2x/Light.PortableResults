@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using FluentAssertions;
-using Light.Results.SharedJsonSerialization.Writing;
+using Light.PortableResults.SharedJsonSerialization.Writing;
 using Xunit;
 
 namespace Light.PortableResults.Tests.SharedJsonSerialization.Writing;

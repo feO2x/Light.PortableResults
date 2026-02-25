@@ -1,10 +1,9 @@
 using System;
 using System.Text.Json;
 using FluentAssertions;
-using Light.Results;
-using Light.Results.CloudEvents.Writing;
-using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization;
+using Light.PortableResults.CloudEvents.Writing;
+using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization;
 using Xunit;
 
 namespace Light.PortableResults.Tests.CloudEvents.Writing;

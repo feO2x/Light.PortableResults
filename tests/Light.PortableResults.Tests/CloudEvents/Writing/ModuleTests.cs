@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text.Json;
 using FluentAssertions;
-using Light.Results.CloudEvents.Writing;
-using Light.Results.CloudEvents.Writing.Json;
-using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization;
+using Light.PortableResults.CloudEvents.Writing;
+using Light.PortableResults.CloudEvents.Writing.Json;
+using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 

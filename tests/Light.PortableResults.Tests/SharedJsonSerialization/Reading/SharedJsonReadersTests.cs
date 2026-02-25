@@ -1,8 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using FluentAssertions;
-using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization.Reading;
+using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization.Reading;
 using Xunit;
 
 namespace Light.PortableResults.Tests.SharedJsonSerialization.Reading;

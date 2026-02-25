@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using FluentAssertions;
-using Light.Results.Metadata;
+using Light.PortableResults.Metadata;
 using Xunit;
 
 namespace Light.PortableResults.Tests.Metadata;
@@ -10,7 +10,10 @@ namespace Light.PortableResults.Tests.Metadata;
 public sealed class MetadataObjectDataCoverageTests
 {
     private static readonly Type MetadataObjectDataType =
-        typeof(MetadataObject).Assembly.GetType("Light.Results.Metadata.MetadataObjectData", throwOnError: true)!;
+        typeof(MetadataObject).Assembly.GetType(
+            "Light.PortableResults.Metadata.MetadataObjectData",
+            throwOnError: true
+        )!;
 
     [Fact]
     public void Constructor_WithNullEntries_ShouldThrowArgumentNullException()

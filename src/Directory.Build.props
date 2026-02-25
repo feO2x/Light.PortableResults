@@ -7,8 +7,8 @@
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/feO2x/Light.Results.git</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/feO2x/Light.Results</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/feO2x/Light.PortableResults.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/feO2x/Light.PortableResults</PackageProjectUrl>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>

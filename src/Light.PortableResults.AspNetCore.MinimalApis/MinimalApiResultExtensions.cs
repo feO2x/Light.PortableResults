@@ -1,12 +1,11 @@
 using System.Net;
 using System.Text.Json;
-using Light.Results;
-using Light.Results.Http.Writing;
+using Light.PortableResults.Http.Writing;
 
 namespace Light.PortableResults.AspNetCore.MinimalApis;
 
 /// <summary>
-/// Extension methods for converting Light.Results to Minimal API results.
+/// Extension methods for converting Light.PortableResults to Minimal API results.
 /// </summary>
 public static class MinimalApiResultExtensions
 {
@@ -16,7 +15,7 @@ public static class MinimalApiResultExtensions
     /// <param name="result">The result to convert.</param>
     /// <param name="successStatusCode">Optional success status code override.</param>
     /// <param name="location">Optional Location header value.</param>
-    /// <param name="overrideOptions">Optional Light.Results options override.</param>
+    /// <param name="overrideOptions">Optional Light.PortableResults options override.</param>
     /// <param name="serializerOptions">Optional JSON serializer options override.</param>
     /// <returns>The minimal API result.</returns>
     public static LightResult ToMinimalApiResult(
@@ -35,7 +34,7 @@ public static class MinimalApiResultExtensions
     /// <param name="result">The result to convert.</param>
     /// <param name="successStatusCode">Optional success status code override.</param>
     /// <param name="location">Optional Location header value.</param>
-    /// <param name="overrideOptions">Optional Light.Results options override.</param>
+    /// <param name="overrideOptions">Optional Light.PortableResults options override.</param>
     /// <param name="serializerOptions">Optional JSON serializer options override.</param>
     /// <returns>The minimal API result.</returns>
     public static LightResult<T> ToMinimalApiResult<T>(
@@ -52,7 +51,7 @@ public static class MinimalApiResultExtensions
     /// </summary>
     /// <param name="result">The result to convert.</param>
     /// <param name="location">Optional Location header value.</param>
-    /// <param name="overrideOptions">Optional Light.Results options override.</param>
+    /// <param name="overrideOptions">Optional Light.PortableResults options override.</param>
     /// <param name="serializerOptions">Optional JSON serializer options override.</param>
     /// <returns>The minimal API result.</returns>
     public static LightResult ToHttp201CreatedMinimalApiResult(
@@ -69,7 +68,7 @@ public static class MinimalApiResultExtensions
     /// <typeparam name="T">The value type.</typeparam>
     /// <param name="result">The result to convert.</param>
     /// <param name="location">Optional Location header value.</param>
-    /// <param name="overrideOptions">Optional Light.Results options override.</param>
+    /// <param name="overrideOptions">Optional Light.PortableResults options override.</param>
     /// <param name="serializerOptions">Optional JSON serializer options override.</param>
     /// <returns>The minimal API result.</returns>
     public static LightResult<T> ToHttp201CreatedMinimalApiResult<T>(

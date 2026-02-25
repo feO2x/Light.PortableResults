@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Light.Results;
-using Light.Results.Metadata;
+using Light.PortableResults.Metadata;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Light.PortableResults.AspNetCore.Mvc.Tests.IntegrationTests;

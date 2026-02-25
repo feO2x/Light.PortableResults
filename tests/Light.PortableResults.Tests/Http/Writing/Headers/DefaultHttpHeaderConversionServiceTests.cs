@@ -2,8 +2,8 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using FluentAssertions;
-using Light.Results.Http.Writing.Headers;
-using Light.Results.Metadata;
+using Light.PortableResults.Http.Writing.Headers;
+using Light.PortableResults.Metadata;
 using Microsoft.Extensions.Primitives;
 using Xunit;
 

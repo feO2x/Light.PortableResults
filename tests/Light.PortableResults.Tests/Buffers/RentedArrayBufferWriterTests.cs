@@ -2,7 +2,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using FluentAssertions;
-using Light.Results.Buffers;
+using Light.PortableResults.Buffers;
 using Xunit;
 
 namespace Light.PortableResults.Tests.Buffers;

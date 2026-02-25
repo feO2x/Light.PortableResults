@@ -1,8 +1,8 @@
 using System;
 using System.Reflection;
 using FluentAssertions;
-using Light.Results.CloudEvents;
-using Light.Results.Metadata;
+using Light.PortableResults.CloudEvents;
+using Light.PortableResults.Metadata;
 using Xunit;
 
 namespace Light.PortableResults.Tests.CloudEvents;
@@ -153,7 +153,7 @@ public sealed class MetadataValueAnnotationHelperTests
     {
         var metadataValueType = typeof(MetadataValue);
         var metadataPayloadType = metadataValueType.Assembly.GetType(
-            "Light.Results.Metadata.MetadataPayload",
+            "Light.PortableResults.Metadata.MetadataPayload",
             throwOnError: true
         )!;
 

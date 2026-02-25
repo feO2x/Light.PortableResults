@@ -4,11 +4,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using FluentAssertions;
-using Light.Results;
-using Light.Results.Http.Writing;
-using Light.Results.Http.Writing.Json;
-using Light.Results.Metadata;
-using Light.Results.SharedJsonSerialization;
+using Light.PortableResults.Http.Writing;
+using Light.PortableResults.Http.Writing.Json;
+using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization;
 using Xunit;
 
 namespace Light.PortableResults.Tests.Http.Writing;
