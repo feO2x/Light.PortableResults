@@ -31,7 +31,7 @@ public sealed class LightResultSerializationTests
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
-        serializerOptions.AddDefaultLightResultsHttpWriteJsonConverters();
+        serializerOptions.AddDefaultPortableResultsHttpWriteJsonConverters();
 
         var lightResult = new LightResult(Result.Ok(), serializerOptions: serializerOptions);
 
@@ -59,7 +59,7 @@ public sealed class LightResultSerializationTests
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
-        serializerOptions.AddDefaultLightResultsHttpWriteJsonConverters();
+        serializerOptions.AddDefaultPortableResultsHttpWriteJsonConverters();
 
         var lightResult = new LightResult<string>(
             Result<string>.Ok("hello"),

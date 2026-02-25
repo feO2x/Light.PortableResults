@@ -20,7 +20,7 @@ public static class Module
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddLightResultHttpWriteOptions(this IServiceCollection services)
+    public static IServiceCollection AddPortableResultHttpWriteOptions(this IServiceCollection services)
     {
         services.AddOptions<PortableResultsHttpWriteOptions>();
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<PortableResultsHttpWriteOptions>>().Value);
@@ -34,7 +34,7 @@ public static class Module
     /// <exception cref="ArgumentNullException">
     /// Thrown when <paramref name="serializerOptions" /> is <see langword="null" />.
     /// </exception>
-    public static void AddDefaultLightResultsHttpWriteJsonConverters(
+    public static void AddDefaultPortableResultsHttpWriteJsonConverters(
         this JsonSerializerOptions serializerOptions
     )
     {
@@ -58,7 +58,7 @@ public static class Module
     /// <exception cref="InvalidOperationException">
     /// Thrown when multiple converters register the same metadata key.
     /// </exception>
-    public static IServiceCollection AddLightResultsHttpHeaderConversionService(
+    public static IServiceCollection AddPortableResultsHttpHeaderConversionService(
         this IServiceCollection services,
         IEqualityComparer<string>? metadataKeyComparer = null
     )

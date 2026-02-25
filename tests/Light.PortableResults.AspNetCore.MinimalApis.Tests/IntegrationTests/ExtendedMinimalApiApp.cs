@@ -267,7 +267,7 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
-        options.AddDefaultLightResultsHttpWriteJsonConverters();
+        options.AddDefaultPortableResultsHttpWriteJsonConverters();
 
         ConfigureTypeInfoResolver(options);
         return options;
@@ -279,7 +279,7 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
-        options.AddDefaultLightResultsHttpWriteJsonConverters();
+        options.AddDefaultPortableResultsHttpWriteJsonConverters();
 
         ConfigureTypeInfoResolver(options);
         return options;

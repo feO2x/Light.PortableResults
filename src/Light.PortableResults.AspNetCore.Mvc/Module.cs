@@ -16,8 +16,8 @@ public static class Module
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddLightResultsForMvc(this IServiceCollection services) =>
         services
-           .AddLightResultHttpWriteOptions()
-           .AddLightResultsHttpHeaderConversionService()
+           .AddPortableResultHttpWriteOptions()
+           .AddPortableResultsHttpHeaderConversionService()
            .ConfigureMvcJsonOptionsForLightResults();
 
     /// <summary>
@@ -32,7 +32,7 @@ public static class Module
            .Configure(
                 jsonOptions =>
                 {
-                    jsonOptions.JsonSerializerOptions.AddDefaultLightResultsHttpWriteJsonConverters();
+                    jsonOptions.JsonSerializerOptions.AddDefaultPortableResultsHttpWriteJsonConverters();
                 }
             );
         return services;

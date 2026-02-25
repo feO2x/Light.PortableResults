@@ -33,7 +33,7 @@ public sealed class ResultJsonConverterReadTests
     private static JsonSerializerOptions CreateOptions()
     {
         var options = new JsonSerializerOptions();
-        options.AddDefaultLightResultsHttpWriteJsonConverters();
+        options.AddDefaultPortableResultsHttpWriteJsonConverters();
         return options;
     }
 }

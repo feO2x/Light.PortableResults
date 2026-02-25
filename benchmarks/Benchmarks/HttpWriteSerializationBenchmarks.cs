@@ -40,7 +40,7 @@ public class HttpWriteSerializationBenchmarks
                 new DefaultJsonTypeInfoResolver()
             )
         };
-        _serializerOptions.AddDefaultLightResultsHttpWriteJsonConverters();
+        _serializerOptions.AddDefaultPortableResultsHttpWriteJsonConverters();
 
         _resolvedOptions = new PortableResultsHttpWriteOptions().ToResolvedHttpWriteOptions();
 

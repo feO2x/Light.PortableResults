@@ -230,7 +230,7 @@ public sealed class ExtendedMvcController : ControllerBase
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
-        options.AddDefaultLightResultsHttpWriteJsonConverters();
+        options.AddDefaultPortableResultsHttpWriteJsonConverters();
 
         return options;
     }
@@ -242,7 +242,7 @@ public sealed class ExtendedMvcController : ControllerBase
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
-        options.AddDefaultLightResultsHttpWriteJsonConverters();
+        options.AddDefaultPortableResultsHttpWriteJsonConverters();
 
         return options;
     }

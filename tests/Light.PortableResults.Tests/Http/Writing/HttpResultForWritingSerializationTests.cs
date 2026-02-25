@@ -221,7 +221,7 @@ public sealed class HttpResultForWritingSerializationTests
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
-        options.AddDefaultLightResultsHttpWriteJsonConverters();
+        options.AddDefaultPortableResultsHttpWriteJsonConverters();
 
         using var stream = new MemoryStream();
         using var writer = new Utf8JsonWriter(stream);

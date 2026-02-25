@@ -18,7 +18,7 @@ public sealed class ModuleTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<HttpHeaderConverter>(new TestHeaderConverter("x-trace"));
-        services.AddLightResultsHttpHeaderConversionService(StringComparer.OrdinalIgnoreCase);
+        services.AddPortableResultsHttpHeaderConversionService(StringComparer.OrdinalIgnoreCase);
 
         using var provider = services.BuildServiceProvider();
         var converters = provider.GetRequiredService<FrozenDictionary<string, HttpHeaderConverter>>();
@@ -32,7 +32,7 @@ public sealed class ModuleTests
         var services = new ServiceCollection();
         services.AddSingleton<HttpHeaderConverter>(new TestHeaderConverter("duplicate"));
         services.AddSingleton<HttpHeaderConverter>(new TestHeaderConverter("duplicate"));
-        services.AddLightResultsHttpHeaderConversionService();
+        services.AddPortableResultsHttpHeaderConversionService();
 
         using var provider = services.BuildServiceProvider();
 
@@ -44,7 +44,7 @@ public sealed class ModuleTests
     [Fact]
     public void AddDefaultLightResultsJsonConverters_ShouldThrow_WhenSerializerOptionsIsNull()
     {
-        var act = () => Module.AddDefaultLightResultsHttpWriteJsonConverters(null!);
+        var act = () => Module.AddDefaultPortableResultsHttpWriteJsonConverters(null!);
 
         act.Should().Throw<ArgumentNullException>().Where(x => x.ParamName == "serializerOptions");
     }
