@@ -6,8 +6,8 @@ This summary covers branch `22-rename-to-portable-results` compared to `main`.
 
 ## Change Size
 
-- 315 files changed
-- 1028 insertions, 1007 deletions
+- 316 files changed
+- 1182 insertions, 1037 deletions
 - Predominantly mechanical rename/refactor work, plus targeted API and documentation fixes.
 
 ## 1. Repository and Package Identity Renamed
@@ -112,6 +112,57 @@ GitHub workflows were updated to new solution/signing names:
 - Test project names, namespaces, file paths, and snapshots were renamed to `Light.PortableResults*`
 - Assertions and JSON payload fixtures were updated to reflect renamed APIs and `lproutcome`
 - Benchmark code updated to reference renamed projects/types and CloudEvents outcome key
+
+## 8. Post-Summary Cleanup (Follow-up Commit)
+
+After this summary file was first added, a follow-up cleanup commit addressed remaining transition gaps.
+
+### CloudEvents writing API consistency
+
+The CloudEvents writing module still exposed `AddLightResults*` method names and was aligned to `PortableResults*`:
+
+- `AddLightResultsCloudEventsWriteOptions` -> `AddPortableResultsCloudEventsWriteOptions`
+- `AddLightResultsCloudEventsAttributeConversionService` -> `AddPortableResultsCloudEventsAttributeConversionService`
+- `AddDefaultLightResultsCloudEventsWriteJsonConverters` -> `AddDefaultPortableResultsCloudEventsWriteJsonConverters`
+
+The default serializer setup call chain was updated accordingly.
+
+### Runtime/message text consistency
+
+- Updated DI error text from
+  `"No LightResultsHttpWriteOptions are configured in the DI container"` to
+  `"No PortableResultsHttpWriteOptions are configured in the DI container"`.
+
+### Package release notes consistency
+
+Updated outdated method names in package release notes:
+
+- `AddLightResultsForMinimalApis` -> `AddPortableResultsForMinimalApis`
+- `AddLightResultsForMvc` -> `AddPortableResultsForMvc`
+
+### Test naming cleanup
+
+Renamed leftover `LightResults*` test method names/usages to `PortableResults*` in:
+
+- CloudEvents writing module tests
+- CloudEvents reading module tests
+- HTTP writing module tests
+- HTTP reading module tests
+- One CloudEvents writing test name (`...LightResultsErrorPayload` -> `...PortableResultsErrorPayload`)
+
+### Final sweep result
+
+A final repository-wide sweep was run for stale transition identifiers (`Light.Results`, `LightResults`,
+`light-results`,
+`lroutcome`).
+
+Remaining references were limited to:
+
+- Intentionally excluded files:
+    - `LightResult.cs`
+    - `LightActionResult.cs`
+- Historical planning documents under `ai-plans/`
+- Benchmark artifact logs (`BenchmarkDotNet.Artifacts`)
 
 ## Outcome
 
