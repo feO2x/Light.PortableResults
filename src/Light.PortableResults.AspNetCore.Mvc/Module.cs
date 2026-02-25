@@ -14,18 +14,18 @@ public static class Module
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddLightResultsForMvc(this IServiceCollection services) =>
+    public static IServiceCollection AddPortableResultsForMvc(this IServiceCollection services) =>
         services
            .AddPortableResultHttpWriteOptions()
            .AddPortableResultsHttpHeaderConversionService()
-           .ConfigureMvcJsonOptionsForLightResults();
+           .ConfigureMvcJsonOptionsForPortableResults();
 
     /// <summary>
     /// Configures JSON options for Light.PortableResults MVC responses.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection ConfigureMvcJsonOptionsForLightResults(this IServiceCollection services)
+    public static IServiceCollection ConfigureMvcJsonOptionsForPortableResults(this IServiceCollection services)
     {
         services
            .AddOptions<JsonOptions>()

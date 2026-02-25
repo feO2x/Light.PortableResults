@@ -19,7 +19,7 @@ public sealed class ExtendedMvcApp : IAsyncLifetime
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
-        builder.Services.AddLightResultsForMvc();
+        builder.Services.AddPortableResultsForMvc();
         builder.Services.AddControllers().AddApplicationPart(typeof(ExtendedMvcController).Assembly);
         builder.Services.AddSingleton<IHttpResultEnricher, StaticMetadataEnricher>();
 
