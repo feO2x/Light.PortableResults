@@ -10,15 +10,15 @@ namespace Light.PortableResults.AspNetCore.Mvc;
 /// </summary>
 /// <typeparam name="TValue">The type of the result value.</typeparam>
 /// <typeparam name="TMetadata">The type of the metadata (for OpenAPI schema generation).</typeparam>
-public sealed class ProducesLightResultAttribute<TValue, TMetadata>
-    : ProducesResponseTypeAttribute<WrappedResponse<TValue, TMetadata>>
+public sealed class ProducesPortableResultAttribute<TValue, TMetadata> :
+    ProducesResponseTypeAttribute<WrappedResponse<TValue, TMetadata>>
 {
     /// <summary>
-    /// Initializes a new instance of <see cref="ProducesLightResultAttribute{TValue, TMetadata}" />.
+    /// Initializes a new instance of <see cref="ProducesPortableResultAttribute{TValue,TMetadata}" />.
     /// </summary>
     /// <param name="statusCode">The HTTP status code (default 200).</param>
     /// <param name="contentType">The content type (default "application/json").</param>
-    public ProducesLightResultAttribute(
+    public ProducesPortableResultAttribute(
         int statusCode = StatusCodes.Status200OK,
         string contentType = "application/json"
     ) : base(statusCode, contentType) { }
@@ -30,15 +30,15 @@ public sealed class ProducesLightResultAttribute<TValue, TMetadata>
 /// The response type is documented as <see cref="WrappedResponse{TValue, TMetadata}" /> with <c>object</c> metadata.
 /// </summary>
 /// <typeparam name="TValue">The type of the result value.</typeparam>
-public sealed class ProducesLightResultAttribute<TValue>
-    : ProducesResponseTypeAttribute<WrappedResponse<TValue, object>>
+public sealed class ProducesPortableResultAttribute<TValue> :
+    ProducesResponseTypeAttribute<WrappedResponse<TValue, object>>
 {
     /// <summary>
-    /// Initializes a new instance of <see cref="ProducesLightResultAttribute{TValue}" />.
+    /// Initializes a new instance of <see cref="ProducesPortableResultAttribute{TValue}" />.
     /// </summary>
     /// <param name="statusCode">The HTTP status code (default 200).</param>
     /// <param name="contentType">The content type (default "application/json").</param>
-    public ProducesLightResultAttribute(
+    public ProducesPortableResultAttribute(
         int statusCode = StatusCodes.Status200OK,
         string contentType = "application/json"
     ) : base(statusCode, contentType) { }

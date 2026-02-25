@@ -10,7 +10,7 @@ namespace Light.PortableResults.AspNetCore.Mvc.Tests.IntegrationTests;
 public sealed class RegularMvcController : ControllerBase
 {
     [HttpGet]
-    [ProducesLightResult<List<ContactDto>, Dictionary<string, long>>]
+    [ProducesPortableResult<List<ContactDto>, Dictionary<string, long>>]
     public LightActionResult<List<ContactDto>> GetContacts()
     {
         var contact1 = new ContactDto { Id = new Guid("D8FC9BEC-0606-4E9B-8EB4-04558B2B9D40"), Name = "Foo" };
@@ -26,7 +26,7 @@ public sealed class RegularMvcController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [ProducesLightResult<ContactDto>]
+    [ProducesPortableResult<ContactDto>]
     public LightActionResult<ContactDto> GetContact(Guid id)
     {
         var contactDto = new ContactDto { Id = id, Name = "Foo" };
@@ -35,7 +35,7 @@ public sealed class RegularMvcController : ControllerBase
     }
 
     [HttpPut]
-    [ProducesLightResult<ContactDto>(statusCode: 201)]
+    [ProducesPortableResult<ContactDto>(statusCode: 201)]
     public LightActionResult<ContactDto> CreateContact([FromBody] ContactDto contactDto)
     {
         var result = Result<ContactDto>.Ok(contactDto);
