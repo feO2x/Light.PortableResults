@@ -37,7 +37,7 @@
     <File Path="global.json" />
     <File Path="LICENSE" />
     <File Path="Light.PortableResults.Public.snk" />
-    <File Path="Light.Results.sln.DotSettings" />
+    <File Path="Light.PortableResults.sln.DotSettings" />
     <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
