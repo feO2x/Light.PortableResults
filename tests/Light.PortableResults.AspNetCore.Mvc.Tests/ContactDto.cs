@@ -1,6 +1,6 @@
 using System;
 
-namespace Light.Results.AspNetCore.Mvc.Tests;
+namespace Light.PortableResults.AspNetCore.Mvc.Tests;
 
 public sealed record ContactDto
 {

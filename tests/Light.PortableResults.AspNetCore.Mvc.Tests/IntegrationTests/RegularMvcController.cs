@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Light.Results;
+using Light.Results.AspNetCore.Mvc;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Light.Results.AspNetCore.Mvc.Tests.IntegrationTests;
+namespace Light.PortableResults.AspNetCore.Mvc.Tests.IntegrationTests;
 
 [ApiController]
 [Route("api/contacts")]

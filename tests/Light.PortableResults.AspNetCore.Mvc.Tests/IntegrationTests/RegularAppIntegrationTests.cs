@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using VerifyXunit;
 using Xunit;
 
-namespace Light.Results.AspNetCore.Mvc.Tests.IntegrationTests;
+namespace Light.PortableResults.AspNetCore.Mvc.Tests.IntegrationTests;
 
 public sealed class RegularAppIntegrationTests
 {

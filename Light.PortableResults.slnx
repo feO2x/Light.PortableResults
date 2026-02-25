@@ -51,9 +51,10 @@
   <Folder Name="/tests/">
     <File Path="tests\AGENTS.md" />
     <Project Path="tests/Light.Results.Tests/Light.Results.Tests.csproj" />
+    <Project
+      Path="tests\Light.PortableResults.AspNetCore.Mvc.Tests\Light.PortableResults.AspNetCore.Mvc.Tests.csproj" />
     <Project Path="tests\Light.Results.AspNetCore.Shared.Tests\Light.Results.AspNetCore.Shared.Tests.csproj" />
     <Project
       Path="tests\Light.PortableResults.AspNetCore.MinimalApis.Tests\Light.PortableResults.AspNetCore.MinimalApis.Tests.csproj" />
-    <Project Path="tests\Light.Results.AspNetCore.Mvc.Tests\Light.Results.AspNetCore.Mvc.Tests.csproj" />
   </Folder>
 </Solution>

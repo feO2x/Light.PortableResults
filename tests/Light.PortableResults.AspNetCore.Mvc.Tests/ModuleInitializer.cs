@@ -2,7 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using VerifyTests;
 
-namespace Light.Results.AspNetCore.Mvc.Tests;
+namespace Light.PortableResults.AspNetCore.Mvc.Tests;
 
 public static class ModuleInitializer
 {

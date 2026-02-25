@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Threading.Tasks;
-using Light.Results.AspNetCore.Mvc.Tests.IntegrationTests;
+using Light.PortableResults.AspNetCore.Mvc.Tests.IntegrationTests;
+using Light.Results.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,7 +9,7 @@ using Xunit;
 
 [assembly: AssemblyFixture(typeof(RegularMvcApp))]
 
-namespace Light.Results.AspNetCore.Mvc.Tests.IntegrationTests;
+namespace Light.PortableResults.AspNetCore.Mvc.Tests.IntegrationTests;
 
 public sealed class RegularMvcApp : IAsyncLifetime
 {

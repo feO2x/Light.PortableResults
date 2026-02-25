@@ -4,12 +4,13 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Light.Results;
 using Light.Results.Http.Reading;
 using Light.Results.Http.Reading.Headers;
 using Light.Results.Metadata;
 using Xunit;
 
-namespace Light.Results.AspNetCore.Mvc.Tests.IntegrationTests;
+namespace Light.PortableResults.AspNetCore.Mvc.Tests.IntegrationTests;
 
 public sealed class RegularRoundTripIntegrationTests
 {
