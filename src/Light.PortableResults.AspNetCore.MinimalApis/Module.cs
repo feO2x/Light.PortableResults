@@ -18,14 +18,14 @@ public static class Module
         services
            .AddPortableResultHttpWriteOptions()
            .AddPortableResultsHttpHeaderConversionService()
-           .ConfigureMinimalApiJsonOptionsForLightResults();
+           .ConfigureMinimalApiJsonOptionsForPortableResults();
 
     /// <summary>
     /// Configures JSON options for Light.PortableResults Minimal API responses.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection ConfigureMinimalApiJsonOptionsForLightResults(this IServiceCollection services)
+    public static IServiceCollection ConfigureMinimalApiJsonOptionsForPortableResults(this IServiceCollection services)
     {
         services
            .AddOptions<JsonOptions>()
