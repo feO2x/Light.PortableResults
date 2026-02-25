@@ -1,4 +1,4 @@
-namespace Light.Results.AspNetCore.Shared;
+namespace Light.PortableResults.AspNetCore.Shared;
 
 /// <summary>
 /// Schema-only type for OpenAPI documentation. Not used at runtime.

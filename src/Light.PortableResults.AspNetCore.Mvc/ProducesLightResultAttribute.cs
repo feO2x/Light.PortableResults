@@ -1,4 +1,4 @@
-using Light.Results.AspNetCore.Shared;
+using Light.PortableResults.AspNetCore.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 

@@ -17,9 +17,7 @@ public sealed class RegularMvcApp : IAsyncLifetime
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddLightResultsForMvc();
-        builder.Services.AddControllers()
-           .AddApplicationPart(typeof(RegularMvcController).Assembly);
-
+        builder.Services.AddControllers().AddApplicationPart(typeof(RegularMvcController).Assembly);
         App = builder.Build();
         App.MapControllers();
     }

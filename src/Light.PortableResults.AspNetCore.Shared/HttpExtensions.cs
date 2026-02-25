@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using Light.Results;
 using Light.Results.Http;
 using Light.Results.Http.Writing;
 using Light.Results.Http.Writing.Headers;
@@ -11,7 +12,7 @@ using Microsoft.Extensions.Options;
 
 // ReSharper disable ConvertToExtensionBlock
 
-namespace Light.Results.AspNetCore.Shared;
+namespace Light.PortableResults.AspNetCore.Shared;
 
 /// <summary>
 /// Provides helper methods to translate <see cref="Result{T}" /> and <see cref="Result" /> instances

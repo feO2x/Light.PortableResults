@@ -1,8 +1,8 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using Light.PortableResults.AspNetCore.Mvc.Tests.IntegrationTests;
+using Light.PortableResults.AspNetCore.Shared.Enrichment;
 using Light.Results;
-using Light.Results.AspNetCore.Shared.Enrichment;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -21,8 +21,7 @@ public sealed class ExtendedMvcApp : IAsyncLifetime
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddLightResultsForMvc();
-        builder.Services.AddControllers()
-           .AddApplicationPart(typeof(ExtendedMvcController).Assembly);
+        builder.Services.AddControllers().AddApplicationPart(typeof(ExtendedMvcController).Assembly);
         builder.Services.AddSingleton<IHttpResultEnricher, StaticMetadataEnricher>();
 
         App = builder.Build();

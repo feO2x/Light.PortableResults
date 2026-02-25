@@ -601,7 +601,13 @@
       "light.portableresults.aspnetcore.mvc": {
         "type": "Project",
         "dependencies": {
-          "Light.Results.AspNetCore.Shared": "[0.1.0, )"
+          "Light.PortableResults.AspNetCore.Shared": "[0.1.0, )"
+        }
+      },
+      "light.portableresults.aspnetcore.shared": {
+        "type": "Project",
+        "dependencies": {
+          "Light.Results": "[0.1.0, )"
         }
       },
       "light.results": {
@@ -611,12 +617,6 @@
           "Microsoft.Extensions.Options": "[10.0.2, )",
           "Microsoft.Extensions.Primitives": "[10.0.2, )",
           "Ulid": "[1.4.1, )"
-        }
-      },
-      "light.results.aspnetcore.shared": {
-        "type": "Project",
-        "dependencies": {
-          "Light.Results": "[0.1.0, )"
         }
       },
       "Microsoft.Bcl.HashCode": {
