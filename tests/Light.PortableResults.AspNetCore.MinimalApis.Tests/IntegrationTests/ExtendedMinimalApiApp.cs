@@ -288,7 +288,7 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
     private static void ConfigureTypeInfoResolver(JsonSerializerOptions options)
     {
         options.TypeInfoResolverChain.Insert(0, ExtendedMinimalApiJsonContext.Default);
-        options.TypeInfoResolverChain.Insert(1, LightResultsMinimalApiJsonContext.Default);
+        options.TypeInfoResolverChain.Insert(1, PortableResultsMinimalApiJsonContext.Default);
         options.TypeInfoResolverChain.Add(new DefaultJsonTypeInfoResolver());
     }
 

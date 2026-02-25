@@ -19,7 +19,7 @@ public sealed class ModuleTests
         services.AddLightResultsCloudEventsReadOptions();
 
         using var provider = services.BuildServiceProvider();
-        var options = provider.GetRequiredService<LightResultsCloudEventsReadOptions>();
+        var options = provider.GetRequiredService<PortableResultsCloudEventsReadOptions>();
 
         options.Should().NotBeNull();
         options.PreferSuccessPayload.Should().Be(PreferSuccessPayload.Auto);

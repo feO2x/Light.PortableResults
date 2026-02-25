@@ -14,4 +14,4 @@ namespace Light.PortableResults.AspNetCore.MinimalApis.Serialization;
 [JsonSerializable(typeof(MetadataValue))]
 [JsonSerializable(typeof(MetadataObject))]
 [JsonSerializable(typeof(HttpResultForWriting))]
-public sealed partial class LightResultsMinimalApiJsonContext : JsonSerializerContext;
+public sealed partial class PortableResultsMinimalApiJsonContext : JsonSerializerContext;

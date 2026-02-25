@@ -20,14 +20,14 @@ public static class ReadOnlyMemoryCloudEventsExtensions
     /// <exception cref="JsonException">Thrown when the CloudEvents envelope or data payload is malformed or violates the Light.PortableResults expectations.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the outcome cannot be determined because neither the lroutcome extension nor
-    /// <see cref="LightResultsCloudEventsReadOptions.IsFailureType" /> is provided.
+    /// <see cref="PortableResultsCloudEventsReadOptions.IsFailureType" /> is provided.
     /// </exception>
     public static Result ReadResult(
         this ReadOnlyMemory<byte> cloudEvent,
-        LightResultsCloudEventsReadOptions? options = null
+        PortableResultsCloudEventsReadOptions? options = null
     )
     {
-        options ??= LightResultsCloudEventsReadOptions.Default;
+        options ??= PortableResultsCloudEventsReadOptions.Default;
         var envelope = cloudEvent.ReadResultWithCloudEventsEnvelope(options);
         return MergeEnvelopeMetadataIfNeeded(envelope.Data, envelope.ExtensionAttributes, options);
     }
@@ -42,14 +42,14 @@ public static class ReadOnlyMemoryCloudEventsExtensions
     /// <exception cref="JsonException">Thrown when the CloudEvents envelope or data payload is malformed or violates the Light.PortableResults expectations.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the outcome cannot be determined because neither the lroutcome extension nor
-    /// <see cref="LightResultsCloudEventsReadOptions.IsFailureType" /> is provided.
+    /// <see cref="PortableResultsCloudEventsReadOptions.IsFailureType" /> is provided.
     /// </exception>
     public static Result<T> ReadResult<T>(
         this ReadOnlyMemory<byte> cloudEvent,
-        LightResultsCloudEventsReadOptions? options = null
+        PortableResultsCloudEventsReadOptions? options = null
     )
     {
-        options ??= LightResultsCloudEventsReadOptions.Default;
+        options ??= PortableResultsCloudEventsReadOptions.Default;
         var envelope = cloudEvent.ReadResultWithCloudEventsEnvelope<T>(options);
         return MergeEnvelopeMetadataIfNeeded(envelope.Data, envelope.ExtensionAttributes, options);
     }
@@ -63,14 +63,14 @@ public static class ReadOnlyMemoryCloudEventsExtensions
     /// <exception cref="JsonException">Thrown when the CloudEvents envelope or data payload is malformed or violates the Light.PortableResults expectations.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the outcome cannot be determined because neither the lroutcome extension nor
-    /// <see cref="LightResultsCloudEventsReadOptions.IsFailureType" /> is provided.
+    /// <see cref="PortableResultsCloudEventsReadOptions.IsFailureType" /> is provided.
     /// </exception>
     public static CloudEventsEnvelope ReadResultWithCloudEventsEnvelope(
         this ReadOnlyMemory<byte> cloudEvent,
-        LightResultsCloudEventsReadOptions? options = null
+        PortableResultsCloudEventsReadOptions? options = null
     )
     {
-        options ??= LightResultsCloudEventsReadOptions.Default;
+        options ??= PortableResultsCloudEventsReadOptions.Default;
         var parsedEnvelope = JsonSerializer.Deserialize<CloudEventsEnvelopePayload>(
             cloudEvent.Span,
             options.SerializerOptions
@@ -106,14 +106,14 @@ public static class ReadOnlyMemoryCloudEventsExtensions
     /// <exception cref="JsonException">Thrown when the CloudEvents envelope or data payload is malformed or violates the Light.PortableResults expectations.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the outcome cannot be determined because neither the lroutcome extension nor
-    /// <see cref="LightResultsCloudEventsReadOptions.IsFailureType" /> is provided.
+    /// <see cref="PortableResultsCloudEventsReadOptions.IsFailureType" /> is provided.
     /// </exception>
     public static CloudEventsEnvelope<T> ReadResultWithCloudEventsEnvelope<T>(
         this ReadOnlyMemory<byte> cloudEvent,
-        LightResultsCloudEventsReadOptions? options = null
+        PortableResultsCloudEventsReadOptions? options = null
     )
     {
-        options ??= LightResultsCloudEventsReadOptions.Default;
+        options ??= PortableResultsCloudEventsReadOptions.Default;
         var parsedEnvelope = JsonSerializer.Deserialize<CloudEventsEnvelopePayload>(
             cloudEvent.Span,
             options.SerializerOptions
@@ -143,7 +143,7 @@ public static class ReadOnlyMemoryCloudEventsExtensions
     private static Result ParseResultPayload(
         ReadOnlyMemory<byte> dataSegment,
         bool isFailure,
-        LightResultsCloudEventsReadOptions options
+        PortableResultsCloudEventsReadOptions options
     )
     {
         if (dataSegment.IsEmpty)
@@ -189,7 +189,7 @@ public static class ReadOnlyMemoryCloudEventsExtensions
         // This will shortcut the deserialization of the cloud event.
         bool hasData,
         bool isFailure,
-        LightResultsCloudEventsReadOptions options
+        PortableResultsCloudEventsReadOptions options
     )
     {
         if (dataSegment.IsEmpty || !hasData)
@@ -256,7 +256,7 @@ public static class ReadOnlyMemoryCloudEventsExtensions
 
     private static bool DetermineIsFailure(
         CloudEventsEnvelopePayload parsedEnvelope,
-        LightResultsCloudEventsReadOptions options
+        PortableResultsCloudEventsReadOptions options
     )
     {
         if (parsedEnvelope.ExtensionAttributes is { } extensionAttributes &&
@@ -300,7 +300,7 @@ public static class ReadOnlyMemoryCloudEventsExtensions
     private static TResult MergeEnvelopeMetadataIfNeeded<TResult>(
         TResult result,
         MetadataObject? extensionAttributes,
-        LightResultsCloudEventsReadOptions options
+        PortableResultsCloudEventsReadOptions options
     )
         where TResult : struct, ICanReplaceMetadata<TResult>
     {

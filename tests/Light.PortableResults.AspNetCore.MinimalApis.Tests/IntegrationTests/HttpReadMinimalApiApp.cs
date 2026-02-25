@@ -86,7 +86,7 @@ public sealed class HttpReadMinimalApiApp : IAsyncLifetime
     private static void ConfigureTypeInfoResolver(JsonSerializerOptions options)
     {
         options.TypeInfoResolverChain.Insert(0, ExtendedMinimalApiJsonContext.Default);
-        options.TypeInfoResolverChain.Insert(1, LightResultsMinimalApiJsonContext.Default);
+        options.TypeInfoResolverChain.Insert(1, PortableResultsMinimalApiJsonContext.Default);
     }
 
     private static LightResult<int> GetBareInteger()

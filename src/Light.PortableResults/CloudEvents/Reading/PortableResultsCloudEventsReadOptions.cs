@@ -8,12 +8,12 @@ namespace Light.PortableResults.CloudEvents.Reading;
 /// <summary>
 /// Options controlling how CloudEvents JSON envelopes are read into Light.PortableResults.
 /// </summary>
-public sealed record LightResultsCloudEventsReadOptions
+public sealed record PortableResultsCloudEventsReadOptions
 {
     /// <summary>
     /// Gets the default options instance for CloudEvents deserialization.
     /// </summary>
-    public static LightResultsCloudEventsReadOptions Default { get; } = new ();
+    public static PortableResultsCloudEventsReadOptions Default { get; } = new ();
 
     /// <summary>
     /// Gets or sets serializer options used to deserialize CloudEvents envelopes and data payloads.

@@ -308,7 +308,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
             """
         );
 
-        var options = new LightResultsCloudEventsReadOptions
+        var options = new PortableResultsCloudEventsReadOptions
         {
             IsFailureType = type => type == "app.failure"
         };
@@ -480,7 +480,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
             """
         );
 
-        var options = new LightResultsCloudEventsReadOptions
+        var options = new PortableResultsCloudEventsReadOptions
         {
             ParsingService = new DefaultCloudEventsAttributeParsingService(),
             PreferSuccessPayload = PreferSuccessPayload.WrappedValue,
@@ -515,7 +515,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
             """
         );
 
-        var options = new LightResultsCloudEventsReadOptions
+        var options = new PortableResultsCloudEventsReadOptions
         {
             ParsingService = new DefaultCloudEventsAttributeParsingService(),
             PreferSuccessPayload = PreferSuccessPayload.BareValue,
@@ -546,7 +546,7 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
             """
         );
 
-        var options = new LightResultsCloudEventsReadOptions
+        var options = new PortableResultsCloudEventsReadOptions
         {
             ParsingService = new DefaultCloudEventsAttributeParsingService(),
             MergeStrategy = MetadataMergeStrategy.AddOrReplace

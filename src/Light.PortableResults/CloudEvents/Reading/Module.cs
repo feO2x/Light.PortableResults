@@ -20,14 +20,14 @@ public static class Module
     public static JsonSerializerOptions DefaultSerializerOptions { get; } = CreateDefaultSerializerOptions();
 
     /// <summary>
-    /// Registers <see cref="LightResultsCloudEventsReadOptions" /> in the service container.
+    /// Registers <see cref="PortableResultsCloudEventsReadOptions" /> in the service container.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddLightResultsCloudEventsReadOptions(this IServiceCollection services)
     {
-        services.AddOptions<LightResultsCloudEventsReadOptions>();
-        services.AddSingleton(sp => sp.GetRequiredService<IOptions<LightResultsCloudEventsReadOptions>>().Value);
+        services.AddOptions<PortableResultsCloudEventsReadOptions>();
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<PortableResultsCloudEventsReadOptions>>().Value);
         return services;
     }
 

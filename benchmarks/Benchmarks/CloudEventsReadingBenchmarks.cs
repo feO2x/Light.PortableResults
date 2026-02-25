@@ -16,13 +16,13 @@ public class CloudEventsReadingBenchmarks
     private ReadOnlyMemory<byte> _failureCloudEvents;
     private ReadOnlyMemory<byte> _largeSuccessCloudEvents;
     private ReadOnlyMemory<byte> _mediumSuccessCloudEvents;
-    private LightResultsCloudEventsReadOptions _options = null!;
+    private PortableResultsCloudEventsReadOptions _options = null!;
     private ReadOnlyMemory<byte> _smallSuccessCloudEvents;
 
     [GlobalSetup]
     public void Setup()
     {
-        _options = new LightResultsCloudEventsReadOptions
+        _options = new PortableResultsCloudEventsReadOptions
         {
             SerializerOptions = Module.CreateDefaultSerializerOptions()
         };
