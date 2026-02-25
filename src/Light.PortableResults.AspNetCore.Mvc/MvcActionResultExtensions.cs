@@ -1,8 +1,9 @@
 using System.Net;
 using System.Text.Json;
+using Light.Results;
 using Light.Results.Http.Writing;
 
-namespace Light.Results.AspNetCore.Mvc;
+namespace Light.PortableResults.AspNetCore.Mvc;
 
 /// <summary>
 /// Extension methods for converting Light.Results to MVC action results.

@@ -2,7 +2,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Light.PortableResults.AspNetCore.Mvc.Tests.IntegrationTests;
 using Light.Results;
-using Light.Results.AspNetCore.Mvc;
 using Light.Results.AspNetCore.Shared.Enrichment;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Builder;

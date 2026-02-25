@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Light.Results;
 using Light.Results.AspNetCore.Shared;
 using Light.Results.AspNetCore.Shared.Enrichment;
 using Light.Results.Http.Writing;
@@ -11,7 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Light.Results.AspNetCore.Mvc;
+namespace Light.PortableResults.AspNetCore.Mvc;
 
 /// <summary>
 /// Base type for MVC action results that wrap Light.Results values.

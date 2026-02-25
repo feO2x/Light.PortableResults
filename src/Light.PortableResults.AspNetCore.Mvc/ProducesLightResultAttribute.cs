@@ -2,7 +2,7 @@ using Light.Results.AspNetCore.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Light.Results.AspNetCore.Mvc;
+namespace Light.PortableResults.AspNetCore.Mvc;
 
 /// <summary>
 /// Specifies the type of the value and metadata returned by the action for OpenAPI documentation.

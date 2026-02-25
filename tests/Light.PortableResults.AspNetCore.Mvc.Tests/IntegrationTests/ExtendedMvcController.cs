@@ -3,7 +3,6 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Light.Results;
-using Light.Results.AspNetCore.Mvc;
 using Light.Results.Http;
 using Light.Results.Http.Writing;
 using Light.Results.Metadata;

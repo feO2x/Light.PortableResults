@@ -2,7 +2,7 @@ using Light.Results.Http.Writing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Light.Results.AspNetCore.Mvc;
+namespace Light.PortableResults.AspNetCore.Mvc;
 
 /// <summary>
 /// Service registration helpers for Light.Results MVC.

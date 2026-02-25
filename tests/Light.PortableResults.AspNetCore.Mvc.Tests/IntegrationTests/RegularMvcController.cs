@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Light.Results;
-using Light.Results.AspNetCore.Mvc;
 using Light.Results.Metadata;
 using Microsoft.AspNetCore.Mvc;
 

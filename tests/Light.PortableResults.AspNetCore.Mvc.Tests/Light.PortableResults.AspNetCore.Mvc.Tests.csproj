@@ -20,8 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Light.Results.AspNetCore.Mvc\Light.Results.AspNetCore.Mvc.csproj" />
-    <ProjectReference Include="..\..\src\Light.Results.AspNetCore.Shared\Light.Results.AspNetCore.Shared.csproj" />
+    <ProjectReference Include="..\..\src\Light.PortableResults.AspNetCore.Mvc\Light.PortableResults.AspNetCore.Mvc.csproj" />
   </ItemGroup>
 
 </Project>

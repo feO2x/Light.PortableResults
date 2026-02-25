@@ -44,10 +44,10 @@
     <File Path="src\AGENTS.md" />
     <File Path="src\Directory.Build.props" />
     <Project Path="src/Light.Results/Light.Results.csproj" />
+    <Project Path="src\Light.PortableResults.AspNetCore.Mvc\Light.PortableResults.AspNetCore.Mvc.csproj" />
     <Project Path="src\Light.Results.AspNetCore.Shared\Light.Results.AspNetCore.Shared.csproj" />
     <Project
       Path="src\Light.PortableResults.AspNetCore.MinimalApis\Light.PortableResults.AspNetCore.MinimalApis.csproj" />
-    <Project Path="src\Light.Results.AspNetCore.Mvc\Light.Results.AspNetCore.Mvc.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <File Path="tests\AGENTS.md" />

@@ -3,11 +3,12 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
-using Light.Results.AspNetCore.Mvc.Serialization;
+using Light.PortableResults.AspNetCore.Mvc.Serialization;
+using Light.Results;
 using Light.Results.Http.Writing;
 using Microsoft.AspNetCore.Http;
 
-namespace Light.Results.AspNetCore.Mvc;
+namespace Light.PortableResults.AspNetCore.Mvc;
 
 /// <summary>
 /// MVC action result for <see cref="Result" /> which either writes success HTTP response bodies or Problem Details

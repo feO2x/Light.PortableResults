@@ -598,6 +598,12 @@
           "xunit.v3.runner.common": "[3.2.2]"
         }
       },
+      "light.portableresults.aspnetcore.mvc": {
+        "type": "Project",
+        "dependencies": {
+          "Light.Results.AspNetCore.Shared": "[0.1.0, )"
+        }
+      },
       "light.results": {
         "type": "Project",
         "dependencies": {
@@ -607,16 +613,10 @@
           "Ulid": "[1.4.1, )"
         }
       },
-      "light.results.aspnetcore.mvc": {
-        "type": "Project",
-        "dependencies": {
-          "Light.Results.AspNetCore.Shared": "[1.0.0, )"
-        }
-      },
       "light.results.aspnetcore.shared": {
         "type": "Project",
         "dependencies": {
-          "Light.Results": "[1.0.0, )"
+          "Light.Results": "[0.1.0, )"
         }
       },
       "Microsoft.Bcl.HashCode": {
