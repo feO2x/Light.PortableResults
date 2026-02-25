@@ -11,13 +11,13 @@ namespace Light.PortableResults.AspNetCore.MinimalApis.Tests;
 public sealed class PortableResultsEndpointExtensionsTests
 {
     [Fact]
-    public void ProducesLightResult_ShouldRegisterWrappedResponseMetadata()
+    public void ProducesPortableResult_ShouldRegisterWrappedResponseMetadata()
     {
         var builder = WebApplication.CreateBuilder();
         var app = builder.Build();
 
         var routeBuilder = app.MapGet("/test", () => "ok");
-        var returned = routeBuilder.ProducesLightResult<ContactDto>();
+        var returned = routeBuilder.ProducesPortableResult<ContactDto>();
 
         returned.Should().BeSameAs(routeBuilder);
 
@@ -35,13 +35,13 @@ public sealed class PortableResultsEndpointExtensionsTests
     }
 
     [Fact]
-    public void ProducesLightResultWithMetadataType_ShouldRegisterWrappedResponseMetadata()
+    public void ProducesPortableResultWithMetadataType_ShouldRegisterWrappedResponseMetadata()
     {
         var builder = WebApplication.CreateBuilder();
         var app = builder.Build();
 
         var routeBuilder = app.MapGet("/test-metadata", () => "ok");
-        var returned = routeBuilder.ProducesLightResult<ContactDto, MetadataObject>();
+        var returned = routeBuilder.ProducesPortableResult<ContactDto, MetadataObject>();
 
         returned.Should().BeSameAs(routeBuilder);
 

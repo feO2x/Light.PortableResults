@@ -19,7 +19,7 @@ public static class PortableResultsEndpointExtensions
     /// <param name="statusCode">The HTTP status code (default 200).</param>
     /// <param name="contentType">The content type (default "application/json").</param>
     /// <returns>The route handler builder for chaining.</returns>
-    public static RouteHandlerBuilder ProducesLightResult<TValue, TMetadata>(
+    public static RouteHandlerBuilder ProducesPortableResult<TValue, TMetadata>(
         this RouteHandlerBuilder builder,
         int statusCode = StatusCodes.Status200OK,
         string contentType = "application/json"
@@ -37,7 +37,7 @@ public static class PortableResultsEndpointExtensions
     /// <param name="statusCode">The HTTP status code (default 200).</param>
     /// <param name="contentType">The content type (default "application/json").</param>
     /// <returns>The route handler builder for chaining.</returns>
-    public static RouteHandlerBuilder ProducesLightResult<TValue>(
+    public static RouteHandlerBuilder ProducesPortableResult<TValue>(
         this RouteHandlerBuilder builder,
         int statusCode = StatusCodes.Status200OK,
         string contentType = "application/json"
