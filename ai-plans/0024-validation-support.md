@@ -15,41 +15,41 @@ place or transform it into another validated type for anti-corruption boundaries
 
 ## Acceptance Criteria
 
-- [ ] A new project `src/Light.PortableResults.Validation` exists, targets `netstandard2.0`, references
+- [x] A new project `src/Light.PortableResults.Validation` exists, targets `netstandard2.0`, references
   `Light.PortableResults`, is added to the solution, and `src/AGENTS.md` is updated to describe the new project.
-- [ ] A corresponding test project `tests/Light.PortableResults.Validation.Tests` exists for the new validation package
+- [x] A corresponding test project `tests/Light.PortableResults.Validation.Tests` exists for the new validation package
   and is added to the solution.
-- [ ] The validation foundation exposes public types for `ValidationContext`, `Check<T>`, `ValidationOutcome<T>`,
+- [x] The validation foundation exposes public types for `ValidationContext`, `Check<T>`, `ValidationOutcome<T>`,
   `BaseValidator<TSource>`, `Validator<T>`, `Validator<TSource, TValidated>`, `AsyncValidator<T>`,
   `AsyncValidator<TSource, TValidated>`, `IValidationContextFactory`, `IValidationTargetNormalizer`, a default
   `ValidationContextFactory`, and the supporting options/template types needed to create contexts.
-- [ ] `ValidationContext` lazily accumulates validation failures as flat `Error` entries with
+- [x] `ValidationContext` lazily accumulates validation failures as flat `Error` entries with
   `ErrorCategory.Validation`, creates `Check<T>` instances via caller argument expressions, normalizes strings when
   configured, and materializes failures as `Errors` / `Result` values without nested error containers.
-- [ ] Public path-normalization and path-composition tooling is available so callers can build validation targets with
+- [x] Public path-normalization and path-composition tooling is available so callers can build validation targets with
   the same rules as the library instead of relying on internal-only helpers.
-- [ ] `Check<T>` is implemented as a low-overhead readonly struct that supports normalized value flow,
+- [x] `Check<T>` is implemented as a low-overhead readonly struct that supports normalized value flow,
   target/display-name handling, short-circuiting, and manual error creation so that future check extension methods can
   build on it without redesigning the type.
-- [ ] The built-in target normalizer supports configurable casing conventions, uses cache-backed default normalization,
+- [x] The built-in target normalizer supports configurable casing conventions, uses cache-backed default normalization,
   and is configured through the selected normalizer instance rather than through a conflicting parallel casing option on
   `ValidationContextOptions`.
-- [ ] `ValidationOutcome<T>` preserves the validated value on success, stores flat `Errors` on failure, and provides
+- [x] `ValidationOutcome<T>` preserves the validated value on success, stores flat `Errors` on failure, and provides
   helpers to convert failures into `Result` so that endpoint code can stay concise without losing a path to normalized
   values.
-- [ ] `Validator<T>` performs automatic null checking, delegates rule execution to
+- [x] `Validator<T>` performs automatic null checking, delegates rule execution to
   `PerformValidation(ValidationContext, T)`, and returns `ValidationOutcome<T>` while also offering synchronous
   convenience APIs such as `CheckForErrors(...)` / `TryValidate(...)` for short endpoint code.
-- [ ] `Validator<TSource, TValidated>` supports validation plus transformation to a different validated output type,
+- [x] `Validator<TSource, TValidated>` supports validation plus transformation to a different validated output type,
   enabling immutable records, commands, and anti-corruption-layer mappings.
-- [ ] `AsyncValidator<T>` and `AsyncValidator<TSource, TValidated>` provide the same validation and transformation
+- [x] `AsyncValidator<T>` and `AsyncValidator<TSource, TValidated>` provide the same validation and transformation
   model for I/O-bound validation workflows, accept `CancellationToken`, and return
   `ValueTask<ValidationOutcome<T>>` / `ValueTask<ValidationOutcome<TValidated>>`.
-- [ ] Nested validation is modeled through target prefixing rather than nested `Errors` instances, and the foundation
+- [x] Nested validation is modeled through target prefixing rather than nested `Errors` instances, and the foundation
   provides the path-composition hooks needed for future child-validator and collection-validation extensions.
-- [ ] Automated tests cover successful validation, failure accumulation, target normalization, string normalization,
+- [x] Automated tests cover successful validation, failure accumulation, target normalization, string normalization,
   automatic null validation, and flat hierarchical target composition.
-- [ ] Benchmarks compare Light.PortableResults.Validation against FluentValidation `12.1.1` using two equivalent
+- [x] Benchmarks compare Light.PortableResults.Validation against FluentValidation `12.1.1` using two equivalent
   in-memory Minimal API endpoints: one with simple validation logic and one with more complex validation logic. The
   benchmarks measure runtime performance and allocated memory, with FluentValidation as the baseline. Both implementations
   must use the same DTOs and produce behaviorally equivalent responses so the comparison stays meaningful.
