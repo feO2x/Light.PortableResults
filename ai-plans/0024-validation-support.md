@@ -26,9 +26,14 @@ place or transform it into another validated type for anti-corruption boundaries
 - [ ] `ValidationContext` lazily accumulates validation failures as flat `Error` entries with
   `ErrorCategory.Validation`, creates `Check<T>` instances via caller argument expressions, normalizes strings when
   configured, and materializes failures as `Errors` / `Result` values without nested error containers.
+- [ ] Public path-normalization and path-composition tooling is available so callers can build validation targets with
+  the same rules as the library instead of relying on internal-only helpers.
 - [ ] `Check<T>` is implemented as a low-overhead readonly struct that supports normalized value flow,
   target/display-name handling, short-circuiting, and manual error creation so that future check extension methods can
   build on it without redesigning the type.
+- [ ] The built-in target normalizer supports configurable casing conventions, uses cache-backed default normalization,
+  and is configured through the selected normalizer instance rather than through a conflicting parallel casing option on
+  `ValidationContextOptions`.
 - [ ] `ValidationOutcome<T>` preserves the validated value on success, stores flat `Errors` on failure, and provides
   helpers to convert failures into `Result` so that endpoint code can stay concise without losing a path to normalized
   values.
@@ -46,7 +51,8 @@ place or transform it into another validated type for anti-corruption boundaries
   automatic null validation, and flat hierarchical target composition.
 - [ ] Benchmarks compare Light.PortableResults.Validation against FluentValidation `12.1.1` using two equivalent
   in-memory Minimal API endpoints: one with simple validation logic and one with more complex validation logic. The
-  benchmarks measure runtime performance and allocated memory, with FluentValidation as the baseline.
+  benchmarks measure runtime performance and allocated memory, with FluentValidation as the baseline. Both implementations
+  must use the same DTOs and produce behaviorally equivalent responses so the comparison stays meaningful.
 
 ## Technical Details
 
@@ -136,7 +142,8 @@ shapes with `AsyncValidator<T>` and `AsyncValidator<TSource, TValidated>` using 
 `PerformValidationAsync(...)` methods that accept `CancellationToken` and return
 `ValueTask<ValidationOutcome<T>>` / `ValueTask<ValidationOutcome<TValidated>>`. `ValueTask` is preferable here because
 many validators will still complete synchronously even when they participate in an async pipeline, and the library is
-explicitly performance-focused.
+explicitly performance-focused. The async implementation should also follow normal library guidance for
+`netstandard2.0`, including the deliberate use of `ConfigureAwait(false)` where appropriate.
 
 The public API should center on `Validate(...)` overloads returning `ValidationOutcome<T>` or
 `ValidationOutcome<TValidated>`, with overloads that accept an existing `ValidationContext` for multi-step validation
