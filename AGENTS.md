@@ -11,7 +11,7 @@ In our Directory.Build.props files in this solution, the following rules are def
 - Implicit usings or global usings are not allowed - use explicit using statements for clarity.
 - The Light.PortableResults project is built with .NET Standard 2.0, but you can use C# 14 features.
 - All other projects use .NET 10, including the test projects.
-- The library is not published yet, you can make breaking changes.
+- The library is not published in a stable version yet, you can make breaking changes.
 - `<TreatWarningsAsErrors>` is enabled in Release builds, so your code changes must not generate warnings.
 - If it is properly encapsulated, make it public. We don't know how callers would like to use this library. When some
   types are internal, this might make it hard for callers to access these in tests or when making configuration changes.
