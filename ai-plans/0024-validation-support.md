@@ -21,8 +21,8 @@ place or transform it into another validated type for anti-corruption boundaries
   and is added to the solution.
 - [ ] The validation foundation exposes public types for `ValidationContext`, `Check<T>`, `ValidationOutcome<T>`,
   `BaseValidator<TSource>`, `Validator<T>`, `Validator<TSource, TValidated>`, `AsyncValidator<T>`,
-  `AsyncValidator<TSource, TValidated>`, `IValidationContextFactory`, a default `ValidationContextFactory`, and the
-  supporting options/template types needed to create contexts.
+  `AsyncValidator<TSource, TValidated>`, `IValidationContextFactory`, `IValidationTargetNormalizer`, a default
+  `ValidationContextFactory`, and the supporting options/template types needed to create contexts.
 - [ ] `ValidationContext` lazily accumulates validation failures as flat `Error` entries with
   `ErrorCategory.Validation`, creates `Check<T>` instances via caller argument expressions, normalizes strings when
   configured, and materializes failures as `Errors` / `Result` values without nested error containers.
@@ -80,15 +80,27 @@ and convenience methods that convert the current state into `Errors` and `Result
 
 `ValidationContextOptions` should keep only the options that still make sense with flat errors: target normalization,
 string normalization, and automatic-null-error creation. The old key comparer and multiple-errors-per-key settings
-should be dropped. Likewise, the target normalizer must be redesigned for PortableResults. The default behavior should
-preserve member paths instead of taking only the last segment: `dto.Address.ZipCode` should become `address.zipCode`,
-and collection/indexer syntax should remain expressible as `addresses[0].zipCode`. Keep the normalizer pluggable through
-options because expression-text cleanup is inherently heuristic. An empty target string must continue to represent the
-root object because the existing HTTP serialization already treats `""` as the root validation target.
+should be dropped. Likewise, the target normalizer should no longer be just a delegate. Introduce a public
+`IValidationTargetNormalizer` with `string Normalize(string rawPath)` so callers can plug in their own policy while the
+default implementation remains free to add caching internally. The default behavior should preserve member paths instead
+of taking only the last segment: `dto.Address.ZipCode` should become `address.zipCode`, and collection/indexer syntax
+should remain expressible as `addresses[0].zipCode`. An empty target string must continue to represent the root object
+because the existing HTTP serialization already treats `""` as the root validation target.
+
+Do not force callers to replace the entire normalizer just to switch the casing convention. The built-in normalizer
+should expose a first-class casing option, for example via a small enum that supports at least `CamelCase`,
+`PascalCase`, and `Preserve`, so callers can align validation targets with their DTO/JSON naming conventions while
+still benefiting from the default parser and cache. That casing setting should configure the built-in normalizer
+instance itself through its constructor. `ValidationContextOptions` should
+then hold only the selected `IValidationTargetNormalizer` instance, avoiding an ambiguous API where a separate
+`TargetCasing` setting might conflict with a custom normalizer.
 
 Make the default target-path normalization rules explicit in the implementation and tests: remove irrelevant leading
 parameter roots such as `dto.`, preserve the member path, and convert member names to the expected lower-camel-case
-segments so that expressions like `dto.Address.ZipCode` become `address.zipCode`.
+segments so that expressions like `dto.Address.ZipCode` become `address.zipCode`. The default normalizer should own a
+thread-safe cache for `rawPath -> normalizedPath` mappings, but only for the built-in normalization strategy. Do not
+globally cache prefix-composed paths such as `addresses[123].zipCode` because indexed prefixes can grow without a
+useful bound.
 
 `ValidationErrorTemplates` should stay close to Light.Validation’s strengths, but adapted to `Error`. Keep the localized
 format strings and formatting helpers so future rule extensions can reuse them, but do not make templates responsible
@@ -148,7 +160,9 @@ To preserve a path for future child validators without nested error trees, keep 
 underlying error sink while prepending a target prefix. The child context no longer owns its own nested error
 dictionary; instead, it contributes flat errors whose targets are composed from the parent prefix and the child member
 path. That keeps future `ValidateWith(...)` and `ValidateItems(...)` extensions straightforward and compatible with the
-existing HTTP validation serialization logic.
+existing HTTP validation serialization logic. Do not hide that composition logic behind internal-only helpers. Expose
+the same path-composition mechanism publicly, either through a small public value type or a public static helper, so
+callers can build consistent validation targets when they integrate with the library manually.
 
 Document the intended lifetime model in the implementation notes and XML docs. Validators are expected to be reusable
 and will often be good singleton candidates when they only depend on singleton-safe collaborators. `ValidationContext`
@@ -167,5 +181,5 @@ the architectural decisions in this plan: no allocations or state buildup on the
 instance, string normalization semantics, target normalization for nested members, automatic null failures with root
 targets, conversion of accumulated failures into `Errors`, `Result`, and `ValidationOutcome<T>`, synchronous
 endpoint-oriented convenience methods, transformed validation from `TSource` to `TValidated`, async validation result
-flow including cancellation propagation, nullability behavior, and scoped-context composition yielding paths such as
-`address.zipCode` and `addresses[0].zipCode`.
+flow including cancellation propagation, nullability behavior, cache-backed default target normalization, and
+scoped-context composition yielding paths such as `address.zipCode` and `addresses[0].zipCode`.
