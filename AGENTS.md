@@ -4,6 +4,11 @@ Light.PortableResults is a lightweight, high-performance library implementing th
 for reducing allocations and being able to serialize and deserialize results across different protocols (HTTP via
 RFC-9457, gRPC, Asynchronous Messaging). Extensibility is less important than performance.
 
+## Implementation rules
+
+Plans typically have acceptance criteria with check boxes. Check each box when you are finished with the corresponding
+criterion.
+
 ## General Rules for the Code Base
 
 In our Directory.Build.props files in this solution, the following rules are defined:
