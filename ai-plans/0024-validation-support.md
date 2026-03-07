@@ -53,6 +53,21 @@ messaging, and non-web code. Because the design relies on `CallerArgumentExpress
 project will need the same kind of compatibility support that the solution already uses for newer C# features on older
 target frameworks.
 
+For the original design reference, review these Light.Validation sources before implementing the new types:
+
+- `ValidationContext`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/ValidationContext.cs>
+- `Check<T>`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/Check.cs>
+- `Validator<T>`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/Validator.cs>
+- `BaseValidator<T>`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/BaseValidator.cs>
+- `AsyncValidator<T>`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/AsyncValidator.cs>
+-
+`IValidationContextFactory`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/IValidationContextFactory.cs>
+-
+`ValidationContextOptions`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/ValidationContextOptions.cs>
+- `ValidationResult<T>`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/ValidationResult.cs>
+- `ErrorTemplates`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/Tools/ErrorTemplates.cs>
+- README examples: <https://github.com/feO2x/Light.Validation/blob/main/README.md>
+
 Do not port Light.Validation’s `ExtensibleObject`, `Dictionary<string, object>` error store, or
 `MultipleErrorsPerKeyBehavior`. Those concepts were useful for nested error graphs, but they conflict with
 PortableResults’ flat `Errors` value object. `ValidationContext` should instead own a lightweight internal error builder
