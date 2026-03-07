@@ -38,12 +38,15 @@ place or transform it into another validated type for anti-corruption boundaries
 - [ ] `Validator<TSource, TValidated>` supports validation plus transformation to a different validated output type,
   enabling immutable records, commands, and anti-corruption-layer mappings.
 - [ ] `AsyncValidator<T>` and `AsyncValidator<TSource, TValidated>` provide the same validation and transformation
-  model for I/O-bound validation workflows and return `Task<ValidationOutcome<T>>` /
-  `Task<ValidationOutcome<TValidated>>`.
+  model for I/O-bound validation workflows, accept `CancellationToken`, and return
+  `ValueTask<ValidationOutcome<T>>` / `ValueTask<ValidationOutcome<TValidated>>`.
 - [ ] Nested validation is modeled through target prefixing rather than nested `Errors` instances, and the foundation
   provides the path-composition hooks needed for future child-validator and collection-validation extensions.
 - [ ] Automated tests cover successful validation, failure accumulation, target normalization, string normalization,
   automatic null validation, and flat hierarchical target composition.
+- [ ] Benchmarks compare Light.PortableResults.Validation against FluentValidation `12.1.1` using two equivalent
+  in-memory Minimal API endpoints: one with simple validation logic and one with more complex validation logic. The
+  benchmarks measure runtime performance and allocated memory, with FluentValidation as the baseline.
 
 ## Technical Details
 
@@ -60,10 +63,8 @@ For the original design reference, review these Light.Validation sources before 
 - `Validator<T>`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/Validator.cs>
 - `BaseValidator<T>`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/BaseValidator.cs>
 - `AsyncValidator<T>`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/AsyncValidator.cs>
--
-`IValidationContextFactory`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/IValidationContextFactory.cs>
--
-`ValidationContextOptions`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/ValidationContextOptions.cs>
+- `IValidationContextFactory`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/IValidationContextFactory.cs>
+- `ValidationContextOptions`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/ValidationContextOptions.cs>
 - `ValidationResult<T>`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/ValidationResult.cs>
 - `ErrorTemplates`: <https://github.com/feO2x/Light.Validation/blob/main/Code/Light.Validation/Tools/ErrorTemplates.cs>
 - README examples: <https://github.com/feO2x/Light.Validation/blob/main/README.md>
@@ -85,6 +86,10 @@ and collection/indexer syntax should remain expressible as `addresses[0].zipCode
 options because expression-text cleanup is inherently heuristic. An empty target string must continue to represent the
 root object because the existing HTTP serialization already treats `""` as the root validation target.
 
+Make the default target-path normalization rules explicit in the implementation and tests: remove irrelevant leading
+parameter roots such as `dto.`, preserve the member path, and convert member names to the expected lower-camel-case
+segments so that expressions like `dto.Address.ZipCode` become `address.zipCode`.
+
 `ValidationErrorTemplates` should stay close to Light.Validation’s strengths, but adapted to `Error`. Keep the localized
 format strings and formatting helpers so future rule extensions can reuse them, but do not make templates responsible
 for storing errors. The future check extension methods should use the templates to create `Error.Message` values while
@@ -101,10 +106,14 @@ values and a simpler overload for message-based failures, automatically applying
 target is provided.
 
 Introduce a dedicated `ValidationOutcome<T>` value type as the primary result model of the validation package. It
-should expose the validated value on success, flat `Errors`, and `IsValid` / `HasErrors` semantics, plus helpers such
-as `TryGetErrors(...)` and `ToFailureResult()` so callers can easily convert failures into `Result` for HTTP and MVC
-integration. The type should not revive Light.Validation’s loosely typed `ValidationResult<T>` shape; it should stay
-aligned with PortableResults primitives by using `Errors` directly.
+should expose a non-throwing `Value` property, flat `Errors`, and `IsValid` / `HasErrors` semantics, plus
+`ToFailureResult()` so callers can easily convert failures into `Result` for HTTP and MVC integration. The type should
+not revive Light.Validation’s loosely typed `ValidationResult<T>` shape; it should stay aligned with PortableResults
+primitives by using `Errors` directly. `Errors` should always be available and use `Errors`' empty instance when no
+failures occurred. `ToFailureResult()` should throw when called on a valid outcome. For invalid outcomes, `Value`
+should still be readable and should contain the best available normalized or transformed value, or `default(T)` when no
+meaningful value could be produced, such as after an automatic null check or an aborted transformation. This behavior
+should be documented with appropriate nullability annotations rather than hidden behind throwing accessors.
 
 Introduce a public `BaseValidator<TSource>` plus synchronous and asynchronous validator base classes. `Validator<T>`
 should keep Light.Validation’s ergonomic `PerformValidation(ValidationContext, T)` shape for the common case where
@@ -112,8 +121,10 @@ validation returns the same DTO type after normalization. In addition, add `Vali
 `PerformValidation(ValidationContext, TSource)` returning `TValidated` so validation can also form an anti-corruption
 layer that maps incoming DTOs to immutable record structs, commands, or other validated internal models. Mirror both
 shapes with `AsyncValidator<T>` and `AsyncValidator<TSource, TValidated>` using asynchronous
-`PerformValidationAsync(...)`
-methods and returning `Task<ValidationOutcome<T>>` / `Task<ValidationOutcome<TValidated>>`.
+`PerformValidationAsync(...)` methods that accept `CancellationToken` and return
+`ValueTask<ValidationOutcome<T>>` / `ValueTask<ValidationOutcome<TValidated>>`. `ValueTask` is preferable here because
+many validators will still complete synchronously even when they participate in an async pipeline, and the library is
+explicitly performance-focused.
 
 The public API should center on `Validate(...)` overloads returning `ValidationOutcome<T>` or
 `ValidationOutcome<TValidated>`, with overloads that accept an existing `ValidationContext` for multi-step validation
@@ -122,7 +133,9 @@ pipelines. On top of that, provide synchronous convenience methods tailored to e
 `if (validator.CheckForErrors(dto, out Result failure)) return failure.ToMinimalApiResult();`. These convenience
 methods should be thin adapters over `ValidationOutcome<T>` rather than the primary abstraction, because `out`-based
 patterns do not translate to async validators. Async validators should therefore expose only outcome-based APIs such as
-`ValidateAsync(...)`, keeping the model consistent while avoiding awkward `out`-parameter designs.
+`ValidateAsync(...)`, keeping the model consistent while avoiding awkward `out`-parameter designs. All sync and async
+APIs should use nullability annotations carefully so the compiler can understand when validated values or errors are
+available.
 
 For transformed validators (`TSource -> TValidated`), the validated output should only be considered available on
 success. That keeps the API clean for immutable and anti-corruption use cases where a partially built output object is
@@ -137,9 +150,22 @@ dictionary; instead, it contributes flat errors whose targets are composed from 
 path. That keeps future `ValidateWith(...)` and `ValidateItems(...)` extensions straightforward and compatible with the
 existing HTTP validation serialization logic.
 
+Document the intended lifetime model in the implementation notes and XML docs. Validators are expected to be reusable
+and will often be good singleton candidates when they only depend on singleton-safe collaborators. `ValidationContext`
+instances, on the other hand, must be created per validation run and must never be shared across concurrent requests or
+parallel validation operations.
+
+Add a small benchmark suite in the benchmarks project that models two equivalent Minimal API endpoints twice: once with
+Light.PortableResults.Validation and once with FluentValidation `12.1.1`. One endpoint should exercise simple DTO
+validation with only a few field checks, while the other should exercise more complex validation with nested paths,
+multiple field checks, and a transformed validated output. Keep both versions behaviorally equivalent and in-memory so
+the measurements reflect validation overhead rather than networking or hosting noise. Report runtime performance and
+allocated memory, treating FluentValidation as the baseline.
+
 Tests in `Light.PortableResults.Validation.Tests` should stay mostly unit-level and focus on behavior that locks down
 the architectural decisions in this plan: no allocations or state buildup on the success path beyond the context
 instance, string normalization semantics, target normalization for nested members, automatic null failures with root
 targets, conversion of accumulated failures into `Errors`, `Result`, and `ValidationOutcome<T>`, synchronous
 endpoint-oriented convenience methods, transformed validation from `TSource` to `TValidated`, async validation result
-flow, and scoped-context composition yielding paths such as `address.zipCode` and `addresses[0].zipCode`.
+flow including cancellation propagation, nullability behavior, and scoped-context composition yielding paths such as
+`address.zipCode` and `addresses[0].zipCode`.
