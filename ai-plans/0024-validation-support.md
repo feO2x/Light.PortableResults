@@ -20,8 +20,9 @@ place or transform it into another validated type for anti-corruption boundaries
 - [ ] A corresponding test project `tests/Light.PortableResults.Validation.Tests` exists for the new validation package
   and is added to the solution.
 - [ ] The validation foundation exposes public types for `ValidationContext`, `Check<T>`, `ValidationOutcome<T>`,
-  `BaseValidator<TSource>`, `Validator<T>`, `Validator<TSource, TValidated>`, `IValidationContextFactory`, a default
-  `ValidationContextFactory`, and the supporting options/template types needed to create contexts.
+  `BaseValidator<TSource>`, `Validator<T>`, `Validator<TSource, TValidated>`, `AsyncValidator<T>`,
+  `AsyncValidator<TSource, TValidated>`, `IValidationContextFactory`, a default `ValidationContextFactory`, and the
+  supporting options/template types needed to create contexts.
 - [ ] `ValidationContext` lazily accumulates validation failures as flat `Error` entries with
   `ErrorCategory.Validation`, creates `Check<T>` instances via caller argument expressions, normalizes strings when
   configured, and materializes failures as `Errors` / `Result` values without nested error containers.
@@ -36,6 +37,9 @@ place or transform it into another validated type for anti-corruption boundaries
   convenience APIs such as `CheckForErrors(...)` / `TryValidate(...)` for short endpoint code.
 - [ ] `Validator<TSource, TValidated>` supports validation plus transformation to a different validated output type,
   enabling immutable records, commands, and anti-corruption-layer mappings.
+- [ ] `AsyncValidator<T>` and `AsyncValidator<TSource, TValidated>` provide the same validation and transformation
+  model for I/O-bound validation workflows and return `Task<ValidationOutcome<T>>` /
+  `Task<ValidationOutcome<TValidated>>`.
 - [ ] Nested validation is modeled through target prefixing rather than nested `Errors` instances, and the foundation
   provides the path-composition hooks needed for future child-validator and collection-validation extensions.
 - [ ] Automated tests cover successful validation, failure accumulation, target normalization, string normalization,
@@ -87,12 +91,14 @@ as `TryGetErrors(...)` and `ToFailureResult()` so callers can easily convert fai
 integration. The type should not revive Light.Validation’s loosely typed `ValidationResult<T>` shape; it should stay
 aligned with PortableResults primitives by using `Errors` directly.
 
-Introduce a public `BaseValidator<TSource>` plus two synchronous validator base classes now; async validation can be
-added later without invalidating the synchronous design. `Validator<T>` should keep Light.Validation’s ergonomic
-`PerformValidation(ValidationContext, T)` shape for the common case where validation returns the same DTO type after
-normalization. In addition, add `Validator<TSource, TValidated>` with `PerformValidation(ValidationContext, TSource)`
-returning `TValidated` so validation can also form an anti-corruption layer that maps incoming DTOs to immutable record
-structs, commands, or other validated internal models.
+Introduce a public `BaseValidator<TSource>` plus synchronous and asynchronous validator base classes. `Validator<T>`
+should keep Light.Validation’s ergonomic `PerformValidation(ValidationContext, T)` shape for the common case where
+validation returns the same DTO type after normalization. In addition, add `Validator<TSource, TValidated>` with
+`PerformValidation(ValidationContext, TSource)` returning `TValidated` so validation can also form an anti-corruption
+layer that maps incoming DTOs to immutable record structs, commands, or other validated internal models. Mirror both
+shapes with `AsyncValidator<T>` and `AsyncValidator<TSource, TValidated>` using asynchronous
+`PerformValidationAsync(...)`
+methods and returning `Task<ValidationOutcome<T>>` / `Task<ValidationOutcome<TValidated>>`.
 
 The public API should center on `Validate(...)` overloads returning `ValidationOutcome<T>` or
 `ValidationOutcome<TValidated>`, with overloads that accept an existing `ValidationContext` for multi-step validation
@@ -100,7 +106,8 @@ pipelines. On top of that, provide synchronous convenience methods tailored to e
 `CheckForErrors(...)` and `TryValidate(...)`, so callers can keep short patterns such as
 `if (validator.CheckForErrors(dto, out Result failure)) return failure.ToMinimalApiResult();`. These convenience
 methods should be thin adapters over `ValidationOutcome<T>` rather than the primary abstraction, because `out`-based
-patterns do not translate well to future async validators.
+patterns do not translate to async validators. Async validators should therefore expose only outcome-based APIs such as
+`ValidateAsync(...)`, keeping the model consistent while avoiding awkward `out`-parameter designs.
 
 For transformed validators (`TSource -> TValidated`), the validated output should only be considered available on
 success. That keeps the API clean for immutable and anti-corruption use cases where a partially built output object is
@@ -119,5 +126,5 @@ Tests in `Light.PortableResults.Validation.Tests` should stay mostly unit-level 
 the architectural decisions in this plan: no allocations or state buildup on the success path beyond the context
 instance, string normalization semantics, target normalization for nested members, automatic null failures with root
 targets, conversion of accumulated failures into `Errors`, `Result`, and `ValidationOutcome<T>`, synchronous
-endpoint-oriented convenience methods, transformed validation from `TSource` to `TValidated`, and scoped-context
-composition yielding paths such as `address.zipCode` and `addresses[0].zipCode`.
+endpoint-oriented convenience methods, transformed validation from `TSource` to `TValidated`, async validation result
+flow, and scoped-context composition yielding paths such as `address.zipCode` and `addresses[0].zipCode`.
