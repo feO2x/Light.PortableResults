@@ -67,7 +67,7 @@ public abstract class Validator<T> : BaseValidator<T>
             return nullOutcome;
         }
 
-        var validatedValue = PerformValidation(context, value!);
+        var validatedValue = PerformValidation(context, value);
         return new ValidationOutcome<T>(validatedValue, context.ToErrors());
     }
 
@@ -245,9 +245,9 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
 
         var validatedValue = PerformValidation(context, value!);
         var errors = context.ToErrors();
-        return errors.IsEmpty
-            ? new ValidationOutcome<TValidated>(validatedValue)
-            : new ValidationOutcome<TValidated>(default!, errors);
+        return errors.IsEmpty ?
+            new ValidationOutcome<TValidated>(validatedValue) :
+            new ValidationOutcome<TValidated>(default!, errors);
     }
 
     /// <summary>

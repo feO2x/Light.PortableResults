@@ -60,9 +60,7 @@ public sealed class ValidationContextFactory : IValidationContextFactory
             throw new ArgumentNullException(nameof(targetPrefix));
         }
 
-        var normalizedPrefix = isTargetPrefixNormalized
-            ? targetPrefix
-            : parent.NormalizeTarget(targetPrefix);
+        var normalizedPrefix = isTargetPrefixNormalized ? targetPrefix : parent.NormalizeTarget(targetPrefix);
         var composedPrefix = ValidationTargets.Compose(parent.TargetPrefix, normalizedPrefix);
         return new ValidationContext(this, parent.Options, parent.ErrorTemplates, parent.Sink, composedPrefix);
     }

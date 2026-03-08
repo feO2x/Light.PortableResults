@@ -7,8 +7,6 @@ namespace Light.PortableResults.Validation;
 /// </summary>
 public class ValidationContextOptions
 {
-    private IValidationTargetNormalizer _targetNormalizer = ValidationTargets.DefaultNormalizer;
-
     /// <summary>
     /// Gets the shared default options instance.
     /// </summary>
@@ -20,9 +18,9 @@ public class ValidationContextOptions
     /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
     public IValidationTargetNormalizer TargetNormalizer
     {
-        get => _targetNormalizer;
-        set => _targetNormalizer = value ?? throw new ArgumentNullException(nameof(value));
-    }
+        get;
+        set => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = ValidationTargets.DefaultNormalizer;
 
     /// <summary>
     /// Gets or sets a value indicating whether string values are normalized when checks are created.

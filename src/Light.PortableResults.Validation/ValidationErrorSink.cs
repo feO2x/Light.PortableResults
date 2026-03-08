@@ -4,8 +4,8 @@ namespace Light.PortableResults.Validation;
 
 internal sealed class ValidationErrorSink
 {
-    private Error _firstError;
     private Error[]? _additionalErrors;
+    private Error _firstError;
 
     public int Count { get; private set; }
 
@@ -65,7 +65,9 @@ internal sealed class ValidationErrorSink
             return;
         }
 
-        var newCapacity = _additionalErrors is null ? 4 : Math.Max(_additionalErrors.Length * 2, requiredAdditionalCount);
+        var newCapacity = _additionalErrors is null ?
+            4 :
+            Math.Max(_additionalErrors.Length * 2, requiredAdditionalCount);
         var newBuffer = new Error[newCapacity];
         if (_additionalErrors is not null)
         {

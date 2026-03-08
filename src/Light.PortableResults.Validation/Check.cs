@@ -84,7 +84,14 @@ public readonly struct Check<T>
     /// <param name="displayName">The display name to use.</param>
     /// <returns>The updated check.</returns>
     public Check<T> WithDisplayName(string displayName) =>
-        new (Context, Target, displayName ?? throw new ArgumentNullException(nameof(displayName)), Value, IsTargetNormalized, IsShortCircuited);
+        new (
+            Context,
+            Target,
+            displayName ?? throw new ArgumentNullException(nameof(displayName)),
+            Value,
+            IsTargetNormalized,
+            IsShortCircuited
+        );
 
     /// <summary>
     /// Creates a new short-circuited check.
@@ -158,9 +165,9 @@ public readonly struct Check<T>
         }
 
         var normalizedCheck = NormalizeTargetIfNecessary();
-        var resolvedTarget = target is null
-            ? normalizedCheck.Target
-            : normalizedCheck.Context.ComposeTarget(target, isTargetNormalized: true);
+        var resolvedTarget = target is null ?
+            normalizedCheck.Target :
+            normalizedCheck.Context.ComposeTarget(target, isTargetNormalized: true);
 
         normalizedCheck.Context.AddError(
             new Error

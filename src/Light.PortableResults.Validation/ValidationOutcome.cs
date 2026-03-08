@@ -10,26 +10,12 @@ namespace Light.PortableResults.Validation;
 public readonly struct ValidationOutcome<T> : IEquatable<ValidationOutcome<T>>
 {
     /// <summary>
-    /// Initializes a new successful validation outcome.
-    /// </summary>
-    /// <param name="value">The validated value.</param>
-    public ValidationOutcome(T value)
-        : this(value, default) { }
-
-    /// <summary>
     /// Initializes a new validation outcome.
     /// </summary>
     /// <param name="value">The best available validated value.</param>
     /// <param name="errors">The validation errors.</param>
-    public ValidationOutcome(T value, Errors errors)
+    public ValidationOutcome(T value, Errors errors = default)
     {
-        if (!errors.IsEmpty || value is not null || typeof(T).IsValueType)
-        {
-            Value = value;
-            Errors = errors;
-            return;
-        }
-
         Value = value;
         Errors = errors;
     }

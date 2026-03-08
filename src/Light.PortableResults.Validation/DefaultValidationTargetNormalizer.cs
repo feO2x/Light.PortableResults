@@ -11,13 +11,17 @@ namespace Light.PortableResults.Validation;
 public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormalizer
 {
     private readonly ConcurrentDictionary<string, string> _cache = new (StringComparer.Ordinal);
+    private readonly Func<string, string> _normalizeDelegate;
 
     /// <summary>
     /// Initializes a new instance of <see cref="DefaultValidationTargetNormalizer" />.
     /// </summary>
     /// <param name="casing">The casing convention for normalized member segments.</param>
-    public DefaultValidationTargetNormalizer(ValidationTargetCasing casing = ValidationTargetCasing.CamelCase) =>
+    public DefaultValidationTargetNormalizer(ValidationTargetCasing casing = ValidationTargetCasing.CamelCase)
+    {
         Casing = casing;
+        _normalizeDelegate = NormalizeCore;
+    }
 
     /// <summary>
     /// Gets the casing convention applied by this normalizer.
@@ -32,7 +36,7 @@ public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormali
             throw new ArgumentNullException(nameof(rawPath));
         }
 
-        return _cache.GetOrAdd(rawPath, NormalizeCore);
+        return _cache.GetOrAdd(rawPath, _normalizeDelegate);
     }
 
     private string NormalizeCore(string rawPath)

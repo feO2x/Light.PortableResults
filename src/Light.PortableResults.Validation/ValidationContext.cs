@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Light.PortableResults.Metadata;
 
@@ -209,7 +208,7 @@ public sealed class ValidationContext
     /// </summary>
     /// <param name="errors">The accumulated errors when present.</param>
     /// <returns><see langword="true" /> when errors are present; otherwise, <see langword="false" />.</returns>
-    public bool TryGetErrors([NotNullWhen(true)] out Errors errors) => Sink.TryBuildErrors(out errors);
+    public bool TryGetErrors(out Errors errors) => Sink.TryBuildErrors(out errors);
 
     /// <summary>
     /// Materializes the accumulated errors.
@@ -226,7 +225,9 @@ public sealed class ValidationContext
     {
         if (!TryGetErrors(out var errors))
         {
-            throw new InvalidOperationException("Cannot create a failure result when no validation errors are present.");
+            throw new InvalidOperationException(
+                "Cannot create a failure result when no validation errors are present."
+            );
         }
 
         return Result.Fail(errors);

@@ -21,7 +21,8 @@ public abstract class BaseValidator<TSource>
         bool isAutomaticNullCheckingEnabled = true
     )
     {
-        ValidationContextFactory = validationContextFactory ?? throw new ArgumentNullException(nameof(validationContextFactory));
+        ValidationContextFactory = validationContextFactory ??
+                                   throw new ArgumentNullException(nameof(validationContextFactory));
         IsAutomaticNullCheckingEnabled = isAutomaticNullCheckingEnabled;
     }
 

@@ -37,7 +37,14 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
         CancellationToken cancellationToken = default,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
-    ) => ValidateAsync(value, ValidationContextFactory.CreateValidationContext(), cancellationToken, target, displayName);
+    ) =>
+        ValidateAsync(
+            value,
+            ValidationContextFactory.CreateValidationContext(),
+            cancellationToken,
+            target,
+            displayName
+        );
 
     /// <summary>
     /// Validates the specified value with the provided validation context.
@@ -123,7 +130,14 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
         CancellationToken cancellationToken = default,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
-    ) => ValidateAsync(value, ValidationContextFactory.CreateValidationContext(), cancellationToken, target, displayName);
+    ) =>
+        ValidateAsync(
+            value,
+            ValidationContextFactory.CreateValidationContext(),
+            cancellationToken,
+            target,
+            displayName
+        );
 
     /// <summary>
     /// Validates the specified source value with the provided validation context and transforms it into a validated output.
@@ -160,9 +174,9 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
 
         var validatedValue = await PerformValidationAsync(context, value!, cancellationToken).ConfigureAwait(false);
         var errors = context.ToErrors();
-        return errors.IsEmpty
-            ? new ValidationOutcome<TValidated>(validatedValue)
-            : new ValidationOutcome<TValidated>(default!, errors);
+        return errors.IsEmpty ?
+            new ValidationOutcome<TValidated>(validatedValue) :
+            new ValidationOutcome<TValidated>(default!, errors);
     }
 
     /// <summary>
