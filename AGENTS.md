@@ -1,13 +1,10 @@
 # Root Agents.md
 
-Light.PortableResults is a lightweight, high-performance library implementing the Result Pattern for .NET. It stands out
-for reducing allocations and being able to serialize and deserialize results across different protocols (HTTP via
-RFC-9457, gRPC, Asynchronous Messaging). Extensibility is less important than performance.
+Light.PortableResults is a lightweight, high-performance library implementing the Result Pattern for .NET. It stands out for reducing allocations and being able to serialize and deserialize results across different protocols (HTTP via RFC-9457, gRPC, Asynchronous Messaging). Extensibility is less important than performance.
 
 ## Implementation rules
 
-Plans typically have acceptance criteria with check boxes. Check each box when you are finished with the corresponding
-criterion.
+Plans typically have acceptance criteria with check boxes. Check each box when you are finished with the corresponding criterion.
 
 ## General Rules for the Code Base
 
@@ -36,8 +33,7 @@ Read ./ai-plans/AGENTS.md for details on how to write plans.
 
 ## Here is Your Space
 
-If you encounter something worth noting while you are working on this code base, write it down here in this section.
-Once you are finished, I will discuss it with you and we can decide where to put your notes.
+If you encounter something worth noting while you are working on this code base, write it down here in this section. Once you are finished, I will discuss it with you and we can decide where to put your notes.
 
 - Validation target composition needs a clear ownership boundary: when a child validation context is already working
   with a fully composed `Error.Target`, composing the prefix again duplicates paths such as
