@@ -71,7 +71,13 @@ public static class ValidationTargets
     /// <returns>The composed target.</returns>
     public static string AppendIndex(string prefix, int index) => Compose(prefix, $"[{index}]");
 
-    internal static bool IsSimpleIdentifier(string rawTarget)
+    /// <summary>
+    /// Gets a value indicating whether the specified raw target is a simple identifier.
+    /// This is true when the target does not contain any dots or square brackets.
+    /// </summary>
+    /// <param name="rawTarget">The raw target to check.</param>
+    /// <returns><see langword="true" /> when the target is a simple identifier; otherwise, <see langword="false" />.</returns>
+    public static bool IsSimpleIdentifier(string rawTarget)
     {
         if (rawTarget.Length == 0)
         {

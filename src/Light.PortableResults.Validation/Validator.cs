@@ -17,11 +17,11 @@ public abstract class Validator<T> : BaseValidator<T>
     /// <param name="isAutomaticNullCheckingEnabled">
     /// Specifies whether the validator should automatically create a validation error for null source values.
     /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="validationContextFactory" /> is null.</exception>
     protected Validator(
         IValidationContextFactory validationContextFactory,
         bool isAutomaticNullCheckingEnabled = true
-    )
-        : base(validationContextFactory, isAutomaticNullCheckingEnabled) { }
+    ) : base(validationContextFactory, isAutomaticNullCheckingEnabled) { }
 
     /// <summary>
     /// Validates the specified value with a fresh validation context.
@@ -44,6 +44,8 @@ public abstract class Validator<T> : BaseValidator<T>
     /// <param name="target">The raw caller expression for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The validation outcome.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="context" /> is the default instance.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
     public ValidationOutcome<T> Validate(
         T? value,
         ValidationContext context,
@@ -51,11 +53,13 @@ public abstract class Validator<T> : BaseValidator<T>
         string? displayName = null
     )
     {
-        if (context is null)
+        if (context.IsDefault)
         {
-            throw new ArgumentNullException(nameof(context));
+            throw new ArgumentException("The validation context must not be the default instance.", nameof(context));
         }
 
+        // ReSharper disable once JoinNullCheckWithUsage -- false positive, for display name, we use the ??= operator.
+        // This would mean that the null check for target is only executed when displayName is null.
         if (target is null)
         {
             throw new ArgumentNullException(nameof(target));
@@ -220,6 +224,8 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
     /// <param name="target">The raw caller expression for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The validation outcome.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="context" /> is the default instance.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
     public ValidationOutcome<TValidated> Validate(
         TSource? value,
         ValidationContext context,
@@ -227,11 +233,13 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
         string? displayName = null
     )
     {
-        if (context is null)
+        if (context.IsDefault)
         {
-            throw new ArgumentNullException(nameof(context));
+            throw new ArgumentException("The validation context must not be the default instance.", nameof(context));
         }
 
+        // ReSharper disable once JoinNullCheckWithUsage -- false positive, for display name, we use the ??= operator.
+        // This would mean that the null check for target is only executed when displayName is null.
         if (target is null)
         {
             throw new ArgumentNullException(nameof(target));
@@ -243,7 +251,7 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
             return nullOutcome;
         }
 
-        var validatedValue = PerformValidation(context, value!);
+        var validatedValue = PerformValidation(context, value);
         var errors = context.ToErrors();
         return errors.IsEmpty ?
             new ValidationOutcome<TValidated>(validatedValue) :
@@ -263,7 +271,8 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
         out Result failure,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
-    ) => CheckForErrors(value, ValidationContextFactory.CreateValidationContext(), out failure, target, displayName);
+    ) =>
+        CheckForErrors(value, ValidationContextFactory.CreateValidationContext(), out failure, target, displayName);
 
     /// <summary>
     /// Validates the value with the specified context and materializes failures as a non-generic <see cref="Result" />.

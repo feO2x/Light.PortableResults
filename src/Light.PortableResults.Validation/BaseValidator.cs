@@ -16,6 +16,7 @@ public abstract class BaseValidator<TSource>
     /// <param name="isAutomaticNullCheckingEnabled">
     /// Specifies whether the validator should automatically create a validation error for null source values.
     /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="validationContextFactory" /> is null.</exception>
     protected BaseValidator(
         IValidationContextFactory validationContextFactory,
         bool isAutomaticNullCheckingEnabled = true
@@ -54,7 +55,7 @@ public abstract class BaseValidator<TSource>
         out ValidationOutcome<TValidated> outcome
     )
     {
-        if (!IsAutomaticNullCheckingEnabled || !context.ShouldCreateAutomaticNullError() || value is not null)
+        if (!IsAutomaticNullCheckingEnabled || !context.Options.CreateAutomaticNullErrors || value is not null)
         {
             outcome = default;
             return false;

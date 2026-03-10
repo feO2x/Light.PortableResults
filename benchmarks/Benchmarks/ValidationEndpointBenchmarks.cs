@@ -21,12 +21,15 @@ public class SimpleValidationEndpointBenchmarks
     public void Setup()
     {
         _fluentValidator = new FluentSimpleRequestValidator();
-        _portableValidator = new PortableSimpleRequestValidator(new ValidationContextFactory());
+        _portableValidator = new PortableSimpleRequestValidator(new DefaultValidationContextFactory());
         _request = new SimpleRequest { FirstName = " ", Age = 16 };
     }
 
     [Benchmark(Baseline = true)]
-    public IResult FluentValidationEndpoint() => MapSimpleFluent(ValidationBenchmarkHelpers.Clone(_request), _fluentValidator);
+    public IResult FluentValidationEndpoint() => MapSimpleFluent(
+        ValidationBenchmarkHelpers.Clone(_request),
+        _fluentValidator
+    );
 
     [Benchmark]
     public IResult PortableResultsValidationEndpoint() =>
@@ -68,7 +71,7 @@ public class ComplexValidationEndpointBenchmarks
     public void Setup()
     {
         _fluentValidator = new FluentComplexRequestValidator();
-        _portableValidator = new PortableComplexRequestValidator(new ValidationContextFactory());
+        _portableValidator = new PortableComplexRequestValidator(new DefaultValidationContextFactory());
         _request = new ComplexRequest
         {
             Email = "not-an-email",
@@ -170,7 +173,7 @@ internal sealed class PortableComplexRequestValidator : Validator<ComplexRequest
         AddressCommand? addressCommand = null;
         if (value.Address is not null)
         {
-            var addressOutcome = _addressValidator.Validate(value.Address, context.CreateChildContext(value.Address));
+            var addressOutcome = _addressValidator.Validate(value.Address, context.For(value.Address));
             if (addressOutcome.IsValid)
             {
                 addressCommand = addressOutcome.Value;
@@ -179,12 +182,10 @@ internal sealed class PortableComplexRequestValidator : Validator<ComplexRequest
 
         var items = value.Items ?? new List<ItemRequest>();
         var itemCommands = new ItemCommand[items.Count];
+        var itemsContext = context.ForMember("items", isNormalized: true);
         for (var i = 0; i < items.Count; i++)
         {
-            var childContext = context.CreateChildContext(
-                ValidationTargets.AppendIndex("items", i),
-                isTargetPrefixNormalized: true
-            );
+            var childContext = itemsContext.ForIndex(i);
             var itemOutcome = _itemValidator.Validate(items[i], childContext);
             if (itemOutcome.IsValid)
             {
@@ -247,10 +248,12 @@ internal sealed class FluentSimpleRequestValidator : AbstractValidator<SimpleReq
                 {
                     if (string.IsNullOrWhiteSpace(value))
                     {
-                        context.AddFailure(new ValidationFailure("firstName", "firstName must not be empty")
-                        {
-                            ErrorCode = "NotEmpty"
-                        });
+                        context.AddFailure(
+                            new ValidationFailure("firstName", "firstName must not be empty")
+                            {
+                                ErrorCode = "NotEmpty"
+                            }
+                        );
                     }
                 }
             );
@@ -261,10 +264,12 @@ internal sealed class FluentSimpleRequestValidator : AbstractValidator<SimpleReq
                 {
                     if (value < 18)
                     {
-                        context.AddFailure(new ValidationFailure("age", "age must be at least 18")
-                        {
-                            ErrorCode = "Adult"
-                        });
+                        context.AddFailure(
+                            new ValidationFailure("age", "age must be at least 18")
+                            {
+                                ErrorCode = "Adult"
+                            }
+                        );
                     }
                 }
             );
@@ -281,10 +286,12 @@ internal sealed class FluentComplexRequestValidator : AbstractValidator<ComplexR
                 {
                     if (value is null || !value.Contains("@", StringComparison.Ordinal))
                     {
-                        context.AddFailure(new ValidationFailure("email", "email must be an email address")
-                        {
-                            ErrorCode = "Email"
-                        });
+                        context.AddFailure(
+                            new ValidationFailure("email", "email must be an email address")
+                            {
+                                ErrorCode = "Email"
+                            }
+                        );
                     }
                 }
             );
@@ -295,10 +302,12 @@ internal sealed class FluentComplexRequestValidator : AbstractValidator<ComplexR
                 {
                     if (value is not null && string.IsNullOrWhiteSpace(value.ZipCode))
                     {
-                        context.AddFailure(new ValidationFailure("address.zipCode", "zipCode must not be empty")
-                        {
-                            ErrorCode = "NotEmpty"
-                        });
+                        context.AddFailure(
+                            new ValidationFailure("address.zipCode", "zipCode must not be empty")
+                            {
+                                ErrorCode = "NotEmpty"
+                            }
+                        );
                     }
                 }
             );
@@ -315,18 +324,22 @@ internal sealed class FluentComplexRequestValidator : AbstractValidator<ComplexR
                     var propertyName = context.PropertyPath;
                     if (string.IsNullOrWhiteSpace(value.Sku))
                     {
-                        context.AddFailure(new ValidationFailure(propertyName + ".sku", "sku must not be empty")
-                        {
-                            ErrorCode = "NotEmpty"
-                        });
+                        context.AddFailure(
+                            new ValidationFailure(propertyName + ".sku", "sku must not be empty")
+                            {
+                                ErrorCode = "NotEmpty"
+                            }
+                        );
                     }
 
                     if (value.Quantity < 1)
                     {
-                        context.AddFailure(new ValidationFailure(propertyName + ".quantity", "quantity must be at least 1")
-                        {
-                            ErrorCode = "MinQuantity"
-                        });
+                        context.AddFailure(
+                            new ValidationFailure(propertyName + ".quantity", "quantity must be at least 1")
+                            {
+                                ErrorCode = "MinQuantity"
+                            }
+                        );
                     }
                 }
             );
@@ -371,7 +384,9 @@ internal sealed record ItemCommand(string Sku, int Quantity);
 
 internal static class ValidationBenchmarkHelpers
 {
-    public static Result ToFailureResult(FluentValidation.Results.ValidationResult validationResult)
+    public static readonly DefaultValidationContextFactory ValidationContextFactory = new ();
+
+    public static Result ToFailureResult(ValidationResult validationResult)
     {
         var errors = new Error[validationResult.Errors.Count];
         for (var i = 0; i < validationResult.Errors.Count; i++)

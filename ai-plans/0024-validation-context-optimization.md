@@ -6,18 +6,18 @@ The validation package is already competitive on the simple endpoint benchmark, 
 
 ## Acceptance Criteria
 
-- [ ] `ValidationContext` is redesigned as a lightweight scoped value type for validation runs rather than a dedicated heap object per scope.
-- [ ] A single internal `ValidationState` reference type owns the mutable per-run validation state, including options, templates, error accumulation, and any shared root-level services needed by all scoped contexts.
-- [ ] `IValidationContextFactory` and `ValidationContextFactory` are simplified to create root validation contexts only; child validation scopes are created directly from `ValidationContext` without round-tripping through the factory.
-- [ ] `ValidationContext` exposes explicit scope/prefix creation APIs for nested validation scenarios, including member and index-based composition, so nested validators can avoid unnecessary caller-expression normalization work.
-- [ ] The previous sink-based error accumulator is removed and merged into `ValidationState`.
-- [ ] `ValidationState` keeps the first error inline and allocates an owned `Error[]` with an initial capacity of 10 when the second error arrives, allowing the common 2-to-10-error case to avoid further storage allocations.
-- [ ] When more than 10 errors occur, `ValidationState` grows the owned array in a predictable way while preserving the existing error order.
-- [ ] `ValidationContext.ToErrors()` / `TryGetErrors(...)` materialize `Errors` directly from the owned array via `ReadOnlyMemory<Error>` slicing when multiple errors are present, avoiding a second copy for the common failure path.
-- [ ] The redesign preserves the current flat target semantics for nested validation, including root targets, member paths such as `address.zipCode`, and indexed paths such as `addresses[0].zipCode`.
-- [ ] The redesign does not regress the success path: successful validation should allocate only the root per-run state, while nested scopes should not allocate additional objects.
-- [ ] Automated tests cover root and nested scope creation, error accumulation across multiple scopes, first-error and multi-error materialization, direct wrapping of the owned multi-error buffer into `Errors`, and overflow behavior when more than 10 errors are produced.
-- [ ] Benchmarks are added or updated to measure the validation hot paths affected by this redesign, including at least nested validation with child scopes and failure accumulation for 1, 2, 10, and more than 10 errors.
+- [x] `ValidationContext` is redesigned as a lightweight scoped value type for validation runs rather than a dedicated heap object per scope.
+- [x] A single internal `ValidationState` reference type owns the mutable per-run validation state, including options, templates, error accumulation, and any shared root-level services needed by all scoped contexts.
+- [x] `IValidationContextFactory` and `ValidationContextFactory` are simplified to create root validation contexts only; child validation scopes are created directly from `ValidationContext` without round-tripping through the factory.
+- [x] `ValidationContext` exposes explicit scope/prefix creation APIs for nested validation scenarios, including member and index-based composition, so nested validators can avoid unnecessary caller-expression normalization work.
+- [x] The previous sink-based error accumulator is removed and merged into `ValidationState`.
+- [x] `ValidationState` keeps the first error inline and allocates an owned `Error[]` with an initial capacity of 10 when the second error arrives, allowing the common 2-to-10-error case to avoid further storage allocations.
+- [x] When more than 10 errors occur, `ValidationState` grows the owned array in a predictable way while preserving the existing error order.
+- [x] `ValidationContext.ToErrors()` / `TryGetErrors(...)` materialize `Errors` directly from the owned array via `ReadOnlyMemory<Error>` slicing when multiple errors are present, avoiding a second copy for the common failure path.
+- [x] The redesign preserves the current flat target semantics for nested validation, including root targets, member paths such as `address.zipCode`, and indexed paths such as `addresses[0].zipCode`.
+- [x] The redesign does not regress the success path: successful validation should allocate only the root per-run state, while nested scopes should not allocate additional objects.
+- [x] Automated tests cover root and nested scope creation, error accumulation across multiple scopes, first-error and multi-error materialization, direct wrapping of the owned multi-error buffer into `Errors`, and overflow behavior when more than 10 errors are produced.
+- [x] Benchmarks are added or updated to measure the validation hot paths affected by this redesign, including at least nested validation with child scopes and failure accumulation for 1, 2, 10, and more than 10 errors.
 
 ## Technical Details
 

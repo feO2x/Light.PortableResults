@@ -27,7 +27,8 @@ public readonly struct Check<T>
         bool isShortCircuited
     )
     {
-        Context = context ?? throw new ArgumentNullException(nameof(context));
+        context.ThrowIfDefault();
+        Context = context;
         Target = target ?? throw new ArgumentNullException(nameof(target));
         DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
         Value = value;

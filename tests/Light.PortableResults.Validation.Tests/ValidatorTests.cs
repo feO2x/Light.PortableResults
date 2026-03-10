@@ -9,7 +9,7 @@ namespace Light.PortableResults.Validation.Tests;
 
 public sealed class ValidatorTests
 {
-    private static readonly ValidationContextFactory ValidationContextFactory = new ();
+    private static readonly DefaultValidationContextFactory ValidationContextFactory = new ();
 
     [Fact]
     public void Validator_ShouldReturnNormalizedValueOnSuccess()
@@ -197,17 +197,15 @@ public sealed class ValidatorTests
 
             if (value.Address is not null)
             {
-                _addressValidator.Validate(value.Address, context.CreateChildContext(value.Address));
+                _addressValidator.Validate(value.Address, context.For(value.Address));
             }
 
             if (value.Addresses is not null)
             {
+                var addressesContext = context.ForMember("addresses", isNormalized: true);
                 for (var i = 0; i < value.Addresses.Count; i++)
                 {
-                    var childContext = context.CreateChildContext(
-                        ValidationTargets.AppendIndex("addresses", i),
-                        isTargetPrefixNormalized: true
-                    );
+                    var childContext = addressesContext.ForIndex(i);
                     _addressValidator.Validate(value.Addresses[i], childContext);
                 }
             }

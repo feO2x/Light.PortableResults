@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Light.PortableResults.Metadata;
 
@@ -8,72 +9,115 @@ namespace Light.PortableResults.Validation;
 /// Tracks validation failures for a single validation run and exposes low-overhead helpers to create checks and
 /// materialize flat validation errors.
 /// </summary>
-public sealed class ValidationContext
+public readonly struct ValidationContext
 {
-    internal ValidationContext(
-        IValidationContextFactory factory,
-        ValidationContextOptions options,
-        ValidationErrorTemplates errorTemplates,
-        ValidationErrorSink sink,
-        string targetPrefix
-    )
+    private readonly ValidationState? _state;
+    private readonly string? _targetPrefix;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValidationContext" /> struct.
+    /// </summary>
+    /// <param name="state">The validation state that tracks accumulated errors.</param>
+    /// <param name="targetPrefix">The prefix to prepend to error targets within this context.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="state" /> or <paramref name="targetPrefix" /> is null.</exception>
+    public ValidationContext(ValidationState state, string targetPrefix)
     {
-        Factory = factory ?? throw new ArgumentNullException(nameof(factory));
-        Options = options ?? throw new ArgumentNullException(nameof(options));
-        ErrorTemplates = errorTemplates ?? throw new ArgumentNullException(nameof(errorTemplates));
-        Sink = sink ?? throw new ArgumentNullException(nameof(sink));
-        TargetPrefix = targetPrefix ?? throw new ArgumentNullException(nameof(targetPrefix));
+        _state = state ?? throw new ArgumentNullException(nameof(state));
+        _targetPrefix = targetPrefix ?? throw new ArgumentNullException(nameof(targetPrefix));
     }
 
     /// <summary>
-    /// Gets the factory that created this context.
+    /// Gets a value indicating whether this instance is the uninitialized default value.
     /// </summary>
-    public IValidationContextFactory Factory { get; }
+    public bool IsDefault => _state is null;
 
     /// <summary>
     /// Gets the options applied by this context.
     /// </summary>
-    public ValidationContextOptions Options { get; }
+    public ValidationContextOptions Options => State.Options;
 
     /// <summary>
     /// Gets the validation error templates used by this context.
     /// </summary>
-    public ValidationErrorTemplates ErrorTemplates { get; }
+    public ValidationErrorTemplates ErrorTemplates => State.ErrorTemplates;
 
     /// <summary>
     /// Gets the target prefix that is prepended to errors created within this context.
     /// </summary>
-    public string TargetPrefix { get; }
+    public string TargetPrefix
+    {
+        get
+        {
+            EnsureInitialized();
+            return _targetPrefix;
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating whether this context has accumulated validation failures.
     /// </summary>
-    public bool HasErrors => Sink.HasErrors;
+    public bool HasErrors => State.HasErrors;
 
-    internal ValidationErrorSink Sink { get; }
+    private ValidationState State =>
+        _state ?? throw new InvalidOperationException("The validation context must not be the default instance");
 
     /// <summary>
-    /// Creates a child validation context that shares this context's flat error sink.
+    /// Creates a scoped validation context for the specified child value.
     /// </summary>
     /// <typeparam name="T">The type of the child value.</typeparam>
-    /// <param name="childValue">The child value whose caller expression identifies the target prefix.</param>
-    /// <param name="targetPrefix">The raw caller expression for the child value.</param>
-    /// <returns>The child validation context.</returns>
-    public ValidationContext CreateChildContext<T>(
-        T childValue,
-        [CallerArgumentExpression("childValue")] string targetPrefix = ""
-    ) => Factory.CreateChildValidationContext(this, childValue, targetPrefix);
+    /// <param name="child">The child value whose caller expression identifies the scope prefix.</param>
+    /// <param name="target">The raw caller expression for the child value.</param>
+    /// <returns>The scoped validation context.</returns>
+    public ValidationContext For<T>(T child, [CallerArgumentExpression("child")] string target = "") =>
+        WithPrefix(target);
 
     /// <summary>
-    /// Creates a child validation context with the specified target prefix.
+    /// Creates a scoped validation context for the specified member path segment.
     /// </summary>
-    /// <param name="targetPrefix">The target prefix for the new child scope.</param>
-    /// <param name="isTargetPrefixNormalized">
-    /// <see langword="true" /> when <paramref name="targetPrefix" /> is already normalized; otherwise, <see langword="false" />.
+    /// <param name="memberName">The member name or path segment to append.</param>
+    /// <param name="isNormalized">
+    /// <see langword="true" /> when <paramref name="memberName" /> is already normalized; otherwise, <see langword="false" />.
     /// </param>
-    /// <returns>The child validation context.</returns>
-    public ValidationContext CreateChildContext(string targetPrefix, bool isTargetPrefixNormalized = false) =>
-        Factory.CreateChildValidationContext(this, targetPrefix, isTargetPrefixNormalized);
+    /// <returns>The scoped validation context.</returns>
+    public ValidationContext ForMember(string memberName, bool isNormalized = false) =>
+        WithPrefix(memberName, isNormalized);
+
+    /// <summary>
+    /// Creates a scoped validation context for the specified collection index.
+    /// </summary>
+    /// <param name="index">The zero-based index.</param>
+    /// <returns>The scoped validation context.</returns>
+    public ValidationContext ForIndex(int index)
+    {
+        EnsureInitialized();
+        return new ValidationContext(State, ValidationTargets.AppendIndex(_targetPrefix, index));
+    }
+
+    /// <summary>
+    /// Creates a scoped validation context with the specified target prefix.
+    /// </summary>
+    /// <param name="prefix">The prefix to append to this scope.</param>
+    /// <param name="isNormalized">
+    /// <see langword="true" /> when <paramref name="prefix" /> is already normalized; otherwise, <see langword="false" />.
+    /// </param>
+    /// <returns>The scoped validation context.</returns>
+    public ValidationContext WithPrefix(string prefix, bool isNormalized = false)
+    {
+        EnsureInitialized();
+        if (prefix is null)
+        {
+            throw new ArgumentNullException(nameof(prefix));
+        }
+
+        if (prefix.Length == 0)
+        {
+            return this;
+        }
+
+        var normalizedPrefix = isNormalized ? prefix : NormalizeTarget(prefix);
+        var composedPrefix = ValidationTargets.Compose(_targetPrefix, normalizedPrefix);
+        return new ValidationContext(State, composedPrefix);
+    }
 
     /// <summary>
     /// Creates a check for the specified value and raw caller expression target.
@@ -86,13 +130,18 @@ public sealed class ValidationContext
     /// <param name="target">The raw target expression.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The created check.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
     public Check<T> Check<T>(
         T value,
         bool? normalizeStringValue = null,
-        [CallerArgumentExpression("value")] string target = "",
+        [CallerArgumentExpression("value")] string? target = null,
         string? displayName = null
     )
     {
+        EnsureInitialized();
+        // ReSharper disable once JoinNullCheckWithUsage -- false positive, for display name, we use the ??= operator.
+        // This would mean that the null check for target is only executed when displayName is null.
         if (target is null)
         {
             throw new ArgumentNullException(nameof(target));
@@ -111,19 +160,21 @@ public sealed class ValidationContext
     /// Adds the specified validation error to this context.
     /// </summary>
     /// <param name="error">The error to add.</param>
+    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
     public void AddError(Error error)
     {
+        EnsureInitialized();
         if (error.IsDefaultInstance)
         {
             throw new ArgumentException("The error must not be the default instance.", nameof(error));
         }
 
-        if (error.Target is null && TargetPrefix.Length > 0)
+        if (error.Target is null && _targetPrefix.Length > 0)
         {
-            error = error with { Target = TargetPrefix };
+            error = error with { Target = _targetPrefix };
         }
 
-        Sink.Add(error);
+        State.AddError(error);
     }
 
     /// <summary>
@@ -133,8 +184,11 @@ public sealed class ValidationContext
     /// <param name="code">The optional error code.</param>
     /// <param name="target">The optional target path.</param>
     /// <param name="metadata">The optional error metadata.</param>
+    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="message" /> is null.</exception>
     public void AddError(string message, string? code = null, string? target = null, MetadataObject? metadata = null)
     {
+        EnsureInitialized();
         if (message is null)
         {
             throw new ArgumentNullException(nameof(message));
@@ -142,7 +196,7 @@ public sealed class ValidationContext
 
         if (target is null)
         {
-            target = TargetPrefix;
+            target = _targetPrefix;
         }
         else
         {
@@ -166,14 +220,24 @@ public sealed class ValidationContext
     /// </summary>
     /// <param name="rawTarget">The raw target expression.</param>
     /// <returns>The normalized target.</returns>
-    public string NormalizeTarget(string rawTarget) => Options.TargetNormalizer.Normalize(rawTarget);
+    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
+    public string NormalizeTarget(string rawTarget)
+    {
+        EnsureInitialized();
+        return Options.TargetNormalizer.Normalize(rawTarget);
+    }
 
     /// <summary>
     /// Normalizes a string value using the configured string normalization behavior.
     /// </summary>
     /// <param name="value">The string value to normalize.</param>
     /// <returns>The normalized string value.</returns>
-    public string NormalizeStringValue(string? value) => Options.NormalizeStringValue(value);
+    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
+    public string NormalizeStringValue(string? value)
+    {
+        EnsureInitialized();
+        return Options.NormalizeStringValue(value);
+    }
 
     /// <summary>
     /// Creates the automatic null-validation error for the specified target and display name.
@@ -181,8 +245,11 @@ public sealed class ValidationContext
     /// <param name="target">The normalized target.</param>
     /// <param name="displayName">The display name.</param>
     /// <returns>The created error.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> or <paramref name="displayName" /> is null.</exception>
     public Error CreateErrorForAutomaticNullCheck(string target, string displayName)
     {
+        EnsureInitialized();
         if (target is null)
         {
             throw new ArgumentNullException(nameof(target));
@@ -208,7 +275,12 @@ public sealed class ValidationContext
     /// </summary>
     /// <param name="errors">The accumulated errors when present.</param>
     /// <returns><see langword="true" /> when errors are present; otherwise, <see langword="false" />.</returns>
-    public bool TryGetErrors(out Errors errors) => Sink.TryBuildErrors(out errors);
+    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
+    public bool TryGetErrors(out Errors errors)
+    {
+        EnsureInitialized();
+        return State.TryBuildErrors(out errors);
+    }
 
     /// <summary>
     /// Materializes the accumulated errors.
@@ -226,32 +298,37 @@ public sealed class ValidationContext
         if (!TryGetErrors(out var errors))
         {
             throw new InvalidOperationException(
-                "Cannot create a failure result when no validation errors are present."
+                "Cannot create a failure result when no validation errors are present"
             );
         }
 
         return Result.Fail(errors);
     }
 
-    internal bool ShouldCreateAutomaticNullError() => Options.CreateAutomaticNullErrors;
-
-    internal string GetAutomaticNullTarget(string rawTarget)
+    /// <summary>
+    /// Gets the target path for the automatic null check.
+    /// </summary>
+    /// <param name="rawTarget">The non-normalized target </param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
+    public string GetAutomaticNullTarget(string rawTarget)
     {
-        if (TargetPrefix.Length > 0)
+        EnsureInitialized();
+        if (_targetPrefix.Length > 0)
         {
             if (ValidationTargets.IsSimpleIdentifier(rawTarget))
             {
-                return TargetPrefix;
+                return _targetPrefix;
             }
 
             var normalizedTarget = NormalizeTarget(rawTarget);
-            if (string.Equals(normalizedTarget, TargetPrefix, StringComparison.Ordinal))
+            if (string.Equals(normalizedTarget, _targetPrefix, StringComparison.Ordinal))
             {
-                return TargetPrefix;
+                return _targetPrefix;
             }
         }
 
-        if (TargetPrefix.Length == 0 && ValidationTargets.IsSimpleIdentifier(rawTarget))
+        if (_targetPrefix.Length == 0 && ValidationTargets.IsSimpleIdentifier(rawTarget))
         {
             return string.Empty;
         }
@@ -259,16 +336,32 @@ public sealed class ValidationContext
         return ComposeTarget(rawTarget, isTargetNormalized: false);
     }
 
-    internal string ComposeTarget(string target, bool isTargetNormalized)
+    /// <summary>
+    /// Composes a target path by combining the context's target prefix with the specified target.
+    /// </summary>
+    /// <param name="target">The target to compose with the prefix.</param>
+    /// <param name="isTargetNormalized">
+    /// <see langword="true" /> when <paramref name="target" /> is already normalized; otherwise, <see langword="false" />.
+    /// </param>
+    /// <returns>The composed target path.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
+    public string ComposeTarget(string target, bool isTargetNormalized)
     {
+        EnsureInitialized();
         if (target is null)
         {
             throw new ArgumentNullException(nameof(target));
         }
 
         var normalizedTarget = isTargetNormalized ? target : NormalizeTarget(target);
-        return ValidationTargets.Compose(TargetPrefix, normalizedTarget);
+        return ValidationTargets.Compose(_targetPrefix, normalizedTarget);
     }
+
+    /// <summary>
+    /// Ensures that the validation context is initialized and not the default instance.
+    /// </summary>
+    public void ThrowIfDefault() => EnsureInitialized();
 
     private bool ShouldNormalizeStringValue(bool? overrideValue) => overrideValue ?? Options.NormalizeStringValues;
 
@@ -287,4 +380,17 @@ public sealed class ValidationContext
 
         return value;
     }
+
+    [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
+    private void EnsureInitialized()
+    {
+        if (_state is null)
+        {
+            throw new InvalidOperationException("The validation context must not be the default instance");
+        }
+
+        // _targetPrefix is initialized in the constructor and cannot be null when _state is not null.
+#pragma warning disable CS8774 // Member must have a non-null value when exiting.
+    }
+#pragma warning restore CS8774
 }

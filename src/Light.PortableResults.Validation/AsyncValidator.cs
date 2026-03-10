@@ -21,8 +21,7 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
     protected AsyncValidator(
         IValidationContextFactory validationContextFactory,
         bool isAutomaticNullCheckingEnabled = true
-    )
-        : base(validationContextFactory, isAutomaticNullCheckingEnabled) { }
+    ) : base(validationContextFactory, isAutomaticNullCheckingEnabled) { }
 
     /// <summary>
     /// Validates the specified value with a fresh validation context.
@@ -55,6 +54,8 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
     /// <param name="target">The raw caller expression for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The validation outcome.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="context" /> is the default instance.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
     public async ValueTask<ValidationOutcome<T>> ValidateAsync(
         T? value,
         ValidationContext context,
@@ -63,11 +64,13 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
         string? displayName = null
     )
     {
-        if (context is null)
+        if (context.IsDefault)
         {
-            throw new ArgumentNullException(nameof(context));
+            throw new ArgumentException("The validation context must not be the default instance.", nameof(context));
         }
 
+        // ReSharper disable once JoinNullCheckWithUsage -- false positive, for display name, we use the ??= operator.
+        // This would mean that the null check for target is only executed when displayName is null.
         if (target is null)
         {
             throw new ArgumentNullException(nameof(target));
@@ -79,7 +82,7 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
             return nullOutcome;
         }
 
-        var validatedValue = await PerformValidationAsync(context, value!, cancellationToken).ConfigureAwait(false);
+        var validatedValue = await PerformValidationAsync(context, value, cancellationToken).ConfigureAwait(false);
         return new ValidationOutcome<T>(validatedValue, context.ToErrors());
     }
 
@@ -111,11 +114,11 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
     /// <param name="isAutomaticNullCheckingEnabled">
     /// Specifies whether the validator should automatically create a validation error for null source values.
     /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="validationContextFactory" /> is null.</exception>
     protected AsyncValidator(
         IValidationContextFactory validationContextFactory,
         bool isAutomaticNullCheckingEnabled = true
-    )
-        : base(validationContextFactory, isAutomaticNullCheckingEnabled) { }
+    ) : base(validationContextFactory, isAutomaticNullCheckingEnabled) { }
 
     /// <summary>
     /// Validates the specified source value with a fresh validation context and transforms it into a validated output.
@@ -148,6 +151,8 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
     /// <param name="target">The raw caller expression for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The validation outcome.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="context" /> is the default instance.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
     public async ValueTask<ValidationOutcome<TValidated>> ValidateAsync(
         TSource? value,
         ValidationContext context,
@@ -156,11 +161,13 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
         string? displayName = null
     )
     {
-        if (context is null)
+        if (context.IsDefault)
         {
-            throw new ArgumentNullException(nameof(context));
+            throw new ArgumentException("The validation context must not be the default instance.", nameof(context));
         }
 
+        // ReSharper disable once JoinNullCheckWithUsage -- false positive, for display name, we use the ??= operator.
+        // This would mean that the null check for target is only executed when displayName is null.
         if (target is null)
         {
             throw new ArgumentNullException(nameof(target));

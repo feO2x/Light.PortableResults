@@ -1,5 +1,4 @@
 using FluentAssertions;
-using Light.PortableResults.Validation;
 using Xunit;
 
 namespace Light.PortableResults.Validation.Tests;
@@ -9,7 +8,7 @@ public sealed class ValidationContextTests
     [Fact]
     public void Check_ShouldNormalizeTrimmedStringValues()
     {
-        var context = new ValidationContextFactory().CreateValidationContext();
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
         string? firstName = "  Alice  ";
 
         var check = context.Check(firstName).NormalizeTargetIfNecessary();
@@ -22,7 +21,7 @@ public sealed class ValidationContextTests
     [Fact]
     public void Check_ShouldNormalizeNullStringsToEmptyString()
     {
-        var context = new ValidationContextFactory().CreateValidationContext();
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
         string? firstName = null;
 
         var check = context.Check(firstName);
@@ -33,7 +32,7 @@ public sealed class ValidationContextTests
     [Fact]
     public void AddError_ShouldMaterializeFlatErrorsAndFailureResult()
     {
-        var context = new ValidationContextFactory().CreateValidationContext();
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
 
         context.AddError("first name is required", "NotEmpty", "firstName");
         context.AddError("age must be at least 18", "Adult", "age");
