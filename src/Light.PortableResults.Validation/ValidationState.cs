@@ -1,11 +1,11 @@
 using System;
+using System.Collections.Generic;
 
 namespace Light.PortableResults.Validation;
 
 /// <summary>
-/// Represents the mutable state of a validation operation, tracking validation errors
-/// and providing configuration options. This class uses an optimized storage strategy
-/// that minimizes allocations for common scenarios (0-1 errors, 2-10 errors, and more than 10 errors).
+/// Represents the mutable state of a validation operation, tracking validation errors,
+/// shared run-level items, and configuration options.
 /// </summary>
 public sealed class ValidationState
 {
@@ -13,18 +13,15 @@ public sealed class ValidationState
 
     private Error[]? _errors;
     private Error _firstError;
+    private Dictionary<object, object?>? _items;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ValidationState" /> class.
     /// </summary>
     /// <param name="options">The validation context options.</param>
-    /// <param name="errorTemplates">The error templates for generating validation errors.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> or <paramref name="errorTemplates" /> is null.</exception>
-    public ValidationState(ValidationContextOptions options, ValidationErrorTemplates errorTemplates)
-    {
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="options" /> is null.</exception>
+    public ValidationState(ValidationContextOptions options) =>
         Options = options ?? throw new ArgumentNullException(nameof(options));
-        ErrorTemplates = errorTemplates ?? throw new ArgumentNullException(nameof(errorTemplates));
-    }
 
     /// <summary>
     /// Gets the validation context options that control validation behavior.
@@ -32,9 +29,9 @@ public sealed class ValidationState
     public ValidationContextOptions Options { get; }
 
     /// <summary>
-    /// Gets the error templates used for generating validation errors.
+    /// Gets the validation error templates used for generating validation errors.
     /// </summary>
-    public ValidationErrorTemplates ErrorTemplates { get; }
+    public ValidationErrorTemplates ErrorTemplates => Options.ErrorTemplates;
 
     /// <summary>
     /// Gets the total number of validation errors that have been added.
@@ -45,6 +42,89 @@ public sealed class ValidationState
     /// Gets a value indicating whether any validation errors have been added.
     /// </summary>
     public bool HasErrors => ErrorCount > 0;
+
+    /// <summary>
+    /// Adds or replaces a shared validation item for the current run.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="key">The typed key.</param>
+    /// <param name="value">The value to store.</param>
+    public void SetItem<T>(ValidationContextKey<T> key, T value)
+    {
+        if (key is null)
+        {
+            throw new ArgumentNullException(nameof(key));
+        }
+
+        (_items ??= new Dictionary<object, object?>())[key] = value;
+    }
+
+    /// <summary>
+    /// Tries to read a shared validation item.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="key">The typed key.</param>
+    /// <param name="value">The stored value when present.</param>
+    /// <returns><see langword="true" /> when the item exists; otherwise, <see langword="false" />.</returns>
+    public bool TryGetItem<T>(ValidationContextKey<T> key, out T value)
+    {
+        if (key is null)
+        {
+            throw new ArgumentNullException(nameof(key));
+        }
+
+        if (_items is not null && _items.TryGetValue(key, out var boxedValue))
+        {
+            if (boxedValue is null)
+            {
+                value = default!;
+                return true;
+            }
+
+            if (boxedValue is T typedValue)
+            {
+                value = typedValue;
+                return true;
+            }
+        }
+
+        value = default!;
+        return false;
+    }
+
+    /// <summary>
+    /// Gets a shared validation item or throws when it is missing.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="key">The typed key.</param>
+    /// <returns>The stored value.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="key" /> is <see langword="null" />.</exception>
+    /// <exception cref="KeyNotFoundException">Thrown when the item does not exist.</exception>
+    public T GetRequiredItem<T>(ValidationContextKey<T> key)
+    {
+        if (TryGetItem(key, out var value))
+        {
+            return value;
+        }
+
+        throw new KeyNotFoundException($"The required validation context item '{key}' was not found.");
+    }
+
+    /// <summary>
+    /// Removes a shared validation item.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="key">The typed key.</param>
+    /// <returns><see langword="true" /> when the item existed; otherwise, <see langword="false" />.</returns>
+    public bool RemoveItem<T>(ValidationContextKey<T> key)
+    {
+        if (key is null)
+        {
+            throw new ArgumentNullException(nameof(key));
+        }
+
+        return _items?.Remove(key) ?? false;
+    }
 
     /// <summary>
     /// Adds a validation error to the state. The first error is stored inline,

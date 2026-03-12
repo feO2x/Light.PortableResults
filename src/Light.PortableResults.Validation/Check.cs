@@ -117,6 +117,20 @@ public readonly struct Check<T>
     }
 
     /// <summary>
+    /// Creates the readonly message context for this check.
+    /// </summary>
+    /// <returns>The readonly message context.</returns>
+    public ValidationErrorMessageContext<T> CreateMessageContext()
+    {
+        var normalizedCheck = NormalizeTargetIfNecessary();
+        return normalizedCheck.Context.CreateAbsoluteMessageContext(
+            normalizedCheck.Value,
+            normalizedCheck.Target,
+            normalizedCheck.DisplayName
+        );
+    }
+
+    /// <summary>
     /// Adds the specified error to the context.
     /// </summary>
     /// <param name="error">The error to add.</param>
@@ -142,6 +156,113 @@ public readonly struct Check<T>
     }
 
     /// <summary>
+    /// Adds a validation error with the specified generated message and optional details.
+    /// </summary>
+    /// <param name="message">The generated message.</param>
+    /// <param name="code">The optional error code.</param>
+    /// <param name="metadata">The optional metadata.</param>
+    /// <param name="target">The optional explicit target.</param>
+    /// <param name="respectShortCircuit">
+    /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
+    /// </param>
+    /// <returns>The current check.</returns>
+    public Check<T> AddError(
+        ValidationErrorMessage message,
+        string? code = null,
+        MetadataObject? metadata = null,
+        string? target = null,
+        bool respectShortCircuit = true
+    )
+    {
+        if (respectShortCircuit && IsShortCircuited)
+        {
+            return this;
+        }
+
+        var normalizedCheck = NormalizeTargetIfNecessary();
+        var resolvedTarget = target is null ?
+            normalizedCheck.Target :
+            normalizedCheck.Context.ComposeTarget(target, isTargetNormalized: true);
+        normalizedCheck.Context.AddError(
+            message.ToError(code, resolvedTarget, ErrorCategory.Validation, metadata)
+        );
+        return normalizedCheck;
+    }
+
+    /// <summary>
+    /// Adds a validation error with the specified message template and optional details.
+    /// </summary>
+    /// <param name="template">The message template.</param>
+    /// <param name="code">The optional error code.</param>
+    /// <param name="metadata">The optional metadata.</param>
+    /// <param name="target">The optional explicit target.</param>
+    /// <param name="respectShortCircuit">
+    /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
+    /// </param>
+    /// <returns>The current check.</returns>
+    public Check<T> AddError(
+        IValidationErrorMessageTemplate template,
+        string? code = null,
+        MetadataObject? metadata = null,
+        string? target = null,
+        bool respectShortCircuit = true
+    )
+    {
+        if (template is null)
+        {
+            throw new ArgumentNullException(nameof(template));
+        }
+
+        if (respectShortCircuit && IsShortCircuited)
+        {
+            return this;
+        }
+
+        var normalizedCheck = NormalizeTargetIfNecessary();
+        var messageContext = normalizedCheck.CreateMessageContext();
+        var message = template.ProvideMessage(in messageContext);
+        return normalizedCheck.AddError(message, code, metadata, target, respectShortCircuit: false);
+    }
+
+    /// <summary>
+    /// Adds a validation error with the specified message template, typed parameter, and optional details.
+    /// </summary>
+    /// <typeparam name="TParameter">The parameter type.</typeparam>
+    /// <param name="template">The message template.</param>
+    /// <param name="parameter">The additional typed parameter.</param>
+    /// <param name="code">The optional error code.</param>
+    /// <param name="metadata">The optional metadata.</param>
+    /// <param name="target">The optional explicit target.</param>
+    /// <param name="respectShortCircuit">
+    /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
+    /// </param>
+    /// <returns>The current check.</returns>
+    public Check<T> AddError<TParameter>(
+        IValidationErrorMessageTemplate<TParameter> template,
+        TParameter parameter,
+        string? code = null,
+        MetadataObject? metadata = null,
+        string? target = null,
+        bool respectShortCircuit = true
+    )
+    {
+        if (template is null)
+        {
+            throw new ArgumentNullException(nameof(template));
+        }
+
+        if (respectShortCircuit && IsShortCircuited)
+        {
+            return this;
+        }
+
+        var normalizedCheck = NormalizeTargetIfNecessary();
+        var messageContext = normalizedCheck.CreateMessageContext();
+        var message = template.ProvideMessage(in messageContext, parameter);
+        return normalizedCheck.AddError(message, code, metadata, target, respectShortCircuit: false);
+    }
+
+    /// <summary>
     /// Adds a validation error with the specified message and optional details.
     /// </summary>
     /// <param name="message">The error message.</param>
@@ -158,31 +279,8 @@ public readonly struct Check<T>
         MetadataObject? metadata = null,
         string? target = null,
         bool respectShortCircuit = true
-    )
-    {
-        if (respectShortCircuit && IsShortCircuited)
-        {
-            return this;
-        }
-
-        var normalizedCheck = NormalizeTargetIfNecessary();
-        var resolvedTarget = target is null ?
-            normalizedCheck.Target :
-            normalizedCheck.Context.ComposeTarget(target, isTargetNormalized: true);
-
-        normalizedCheck.Context.AddError(
-            new Error
-            {
-                Message = message ?? throw new ArgumentNullException(nameof(message)),
-                Code = code,
-                Target = resolvedTarget,
-                Category = ErrorCategory.Validation,
-                Metadata = metadata
-            }
-        );
-
-        return normalizedCheck;
-    }
+    ) =>
+        AddError(new ValidationErrorMessage(message), code, metadata, target, respectShortCircuit);
 
     /// <summary>
     /// Implicitly converts the check to its value.

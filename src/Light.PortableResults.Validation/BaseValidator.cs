@@ -55,14 +55,19 @@ public abstract class BaseValidator<TSource>
         out ValidationOutcome<TValidated> outcome
     )
     {
-        if (!IsAutomaticNullCheckingEnabled || !context.Options.CreateAutomaticNullErrors || value is not null)
+        if (!IsAutomaticNullCheckingEnabled || value is not null)
         {
             outcome = default;
             return false;
         }
 
         var target = context.GetAutomaticNullTarget(rawTarget);
-        var error = context.CreateErrorForAutomaticNullCheck(target, displayName);
+        if (!context.TryCreateAutomaticNullError(value, target, displayName, out var error))
+        {
+            outcome = default;
+            return false;
+        }
+
         outcome = new ValidationOutcome<TValidated>(default!, new Errors(error));
         return true;
     }

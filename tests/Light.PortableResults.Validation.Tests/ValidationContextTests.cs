@@ -9,7 +9,7 @@ public sealed class ValidationContextTests
     public void Check_ShouldNormalizeTrimmedStringValues()
     {
         var context = new DefaultValidationContextFactory().CreateValidationContext();
-        string? firstName = "  Alice  ";
+        const string firstName = "  Alice  ";
 
         var check = context.Check(firstName).NormalizeTargetIfNecessary();
 
@@ -27,6 +27,32 @@ public sealed class ValidationContextTests
         var check = context.Check(firstName);
 
         check.Value.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Check_ShouldPreserveNullStrings_WhenNoOpNormalizerIsConfigured()
+    {
+        var options = ValidationContextOptions.Default with
+        {
+            StringValueNormalizer = NoOpStringValueNormalizer.Instance
+        };
+        var context = new DefaultValidationContextFactory(options).CreateValidationContext();
+        string? firstName = null;
+
+        var check = context.Check(firstName);
+
+        check.Value.Should().BeNull();
+    }
+
+    [Fact]
+    public void Check_ShouldAllowPerCheckStringNormalizerOverride()
+    {
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        const string firstName = "  Alice  ";
+
+        var check = context.Check(firstName, NoOpStringValueNormalizer.Instance);
+
+        check.Value.Should().Be("  Alice  ");
     }
 
     [Fact]
@@ -64,5 +90,24 @@ public sealed class ValidationContextTests
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Equal(errors);
+    }
+
+    [Fact]
+    public void ContextItems_ShouldBeSharedAcrossParentAndChildScopes()
+    {
+        var key = new ValidationContextKey<string>("tenant");
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var childContext = context.ForMember("address", isNormalized: true);
+
+        context.SetItem(key, "parent");
+        childContext.TryGetItem(key, out var initialValue).Should().BeTrue();
+        initialValue.Should().Be("parent");
+
+        childContext.SetItem(key, "child");
+        context.TryGetItem(key, out var updatedValue).Should().BeTrue();
+        updatedValue.Should().Be("child");
+
+        childContext.RemoveItem(key).Should().BeTrue();
+        context.TryGetItem(key, out _).Should().BeFalse();
     }
 }

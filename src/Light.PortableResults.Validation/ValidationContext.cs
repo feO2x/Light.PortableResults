@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Light.PortableResults.Metadata;
@@ -60,6 +61,66 @@ public readonly struct ValidationContext
 
     private ValidationState State =>
         _state ?? throw new InvalidOperationException("The validation context must not be the default instance");
+
+    /// <summary>
+    /// Creates a readonly view for the current validation run and scope.
+    /// </summary>
+    public ReadOnlyValidationContext AsReadOnly()
+    {
+        EnsureInitialized();
+        return new ReadOnlyValidationContext(State, _targetPrefix);
+    }
+
+    /// <summary>
+    /// Stores a shared validation item for the current run.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="key">The typed key.</param>
+    /// <param name="value">The value to store.</param>
+    public void SetItem<T>(ValidationContextKey<T> key, T value)
+    {
+        EnsureInitialized();
+        State.SetItem(key, value);
+    }
+
+    /// <summary>
+    /// Tries to read a shared validation item.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="key">The typed key.</param>
+    /// <param name="value">The stored value when present.</param>
+    /// <returns><see langword="true" /> when the item exists; otherwise, <see langword="false" />.</returns>
+    public bool TryGetItem<T>(ValidationContextKey<T> key, out T value)
+    {
+        EnsureInitialized();
+        return State.TryGetItem(key, out value);
+    }
+
+    /// <summary>
+    /// Gets a shared validation item or throws when it is missing.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="key">The typed key.</param>
+    /// <returns>The stored value.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="key" /> is <see langword="null" />.</exception>
+    /// <exception cref="KeyNotFoundException">Thrown when the item does not exist.</exception>
+    public T GetRequiredItem<T>(ValidationContextKey<T> key)
+    {
+        EnsureInitialized();
+        return State.GetRequiredItem(key);
+    }
+
+    /// <summary>
+    /// Removes a shared validation item.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="key">The typed key.</param>
+    /// <returns><see langword="true" /> when the item existed; otherwise, <see langword="false" />.</returns>
+    public bool RemoveItem<T>(ValidationContextKey<T> key)
+    {
+        EnsureInitialized();
+        return State.RemoveItem(key);
+    }
 
     /// <summary>
     /// Creates a scoped validation context for the specified child value.
@@ -124,7 +185,7 @@ public readonly struct ValidationContext
     /// </summary>
     /// <typeparam name="T">The type of the value to validate.</typeparam>
     /// <param name="value">The value to validate.</param>
-    /// <param name="normalizeStringValue">
+    /// <param name="stringValueNormalizer">
     /// Overrides the context-wide string normalization behavior for this specific check when set.
     /// </param>
     /// <param name="target">The raw target expression.</param>
@@ -134,7 +195,7 @@ public readonly struct ValidationContext
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
     public Check<T> Check<T>(
         T value,
-        bool? normalizeStringValue = null,
+        IStringValueNormalizer? stringValueNormalizer = null,
         [CallerArgumentExpression("value")] string? target = null,
         string? displayName = null
     )
@@ -148,11 +209,7 @@ public readonly struct ValidationContext
         }
 
         displayName ??= target;
-        if (ShouldNormalizeStringValue(normalizeStringValue))
-        {
-            value = NormalizeValueIfNecessary(value);
-        }
-
+        value = NormalizeValueIfNecessary(value, stringValueNormalizer ?? Options.StringValueNormalizer);
         return new Check<T>(this, target, displayName, value, isTargetNormalized: false, isShortCircuited: false);
     }
 
@@ -178,6 +235,25 @@ public readonly struct ValidationContext
     }
 
     /// <summary>
+    /// Creates and adds a validation error from the specified message descriptor.
+    /// </summary>
+    /// <param name="message">The generated validation error message.</param>
+    /// <param name="code">The optional error code.</param>
+    /// <param name="target">The optional target path.</param>
+    /// <param name="metadata">The optional error metadata.</param>
+    public void AddError(
+        ValidationErrorMessage message,
+        string? code = null,
+        string? target = null,
+        MetadataObject? metadata = null
+    )
+    {
+        EnsureInitialized();
+        var resolvedTarget = target is null ? _targetPrefix : ComposeTarget(target, isTargetNormalized: true);
+        AddError(message.ToError(code, resolvedTarget, ErrorCategory.Validation, metadata));
+    }
+
+    /// <summary>
     /// Creates and adds a validation error with the specified message and optional details.
     /// </summary>
     /// <param name="message">The error message.</param>
@@ -194,25 +270,7 @@ public readonly struct ValidationContext
             throw new ArgumentNullException(nameof(message));
         }
 
-        if (target is null)
-        {
-            target = _targetPrefix;
-        }
-        else
-        {
-            target = ComposeTarget(target, isTargetNormalized: true);
-        }
-
-        AddError(
-            new Error
-            {
-                Message = message,
-                Code = code,
-                Target = target,
-                Category = ErrorCategory.Validation,
-                Metadata = metadata
-            }
-        );
+        AddError(new ValidationErrorMessage(message), code, target, metadata);
     }
 
     /// <summary>
@@ -233,21 +291,22 @@ public readonly struct ValidationContext
     /// <param name="value">The string value to normalize.</param>
     /// <returns>The normalized string value.</returns>
     /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
-    public string NormalizeStringValue(string? value)
+    public string? NormalizeStringValue(string? value)
     {
         EnsureInitialized();
-        return Options.NormalizeStringValue(value);
+        return Options.StringValueNormalizer.Normalize(value);
     }
 
     /// <summary>
-    /// Creates the automatic null-validation error for the specified target and display name.
+    /// Tries to create the automatic null-validation error for the specified target and display name.
     /// </summary>
-    /// <param name="target">The normalized target.</param>
+    /// <typeparam name="T">The validated value type.</typeparam>
+    /// <param name="value">The validated value.</param>
+    /// <param name="target">The normalized validation target.</param>
     /// <param name="displayName">The display name.</param>
-    /// <returns>The created error.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> or <paramref name="displayName" /> is null.</exception>
-    public Error CreateErrorForAutomaticNullCheck(string target, string displayName)
+    /// <param name="error">The created error when one should be produced.</param>
+    /// <returns><see langword="true" /> when an error was created; otherwise, <see langword="false" />.</returns>
+    public bool TryCreateAutomaticNullError<T>(T value, string target, string displayName, out Error error)
     {
         EnsureInitialized();
         if (target is null)
@@ -260,14 +319,8 @@ public readonly struct ValidationContext
             throw new ArgumentNullException(nameof(displayName));
         }
 
-        return Options.CreateAutomaticNullError?.Invoke(this, target, displayName) ??
-               new Error
-               {
-                   Message = ErrorTemplates.Format(ErrorTemplates.NotNull, displayName),
-                   Code = "NotNull",
-                   Target = target,
-                   Category = ErrorCategory.Validation
-               };
+        var messageContext = CreateAbsoluteMessageContext(value, target, displayName);
+        return Options.AutomaticNullErrorProvider.TryCreateError(in messageContext, out error);
     }
 
     /// <summary>
@@ -309,7 +362,7 @@ public readonly struct ValidationContext
     /// Gets the target path for the automatic null check.
     /// </summary>
     /// <param name="rawTarget">The non-normalized target </param>
-    /// <returns></returns>
+    /// <returns>The normalized flat target.</returns>
     /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
     public string GetAutomaticNullTarget(string rawTarget)
     {
@@ -363,19 +416,27 @@ public readonly struct ValidationContext
     /// </summary>
     public void ThrowIfDefault() => EnsureInitialized();
 
-    private bool ShouldNormalizeStringValue(bool? overrideValue) => overrideValue ?? Options.NormalizeStringValues;
+    internal ValidationErrorMessageContext<T> CreateAbsoluteMessageContext<T>(
+        T value,
+        string target,
+        string displayName
+    )
+    {
+        EnsureInitialized();
+        return new ValidationErrorMessageContext<T>(AsReadOnly(), displayName, target, value);
+    }
 
-    private T NormalizeValueIfNecessary<T>(T value)
+    private static T NormalizeValueIfNecessary<T>(T value, IStringValueNormalizer normalizer)
     {
         if (typeof(T) == typeof(string))
         {
-            var normalizedString = NormalizeStringValue((string?) (object?) value);
-            return (T) (object) normalizedString;
+            var normalizedString = normalizer.Normalize((string?) (object?) value);
+            return (T) (object?) normalizedString!;
         }
 
         if (value is string stringValue)
         {
-            return (T) (object) NormalizeStringValue(stringValue);
+            return (T) (object?) normalizer.Normalize(stringValue)!;
         }
 
         return value;
@@ -389,8 +450,7 @@ public readonly struct ValidationContext
             throw new InvalidOperationException("The validation context must not be the default instance");
         }
 
-        // _targetPrefix is initialized in the constructor and cannot be null when _state is not null.
-#pragma warning disable CS8774 // Member must have a non-null value when exiting.
+#pragma warning disable CS8774
     }
 #pragma warning restore CS8774
 }

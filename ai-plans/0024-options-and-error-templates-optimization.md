@@ -6,37 +6,37 @@ The current validation configuration model mixes mutable shared state, loosely c
 
 ## Acceptance Criteria
 
-- [ ]
+- [x]
   `ValidationContextOptions` is redesigned as an immutable record that represents the complete per-run validation configuration.
-- [ ]
+- [x]
   `ValidationErrorTemplates` is redesigned as an immutable record and becomes part of
   `ValidationContextOptions` instead of being passed separately through the validation pipeline.
-- [ ] The mutable shared singleton pattern for
+- [x] The mutable shared singleton pattern for
   `ValidationContextOptions.Default` and
   `ValidationErrorTemplates.Default` is removed so that default instances are safe to reuse without accidental global mutation. There should be default instances for those types, but they must not be mutable.
-- [ ] The current
+- [x] The current
   `NormalizeStringValues` and
   `NormalizeStringValue` members are replaced by a single
   `IStringValueNormalizer` abstraction with a single normalization method and at least one no-op implementation.
-- [ ] The current
+- [x] The current
   `CreateAutomaticNullErrors` and
   `CreateAutomaticNullError` members are replaced by a single
   `IAutomaticNullErrorProvider` abstraction with a
   `TryCreateError(...)` method.
-- [ ] Validation runs can expose arbitrary shared context items to parent and child scopes through mutable APIs on
+- [x] Validation runs can expose arbitrary shared context items to parent and child scopes through mutable APIs on
   `ValidationContext`, while readonly access to those items remains available during error-message generation and automatic-null handling.
-- [ ] A dedicated readonly struct
+- [x] A dedicated readonly struct
   `ReadOnlyValidationContext` is introduced for readonly access to validation-run configuration and shared context data without boxing the mutable
   `ValidationContext` struct.
-- [ ] Error-message generation uses readonly struct message contexts and generic APIs so that value-type inputs are not boxed by default when templates inspect the validated value.
-- [ ]
+- [x] Error-message generation uses readonly struct message contexts and generic APIs so that value-type inputs are not boxed by default when templates inspect the validated value.
+- [x]
   `ValidationErrorTemplates` stores message-template abstractions rather than raw format strings, enabling constant messages, specialized formatting, localization-aware formatting, and machine-readable error keys without forcing every message through
   `string.Format(params object?[])`.
-- [ ] The new message-template design supports both plain message text and localization-oriented scenarios such as hierarchical frontend translation keys.
-- [ ] The public validation API remains ergonomic for custom validators, while the common built-in validation path avoids avoidable allocations from interface boxing,
+- [x] The new message-template design supports both plain message text and localization-oriented scenarios such as hierarchical frontend translation keys.
+- [x] The public validation API remains ergonomic for custom validators, while the common built-in validation path avoids avoidable allocations from interface boxing,
   `object` boxing, and params-array formatting.
-- [ ] Automated tests cover immutable default instances, string normalization policies, automatic-null policies, mutable shared context-item access across parent and child scopes, readonly context-item access during message generation, generic message-template behavior for reference and value types, localization-oriented message generation, and preservation of current validation semantics.
-- [ ] Benchmarks are added or updated to measure the redesigned configuration and message-generation hot paths, including at least built-in string normalization, automatic-null handling, constant message generation, formatted message generation, and message generation for value-type checks.
+- [x] Automated tests cover immutable default instances, string normalization policies, automatic-null policies, mutable shared context-item access across parent and child scopes, readonly context-item access during message generation, generic message-template behavior for reference and value types, localization-oriented message generation, and preservation of current validation semantics.
+- [x] Benchmarks are added or updated to measure the redesigned configuration and message-generation hot paths, including at least built-in string normalization, automatic-null handling, constant message generation, formatted message generation, and message generation for value-type checks.
 
 ## Technical Details
 

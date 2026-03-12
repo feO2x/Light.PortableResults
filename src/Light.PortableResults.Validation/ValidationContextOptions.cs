@@ -1,11 +1,12 @@
 using System;
+using System.Globalization;
 
 namespace Light.PortableResults.Validation;
 
 /// <summary>
-/// Represents options for validation context creation and behavior.
+/// Represents the immutable configuration for a validation run.
 /// </summary>
-public class ValidationContextOptions
+public sealed record ValidationContextOptions
 {
     /// <summary>
     /// Gets the shared default options instance.
@@ -13,32 +14,52 @@ public class ValidationContextOptions
     public static ValidationContextOptions Default { get; } = new ();
 
     /// <summary>
-    /// Gets or sets the target normalizer that is applied to raw caller argument expressions.
+    /// Gets the target normalizer that is applied to raw caller argument expressions.
     /// </summary>
     /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
     public IValidationTargetNormalizer TargetNormalizer
     {
         get;
-        set => field = value ?? throw new ArgumentNullException(nameof(value));
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
     } = ValidationTargets.DefaultNormalizer;
 
     /// <summary>
-    /// Gets or sets a value indicating whether string values are normalized when checks are created.
+    /// Gets the string normalizer applied to string checks.
     /// </summary>
-    public bool NormalizeStringValues { get; set; } = true;
+    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
+    public IStringValueNormalizer StringValueNormalizer
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = TrimStringValueNormalizer.Instance;
 
     /// <summary>
-    /// Gets or sets the string normalization function.
+    /// Gets the culture used for formatting validation message parameters and localization-aware templates.
     /// </summary>
-    public Func<string?, string> NormalizeStringValue { get; set; } = static value => value?.Trim() ?? string.Empty;
+    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
+    public CultureInfo CultureInfo
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = CultureInfo.InvariantCulture;
 
     /// <summary>
-    /// Gets or sets a value indicating whether validators automatically create a validation error for null source values.
+    /// Gets the provider that decides whether validators automatically create null-validation errors.
     /// </summary>
-    public bool CreateAutomaticNullErrors { get; set; } = true;
+    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
+    public IAutomaticNullErrorProvider AutomaticNullErrorProvider
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultAutomaticNullErrorProvider.Instance;
 
     /// <summary>
-    /// Gets or sets a custom factory for the automatic null-validation error.
+    /// Gets the validation error templates used for the validation run.
     /// </summary>
-    public Func<ValidationContext, string, string, Error>? CreateAutomaticNullError { get; set; }
+    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
+    public ValidationErrorTemplates ErrorTemplates
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = ValidationErrorTemplates.Default;
 }
