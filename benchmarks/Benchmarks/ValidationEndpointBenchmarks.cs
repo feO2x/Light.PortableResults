@@ -50,13 +50,7 @@ public class SimpleValidationEndpointBenchmarks
 
     private static IResult MapSimplePortable(SimpleRequest request, PortableSimpleRequestValidator validator)
     {
-        var outcome = validator.Validate(request);
-        if (!outcome.IsValid)
-        {
-            return outcome.ToFailureResult().ToMinimalApiResult();
-        }
-
-        return Result<SimpleCommand>.Ok(outcome.Value!).ToMinimalApiResult();
+        return validator.Validate(request).ToMinimalApiResult();
     }
 }
 
@@ -92,6 +86,10 @@ public class ComplexValidationEndpointBenchmarks
     public IResult PortableResultsValidationEndpoint() =>
         MapComplexPortable(ValidationBenchmarkHelpers.Clone(_request), _portableValidator);
 
+    [Benchmark]
+    public int PortableResultsNestedValidationOnly() =>
+        _portableValidator.Validate(ValidationBenchmarkHelpers.Clone(_request)).Errors.Count;
+
     private static IResult MapComplexFluent(ComplexRequest request, FluentComplexRequestValidator validator)
     {
         ValidationBenchmarkHelpers.NormalizeComplexRequest(request);
@@ -115,22 +113,16 @@ public class ComplexValidationEndpointBenchmarks
 
     private static IResult MapComplexPortable(ComplexRequest request, PortableComplexRequestValidator validator)
     {
-        var outcome = validator.Validate(request);
-        if (!outcome.IsValid)
-        {
-            return outcome.ToFailureResult().ToMinimalApiResult();
-        }
-
-        return Result<ComplexCommand>.Ok(outcome.Value!).ToMinimalApiResult();
+        return validator.Validate(request).ToMinimalApiResult();
     }
 }
 
-internal sealed class PortableSimpleRequestValidator : Validator<SimpleRequest, SimpleCommand?>
+internal sealed class PortableSimpleRequestValidator : Validator<SimpleRequest, SimpleCommand>
 {
     public PortableSimpleRequestValidator(IValidationContextFactory validationContextFactory)
         : base(validationContextFactory) { }
 
-    protected override SimpleCommand? PerformValidation(ValidationContext context, SimpleRequest value)
+    protected override ValidatedValue<SimpleCommand> PerformValidation(ValidationContext context, SimpleRequest value)
     {
         var firstName = context.Check(value.FirstName).NormalizeTargetIfNecessary();
         value.FirstName = firstName.Value ?? string.Empty;
@@ -145,11 +137,16 @@ internal sealed class PortableSimpleRequestValidator : Validator<SimpleRequest, 
             context.Check(value.Age).AddError("age must be at least 18", "Adult");
         }
 
-        return new SimpleCommand(value.FirstName, value.Age);
+        if (context.HasErrors)
+        {
+            return ValidatedValue<SimpleCommand>.NoValue;
+        }
+
+        return ValidatedValue.Success(new SimpleCommand(value.FirstName, value.Age));
     }
 }
 
-internal sealed class PortableComplexRequestValidator : Validator<ComplexRequest, ComplexCommand?>
+internal sealed class PortableComplexRequestValidator : Validator<ComplexRequest, ComplexCommand>
 {
     private readonly PortableAddressValidator _addressValidator;
     private readonly PortableItemValidator _itemValidator;
@@ -161,7 +158,7 @@ internal sealed class PortableComplexRequestValidator : Validator<ComplexRequest
         _itemValidator = new PortableItemValidator(validationContextFactory);
     }
 
-    protected override ComplexCommand? PerformValidation(ValidationContext context, ComplexRequest value)
+    protected override ValidatedValue<ComplexCommand> PerformValidation(ValidationContext context, ComplexRequest value)
     {
         var email = context.Check(value.Email).NormalizeTargetIfNecessary();
         value.Email = email.Value ?? string.Empty;
@@ -173,10 +170,10 @@ internal sealed class PortableComplexRequestValidator : Validator<ComplexRequest
         AddressCommand? addressCommand = null;
         if (value.Address is not null)
         {
-            var addressOutcome = _addressValidator.Validate(value.Address, context.For(value.Address));
-            if (addressOutcome.IsValid)
+            var addressOutcome = ValidateChild(_addressValidator, value.Address, context.For(value.Address));
+            if (addressOutcome.TryGetValue(out var validatedAddress))
             {
-                addressCommand = addressOutcome.Value;
+                addressCommand = validatedAddress;
             }
         }
 
@@ -186,23 +183,28 @@ internal sealed class PortableComplexRequestValidator : Validator<ComplexRequest
         for (var i = 0; i < items.Count; i++)
         {
             var childContext = itemsContext.ForIndex(i);
-            var itemOutcome = _itemValidator.Validate(items[i], childContext);
-            if (itemOutcome.IsValid)
+            var itemOutcome = ValidateChild(_itemValidator, items[i], childContext);
+            if (itemOutcome.TryGetValue(out var validatedItem))
             {
-                itemCommands[i] = itemOutcome.Value!;
+                itemCommands[i] = validatedItem;
             }
         }
 
-        return new ComplexCommand(value.Email, addressCommand!, itemCommands);
+        if (context.HasErrors)
+        {
+            return ValidatedValue<ComplexCommand>.NoValue;
+        }
+
+        return ValidatedValue.Success(new ComplexCommand(value.Email, addressCommand!, itemCommands));
     }
 }
 
-internal sealed class PortableAddressValidator : Validator<AddressRequest, AddressCommand?>
+internal sealed class PortableAddressValidator : Validator<AddressRequest, AddressCommand>
 {
     public PortableAddressValidator(IValidationContextFactory validationContextFactory)
         : base(validationContextFactory) { }
 
-    protected override AddressCommand? PerformValidation(ValidationContext context, AddressRequest value)
+    protected override ValidatedValue<AddressCommand> PerformValidation(ValidationContext context, AddressRequest value)
     {
         var zipCode = context.Check(value.ZipCode).NormalizeTargetIfNecessary();
         value.ZipCode = zipCode.Value ?? string.Empty;
@@ -211,16 +213,21 @@ internal sealed class PortableAddressValidator : Validator<AddressRequest, Addre
             zipCode.AddError("zipCode must not be empty", "NotEmpty");
         }
 
-        return new AddressCommand(value.ZipCode);
+        if (context.HasErrors)
+        {
+            return ValidatedValue<AddressCommand>.NoValue;
+        }
+
+        return ValidatedValue.Success(new AddressCommand(value.ZipCode));
     }
 }
 
-internal sealed class PortableItemValidator : Validator<ItemRequest, ItemCommand?>
+internal sealed class PortableItemValidator : Validator<ItemRequest, ItemCommand>
 {
     public PortableItemValidator(IValidationContextFactory validationContextFactory)
         : base(validationContextFactory) { }
 
-    protected override ItemCommand? PerformValidation(ValidationContext context, ItemRequest value)
+    protected override ValidatedValue<ItemCommand> PerformValidation(ValidationContext context, ItemRequest value)
     {
         var sku = context.Check(value.Sku).NormalizeTargetIfNecessary();
         value.Sku = sku.Value ?? string.Empty;
@@ -234,7 +241,12 @@ internal sealed class PortableItemValidator : Validator<ItemRequest, ItemCommand
             context.Check(value.Quantity).AddError("quantity must be at least 1", "MinQuantity");
         }
 
-        return new ItemCommand(value.Sku, value.Quantity);
+        if (context.HasErrors)
+        {
+            return ValidatedValue<ItemCommand>.NoValue;
+        }
+
+        return ValidatedValue.Success(new ItemCommand(value.Sku, value.Quantity));
     }
 }
 

@@ -29,8 +29,8 @@ public abstract class Validator<T> : BaseValidator<T>
     /// <param name="value">The value to validate.</param>
     /// <param name="target">The raw caller expression for the value.</param>
     /// <param name="displayName">The optional display name.</param>
-    /// <returns>The validation outcome.</returns>
-    public ValidationOutcome<T> Validate(
+    /// <returns>The validation result.</returns>
+    public Result<T> Validate(
         T? value,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
@@ -43,37 +43,13 @@ public abstract class Validator<T> : BaseValidator<T>
     /// <param name="context">The validation context.</param>
     /// <param name="target">The raw caller expression for the value.</param>
     /// <param name="displayName">The optional display name.</param>
-    /// <returns>The validation outcome.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="context" /> is the default instance.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
-    public ValidationOutcome<T> Validate(
+    /// <returns>The validation result.</returns>
+    public Result<T> Validate(
         T? value,
         ValidationContext context,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
-    )
-    {
-        if (context.IsDefault)
-        {
-            throw new ArgumentException("The validation context must not be the default instance.", nameof(context));
-        }
-
-        // ReSharper disable once JoinNullCheckWithUsage -- false positive, for display name, we use the ??= operator.
-        // This would mean that the null check for target is only executed when displayName is null.
-        if (target is null)
-        {
-            throw new ArgumentNullException(nameof(target));
-        }
-
-        displayName ??= target;
-        if (TryCreateAutomaticNullOutcome<T>(value, context, target, displayName, out var nullOutcome))
-        {
-            return nullOutcome;
-        }
-
-        var validatedValue = PerformValidation(context, value);
-        return new ValidationOutcome<T>(validatedValue, context.ToErrors());
-    }
+    ) => FinalizeValidation(context, ValidateValue(value, context, target, displayName));
 
     /// <summary>
     /// Validates the value and materializes failures as a non-generic <see cref="Result" />.
@@ -107,14 +83,14 @@ public abstract class Validator<T> : BaseValidator<T>
         string? displayName = null
     )
     {
-        var outcome = Validate(value, context, target, displayName);
-        if (outcome.IsValid)
+        var result = Validate(value, context, target, displayName);
+        if (result.IsValid)
         {
             failure = default;
             return false;
         }
 
-        failure = outcome.ToFailureResult();
+        failure = Result.Fail(result.Errors);
         return true;
     }
 
@@ -161,26 +137,45 @@ public abstract class Validator<T> : BaseValidator<T>
         string? displayName = null
     )
     {
-        var outcome = Validate(value, context, target, displayName);
-        if (outcome.IsValid)
+        var result = Validate(value, context, target, displayName);
+        if (result.TryGetValue(out validatedValue))
         {
-            validatedValue = outcome.Value;
             failure = default;
             return true;
         }
 
+        failure = Result.Fail(result.Errors);
         validatedValue = default;
-        failure = outcome.ToFailureResult();
         return false;
+    }
+
+    internal ValidatedValue<T> ValidateValue(
+        T? value,
+        ValidationContext context,
+        [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
+    )
+    {
+        ValidateCallArguments(context, target);
+        displayName ??= target;
+        if (TryHandleAutomaticNull(value, context, target, displayName))
+        {
+            return ValidatedValue<T>.NoValue;
+        }
+
+        return PerformValidation(context, value);
     }
 
     /// <summary>
     /// Performs the actual validation logic.
     /// </summary>
     /// <param name="context">The active validation context.</param>
-    /// <param name="value">The non-null value being validated.</param>
-    /// <returns>The validated value.</returns>
-    protected abstract T PerformValidation(ValidationContext context, T value);
+    /// <param name="value">The value being validated.</param>
+    /// <returns>
+    /// A successful <see cref="ValidatedValue{T}" /> when validation produced a non-null value; otherwise,
+    /// <see cref="ValidatedValue{T}.NoValue" /> when the shared <see cref="ValidationContext" /> already contains errors.
+    /// </returns>
+    protected abstract ValidatedValue<T> PerformValidation(ValidationContext context, T value);
 }
 
 /// <summary>
@@ -209,8 +204,8 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
     /// <param name="value">The source value.</param>
     /// <param name="target">The raw caller expression for the value.</param>
     /// <param name="displayName">The optional display name.</param>
-    /// <returns>The validation outcome.</returns>
-    public ValidationOutcome<TValidated> Validate(
+    /// <returns>The validation result.</returns>
+    public Result<TValidated> Validate(
         TSource? value,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
@@ -223,40 +218,13 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
     /// <param name="context">The validation context.</param>
     /// <param name="target">The raw caller expression for the value.</param>
     /// <param name="displayName">The optional display name.</param>
-    /// <returns>The validation outcome.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="context" /> is the default instance.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
-    public ValidationOutcome<TValidated> Validate(
+    /// <returns>The validation result.</returns>
+    public Result<TValidated> Validate(
         TSource? value,
         ValidationContext context,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
-    )
-    {
-        if (context.IsDefault)
-        {
-            throw new ArgumentException("The validation context must not be the default instance.", nameof(context));
-        }
-
-        // ReSharper disable once JoinNullCheckWithUsage -- false positive, for display name, we use the ??= operator.
-        // This would mean that the null check for target is only executed when displayName is null.
-        if (target is null)
-        {
-            throw new ArgumentNullException(nameof(target));
-        }
-
-        displayName ??= target;
-        if (TryCreateAutomaticNullOutcome<TValidated>(value, context, target, displayName, out var nullOutcome))
-        {
-            return nullOutcome;
-        }
-
-        var validatedValue = PerformValidation(context, value);
-        var errors = context.ToErrors();
-        return errors.IsEmpty ?
-            new ValidationOutcome<TValidated>(validatedValue) :
-            new ValidationOutcome<TValidated>(default!, errors);
-    }
+    ) => FinalizeValidation(context, ValidateValue(value, context, target, displayName));
 
     /// <summary>
     /// Validates the value and materializes failures as a non-generic <see cref="Result" />.
@@ -291,14 +259,14 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
         string? displayName = null
     )
     {
-        var outcome = Validate(value, context, target, displayName);
-        if (outcome.IsValid)
+        var result = Validate(value, context, target, displayName);
+        if (result.IsValid)
         {
             failure = default;
             return false;
         }
 
-        failure = outcome.ToFailureResult();
+        failure = Result.Fail(result.Errors);
         return true;
     }
 
@@ -345,24 +313,43 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
         string? displayName = null
     )
     {
-        var outcome = Validate(value, context, target, displayName);
-        if (outcome.IsValid)
+        var result = Validate(value, context, target, displayName);
+        if (result.TryGetValue(out validatedValue))
         {
-            validatedValue = outcome.Value;
             failure = default;
             return true;
         }
 
+        failure = Result.Fail(result.Errors);
         validatedValue = default;
-        failure = outcome.ToFailureResult();
         return false;
+    }
+
+    internal ValidatedValue<TValidated> ValidateValue(
+        TSource? value,
+        ValidationContext context,
+        [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
+    )
+    {
+        ValidateCallArguments(context, target);
+        displayName ??= target;
+        if (TryHandleAutomaticNull(value, context, target, displayName))
+        {
+            return ValidatedValue<TValidated>.NoValue;
+        }
+
+        return PerformValidation(context, value);
     }
 
     /// <summary>
     /// Performs the actual validation and transformation logic.
     /// </summary>
     /// <param name="context">The active validation context.</param>
-    /// <param name="value">The non-null source value.</param>
-    /// <returns>The transformed validated output.</returns>
-    protected abstract TValidated PerformValidation(ValidationContext context, TSource value);
+    /// <param name="value">The source value being validated.</param>
+    /// <returns>
+    /// A successful <see cref="ValidatedValue{TValidated}" /> when validation produced a non-null output; otherwise,
+    /// <see cref="ValidatedValue{TValidated}.NoValue" /> when the shared <see cref="ValidationContext" /> already contains errors.
+    /// </returns>
+    protected abstract ValidatedValue<TValidated> PerformValidation(ValidationContext context, TSource value);
 }

@@ -1,5 +1,8 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Light.PortableResults.Validation;
 
@@ -38,37 +41,153 @@ public abstract class BaseValidator<TSource>
     public bool IsAutomaticNullCheckingEnabled { get; }
 
     /// <summary>
-    /// Tries to create the automatic null-validation outcome for the specified source value.
+    /// Tries to create the automatic null-validation error for the specified source value.
     /// </summary>
-    /// <typeparam name="TValidated">The type of the validated output.</typeparam>
     /// <param name="value">The source value to inspect.</param>
     /// <param name="context">The active validation context.</param>
     /// <param name="rawTarget">The raw caller expression for the source value.</param>
     /// <param name="displayName">The display name for the value.</param>
-    /// <param name="outcome">The produced validation outcome when null checking fails.</param>
-    /// <returns><see langword="true" /> when null handling produced an outcome; otherwise, <see langword="false" />.</returns>
-    protected bool TryCreateAutomaticNullOutcome<TValidated>(
+    /// <returns><see langword="true" /> when an automatic null-validation error was added; otherwise, <see langword="false" />.</returns>
+    protected bool TryHandleAutomaticNull(
         [NotNullWhen(false)] TSource? value,
         ValidationContext context,
         string rawTarget,
-        string displayName,
-        out ValidationOutcome<TValidated> outcome
+        string displayName
     )
     {
         if (!IsAutomaticNullCheckingEnabled || value is not null)
         {
-            outcome = default;
             return false;
         }
 
         var target = context.GetAutomaticNullTarget(rawTarget);
         if (!context.TryCreateAutomaticNullError(value, target, displayName, out var error))
         {
-            outcome = default;
             return false;
         }
 
-        outcome = new ValidationOutcome<TValidated>(default!, new Errors(error));
+        context.AddError(error);
         return true;
     }
+
+    /// <summary>
+    /// Validates the specified validation call arguments.
+    /// </summary>
+    /// <param name="context">The validation context.</param>
+    /// <param name="target">The raw caller expression target.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="context" /> is the default instance.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
+    protected static void ValidateCallArguments(ValidationContext context, string target)
+    {
+        if (context.IsDefault)
+        {
+            throw new ArgumentException("The validation context must not be the default instance.", nameof(context));
+        }
+
+        if (target is null)
+        {
+            throw new ArgumentNullException(nameof(target));
+        }
+    }
+
+    /// <summary>
+    /// Materializes the final public result from the shared validation context and validated value.
+    /// </summary>
+    /// <typeparam name="TValidated">The validated output type.</typeparam>
+    /// <param name="context">The active validation context.</param>
+    /// <param name="validatedValue">The validated value produced by the validator implementation.</param>
+    /// <returns>The final validation result.</returns>
+    protected static Result<TValidated> FinalizeValidation<TValidated>(
+        ValidationContext context,
+        ValidatedValue<TValidated> validatedValue
+    )
+    {
+        if (context.TryGetErrors(out var errors))
+        {
+            return Result<TValidated>.Fail(errors);
+        }
+
+        if (validatedValue.TryGetValue(out var value))
+        {
+            return Result<TValidated>.Ok(value);
+        }
+
+        throw new InvalidOperationException(
+            "The validator completed without validation errors but did not produce a validated value."
+        );
+    }
+
+    /// <summary>
+    /// Executes a synchronous child validator without materializing an intermediate public result.
+    /// </summary>
+    protected static ValidatedValue<TValidated> ValidateChild<TValidated>(
+        Validator<TValidated> validator,
+        TValidated? value,
+        ValidationContext context,
+        [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
+    )
+    {
+        if (validator is null)
+        {
+            throw new ArgumentNullException(nameof(validator));
+        }
+
+        return validator.ValidateValue(value, context, target, displayName);
+    }
+
+    /// <summary>
+    /// Executes a synchronous child validator without materializing an intermediate public result.
+    /// </summary>
+    protected static ValidatedValue<TValidated> ValidateChild<TChildSource, TValidated>(
+        Validator<TChildSource, TValidated> validator,
+        TChildSource? value,
+        ValidationContext context,
+        [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
+    )
+    {
+        if (validator is null)
+        {
+            throw new ArgumentNullException(nameof(validator));
+        }
+
+        return validator.ValidateValue(value, context, target, displayName);
+    }
+
+    /// <summary>
+    /// Executes an asynchronous child validator without materializing an intermediate public result.
+    /// </summary>
+    protected static ValueTask<ValidatedValue<TValidated>> ValidateChildAsync<TValidated>(
+        AsyncValidator<TValidated> validator,
+        TValidated? value,
+        ValidationContext context,
+        CancellationToken cancellationToken = default,
+        [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
+    )
+    {
+        if (validator is null)
+        {
+            throw new ArgumentNullException(nameof(validator));
+        }
+
+        return validator.ValidateValueAsync(value, context, cancellationToken, target, displayName);
+    }
+
+    /// <summary>
+    /// Executes an asynchronous child validator without materializing an intermediate public result.
+    /// </summary>
+    protected static ValueTask<ValidatedValue<TValidated>> ValidateChildAsync<TChildSource, TValidated>(
+        AsyncValidator<TChildSource, TValidated> validator,
+        TChildSource? value,
+        ValidationContext context,
+        CancellationToken cancellationToken = default,
+        [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
+    ) =>
+        // ReSharper disable once MergeConditionalExpression -- make null check explicit
+        validator is null ?
+            throw new ArgumentNullException(nameof(validator)) :
+            validator.ValidateValueAsync(value, context, cancellationToken, target, displayName);
 }

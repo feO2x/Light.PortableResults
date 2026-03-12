@@ -22,12 +22,12 @@ public sealed class ValidatorTests
             Address = new AddressDto { ZipCode = " 12345 " }
         };
 
-        var outcome = validator.Validate(dto);
+        var result = validator.Validate(dto);
 
-        outcome.IsValid.Should().BeTrue();
-        outcome.Value.Should().BeSameAs(dto);
-        outcome.Value.FirstName.Should().Be("Alice");
-        outcome.Value.Address!.ZipCode.Should().Be("12345");
+        result.IsValid.Should().BeTrue();
+        result.Value.Should().BeSameAs(dto);
+        result.Value.FirstName.Should().Be("Alice");
+        result.Value.Address!.ZipCode.Should().Be("12345");
     }
 
     [Fact]
@@ -42,10 +42,10 @@ public sealed class ValidatorTests
             Addresses = new List<AddressDto> { new () { ZipCode = " " } }
         };
 
-        var outcome = validator.Validate(dto);
+        var result = validator.Validate(dto);
 
-        outcome.IsValid.Should().BeFalse();
-        outcome.Errors.Should().Equal(
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Equal(
             new Errors(
                 new[]
                 {
@@ -88,11 +88,11 @@ public sealed class ValidatorTests
         var validator = new PersonValidator(ValidationContextFactory);
         PersonDto? dto = null;
 
-        var outcome = validator.Validate(dto);
+        var result = validator.Validate(dto);
 
-        outcome.IsValid.Should().BeFalse();
-        outcome.Errors.Should().ContainSingle();
-        outcome.Errors.First.Should().Be(
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().ContainSingle();
+        result.Errors.First.Should().Be(
             new Error
             {
                 Message = "dto must not be null",
@@ -123,6 +123,17 @@ public sealed class ValidatorTests
         var validator = new RegistrationValidator(ValidationContextFactory);
         var dto = new RegistrationDto { FirstName = "  Alice  ", Email = "alice@example.com" };
 
+        var result = validator.Validate(dto);
+
+        result.Should().Be(Result<CreatePersonCommand>.Ok(new CreatePersonCommand("Alice", "alice@example.com")));
+    }
+
+    [Fact]
+    public void TryValidate_ShouldReturnValidatedOutputOnSuccess()
+    {
+        var validator = new RegistrationValidator(ValidationContextFactory);
+        var dto = new RegistrationDto { FirstName = "  Alice  ", Email = "alice@example.com" };
+
         var isValid = validator.TryValidate(dto, out var command, out var failure);
 
         isValid.Should().BeTrue();
@@ -136,6 +147,20 @@ public sealed class ValidatorTests
         var validator = new RegistrationValidator(ValidationContextFactory);
         var dto = new RegistrationDto { FirstName = " ", Email = "not-an-email" };
 
+        var result = validator.Validate(dto);
+
+        result.IsValid.Should().BeFalse();
+        result.TryGetValue(out var command).Should().BeFalse();
+        command.Should().BeNull();
+        result.Errors.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void TryValidate_ShouldReturnFailureAndNoValidatedOutputOnError()
+    {
+        var validator = new RegistrationValidator(ValidationContextFactory);
+        var dto = new RegistrationDto { FirstName = " ", Email = "not-an-email" };
+
         var isValid = validator.TryValidate(dto, out CreatePersonCommand? command, out var failure);
 
         isValid.Should().BeFalse();
@@ -145,15 +170,41 @@ public sealed class ValidatorTests
     }
 
     [Fact]
-    public async Task AsyncValidator_ShouldReturnOutcomeOnSuccess()
+    public void TransformedValidator_ShouldNotConstructOutputWhenValidationFails()
+    {
+        CountingCreatePersonCommand.Reset();
+        var validator = new CountingRegistrationValidator(ValidationContextFactory);
+        var dto = new RegistrationDto { FirstName = " ", Email = "not-an-email" };
+
+        var result = validator.Validate(dto);
+
+        result.IsValid.Should().BeFalse();
+        CountingCreatePersonCommand.InstanceCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AsyncValidator_ShouldReturnResultOnSuccess()
     {
         var validator = new AsyncRegistrationValidator(ValidationContextFactory);
         var dto = new RegistrationDto { FirstName = "  Alice  ", Email = "alice@example.com" };
 
-        var outcome = await validator.ValidateAsync(dto, TestContext.Current.CancellationToken);
+        var result = await validator.ValidateAsync(dto, TestContext.Current.CancellationToken);
 
-        outcome.IsValid.Should().BeTrue();
-        outcome.Value.Should().Be(new CreatePersonCommand("Alice", "alice@example.com"));
+        result.Should().Be(Result<CreatePersonCommand>.Ok(new CreatePersonCommand("Alice", "alice@example.com")));
+    }
+
+    [Fact]
+    public async Task AsyncValidator_ShouldReturnFailureAndNoValidatedOutputOnError()
+    {
+        var validator = new AsyncRegistrationValidator(ValidationContextFactory);
+        var dto = new RegistrationDto { FirstName = " ", Email = "not-an-email" };
+
+        var result = await validator.ValidateAsync(dto, TestContext.Current.CancellationToken);
+
+        result.IsValid.Should().BeFalse();
+        result.TryGetValue(out var command).Should().BeFalse();
+        command.Should().BeNull();
+        result.Errors.Should().HaveCount(2);
     }
 
     [Fact]
@@ -166,9 +217,22 @@ public sealed class ValidatorTests
         );
         await cancellationTokenSource.CancelAsync();
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         Func<Task> act = async () => await validator.ValidateAsync(dto, cancellationTokenSource.Token);
 
         await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public void Validator_ShouldThrow_WhenImplementationReturnsNoValueWithoutErrors()
+    {
+        var validator = new BrokenValidator(ValidationContextFactory);
+        var dto = new RegistrationDto { FirstName = "Alice", Email = "alice@example.com" };
+
+        var act = () => validator.Validate(dto);
+
+        act.Should().Throw<InvalidOperationException>()
+           .WithMessage("*did not produce a validated value*");
     }
 
     private sealed class PersonValidator : Validator<PersonDto>
@@ -181,7 +245,7 @@ public sealed class ValidatorTests
             _addressValidator = new AddressValidator(validationContextFactory);
         }
 
-        protected override PersonDto PerformValidation(ValidationContext context, PersonDto value)
+        protected override ValidatedValue<PersonDto> PerformValidation(ValidationContext context, PersonDto value)
         {
             var firstName = context.Check(value.FirstName).NormalizeTargetIfNecessary();
             value.FirstName = firstName.Value;
@@ -197,7 +261,7 @@ public sealed class ValidatorTests
 
             if (value.Address is not null)
             {
-                _addressValidator.Validate(value.Address, context.For(value.Address));
+                _ = ValidateChild(_addressValidator, value.Address, context.For(value.Address));
             }
 
             if (value.Addresses is not null)
@@ -206,11 +270,11 @@ public sealed class ValidatorTests
                 for (var i = 0; i < value.Addresses.Count; i++)
                 {
                     var childContext = addressesContext.ForIndex(i);
-                    _addressValidator.Validate(value.Addresses[i], childContext);
+                    _ = ValidateChild(_addressValidator, value.Addresses[i], childContext);
                 }
             }
 
-            return value;
+            return ValidatedValue.Success(value);
         }
     }
 
@@ -219,7 +283,7 @@ public sealed class ValidatorTests
         public AddressValidator(IValidationContextFactory validationContextFactory)
             : base(validationContextFactory) { }
 
-        protected override AddressDto PerformValidation(ValidationContext context, AddressDto value)
+        protected override ValidatedValue<AddressDto> PerformValidation(ValidationContext context, AddressDto value)
         {
             var zipCode = context.Check(value.ZipCode).NormalizeTargetIfNecessary();
             value.ZipCode = zipCode.Value;
@@ -228,16 +292,19 @@ public sealed class ValidatorTests
                 zipCode.AddError("zipCode must not be empty", "NotEmpty");
             }
 
-            return value;
+            return ValidatedValue.Success(value);
         }
     }
 
-    private sealed class RegistrationValidator : Validator<RegistrationDto, CreatePersonCommand?>
+    private sealed class RegistrationValidator : Validator<RegistrationDto, CreatePersonCommand>
     {
         public RegistrationValidator(IValidationContextFactory validationContextFactory)
             : base(validationContextFactory) { }
 
-        protected override CreatePersonCommand? PerformValidation(ValidationContext context, RegistrationDto value)
+        protected override ValidatedValue<CreatePersonCommand> PerformValidation(
+            ValidationContext context,
+            RegistrationDto value
+        )
         {
             var firstName = context.Check(value.FirstName).NormalizeTargetIfNecessary();
             var email = context.Check(value.Email).NormalizeTargetIfNecessary();
@@ -256,16 +323,24 @@ public sealed class ValidatorTests
                 email.AddError("email must be an email address", "Email");
             }
 
-            return new CreatePersonCommand(normalizedFirstName, normalizedEmail);
+            if (context.HasErrors)
+            {
+                return ValidatedValue<CreatePersonCommand>.NoValue;
+            }
+
+            return ValidatedValue.Success(new CreatePersonCommand(normalizedFirstName, normalizedEmail));
         }
     }
 
-    private sealed class AsyncRegistrationValidator : AsyncValidator<RegistrationDto, CreatePersonCommand?>
+    private sealed class AsyncRegistrationValidator : AsyncValidator<RegistrationDto, CreatePersonCommand>
     {
-        public AsyncRegistrationValidator(IValidationContextFactory validationContextFactory)
-            : base(validationContextFactory) { }
+        private readonly RegistrationValidator _registrationValidator;
 
-        protected override async ValueTask<CreatePersonCommand?> PerformValidationAsync(
+        public AsyncRegistrationValidator(IValidationContextFactory validationContextFactory)
+            : base(validationContextFactory) =>
+            _registrationValidator = new RegistrationValidator(validationContextFactory);
+
+        protected override async ValueTask<ValidatedValue<CreatePersonCommand>> PerformValidationAsync(
             ValidationContext context,
             RegistrationDto value,
             CancellationToken cancellationToken
@@ -273,7 +348,41 @@ public sealed class ValidatorTests
         {
             await Task.Yield();
             cancellationToken.ThrowIfCancellationRequested();
-            return new RegistrationValidator(ValidationContextFactory).Validate(value, context).Value;
+            return ValidateChild(_registrationValidator, value, context);
+        }
+    }
+
+    private sealed class CountingRegistrationValidator : Validator<RegistrationDto, CountingCreatePersonCommand>
+    {
+        public CountingRegistrationValidator(IValidationContextFactory validationContextFactory)
+            : base(validationContextFactory) { }
+
+        protected override ValidatedValue<CountingCreatePersonCommand> PerformValidation(
+            ValidationContext context,
+            RegistrationDto value
+        )
+        {
+            var firstName = context.Check(value.FirstName).NormalizeTargetIfNecessary();
+            var email = context.Check(value.Email).NormalizeTargetIfNecessary();
+            var normalizedFirstName = firstName.Value ?? string.Empty;
+            var normalizedEmail = email.Value ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(normalizedFirstName))
+            {
+                firstName.AddError("firstName must not be empty", "NotEmpty");
+            }
+
+            if (!normalizedEmail.Contains("@", StringComparison.Ordinal))
+            {
+                email.AddError("email must be an email address", "Email");
+            }
+
+            if (context.HasErrors)
+            {
+                return ValidatedValue<CountingCreatePersonCommand>.NoValue;
+            }
+
+            return ValidatedValue.Success(new CountingCreatePersonCommand(normalizedFirstName, normalizedEmail));
         }
     }
 
@@ -282,15 +391,27 @@ public sealed class ValidatorTests
         public CancelingAsyncPersonValidator(IValidationContextFactory validationContextFactory)
             : base(validationContextFactory) { }
 
-        protected override async ValueTask<PersonDto> PerformValidationAsync(
+        protected override async ValueTask<ValidatedValue<PersonDto>> PerformValidationAsync(
             ValidationContext context,
             PersonDto value,
             CancellationToken cancellationToken
         )
         {
             await Task.Delay(TimeSpan.FromMilliseconds(1), cancellationToken);
-            return value;
+            return ValidatedValue.Success(value);
         }
+    }
+
+    private sealed class BrokenValidator : Validator<RegistrationDto, CreatePersonCommand>
+    {
+        public BrokenValidator(IValidationContextFactory validationContextFactory)
+            : base(validationContextFactory) { }
+
+        protected override ValidatedValue<CreatePersonCommand> PerformValidation(
+            ValidationContext context,
+            RegistrationDto value
+        ) =>
+            ValidatedValue<CreatePersonCommand>.NoValue;
     }
 
     private sealed class PersonDto
@@ -317,4 +438,22 @@ public sealed class ValidatorTests
     }
 
     private sealed record CreatePersonCommand(string FirstName, string Email);
+
+    private sealed class CountingCreatePersonCommand
+    {
+        public CountingCreatePersonCommand(string firstName, string email)
+        {
+            FirstName = firstName;
+            Email = email;
+            InstanceCount++;
+        }
+
+        public static int InstanceCount { get; private set; }
+
+        public string FirstName { get; }
+
+        public string Email { get; }
+
+        public static void Reset() => InstanceCount = 0;
+    }
 }

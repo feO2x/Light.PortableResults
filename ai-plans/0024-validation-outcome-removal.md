@@ -11,50 +11,50 @@ The current validation design mixes two responsibilities in
 
 ## Acceptance Criteria
 
-- [ ]
+- [x]
   `ValidationOutcome<T>` is renamed to
   `ValidatedValue<T>` and redesigned as a success-only value carrier rather than a public validation result model.
-- [ ]
+- [x]
   `ValidatedValue<T>` no longer exposes
   `Errors`,
   `IsValid`,
   `HasErrors`, or
   `ToFailureResult()`, and it enforces the same non-null success semantics as
   `Result<T>`.
-- [ ]
+- [x]
   `ValidatedValue<T>` remains public only because it appears in protected extensibility points on public validator base classes, and its documentation clearly positions it as a validator-implementation type rather than an application-facing result model.
-- [ ] All public synchronous validator entry points return
+- [x] All public synchronous validator entry points return
   `Result<T>` /
   `Result<TValidated>` instead of
   `ValidationOutcome<T>` and remain consistent for root and child validator usage.
-- [ ] All public asynchronous validator entry points return
+- [x] All public asynchronous validator entry points return
   `ValueTask<Result<T>>` /
   `ValueTask<Result<TValidated>>` and mirror the synchronous API shape.
-- [ ]
+- [x]
   `PerformValidation(...)` and
   `PerformValidationAsync(...)` on validator base classes return
   `ValidatedValue<T>` /
   `ValidatedValue<TValidated>` so subclasses can produce normalized values without materializing failures.
-- [ ]
+- [x]
   `ValidationContext` is the single source of validation failures for root and child validators; child validators add errors to the shared context and do not return independent failure objects.
-- [ ] Nested validator composition uses a non-public
+- [x] Nested validator composition uses a non-public
   `ValidatedValue<T>`-based execution path instead of the public
   `Result<T>` API so child validators do not materialize intermediate failures.
-- [ ] The outer validator pipeline converts
+- [x] The outer validator pipeline converts
   `ValidationContext` plus
   `ValidatedValue<T>` into the final
   `Result<T>` exactly once, preserving current flat target semantics, automatic null validation, and nested validation behavior.
-- [ ]
+- [x]
   `ValidatedValue<T>` exposes explicit construction for success and no-value states so validator implementations do not rely on an implicit default-value convention.
-- [ ] Successful validation never produces a
+- [x] Successful validation never produces a
   `null` value, and nullable validator tests and documentation are updated to match that contract.
-- [ ] Synchronous convenience APIs such as
+- [x] Synchronous convenience APIs such as
   `CheckForErrors(...)` and
   `TryValidate(...)` are updated to sit on top of the new
   `Result<T>` contract without duplicating failure materialization.
-- [ ] Automated tests are updated to cover successful normalization, failing validation with no exposed value, automatic null handling, nested child validators, transformed validators, async validators, and
+- [x] Automated tests are updated to cover successful normalization, failing validation with no exposed value, automatic null handling, nested child validators, transformed validators, async validators, and
   `ValidatedValue<T>` semantics.
-- [ ] Benchmarks are updated to show that failing transformed validations no longer allocate normalized output objects unnecessarily, especially in
+- [x] Benchmarks are updated to show that failing transformed validations no longer allocate normalized output objects unnecessarily, especially in
   `ValidationEndpointBenchmarks`.
 
 ## Technical Details

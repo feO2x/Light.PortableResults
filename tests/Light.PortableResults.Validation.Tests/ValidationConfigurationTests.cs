@@ -45,12 +45,11 @@ public sealed class ValidationConfigurationTests
         {
             AutomaticNullErrorProvider = NoOpAutomaticNullErrorProvider.Instance
         };
-        var validator = new PassThroughStringValidator(new DefaultValidationContextFactory(options));
+        var validator = new NullToEmptyStringValidator(new DefaultValidationContextFactory(options));
 
-        var outcome = validator.Validate(null);
+        var result = validator.Validate(null);
 
-        outcome.IsValid.Should().BeTrue();
-        outcome.Value.Should().BeNull();
+        result.Should().Be(Result<string?>.Ok(string.Empty));
     }
 
     [Fact]
@@ -63,11 +62,11 @@ public sealed class ValidationConfigurationTests
         var factory = new DefaultValidationContextFactory(options);
         var context = factory.CreateValidationContext();
         context.SetItem(TenantKey, "checkout");
-        var validator = new PassThroughStringValidator(factory);
+        var validator = new NullToEmptyStringValidator(factory);
 
-        var outcome = validator.Validate(null, context, target: "request", displayName: "Request");
+        var result = validator.Validate(null, context, target: "request", displayName: "Request");
 
-        outcome.IsValid.Should().BeFalse();
+        result.IsValid.Should().BeFalse();
         var expectedErrors = new Errors(
             new Error
             {
@@ -77,7 +76,7 @@ public sealed class ValidationConfigurationTests
                 Category = ErrorCategory.Validation
             }
         );
-        outcome.Errors.Should().Equal(expectedErrors);
+        result.Errors.Should().Equal(expectedErrors);
     }
 
     [Fact]
@@ -181,12 +180,13 @@ public sealed class ValidationConfigurationTests
            .WithMessage("*tenant*");
     }
 
-    private sealed class PassThroughStringValidator : Validator<string?>
+    private sealed class NullToEmptyStringValidator : Validator<string?>
     {
-        public PassThroughStringValidator(IValidationContextFactory validationContextFactory)
+        public NullToEmptyStringValidator(IValidationContextFactory validationContextFactory)
             : base(validationContextFactory) { }
 
-        protected override string? PerformValidation(ValidationContext context, string? value) => value;
+        protected override ValidatedValue<string?> PerformValidation(ValidationContext context, string? value) =>
+            ValidatedValue<string?>.Success(value ?? string.Empty);
     }
 
     private sealed class ContextAwareAutomaticNullErrorProvider : IAutomaticNullErrorProvider

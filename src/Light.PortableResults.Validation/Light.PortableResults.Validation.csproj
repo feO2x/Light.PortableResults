@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Description>Framework-agnostic validation foundations for Light.PortableResults, including validation contexts, low-allocation checks, validator base classes, and validation outcomes.</Description>
+    <Description>Framework-agnostic validation foundations for Light.PortableResults, including validation contexts, low-allocation checks, validator base classes, and validated value pipelines.</Description>
     <PackageReleaseNotes>
       Light.PortableResults.Validation 0.1.0
       ---------------------------------
 
-      - Adds validation foundations with validation contexts, checks, validation outcomes, and sync/async validator base classes.
+      - Adds validation foundations with validation contexts, checks, validated value pipelines, and sync/async validator base classes.
       - Supports flat validation errors that integrate with Light.PortableResults HTTP and messaging transports.
     </PackageReleaseNotes>
   </PropertyGroup>

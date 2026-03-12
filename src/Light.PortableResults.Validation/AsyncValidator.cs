@@ -30,8 +30,8 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <param name="target">The raw caller expression for the value.</param>
     /// <param name="displayName">The optional display name.</param>
-    /// <returns>The validation outcome.</returns>
-    public ValueTask<ValidationOutcome<T>> ValidateAsync(
+    /// <returns>The validation result.</returns>
+    public ValueTask<Result<T>> ValidateAsync(
         T? value,
         CancellationToken cancellationToken = default,
         [CallerArgumentExpression("value")] string target = "",
@@ -53,10 +53,20 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <param name="target">The raw caller expression for the value.</param>
     /// <param name="displayName">The optional display name.</param>
-    /// <returns>The validation outcome.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="context" /> is the default instance.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
-    public async ValueTask<ValidationOutcome<T>> ValidateAsync(
+    /// <returns>The validation result.</returns>
+    public async ValueTask<Result<T>> ValidateAsync(
+        T? value,
+        ValidationContext context,
+        CancellationToken cancellationToken = default,
+        [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
+    ) =>
+        FinalizeValidation(
+            context,
+            await ValidateValueAsync(value, context, cancellationToken, target, displayName).ConfigureAwait(false)
+        );
+
+    internal async ValueTask<ValidatedValue<T>> ValidateValueAsync(
         T? value,
         ValidationContext context,
         CancellationToken cancellationToken = default,
@@ -64,36 +74,27 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
         string? displayName = null
     )
     {
-        if (context.IsDefault)
-        {
-            throw new ArgumentException("The validation context must not be the default instance.", nameof(context));
-        }
-
-        // ReSharper disable once JoinNullCheckWithUsage -- false positive, for display name, we use the ??= operator.
-        // This would mean that the null check for target is only executed when displayName is null.
-        if (target is null)
-        {
-            throw new ArgumentNullException(nameof(target));
-        }
-
+        ValidateCallArguments(context, target);
         displayName ??= target;
-        if (TryCreateAutomaticNullOutcome<T>(value, context, target, displayName, out var nullOutcome))
+        if (TryHandleAutomaticNull(value, context, target, displayName))
         {
-            return nullOutcome;
+            return ValidatedValue<T>.NoValue;
         }
 
-        var validatedValue = await PerformValidationAsync(context, value, cancellationToken).ConfigureAwait(false);
-        return new ValidationOutcome<T>(validatedValue, context.ToErrors());
+        return await PerformValidationAsync(context, value, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Performs the actual asynchronous validation logic.
     /// </summary>
     /// <param name="context">The active validation context.</param>
-    /// <param name="value">The non-null value being validated.</param>
+    /// <param name="value">The value being validated.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The validated value.</returns>
-    protected abstract ValueTask<T> PerformValidationAsync(
+    /// <returns>
+    /// A successful <see cref="ValidatedValue{T}" /> when validation produced a non-null value; otherwise,
+    /// <see cref="ValidatedValue{T}.NoValue" /> when the shared <see cref="ValidationContext" /> already contains errors.
+    /// </returns>
+    protected abstract ValueTask<ValidatedValue<T>> PerformValidationAsync(
         ValidationContext context,
         T value,
         CancellationToken cancellationToken
@@ -127,8 +128,8 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <param name="target">The raw caller expression for the value.</param>
     /// <param name="displayName">The optional display name.</param>
-    /// <returns>The validation outcome.</returns>
-    public ValueTask<ValidationOutcome<TValidated>> ValidateAsync(
+    /// <returns>The validation result.</returns>
+    public ValueTask<Result<TValidated>> ValidateAsync(
         TSource? value,
         CancellationToken cancellationToken = default,
         [CallerArgumentExpression("value")] string target = "",
@@ -150,10 +151,20 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <param name="target">The raw caller expression for the value.</param>
     /// <param name="displayName">The optional display name.</param>
-    /// <returns>The validation outcome.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="context" /> is the default instance.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
-    public async ValueTask<ValidationOutcome<TValidated>> ValidateAsync(
+    /// <returns>The validation result.</returns>
+    public async ValueTask<Result<TValidated>> ValidateAsync(
+        TSource? value,
+        ValidationContext context,
+        CancellationToken cancellationToken = default,
+        [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
+    ) =>
+        FinalizeValidation(
+            context,
+            await ValidateValueAsync(value, context, cancellationToken, target, displayName).ConfigureAwait(false)
+        );
+
+    internal async ValueTask<ValidatedValue<TValidated>> ValidateValueAsync(
         TSource? value,
         ValidationContext context,
         CancellationToken cancellationToken = default,
@@ -161,39 +172,27 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
         string? displayName = null
     )
     {
-        if (context.IsDefault)
-        {
-            throw new ArgumentException("The validation context must not be the default instance.", nameof(context));
-        }
-
-        // ReSharper disable once JoinNullCheckWithUsage -- false positive, for display name, we use the ??= operator.
-        // This would mean that the null check for target is only executed when displayName is null.
-        if (target is null)
-        {
-            throw new ArgumentNullException(nameof(target));
-        }
-
+        ValidateCallArguments(context, target);
         displayName ??= target;
-        if (TryCreateAutomaticNullOutcome<TValidated>(value, context, target, displayName, out var nullOutcome))
+        if (TryHandleAutomaticNull(value, context, target, displayName))
         {
-            return nullOutcome;
+            return ValidatedValue<TValidated>.NoValue;
         }
 
-        var validatedValue = await PerformValidationAsync(context, value!, cancellationToken).ConfigureAwait(false);
-        var errors = context.ToErrors();
-        return errors.IsEmpty ?
-            new ValidationOutcome<TValidated>(validatedValue) :
-            new ValidationOutcome<TValidated>(default!, errors);
+        return await PerformValidationAsync(context, value!, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Performs the actual asynchronous validation and transformation logic.
     /// </summary>
     /// <param name="context">The active validation context.</param>
-    /// <param name="value">The non-null source value.</param>
+    /// <param name="value">The source value being validated.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The transformed validated output.</returns>
-    protected abstract ValueTask<TValidated> PerformValidationAsync(
+    /// <returns>
+    /// A successful <see cref="ValidatedValue{TValidated}" /> when validation produced a non-null output; otherwise,
+    /// <see cref="ValidatedValue{TValidated}.NoValue" /> when the shared <see cref="ValidationContext" /> already contains errors.
+    /// </returns>
+    protected abstract ValueTask<ValidatedValue<TValidated>> PerformValidationAsync(
         ValidationContext context,
         TSource value,
         CancellationToken cancellationToken
