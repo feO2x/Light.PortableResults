@@ -27,6 +27,7 @@
     <File Path="ai-plans\0022-rename-summary.md" />
     <File Path="ai-plans\0024-options-and-error-templates-optimization.md" />
     <File Path="ai-plans\0024-validation-context-optimization.md" />
+    <File Path="ai-plans\0024-validation-outcome-removal.md" />
     <File Path="ai-plans\0024-validation-support.md" />
     <File Path="ai-plans\AGENTS.md" />
   </Folder>
