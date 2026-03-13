@@ -425,6 +425,10 @@ public readonly struct ValidationContext
 
     private static T NormalizeValueIfNecessary<T>(T value, IStringValueNormalizer normalizer)
     {
+        // We have two different if blocks for strings here. The first one uses typeof(T) == typeof(string) so that
+        // the JIT will eliminate the first branch at compile time via generic specialization,
+        // making the second branch effectively dead code for T == string. However, T could be resolved to object and
+        // this is what the second if block handles.
         if (typeof(T) == typeof(string))
         {
             var normalizedString = normalizer.Normalize((string?) (object?) value);
