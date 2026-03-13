@@ -214,9 +214,11 @@ public readonly struct ValidationContext
     }
 
     /// <summary>
-    /// Adds the specified validation error to this context.
+    /// Adds the specified validation error to this context unchanged.
     /// </summary>
-    /// <param name="error">The error to add.</param>
+    /// <param name="error">
+    /// The fully initialized error to add. If a target is desired, it must already be set on the error instance.
+    /// </param>
     /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
     public void AddError(Error error)
     {
@@ -224,11 +226,6 @@ public readonly struct ValidationContext
         if (error.IsDefaultInstance)
         {
             throw new ArgumentException("The error must not be the default instance.", nameof(error));
-        }
-
-        if (error.Target is null && _targetPrefix.Length > 0)
-        {
-            error = error with { Target = _targetPrefix };
         }
 
         State.AddError(error);

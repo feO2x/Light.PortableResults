@@ -93,6 +93,55 @@ public sealed class ValidationContextTests
     }
 
     [Fact]
+    public void AddError_WithConstructedError_ShouldNotInferScopedTarget()
+    {
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var childContext = context.ForMember("address", isNormalized: true);
+
+        childContext.AddError(
+            new Error
+            {
+                Message = "zip code is invalid",
+                Code = "InvalidZipCode",
+                Category = ErrorCategory.Validation
+            }
+        );
+
+        context.ToErrors().Should().Equal(
+            new Errors(
+                new Error
+                {
+                    Message = "zip code is invalid",
+                    Code = "InvalidZipCode",
+                    Target = null,
+                    Category = ErrorCategory.Validation
+                }
+            )
+        );
+    }
+
+    [Fact]
+    public void AddError_WithMessageOverload_ShouldStillComposeScopedTarget()
+    {
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var childContext = context.ForMember("address", isNormalized: true);
+
+        childContext.AddError("zip code is invalid", "InvalidZipCode", "zipCode");
+
+        context.ToErrors().Should().Equal(
+            new Errors(
+                new Error
+                {
+                    Message = "zip code is invalid",
+                    Code = "InvalidZipCode",
+                    Target = "address.zipCode",
+                    Category = ErrorCategory.Validation
+                }
+            )
+        );
+    }
+
+    [Fact]
     public void ContextItems_ShouldBeSharedAcrossParentAndChildScopes()
     {
         var key = new ValidationContextKey<string>("tenant");
