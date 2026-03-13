@@ -34,6 +34,9 @@ public sealed record ValidationContextKey<T>
     /// </summary>
     public string Name { get; }
 
-    /// <inheritdoc />
-    public override string ToString() => Name;
+    /// <summary>
+    /// Returns a string representation of the key.
+    /// </summary>
+    /// <returns>A string that represents the current key.</returns>
+    public override string ToString() => $"{Name} <{typeof(T)}>";
 }
