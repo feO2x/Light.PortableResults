@@ -5,8 +5,10 @@ using System.Collections.Concurrent;
 namespace Light.PortableResults.Validation;
 
 /// <summary>
-/// The built-in validation target normalizer that preserves member paths, removes the leading parameter root when
-/// present, and applies a configurable casing convention to member segments.
+/// The built-in validation target normalizer for raw caller-expression paths.
+/// It preserves member paths, removes the leading parameter root when present, and applies a configurable casing
+/// convention to member segments.
+/// Already normalized absolute targets should usually not be passed to this normalizer again.
 /// </summary>
 public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormalizer
 {
@@ -22,7 +24,7 @@ public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormali
     /// <summary>
     /// Initializes a new instance of <see cref="DefaultValidationTargetNormalizer" />.
     /// </summary>
-    /// <param name="casing">The casing convention for normalized member segments.</param>
+    /// <param name="casing">The casing convention for normalized member segments derived from raw caller expressions.</param>
     /// <param name="arrayPool">
     /// The array pool to use for paths (optional). If null is specified, <see cref="ArrayPool{T}.Shared" /> is used.
     /// </param>
