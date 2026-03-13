@@ -180,6 +180,32 @@ public sealed class ValidationConfigurationTests
            .WithMessage("*tenant*");
     }
 
+    [Fact]
+    public void ValidationContextKeys_ShouldShareItemsByNameAndType()
+    {
+        var stringKey1 = new ValidationContextKey<string>("tenant");
+        var stringKey2 = new ValidationContextKey<string>("tenant");
+        var intKey = new ValidationContextKey<int>("tenant");
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+
+        context.SetItem(stringKey1, "checkout");
+        context.SetItem(intKey, 42);
+
+        context.TryGetItem(stringKey2, out var stringValue).Should().BeTrue();
+        stringValue.Should().Be("checkout");
+        context.TryGetItem(intKey, out var intValue).Should().BeTrue();
+        intValue.Should().Be(42);
+    }
+
+    [Fact]
+    public void ValidationContextKeys_WithSameNameAndDifferentType_ShouldNotBeEqual()
+    {
+        var stringKey = new ValidationContextKey<string>("tenant");
+        var intKey = new ValidationContextKey<int>("tenant");
+
+        stringKey.Should().NotBe(intKey);
+    }
+
     private sealed class NullToEmptyStringValidator : Validator<string?>
     {
         public NullToEmptyStringValidator(IValidationContextFactory validationContextFactory)
