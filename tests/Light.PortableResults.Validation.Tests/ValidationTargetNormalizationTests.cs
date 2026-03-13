@@ -1,40 +1,39 @@
-using System;
 using FluentAssertions;
-using Light.PortableResults.Validation;
 using Xunit;
 
 namespace Light.PortableResults.Validation.Tests;
 
 public sealed class ValidationTargetNormalizationTests
 {
-    [Fact]
-    public void DefaultNormalizer_ShouldPreserveMemberPathAndCamelCaseSegments()
+    public static TheoryData<string, ValidationTargetCasing, string> RepresentativeTargets =>
+        new ()
+        {
+            { "ZipCode", ValidationTargetCasing.CamelCase, "zipCode" },
+            { "dto", ValidationTargetCasing.CamelCase, "dto" },
+            { "dto.Address.ZipCode", ValidationTargetCasing.CamelCase, "address.zipCode" },
+            { "dto.Addresses[0].ZipCode", ValidationTargetCasing.CamelCase, "addresses[0].zipCode" },
+            { "  dto. Address . ZipCode  ", ValidationTargetCasing.CamelCase, "address.zipCode" },
+            { "dto.@Address.@ZipCode", ValidationTargetCasing.CamelCase, "address.zipCode" },
+            { "dto.address.zipCode", ValidationTargetCasing.PascalCase, "Address.ZipCode" },
+            { "dto.Address.ZipCode", ValidationTargetCasing.Preserve, "Address.ZipCode" },
+            { "dto.Address[0", ValidationTargetCasing.CamelCase, "address[0" },
+            { "dto.", ValidationTargetCasing.CamelCase, string.Empty },
+            { " \t ", ValidationTargetCasing.CamelCase, string.Empty }
+        };
+
+    [Theory]
+    [MemberData(nameof(RepresentativeTargets))]
+    public void DefaultNormalizer_ShouldNormalizeRepresentativeTargets(
+        string rawPath,
+        ValidationTargetCasing casing,
+        string expectedTarget
+    )
     {
-        var normalizer = new DefaultValidationTargetNormalizer();
+        var normalizer = new DefaultValidationTargetNormalizer(casing);
 
-        var normalized = normalizer.Normalize("dto.Address.ZipCode");
+        var normalized = normalizer.Normalize(rawPath);
 
-        normalized.Should().Be("address.zipCode");
-    }
-
-    [Fact]
-    public void DefaultNormalizer_ShouldPreserveIndexes()
-    {
-        var normalizer = new DefaultValidationTargetNormalizer();
-
-        var normalized = normalizer.Normalize("dto.Addresses[0].ZipCode");
-
-        normalized.Should().Be("addresses[0].zipCode");
-    }
-
-    [Fact]
-    public void DefaultNormalizer_ShouldSupportPreserveCasing()
-    {
-        var normalizer = new DefaultValidationTargetNormalizer(ValidationTargetCasing.Preserve);
-
-        var normalized = normalizer.Normalize("dto.Address.ZipCode");
-
-        normalized.Should().Be("Address.ZipCode");
+        normalized.Should().Be(expectedTarget);
     }
 
     [Fact]

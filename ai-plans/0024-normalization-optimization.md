@@ -6,12 +6,12 @@
 
 ## Acceptance Criteria
 
-- [ ] `DefaultValidationTargetNormalizer.NormalizeCore` is redesigned to parse the raw path in a single pass without using `Substring` for member segments and without allocating intermediate strings for segment cleanup.
-- [ ] The optimized implementation preserves the current public normalization behavior for whitespace trimming, root-parameter removal, member separators, indexers, casing modes, empty inputs, and malformed indexers.
-- [ ] The implementation keeps the existing cache behavior and thread-safety characteristics of `DefaultValidationTargetNormalizer`.
-- [ ] The new normalization pipeline uses a stack-first output strategy with a safe fallback for longer targets so short and medium paths avoid unnecessary heap allocations beyond the final normalized string.
-- [ ] Any dead or redundant logic uncovered by the parser rewrite is removed or folded into the new flow without changing externally observable behavior.
-- [ ] Automated tests cover the optimized normalizer with representative simple, nested, indexed, whitespace-padded, verbatim-identifier, casing-preserving, empty, and malformed-path inputs.
+- [x] `DefaultValidationTargetNormalizer.NormalizeCore` is redesigned to parse the raw path in a single pass without using `Substring` for member segments and without allocating intermediate strings for segment cleanup.
+- [x] The optimized implementation preserves the current public normalization behavior for whitespace trimming, root-parameter removal, member separators, indexers, casing modes, empty inputs, and malformed indexers.
+- [x] The implementation keeps the existing cache behavior and thread-safety characteristics of `DefaultValidationTargetNormalizer`.
+- [x] The new normalization pipeline uses a stack-first output strategy with a safe fallback for longer targets so short and medium paths avoid unnecessary heap allocations beyond the final normalized string.
+- [x] Any dead or redundant logic uncovered by the parser rewrite is removed or folded into the new flow without changing externally observable behavior.
+- [x] Automated tests cover the optimized normalizer with representative simple, nested, indexed, whitespace-padded, verbatim-identifier, casing-preserving, empty, and malformed-path inputs.
 
 ## Technical Details
 

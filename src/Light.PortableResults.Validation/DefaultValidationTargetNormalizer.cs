@@ -1,6 +1,6 @@
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
-using System.Text;
 
 namespace Light.PortableResults.Validation;
 
@@ -10,6 +10,12 @@ namespace Light.PortableResults.Validation;
 /// </summary>
 public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormalizer
 {
+    /// <summary>
+    /// The default threshold at which paths are normalized into a rented buffer instead of a stack buffer.
+    /// </summary>
+    public const int DefaultStackBufferThreshold = 512;
+
+    private readonly ArrayPool<char> _arrayPool;
     private readonly ConcurrentDictionary<string, string> _cache = new (StringComparer.Ordinal);
     private readonly Func<string, string> _normalizeDelegate;
 
@@ -17,9 +23,28 @@ public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormali
     /// Initializes a new instance of <see cref="DefaultValidationTargetNormalizer" />.
     /// </summary>
     /// <param name="casing">The casing convention for normalized member segments.</param>
-    public DefaultValidationTargetNormalizer(ValidationTargetCasing casing = ValidationTargetCasing.CamelCase)
+    /// <param name="arrayPool">
+    /// The array pool to use for paths (optional). If null is specified, <see cref="ArrayPool{T}.Shared" /> is used.
+    /// </param>
+    /// <param name="arrayPoolThreshold">
+    /// The threshold at which paths are normalized into a rented buffer instead of a stack buffer. Defaults to
+    /// <see cref="DefaultStackBufferThreshold" />.
+    /// </param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="arrayPoolThreshold" /> is less than 0.</exception>
+    public DefaultValidationTargetNormalizer(
+        ValidationTargetCasing casing = ValidationTargetCasing.CamelCase,
+        ArrayPool<char>? arrayPool = null,
+        int arrayPoolThreshold = DefaultStackBufferThreshold
+    )
     {
+        if (arrayPoolThreshold < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(arrayPoolThreshold));
+        }
+
         Casing = casing;
+        _arrayPool = arrayPool ?? ArrayPool<char>.Shared;
+        ArrayPoolThreshold = arrayPoolThreshold;
         _normalizeDelegate = NormalizeCore;
     }
 
@@ -28,85 +53,135 @@ public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormali
     /// </summary>
     public ValidationTargetCasing Casing { get; }
 
-    /// <inheritdoc />
-    public string Normalize(string rawPath)
-    {
-        if (rawPath is null)
-        {
-            throw new ArgumentNullException(nameof(rawPath));
-        }
+    /// <summary>
+    /// Gets the threshold at which paths are normalized into a rented buffer instead of a stack buffer.
+    /// </summary>
+    public int ArrayPoolThreshold { get; }
 
-        return _cache.GetOrAdd(rawPath, _normalizeDelegate);
-    }
+    /// <inheritdoc />
+    public string Normalize(string rawPath) =>
+        rawPath is null ?
+            throw new ArgumentNullException(nameof(rawPath)) :
+            _cache.GetOrAdd(rawPath, _normalizeDelegate);
 
     private string NormalizeCore(string rawPath)
     {
-        if (string.IsNullOrWhiteSpace(rawPath))
+        var trimmedPath = rawPath.AsSpan().Trim();
+        if (trimmedPath.IsEmpty)
         {
             return string.Empty;
         }
 
-        var trimmedPath = rawPath.Trim();
-        var hasMemberSeparator = trimmedPath.IndexOf('.') >= 0;
-        var startIndex = hasMemberSeparator ? FindFirstMemberSeparator(trimmedPath) + 1 : 0;
-        if (startIndex >= trimmedPath.Length)
+        var parsingStart = FindParsingStart(trimmedPath);
+        if (parsingStart >= trimmedPath.Length)
         {
             return string.Empty;
         }
 
-        var builder = new StringBuilder(trimmedPath.Length);
+        if (trimmedPath.Length <= ArrayPoolThreshold)
+        {
+            Span<char> stackBuffer = stackalloc char[trimmedPath.Length];
+            return NormalizeIntoString(trimmedPath, parsingStart, stackBuffer);
+        }
+
+        var rentedBuffer = _arrayPool.Rent(trimmedPath.Length);
+        try
+        {
+            return NormalizeIntoString(trimmedPath, parsingStart, rentedBuffer.AsSpan(0, trimmedPath.Length));
+        }
+        finally
+        {
+            _arrayPool.Return(rentedBuffer);
+        }
+    }
+
+    private static int FindParsingStart(ReadOnlySpan<char> rawPath)
+    {
+        var indexOfDot = rawPath.IndexOf('.');
+        return indexOfDot == -1 ? 0 : indexOfDot + 1;
+    }
+
+    private string NormalizeIntoString(ReadOnlySpan<char> rawPath, int startIndex, Span<char> buffer)
+    {
+        var length = NormalizeIntoBuffer(rawPath, startIndex, buffer);
+        return CreateString(buffer, length);
+    }
+
+    private int NormalizeIntoBuffer(ReadOnlySpan<char> rawPath, int startIndex, Span<char> buffer)
+    {
+        var builder = new TargetBuffer(buffer);
         var segmentStart = startIndex;
-        for (var i = startIndex; i < trimmedPath.Length; i++)
+        var index = startIndex;
+        while (index < rawPath.Length)
         {
-            var current = trimmedPath[i];
+            var current = rawPath[index];
             if (current == '.')
             {
-                AppendSegment(builder, trimmedPath, segmentStart, i - segmentStart);
+                AppendSegment(rawPath, segmentStart, index, ref builder);
                 builder.Append('.');
-                segmentStart = i + 1;
+                index++;
+                segmentStart = index;
+                continue;
             }
-            else if (current == '[')
-            {
-                AppendSegment(builder, trimmedPath, segmentStart, i - segmentStart);
-                var closingBracket = trimmedPath.IndexOf(']', i);
-                if (closingBracket < 0)
-                {
-                    builder.Append(trimmedPath, i, trimmedPath.Length - i);
-                    return builder.ToString();
-                }
 
-                builder.Append(trimmedPath, i, closingBracket - i + 1);
-                i = closingBracket;
-                segmentStart = closingBracket + 1;
-                if (segmentStart < trimmedPath.Length && trimmedPath[segmentStart] == '.')
-                {
-                    builder.Append('.');
-                    i = segmentStart;
-                    segmentStart++;
-                }
+            if (current != '[')
+            {
+                index++;
+                continue;
+            }
+
+            AppendSegment(rawPath, segmentStart, index, ref builder);
+
+            var closingBracket = index + 1;
+            while (closingBracket < rawPath.Length && rawPath[closingBracket] != ']')
+            {
+                closingBracket++;
+            }
+
+            if (closingBracket >= rawPath.Length)
+            {
+                builder.Append(rawPath.Slice(index));
+                return builder.Length;
+            }
+
+            builder.Append(rawPath.Slice(index, closingBracket - index + 1));
+            index = closingBracket + 1;
+            segmentStart = index;
+            if (index < rawPath.Length && rawPath[index] == '.')
+            {
+                builder.Append('.');
+                index++;
+                segmentStart = index;
             }
         }
 
-        AppendSegment(builder, trimmedPath, segmentStart, trimmedPath.Length - segmentStart);
-        return builder.ToString();
+        AppendSegment(rawPath, segmentStart, rawPath.Length, ref builder);
+        return builder.Length;
     }
 
-    private static int FindFirstMemberSeparator(string value)
+    private void AppendSegment(ReadOnlySpan<char> rawPath, int startIndex, int endIndex, ref TargetBuffer builder)
     {
-        var firstDotIndex = value.IndexOf('.');
-        return firstDotIndex < 0 ? value.Length : firstDotIndex;
-    }
+        while (startIndex < endIndex && char.IsWhiteSpace(rawPath[startIndex]))
+        {
+            startIndex++;
+        }
 
-    private void AppendSegment(StringBuilder builder, string rawPath, int startIndex, int length)
-    {
-        if (length <= 0)
+        while (endIndex > startIndex && char.IsWhiteSpace(rawPath[endIndex - 1]))
+        {
+            endIndex--;
+        }
+
+        if (startIndex >= endIndex)
         {
             return;
         }
 
-        var segment = rawPath.Substring(startIndex, length);
-        var cleaned = RemoveIgnoredCharacters(segment);
-        if (cleaned.Length == 0)
+        if (rawPath[startIndex] == '@')
+        {
+            startIndex++;
+        }
+
+        if (startIndex >= endIndex)
         {
             return;
         }
@@ -114,65 +189,49 @@ public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormali
         switch (Casing)
         {
             case ValidationTargetCasing.CamelCase:
-                builder.Append(ToCamelCase(cleaned));
+                builder.Append(char.ToLowerInvariant(rawPath[startIndex]));
                 break;
             case ValidationTargetCasing.PascalCase:
-                builder.Append(ToPascalCase(cleaned));
+                builder.Append(char.ToUpperInvariant(rawPath[startIndex]));
                 break;
             default:
-                builder.Append(cleaned);
+                builder.Append(rawPath[startIndex]);
                 break;
         }
+
+        if (endIndex - startIndex > 1)
+        {
+            builder.Append(rawPath.Slice(startIndex + 1, endIndex - startIndex - 1));
+        }
     }
 
-    private static string RemoveIgnoredCharacters(string segment)
+    private static string CreateString(Span<char> buffer, int length)
     {
-        var trimmedSegment = segment.Trim();
-        if (trimmedSegment.Length == 0)
-        {
-            return string.Empty;
-        }
-
-        if (trimmedSegment.StartsWith("this.", StringComparison.Ordinal))
-        {
-            trimmedSegment = trimmedSegment.Substring(5);
-        }
-
-        if (trimmedSegment.Length > 0 && trimmedSegment[0] == '@')
-        {
-            trimmedSegment = trimmedSegment.Substring(1);
-        }
-
-        return trimmedSegment;
+        return length == 0 ? string.Empty : buffer.Slice(0, length).ToString();
     }
 
-    private static string ToCamelCase(string segment)
+    private ref struct TargetBuffer
     {
-        if (segment.Length == 0 || char.IsLower(segment[0]))
+        private readonly Span<char> _buffer;
+
+        public TargetBuffer(Span<char> buffer)
         {
-            return segment;
+            _buffer = buffer;
+            Length = 0;
         }
 
-        if (segment.Length == 1)
+        public int Length { get; private set; }
+
+        public void Append(char value)
         {
-            return char.ToLowerInvariant(segment[0]).ToString();
+            _buffer[Length] = value;
+            Length++;
         }
 
-        return char.ToLowerInvariant(segment[0]) + segment.Substring(1);
-    }
-
-    private static string ToPascalCase(string segment)
-    {
-        if (segment.Length == 0 || char.IsUpper(segment[0]))
+        public void Append(ReadOnlySpan<char> value)
         {
-            return segment;
+            value.CopyTo(_buffer.Slice(Length));
+            Length += value.Length;
         }
-
-        if (segment.Length == 1)
-        {
-            return char.ToUpperInvariant(segment[0]).ToString();
-        }
-
-        return char.ToUpperInvariant(segment[0]) + segment.Substring(1);
     }
 }
