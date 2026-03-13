@@ -358,7 +358,7 @@ public readonly struct ValidationContext
     /// <summary>
     /// Gets the target path for the automatic null check.
     /// </summary>
-    /// <param name="rawTarget">The non-normalized target </param>
+    /// <param name="rawTarget">The non-normalized target path.</param>
     /// <returns>The normalized flat target.</returns>
     /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
     public string GetAutomaticNullTarget(string rawTarget)
