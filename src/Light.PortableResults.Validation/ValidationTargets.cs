@@ -13,15 +13,6 @@ public static class ValidationTargets
     public static IValidationTargetNormalizer DefaultNormalizer { get; } = new DefaultValidationTargetNormalizer();
 
     /// <summary>
-    /// Normalizes the specified raw path with the given normalizer or the built-in default normalizer.
-    /// </summary>
-    /// <param name="rawPath">The raw path to normalize.</param>
-    /// <param name="normalizer">The normalizer to use.</param>
-    /// <returns>The normalized target path.</returns>
-    public static string Normalize(string rawPath, IValidationTargetNormalizer? normalizer = null) =>
-        (normalizer ?? DefaultNormalizer).Normalize(rawPath);
-
-    /// <summary>
     /// Composes a parent prefix and child target using the same flat-path rules as the validation infrastructure.
     /// </summary>
     /// <param name="prefix">The parent prefix. Use an empty string for the root object.</param>
@@ -54,14 +45,6 @@ public static class ValidationTargets
 
         return target[0] == '[' ? prefix + target : prefix + "." + target;
     }
-
-    /// <summary>
-    /// Appends a member segment to the specified prefix.
-    /// </summary>
-    /// <param name="prefix">The current prefix.</param>
-    /// <param name="memberName">The member segment to append.</param>
-    /// <returns>The composed target.</returns>
-    public static string AppendMember(string prefix, string memberName) => Compose(prefix, memberName);
 
     /// <summary>
     /// Appends an indexer segment to the specified prefix.
