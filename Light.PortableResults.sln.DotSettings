@@ -1,4 +1,4 @@
-﻿<wpf:ResourceDictionary xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+<wpf:ResourceDictionary xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                         xmlns:s="clr-namespace:System;assembly=mscorlib"
                         xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xml:space="preserve">
 	<s:Boolean
@@ -58,7 +58,7 @@
     &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;&#xD;
   &amp;lt;/Language&amp;gt;&#xD;
   &amp;lt;Language id="Markdown"&amp;gt;&#xD;
-    &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;&#xD;
+    &amp;lt;Reformat&amp;gt;false&amp;lt;/Reformat&amp;gt;&#xD;
   &amp;lt;/Language&amp;gt;&#xD;
   &amp;lt;Language id="Properties"&amp;gt;&#xD;
     &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;&#xD;

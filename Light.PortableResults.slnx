@@ -25,6 +25,12 @@
     <File Path="ai-plans\0015-final-code-review.md" />
     <File Path="ai-plans\0017-HTTP-write-integration-streamlining.md" />
     <File Path="ai-plans\0022-rename-summary.md" />
+    <File Path="ai-plans\0024-normalization-optimization.md" />
+    <File Path="ai-plans\0024-options-and-error-templates-optimization.md" />
+    <File Path="ai-plans\0024-plan-deviations.md" />
+    <File Path="ai-plans\0024-validation-context-optimization.md" />
+    <File Path="ai-plans\0024-validation-outcome-removal.md" />
+    <File Path="ai-plans\0024-validation-support.md" />
     <File Path="ai-plans\AGENTS.md" />
   </Folder>
   <Folder Name="/benchmarks/">
@@ -46,19 +52,17 @@
     <File Path="src\AGENTS.md" />
     <File Path="src\Directory.Build.props" />
     <Project Path="src\Light.PortableResults.AspNetCore.Mvc\Light.PortableResults.AspNetCore.Mvc.csproj" />
-    <Project
-      Path="src\Light.PortableResults.AspNetCore.MinimalApis\Light.PortableResults.AspNetCore.MinimalApis.csproj" />
+    <Project Path="src/Light.PortableResults.Validation/Light.PortableResults.Validation.csproj" />
+    <Project Path="src\Light.PortableResults.AspNetCore.MinimalApis\Light.PortableResults.AspNetCore.MinimalApis.csproj" />
     <Project Path="src\Light.PortableResults.AspNetCore.Shared\Light.PortableResults.AspNetCore.Shared.csproj" />
     <Project Path="src\Light.PortableResults\Light.PortableResults.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <File Path="tests\AGENTS.md" />
-    <Project
-      Path="tests\Light.PortableResults.AspNetCore.Mvc.Tests\Light.PortableResults.AspNetCore.Mvc.Tests.csproj" />
-    <Project
-      Path="tests\Light.PortableResults.AspNetCore.MinimalApis.Tests\Light.PortableResults.AspNetCore.MinimalApis.Tests.csproj" />
-    <Project
-      Path="tests\Light.PortableResults.AspNetCore.Shared.Tests\Light.PortableResults.AspNetCore.Shared.Tests.csproj" />
+    <Project Path="tests\Light.PortableResults.AspNetCore.Mvc.Tests\Light.PortableResults.AspNetCore.Mvc.Tests.csproj" />
+    <Project Path="tests/Light.PortableResults.Validation.Tests/Light.PortableResults.Validation.Tests.csproj" />
+    <Project Path="tests\Light.PortableResults.AspNetCore.MinimalApis.Tests\Light.PortableResults.AspNetCore.MinimalApis.Tests.csproj" />
+    <Project Path="tests\Light.PortableResults.AspNetCore.Shared.Tests\Light.PortableResults.AspNetCore.Shared.Tests.csproj" />
     <Project Path="tests\Light.PortableResults.Tests\Light.PortableResults.Tests.csproj" />
   </Folder>
 </Solution>
