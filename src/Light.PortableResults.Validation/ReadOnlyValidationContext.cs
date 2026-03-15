@@ -51,6 +51,11 @@ public readonly struct ReadOnlyValidationContext
     /// </summary>
     public ValidationErrorTemplates ErrorTemplates => State.ErrorTemplates;
 
+    /// <summary>
+    /// Gets the shared cache for reusable validation error definitions.
+    /// </summary>
+    public IValidationErrorDefinitionCache ErrorDefinitionCache => State.ErrorDefinitionCache;
+
     private ValidationState State =>
         _state ?? throw new InvalidOperationException("The validation context must not be the default instance");
 

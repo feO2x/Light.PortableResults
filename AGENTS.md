@@ -34,3 +34,4 @@ Read ./ai-plans/AGENTS.md for details on how to write plans.
 If you encounter something worth noting while you are working on this code base, write it down here in this section. Once you are finished, I will discuss it with you and we can decide where to put your notes.
 
 - Validation target composition needs a clear ownership boundary: when a child validation context is already working with a fully composed `Error.Target`, composing the prefix again duplicates paths such as `address.address.zipCode`. The new validation package treats explicit `Error.Target` values as already absolute and only prefixes targets when the context itself creates the target path.
+- `Check<string?>` normalizes `null` to `string.Empty` by default because the shared string value normalizer runs before assertions. That means `IsNotNull` only observes actual `null` strings when a no-op string normalizer is configured for the validation context or the individual check.

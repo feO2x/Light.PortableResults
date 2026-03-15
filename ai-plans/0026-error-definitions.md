@@ -6,15 +6,15 @@ The recent error-template redesign improved message generation, but assertion me
 
 ## Acceptance Criteria
 
-- [ ] Validation error infrastructure distinguishes between reusable message templates and immutable validation error definitions so that rule identity can be cached independently from message formatting logic.
-- [ ] Non-parameterized and parameterized validation error definitions are supported through public APIs that remain low-allocation and avoid unnecessary boxing for value-type check values and rule parameters.
-- [ ] Validation infrastructure exposes a public static catalog for fixed built-in definitions and a singleton cache for dynamically parameterized validation error definitions, and the current validation pipeline can access that cache through `ValidationState` and `ValidationContext`.
-- [ ] `Check<T>` gains ergonomic overloads for adding errors from validation error definitions, including explicit override hooks for callers who want to replace defaults such as code, metadata, target, or category.
-- [ ] The built-in assertion model preserves the existing short-circuit behavior so that later assertions are skipped after failures such as `IsNotNull`, preventing null-driven follow-up failures in chained checks.
-- [ ] Built-in `Check<T>` assertion methods expose a `shortCircuitOnError` parameter with explicit defaults: `true` for `IsNotNull` and `false` for `IsIn`, `IsGreaterThan`, and `IsLessThan`.
-- [ ] The validation package exposes reusable built-in definitions for at least `NotNull`, `IsIn`, `GreaterThan`, and `LessThan`.
-- [ ] The following assertion methods are implemented on `Check<T>` and use the new error-definition infrastructure: `IsNotNull`, `IsIn`, `IsGreaterThan`, and `IsLessThan`.
-- [ ] Automated tests cover the new definition, catalog, and cache model, built-in assertion behavior, target composition, default and overridden error details, cache reuse semantics, and representative custom-definition scenarios.
+- [x] Validation error infrastructure distinguishes between reusable message templates and immutable validation error definitions so that rule identity can be cached independently from message formatting logic.
+- [x] Non-parameterized and parameterized validation error definitions are supported through public APIs that remain low-allocation and avoid unnecessary boxing for value-type check values and rule parameters.
+- [x] Validation infrastructure exposes a public static catalog for fixed built-in definitions and a singleton cache for dynamically parameterized validation error definitions, and the current validation pipeline can access that cache through `ValidationState` and `ValidationContext`.
+- [x] `Check<T>` gains ergonomic overloads for adding errors from validation error definitions, including explicit override hooks for callers who want to replace defaults such as code, metadata, target, or category.
+- [x] The built-in assertion model preserves the existing short-circuit behavior so that later assertions are skipped after failures such as `IsNotNull`, preventing null-driven follow-up failures in chained checks.
+- [x] Built-in `Check<T>` assertion methods expose a `shortCircuitOnError` parameter with explicit defaults: `true` for `IsNotNull` and `false` for `IsIn`, `IsGreaterThan`, and `IsLessThan`.
+- [x] The validation package exposes reusable built-in definitions for at least `NotNull`, `IsIn`, `GreaterThan`, and `LessThan`.
+- [x] The following assertion methods are implemented on `Check<T>` and use the new error-definition infrastructure: `IsNotNull`, `IsIn`, `IsGreaterThan`, and `IsLessThan`.
+- [x] Automated tests cover the new definition, catalog, and cache model, built-in assertion behavior, target composition, default and overridden error details, cache reuse semantics, and representative custom-definition scenarios.
 
 ## Technical Details
 

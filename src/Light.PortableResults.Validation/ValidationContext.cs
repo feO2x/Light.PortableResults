@@ -43,6 +43,11 @@ public readonly struct ValidationContext
     public ValidationErrorTemplates ErrorTemplates => State.ErrorTemplates;
 
     /// <summary>
+    /// Gets the shared cache for reusable validation error definitions.
+    /// </summary>
+    public IValidationErrorDefinitionCache ErrorDefinitionCache => State.ErrorDefinitionCache;
+
+    /// <summary>
     /// Gets the target prefix that is prepended to errors created within this context.
     /// </summary>
     public string TargetPrefix

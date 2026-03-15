@@ -62,4 +62,14 @@ public sealed record ValidationContextOptions
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));
     } = ValidationErrorTemplates.Default;
+
+    /// <summary>
+    /// Gets the shared cache for reusable validation error definitions.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
+    public IValidationErrorDefinitionCache ErrorDefinitionCache
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = ValidationErrorDefinitionCache.Default;
 }

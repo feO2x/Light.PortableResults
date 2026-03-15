@@ -101,6 +101,14 @@ public readonly struct Check<T>
     public Check<T> ShortCircuit() => new (Context, Target, DisplayName, Value, IsTargetNormalized, true);
 
     /// <summary>
+    /// Creates a new short-circuited check if requested.
+    /// </summary>
+    /// <param name="shortCircuitOnError">When <see langword="true" />, the check is short-circuited after a failure.</param>
+    /// <returns>The updated check.</returns>
+    public Check<T> ShortCircuitOnErrorIfRequested(bool shortCircuitOnError) =>
+        shortCircuitOnError ? ShortCircuit() : this;
+
+    /// <summary>
     /// Normalizes the target if necessary.
     /// </summary>
     /// <returns>The normalized check.</returns>
@@ -162,6 +170,7 @@ public readonly struct Check<T>
     /// <param name="code">The optional error code.</param>
     /// <param name="metadata">The optional metadata.</param>
     /// <param name="target">The optional explicit target.</param>
+    /// <param name="category">The error category.</param>
     /// <param name="respectShortCircuit">
     /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
     /// </param>
@@ -171,6 +180,7 @@ public readonly struct Check<T>
         string? code = null,
         MetadataObject? metadata = null,
         string? target = null,
+        ErrorCategory category = ErrorCategory.Validation,
         bool respectShortCircuit = true
     )
     {
@@ -184,7 +194,53 @@ public readonly struct Check<T>
             normalizedCheck.Target :
             normalizedCheck.Context.ComposeTarget(target, isTargetNormalized: true);
         normalizedCheck.Context.AddError(
-            message.ToError(code, resolvedTarget, ErrorCategory.Validation, metadata)
+            message.ToError(code, resolvedTarget, category, metadata)
+        );
+        return normalizedCheck;
+    }
+
+    /// <summary>
+    /// Adds a validation error from the specified reusable definition and optional override details.
+    /// </summary>
+    /// <param name="definition">The reusable definition.</param>
+    /// <param name="code">The optional override for the definition's default code.</param>
+    /// <param name="metadata">The optional override for the definition's default metadata.</param>
+    /// <param name="target">The optional override target, composed relative to the current context.</param>
+    /// <param name="category">The optional override for the definition's default category.</param>
+    /// <param name="respectShortCircuit">
+    /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
+    /// </param>
+    /// <returns>The current check.</returns>
+    public Check<T> AddError(
+        ValidationErrorDefinition definition,
+        string? code = null,
+        MetadataObject? metadata = null,
+        string? target = null,
+        ErrorCategory? category = null,
+        bool respectShortCircuit = true
+    )
+    {
+        if (definition is null)
+        {
+            throw new ArgumentNullException(nameof(definition));
+        }
+
+        if (respectShortCircuit && IsShortCircuited)
+        {
+            return this;
+        }
+
+        var normalizedCheck = NormalizeTargetIfNecessary();
+        var messageContext = normalizedCheck.CreateMessageContext();
+        var message = definition.ProvideMessage(in messageContext);
+        var resolvedTarget = ResolveDefinitionTarget(normalizedCheck, definition.Target, target);
+        normalizedCheck.Context.AddError(
+            message.ToError(
+                code ?? definition.Code,
+                resolvedTarget,
+                category ?? definition.Category,
+                metadata ?? definition.Metadata
+            )
         );
         return normalizedCheck;
     }
@@ -221,7 +277,13 @@ public readonly struct Check<T>
         var normalizedCheck = NormalizeTargetIfNecessary();
         var messageContext = normalizedCheck.CreateMessageContext();
         var message = template.ProvideMessage(in messageContext);
-        return normalizedCheck.AddError(message, code, metadata, target, respectShortCircuit: false);
+        return normalizedCheck.AddError(
+            message,
+            code,
+            metadata,
+            target,
+            respectShortCircuit: false
+        );
     }
 
     /// <summary>
@@ -259,7 +321,13 @@ public readonly struct Check<T>
         var normalizedCheck = NormalizeTargetIfNecessary();
         var messageContext = normalizedCheck.CreateMessageContext();
         var message = template.ProvideMessage(in messageContext, parameter);
-        return normalizedCheck.AddError(message, code, metadata, target, respectShortCircuit: false);
+        return normalizedCheck.AddError(
+            message,
+            code,
+            metadata,
+            target,
+            respectShortCircuit: false
+        );
     }
 
     /// <summary>
@@ -280,11 +348,32 @@ public readonly struct Check<T>
         string? target = null,
         bool respectShortCircuit = true
     ) =>
-        AddError(new ValidationErrorMessage(message), code, metadata, target, respectShortCircuit);
+        AddError(
+            new ValidationErrorMessage(message),
+            code,
+            metadata,
+            target,
+            ErrorCategory.Validation,
+            respectShortCircuit
+        );
 
     /// <summary>
     /// Implicitly converts the check to its value.
     /// </summary>
     /// <param name="check">The check to convert.</param>
     public static implicit operator T(Check<T> check) => check.Value;
+
+    private static string? ResolveDefinitionTarget(
+        Check<T> normalizedCheck,
+        string? definitionTarget,
+        string? overrideTarget
+    )
+    {
+        if (overrideTarget is not null)
+        {
+            return normalizedCheck.Context.ComposeTarget(overrideTarget, isTargetNormalized: true);
+        }
+
+        return definitionTarget ?? normalizedCheck.Target;
+    }
 }

@@ -31,6 +31,15 @@ public sealed record ValidationErrorTemplates
     private static readonly IValidationErrorMessageTemplate DefaultEmailTemplate =
         new DisplayNameValidationErrorMessageTemplate(" must be an email address");
 
+    private static readonly IComparableValidationErrorMessageTemplate DefaultGreaterThanTemplate =
+        new DisplayNameWithComparableValidationErrorMessageTemplate(" must be greater than ");
+
+    private static readonly IComparableValidationErrorMessageTemplate DefaultLessThanTemplate =
+        new DisplayNameWithComparableValidationErrorMessageTemplate(" must be less than ");
+
+    private static readonly IRangeValidationErrorMessageTemplate DefaultIsInTemplate =
+        new DisplayNameWithRangeValidationErrorMessageTemplate(" must be between ", " and ");
+
     /// <summary>
     /// Gets the shared default templates instance.
     /// </summary>
@@ -95,4 +104,34 @@ public sealed record ValidationErrorTemplates
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));
     } = DefaultEmailTemplate;
+
+    /// <summary>
+    /// Gets the template for greater-than validation failures.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
+    public IComparableValidationErrorMessageTemplate GreaterThan
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultGreaterThanTemplate;
+
+    /// <summary>
+    /// Gets the template for less-than validation failures.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
+    public IComparableValidationErrorMessageTemplate LessThan
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultLessThanTemplate;
+
+    /// <summary>
+    /// Gets the template for inclusive range validation failures.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
+    public IRangeValidationErrorMessageTemplate IsIn
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultIsInTemplate;
 }
