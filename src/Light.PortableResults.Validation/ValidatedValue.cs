@@ -68,7 +68,7 @@ public readonly struct ValidatedValue<T> : IEquatable<ValidatedValue<T>>
     /// <param name="value">The validated value when present; otherwise, the default value.</param>
     /// <returns><see langword="true" /> when a value is present; otherwise, <see langword="false" />.</returns>
     [MemberNotNullWhen(true, nameof(Value))]
-    public bool TryGetValue([MaybeNullWhen(false)] out T value)
+    public bool TryGetValue([NotNullWhen(true)] out T? value)
     {
         if (HasValue)
         {

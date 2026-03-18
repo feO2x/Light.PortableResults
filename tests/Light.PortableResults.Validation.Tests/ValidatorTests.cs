@@ -161,7 +161,7 @@ public sealed class ValidatorTests
         var validator = new RegistrationValidator(ValidationContextFactory);
         var dto = new RegistrationDto { FirstName = " ", Email = "not-an-email" };
 
-        var isValid = validator.TryValidate(dto, out CreatePersonCommand? command, out var failure);
+        var isValid = validator.TryValidate(dto, out var command, out var failure);
 
         isValid.Should().BeFalse();
         command.Should().BeNull();
@@ -261,20 +261,17 @@ public sealed class ValidatorTests
 
             if (value.Address is not null)
             {
-                _ = ValidateChild(_addressValidator, value.Address, context.For(value.Address));
+                context.Check(value.Address).ValidateChild(_addressValidator);
             }
 
             if (value.Addresses is not null)
             {
-                var addressesContext = context.ForMember("addresses", isNormalized: true);
-                for (var i = 0; i < value.Addresses.Count; i++)
-                {
-                    var childContext = addressesContext.ForIndex(i);
-                    _ = ValidateChild(_addressValidator, value.Addresses[i], childContext);
-                }
+                context.Check(value.Addresses).ValidateItems(_addressValidator);
             }
 
-            return ValidatedValue.Success(value);
+            return context.HasErrors ?
+                ValidatedValue<PersonDto>.NoValue :
+                ValidatedValue.Success(value);
         }
     }
 
@@ -348,7 +345,10 @@ public sealed class ValidatorTests
         {
             await Task.Yield();
             cancellationToken.ThrowIfCancellationRequested();
-            return ValidateChild(_registrationValidator, value, context);
+            var validatedCheck = context.Check(value).ValidateChild(_registrationValidator);
+            return validatedCheck.Context.HasErrors ?
+                ValidatedValue<CreatePersonCommand>.NoValue :
+                ValidatedValue.Success(validatedCheck.Value);
         }
     }
 

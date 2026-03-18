@@ -18,6 +18,10 @@ public readonly struct Check<T>
     /// <param name="value">The value being validated.</param>
     /// <param name="isTargetNormalized">Indicates whether <paramref name="target" /> is already normalized.</param>
     /// <param name="isShortCircuited">Indicates whether further checks should be skipped.</param>
+    /// <exception cref="InvalidOperationException">Thrown when <paramref name="context" /> is the default instance.</exception>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="target" /> or <paramref name="displayName" /> are <see langword="null" />.
+    /// </exception>
     public Check(
         ValidationContext context,
         string target,
@@ -373,7 +377,7 @@ public readonly struct Check<T>
     /// <param name="check">The check to convert.</param>
     public static implicit operator T(Check<T> check) => check.Value;
 
-    private static string? ResolveDefinitionTarget(
+    private static string ResolveDefinitionTarget(
         Check<T> normalizedCheck,
         string? definitionTarget,
         string? overrideTarget
