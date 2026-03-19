@@ -14,13 +14,11 @@ public static class CheckExtensions
     /// <typeparam name="T">The type of the value being validated.</typeparam>
     /// <param name="check">The check instance supplying the value and context.</param>
     /// <param name="childValidator">The validator responsible for validating the child value.</param>
-    /// <param name="shortCircuitOnError">Indicates whether the check should short-circuit when validation fails.</param>
     /// <returns>The updated check representing either the validated value or an error state.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="childValidator" /> is <c>null</c>.</exception>
-    public static Check<T> ValidateChild<T>(
+    public static ValidatedValue<T> ValidateChild<T>(
         this Check<T> check,
-        Validator<T> childValidator,
-        bool shortCircuitOnError = false
+        Validator<T> childValidator
     )
     {
         if (childValidator is null)
@@ -29,16 +27,12 @@ public static class CheckExtensions
         }
 
         var childValueContext = check.Context.ForMember(check.Target);
-        var validatedValue = childValidator.ValidateChildValue(
+        return childValidator.ValidateChildValue(
             check.Value,
             childValueContext,
             check.Target,
             check.DisplayName
         );
-
-        return validatedValue.TryGetValue(out var value) ?
-            check.WithValue(value) :
-            check.ShortCircuitOnErrorIfRequested(shortCircuitOnError);
     }
 
     /// <summary>
@@ -48,13 +42,11 @@ public static class CheckExtensions
     /// <typeparam name="TValidated">The type produced by the child validator when validation succeeds.</typeparam>
     /// <param name="check">The check instance supplying the value and context.</param>
     /// <param name="childValidator">The validator that transforms and validates the source value.</param>
-    /// <param name="shortCircuitOnError">Indicates whether the new check should short-circuit when validation fails.</param>
     /// <returns>A new check containing the validated value or an error state.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="childValidator" /> is <c>null</c>.</exception>
-    public static Check<TValidated> ValidateChild<TSource, TValidated>(
+    public static ValidatedValue<TValidated> ValidateChild<TSource, TValidated>(
         this Check<TSource> check,
-        Validator<TSource, TValidated> childValidator,
-        bool shortCircuitOnError = false
+        Validator<TSource, TValidated> childValidator
     )
     {
         if (childValidator is null)
@@ -63,30 +55,12 @@ public static class CheckExtensions
         }
 
         var childValueContext = check.Context.ForMember(check.Target);
-        var validateValue = childValidator.ValidateChildValue(
+        return childValidator.ValidateChildValue(
             check.Value,
             childValueContext,
             check.Target,
             check.DisplayName
         );
-
-        return validateValue.TryGetValue(out var value) ?
-            new Check<TValidated>(
-                check.Context,
-                check.Target,
-                check.DisplayName,
-                value,
-                check.IsTargetNormalized,
-                false
-            ) :
-            new Check<TValidated>(
-                check.Context,
-                check.Target,
-                check.DisplayName,
-                default!,
-                check.IsTargetNormalized,
-                shortCircuitOnError
-            );
     }
 
     /// <summary>
@@ -97,15 +71,13 @@ public static class CheckExtensions
     /// <param name="check">The check that provides the collection value and validation context.</param>
     /// <param name="itemValidator">The validator applied to each item in the collection.</param>
     /// <param name="isNullCheckingEnabled">Indicates whether the method should automatically handle <c>null</c> collection values.</param>
-    /// <param name="shortCircuitOnErrors">Determines if the check should short-circuit when validation errors are present.</param>
     /// <returns>The updated check reflecting the validated collection or error state.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <c>null</c>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when a null collection is encountered but an automatic null error cannot be created.</exception>
-    public static Check<TCollection> ValidateItems<TCollection, TItem>(
+    public static ValidatedValue<TCollection> ValidateItems<TCollection, TItem>(
         this Check<TCollection> check,
         Validator<TItem> itemValidator,
-        bool isNullCheckingEnabled = true,
-        bool shortCircuitOnErrors = false
+        bool isNullCheckingEnabled = true
     )
         where TCollection : IList<TItem>
     {
@@ -126,7 +98,8 @@ public static class CheckExtensions
                     out var error
                 ))
             {
-                return check.AddError(error);
+                check.AddError(error);
+                return ValidatedValue<TCollection>.NoValue;
             }
 
             throw new InvalidOperationException("Failed to create automatic null error.");
@@ -143,8 +116,6 @@ public static class CheckExtensions
             }
         }
 
-        return check.Context.HasErrors ?
-            check.ShortCircuitOnErrorIfRequested(shortCircuitOnErrors) :
-            check;
+        return check.Context.HasErrors ? ValidatedValue<TCollection>.NoValue : ValidatedValue.Success(collection);
     }
 }

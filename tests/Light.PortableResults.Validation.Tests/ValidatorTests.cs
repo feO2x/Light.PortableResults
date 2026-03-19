@@ -345,10 +345,7 @@ public sealed class ValidatorTests
         {
             await Task.Yield();
             cancellationToken.ThrowIfCancellationRequested();
-            var validatedCheck = context.Check(value).ValidateChild(_registrationValidator);
-            return validatedCheck.Context.HasErrors ?
-                ValidatedValue<CreatePersonCommand>.NoValue :
-                ValidatedValue.Success(validatedCheck.Value);
+            return context.Check(value).ValidateChild(_registrationValidator);
         }
     }
 

@@ -337,6 +337,17 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
         return false;
     }
 
+    /// <summary>
+    /// Validates a child value using the existing validation context without emitting failures to the caller.
+    /// </summary>
+    /// <param name="value">The child value that should be validated.</param>
+    /// <param name="context">The ambient validation context shared with the parent validator.</param>
+    /// <param name="target">The caller expression associated with the value.</param>
+    /// <param name="displayName">An optional friendly name for the value; defaults to <paramref name="target" /> when omitted.</param>
+    /// <returns>
+    /// A <see cref="ValidatedValue{TValidated}" /> representing the successful child result or <see cref="ValidatedValue{TValidated}.NoValue" /> when
+    /// validation is bypassed.
+    /// </returns>
     public ValidatedValue<TValidated> ValidateChildValue(
         TSource? value,
         ValidationContext context,
