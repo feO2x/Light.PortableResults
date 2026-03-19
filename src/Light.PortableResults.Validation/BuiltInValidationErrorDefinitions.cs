@@ -5,6 +5,20 @@ using Light.PortableResults.Metadata;
 
 namespace Light.PortableResults.Validation;
 
+// We intentionally model the built-in cache keys in this file as small immutable value types instead of classes.
+// These keys represent transient rule-identity values for hot lookup paths such as GreaterThan(18) or IsIn(1, 10),
+// so a class-based key would usually allocate per cache lookup unless callers also cached the key instance.
+// That extra allocation would undercut the point of reusing immutable validation error definitions in the first place.
+//
+// This is different from ValidationContextKey<T> in ValidationState. Those keys typically identify long-lived shared
+// state slots, are often created once and reused, and therefore tolerate reference-type identity objects better.
+// The definition-cache keys here are short-lived value carriers whose semantics are fully described by one or two
+// typed boundary values, which makes readonly structs a better fit.
+//
+// The public cache API still remains generic, so advanced callers can use their own key types, whether class- or
+// struct-based. We keep the built-in path allocation-free by default and avoid introducing a public inheritance-based
+// key hierarchy that would add ceremony without improving the equality semantics of these concrete rule identities.
+
 /// <summary>
 /// Exposes reusable built-in validation error definitions.
 /// </summary>

@@ -4,6 +4,10 @@ using System.Collections.Generic;
 
 namespace Light.PortableResults.Validation;
 
+// See the comment at the top of BuiltInValidationErrorDefinitions.cs for the rationale behind using small immutable
+// value-type keys on the built-in definition path. This cache stays generic so callers can still bring their own key
+// type, but the built-in rules deliberately avoid per-lookup key allocations.
+
 /// <summary>
 /// Default thread-safe cache for immutable validation error definitions.
 /// </summary>
@@ -53,6 +57,17 @@ public sealed class ValidationErrorDefinitionCache : IValidationErrorDefinitionC
         public override int GetHashCode() => HashCode.Combine(KeyType, DefinitionType);
     }
 
+    // The extra CacheBucket<TKey, TDefinition> layer exists so that the hot path can stay strongly typed after the first
+    // bucket lookup. The outer dictionary only maps a (key type, definition type) pair to the corresponding typed bucket.
+    // The real caching work then happens inside a ConcurrentDictionary<TKey, TDefinition>, which avoids boxing struct keys,
+    // uses EqualityComparer<TKey>.Default directly, and returns the definition with its concrete type instead of forcing
+    // the whole cache through object-based keys and values.
+    //
+    // The inner store also has to be thread-safe. The cache is a shared singleton across validation runs, so once a
+    // bucket has been created, multiple threads can still call GetOrAdd on that same bucket concurrently. A normal
+    // Dictionary<TKey, TValue> would therefore need explicit locking around every lookup/add operation. Using
+    // ConcurrentDictionary<TKey, TDefinition> keeps that logic simple and gives us the atomic GetOrAdd semantics that this
+    // cache needs.
     private sealed class CacheBucket<TKey, TDefinition>
         where TKey : notnull
         where TDefinition : ValidationErrorDefinition
