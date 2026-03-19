@@ -15,8 +15,9 @@ public sealed class DefaultAutomaticNullErrorProvider : IAutomaticNullErrorProvi
     /// <inheritdoc />
     public bool TryCreateError<T>(in ValidationErrorMessageContext<T> context, out Error error)
     {
-        var message = context.ValidationContext.ErrorTemplates.NotNull.ProvideMessage(in context);
-        error = message.ToError("NotNull", context.Target);
+        var definition = BuiltInValidationErrorDefinitions.NotNull;
+        var message = definition.ProvideMessage(in context);
+        error = message.ToError(definition.Code, context.Target, definition.Category, definition.Metadata);
         return true;
     }
 }

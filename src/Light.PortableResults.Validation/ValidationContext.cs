@@ -43,6 +43,11 @@ public readonly struct ValidationContext
     public ValidationErrorTemplates ErrorTemplates => State.ErrorTemplates;
 
     /// <summary>
+    /// Gets the shared cache for reusable validation error definitions.
+    /// </summary>
+    public IValidationErrorDefinitionCache ErrorDefinitionCache => State.ErrorDefinitionCache;
+
+    /// <summary>
     /// Gets the target prefix that is prepended to errors created within this context.
     /// </summary>
     public string TargetPrefix
@@ -236,7 +241,9 @@ public readonly struct ValidationContext
     /// </summary>
     /// <param name="message">The generated validation error message.</param>
     /// <param name="code">The optional error code.</param>
-    /// <param name="target">The optional target path.</param>
+    /// <param name="target">
+    /// The optional normalized target path, composed relative to this context.
+    /// </param>
     /// <param name="metadata">The optional error metadata.</param>
     public void AddError(
         ValidationErrorMessage message,
@@ -255,7 +262,9 @@ public readonly struct ValidationContext
     /// </summary>
     /// <param name="message">The error message.</param>
     /// <param name="code">The optional error code.</param>
-    /// <param name="target">The optional target path.</param>
+    /// <param name="target">
+    /// The optional normalized target path, composed relative to this context.
+    /// </param>
     /// <param name="metadata">The optional error metadata.</param>
     /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="message" /> is null.</exception>

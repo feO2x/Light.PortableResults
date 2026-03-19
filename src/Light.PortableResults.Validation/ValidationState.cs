@@ -34,6 +34,11 @@ public sealed class ValidationState
     public ValidationErrorTemplates ErrorTemplates => Options.ErrorTemplates;
 
     /// <summary>
+    /// Gets the shared cache for reusable validation error definitions.
+    /// </summary>
+    public IValidationErrorDefinitionCache ErrorDefinitionCache => Options.ErrorDefinitionCache;
+
+    /// <summary>
     /// Gets the total number of validation errors that have been added.
     /// </summary>
     public int ErrorCount { get; private set; }

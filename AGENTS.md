@@ -15,9 +15,7 @@ In our Directory.Build.props files in this solution, the following rules are def
 - All other projects use .NET 10, including the test projects.
 - The library is not published in a stable version yet, you can make breaking changes.
 - `<TreatWarningsAsErrors>` is enabled in Release builds, so your code changes must not generate warnings.
-- If it is properly encapsulated, make it public. We don't know how callers would like to use this library. When some
-  types are internal, this might make it hard for callers to access these in tests or when making configuration changes.
-  Prefer public APIs over internal ones.
+- When a type or method is properly encapsulated, make it public. We don't know how callers would like to use this library. When some types are internal, this might make it hard for callers to access these in tests or when making configuration changes. Prefer public APIs over internal ones.
 
 ## Production Code Rules
 
@@ -35,7 +33,5 @@ Read ./ai-plans/AGENTS.md for details on how to write plans.
 
 If you encounter something worth noting while you are working on this code base, write it down here in this section. Once you are finished, I will discuss it with you and we can decide where to put your notes.
 
-- Validation target composition needs a clear ownership boundary: when a child validation context is already working
-  with a fully composed `Error.Target`, composing the prefix again duplicates paths such as
-  `address.address.zipCode`. The new validation package treats explicit `Error.Target` values as already absolute and
-  only prefixes targets when the context itself creates the target path.
+- Validation target composition needs a clear ownership boundary: when a child validation context is already working with a fully composed `Error.Target`, composing the prefix again duplicates paths such as `address.address.zipCode`. The new validation package treats explicit `Error.Target` values as already absolute and only prefixes targets when the context itself creates the target path.
+- `Check<string?>` normalizes `null` to `string.Empty` by default because the shared string value normalizer runs before assertions. That means `IsNotNull` only observes actual `null` strings when a no-op string normalizer is configured for the validation context or the individual check.
