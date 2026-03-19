@@ -169,7 +169,9 @@ public readonly struct Check<T>
     /// <param name="message">The generated message.</param>
     /// <param name="code">The optional error code.</param>
     /// <param name="metadata">The optional metadata.</param>
-    /// <param name="target">The optional explicit target.</param>
+    /// <param name="target">
+    /// The optional explicit normalized target, composed relative to the current context.
+    /// </param>
     /// <param name="category">The error category.</param>
     /// <param name="respectShortCircuit">
     /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
@@ -205,7 +207,9 @@ public readonly struct Check<T>
     /// <param name="definition">The reusable definition.</param>
     /// <param name="code">The optional override for the definition's default code.</param>
     /// <param name="metadata">The optional override for the definition's default metadata.</param>
-    /// <param name="target">The optional override target, composed relative to the current context.</param>
+    /// <param name="target">
+    /// The optional override normalized target, composed relative to the current context.
+    /// </param>
     /// <param name="category">The optional override for the definition's default category.</param>
     /// <param name="respectShortCircuit">
     /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
@@ -251,7 +255,9 @@ public readonly struct Check<T>
     /// <param name="template">The message template.</param>
     /// <param name="code">The optional error code.</param>
     /// <param name="metadata">The optional metadata.</param>
-    /// <param name="target">The optional explicit target.</param>
+    /// <param name="target">
+    /// The optional explicit normalized target, composed relative to the current context.
+    /// </param>
     /// <param name="respectShortCircuit">
     /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
     /// </param>
@@ -294,7 +300,9 @@ public readonly struct Check<T>
     /// <param name="parameter">The additional typed parameter.</param>
     /// <param name="code">The optional error code.</param>
     /// <param name="metadata">The optional metadata.</param>
-    /// <param name="target">The optional explicit target.</param>
+    /// <param name="target">
+    /// The optional explicit normalized target, composed relative to the current context.
+    /// </param>
     /// <param name="respectShortCircuit">
     /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
     /// </param>
@@ -336,7 +344,9 @@ public readonly struct Check<T>
     /// <param name="message">The error message.</param>
     /// <param name="code">The optional error code.</param>
     /// <param name="metadata">The optional metadata.</param>
-    /// <param name="target">The optional explicit target.</param>
+    /// <param name="target">
+    /// The optional explicit normalized target, composed relative to the current context.
+    /// </param>
     /// <param name="respectShortCircuit">
     /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
     /// </param>

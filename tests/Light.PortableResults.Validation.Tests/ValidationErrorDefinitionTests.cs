@@ -111,6 +111,32 @@ public sealed class ValidationErrorDefinitionTests
     }
 
     [Fact]
+    public void AddErrorDefinition_ShouldPreserveNormalizedMultiSegmentOverrideTargets()
+    {
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var childContext = context.ForMember("customer", isNormalized: true);
+        var definition = new TemplateValidationErrorDefinition(
+            new ConstantValidationErrorMessageTemplate("Postal code is invalid")
+        );
+        var check = childContext
+           .Check("X", target: "address.zipCode", displayName: "Postal code")
+           .NormalizeTargetIfNecessary();
+
+        check.AddError(definition, target: "address.postalCode");
+
+        context.ToErrors().Should().Equal(
+            new Errors(
+                new Error
+                {
+                    Message = "Postal code is invalid",
+                    Target = "customer.address.postalCode",
+                    Category = ErrorCategory.Validation
+                }
+            )
+        );
+    }
+
+    [Fact]
     public void AddErrorDefinition_ShouldTreatDefinitionTargetsAsAbsolute()
     {
         var context = new DefaultValidationContextFactory().CreateValidationContext();
