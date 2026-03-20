@@ -123,10 +123,40 @@ public readonly struct Check<T>
             return this;
         }
 
-        var normalizedTarget = Context.ComposeTarget(Target, isTargetNormalized: false);
-        var displayName = string.Equals(DisplayName, Target, StringComparison.Ordinal) ? normalizedTarget : DisplayName;
-        return new Check<T>(Context, normalizedTarget, displayName, Value, isTargetNormalized: true, IsShortCircuited);
+        var normalizedTarget = Context.NormalizeTarget(Target);
+        var resolvedTarget = ResolveAbsoluteTarget(normalizedTarget);
+        var displayName = string.Equals(DisplayName, Target, StringComparison.Ordinal) ? resolvedTarget : DisplayName;
+        return new Check<T>(Context, resolvedTarget, displayName, Value, isTargetNormalized: true, IsShortCircuited);
     }
+
+    /// <summary>
+    /// Creates a child validation context for the current check target.
+    /// Already-normalized targets that are already absolute within the current scope are reused without adding the
+    /// current scope prefix again.
+    /// </summary>
+    /// <returns>The child validation context.</returns>
+    public ValidationContext CreateChildContext() =>
+        Context.ForMember(GetChildContextTarget(), isNormalized: true);
+
+    /// <summary>
+    /// Creates a child validation context for the specified member below the current check target.
+    /// </summary>
+    /// <param name="memberName">The member segment to append.</param>
+    /// <param name="isNormalized">
+    /// <see langword="true" /> when <paramref name="memberName" /> is already normalized; otherwise,
+    /// <see langword="false" />.
+    /// </param>
+    /// <returns>The child validation context.</returns>
+    public ValidationContext CreateChildContextForMember(string memberName, bool isNormalized = false) =>
+        CreateChildContext().ForMember(memberName, isNormalized);
+
+    /// <summary>
+    /// Creates a child validation context for the specified collection index below the current check target.
+    /// </summary>
+    /// <param name="index">The zero-based collection index.</param>
+    /// <returns>The child validation context.</returns>
+    public ValidationContext CreateChildContextForIndex(int index) =>
+        CreateChildContext().ForIndex(index);
 
     /// <summary>
     /// Creates the readonly message context for this check.
@@ -389,5 +419,88 @@ public readonly struct Check<T>
         }
 
         return definitionTarget ?? normalizedCheck.Target;
+    }
+
+    private string GetChildContextTarget()
+    {
+        var normalizedTarget = IsTargetNormalized ? Target : ResolveAbsoluteTarget(Context.NormalizeTarget(Target));
+        var targetPrefix = Context.TargetPrefix;
+        if (targetPrefix.Length == 0 || normalizedTarget.Length == 0)
+        {
+            return normalizedTarget;
+        }
+
+        if (string.Equals(normalizedTarget, targetPrefix, StringComparison.Ordinal))
+        {
+            return string.Empty;
+        }
+
+        if (
+            normalizedTarget.Length > targetPrefix.Length &&
+            string.Compare(
+                normalizedTarget,
+                0,
+                targetPrefix,
+                0,
+                targetPrefix.Length,
+                StringComparison.Ordinal
+            ) ==
+            0
+        )
+        {
+            var separator = normalizedTarget[targetPrefix.Length];
+            if (separator == '.')
+            {
+                return normalizedTarget.Substring(targetPrefix.Length + 1);
+            }
+
+            if (separator == '[')
+            {
+                return normalizedTarget.Substring(targetPrefix.Length);
+            }
+        }
+
+        return normalizedTarget;
+    }
+
+    private string ResolveAbsoluteTarget(string normalizedTarget)
+    {
+        var targetPrefix = Context.TargetPrefix;
+        if (targetPrefix.Length == 0)
+        {
+            return normalizedTarget;
+        }
+
+        if (normalizedTarget.Length == 0)
+        {
+            return targetPrefix;
+        }
+
+        if (string.Equals(normalizedTarget, targetPrefix, StringComparison.Ordinal))
+        {
+            return normalizedTarget;
+        }
+
+        if (
+            normalizedTarget.Length > targetPrefix.Length &&
+            string.Compare(
+                normalizedTarget,
+                0,
+                targetPrefix,
+                0,
+                targetPrefix.Length,
+                StringComparison.Ordinal
+            ) ==
+            0
+        )
+        {
+            var separator = normalizedTarget[targetPrefix.Length];
+            if (separator == '.' || separator == '[')
+            {
+                return normalizedTarget;
+            }
+        }
+
+        return ValidationTargets.Compose(targetPrefix, normalizedTarget);
     }
 }

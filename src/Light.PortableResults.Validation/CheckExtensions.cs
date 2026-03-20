@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Light.PortableResults.Validation;
 
@@ -9,13 +12,13 @@ namespace Light.PortableResults.Validation;
 public static class CheckExtensions
 {
     /// <summary>
-    /// Validates the current check value with a child validator that returns the same type and optionally short-circuits on errors.
+    /// Validates the current check value with a child validator that returns the same type.
     /// </summary>
     /// <typeparam name="T">The type of the value being validated.</typeparam>
     /// <param name="check">The check instance supplying the value and context.</param>
     /// <param name="childValidator">The validator responsible for validating the child value.</param>
-    /// <returns>The updated check representing either the validated value or an error state.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="childValidator" /> is <c>null</c>.</exception>
+    /// <returns>The validated child value or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="childValidator" /> is <see langword="null" />.</exception>
     public static ValidatedValue<T> ValidateChild<T>(
         this Check<T> check,
         Validator<T> childValidator
@@ -26,10 +29,14 @@ public static class CheckExtensions
             throw new ArgumentNullException(nameof(childValidator));
         }
 
-        var childValueContext = check.Context.ForMember(check.Target);
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<T>.NoValue;
+        }
+
         return childValidator.ValidateChildValue(
             check.Value,
-            childValueContext,
+            check.CreateChildContext(),
             check.Target,
             check.DisplayName
         );
@@ -42,8 +49,8 @@ public static class CheckExtensions
     /// <typeparam name="TValidated">The type produced by the child validator when validation succeeds.</typeparam>
     /// <param name="check">The check instance supplying the value and context.</param>
     /// <param name="childValidator">The validator that transforms and validates the source value.</param>
-    /// <returns>A new check containing the validated value or an error state.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="childValidator" /> is <c>null</c>.</exception>
+    /// <returns>The validated child value or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="childValidator" /> is <see langword="null" />.</exception>
     public static ValidatedValue<TValidated> ValidateChild<TSource, TValidated>(
         this Check<TSource> check,
         Validator<TSource, TValidated> childValidator
@@ -54,30 +61,106 @@ public static class CheckExtensions
             throw new ArgumentNullException(nameof(childValidator));
         }
 
-        var childValueContext = check.Context.ForMember(check.Target);
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<TValidated>.NoValue;
+        }
+
         return childValidator.ValidateChildValue(
             check.Value,
-            childValueContext,
+            check.CreateChildContext(),
             check.Target,
             check.DisplayName
         );
     }
 
     /// <summary>
-    /// Validates each item within the collection held by the current check using the supplied item validator.
+    /// Validates the current check value with an asynchronous child validator that returns the same type.
     /// </summary>
-    /// <typeparam name="TCollection">The type of the collection being validated.</typeparam>
-    /// <typeparam name="TItem">The type of the items contained in the collection.</typeparam>
+    /// <typeparam name="T">The type of the value being validated.</typeparam>
+    /// <param name="check">The check instance supplying the value and context.</param>
+    /// <param name="childValidator">The asynchronous validator responsible for validating the child value.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The validated child value or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="childValidator" /> is <see langword="null" />.</exception>
+    public static ValueTask<ValidatedValue<T>> ValidateChildAsync<T>(
+        this Check<T> check,
+        AsyncValidator<T> childValidator,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (childValidator is null)
+        {
+            throw new ArgumentNullException(nameof(childValidator));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return new ValueTask<ValidatedValue<T>>(ValidatedValue<T>.NoValue);
+        }
+
+        return childValidator.ValidateChildValueAsync(
+            check.Value,
+            check.CreateChildContext(),
+            cancellationToken,
+            check.Target,
+            check.DisplayName
+        );
+    }
+
+    /// <summary>
+    /// Validates the current check value with an asynchronous child validator that maps the source type to a new
+    /// validated type.
+    /// </summary>
+    /// <typeparam name="TSource">The type of the value held by the current check.</typeparam>
+    /// <typeparam name="TValidated">The type produced by the child validator when validation succeeds.</typeparam>
+    /// <param name="check">The check instance supplying the value and context.</param>
+    /// <param name="childValidator">The asynchronous validator that transforms and validates the source value.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The validated child value or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="childValidator" /> is <see langword="null" />.</exception>
+    public static ValueTask<ValidatedValue<TValidated>> ValidateChildAsync<TSource, TValidated>(
+        this Check<TSource> check,
+        AsyncValidator<TSource, TValidated> childValidator,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (childValidator is null)
+        {
+            throw new ArgumentNullException(nameof(childValidator));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return new ValueTask<ValidatedValue<TValidated>>(ValidatedValue<TValidated>.NoValue);
+        }
+
+        return childValidator.ValidateChildValueAsync(
+            check.Value,
+            check.CreateChildContext(),
+            cancellationToken,
+            check.Target,
+            check.DisplayName
+        );
+    }
+
+    /// <summary>
+    /// Validates and potentially normalizes each item of a mutable indexed collection in place.
+    /// Nullable collections must be guarded explicitly, for example with <c>IsNotNull()</c>, before calling this
+    /// method.
+    /// </summary>
+    /// <typeparam name="TCollection">The mutable collection type.</typeparam>
+    /// <typeparam name="TItem">The item type.</typeparam>
     /// <param name="check">The check that provides the collection value and validation context.</param>
     /// <param name="itemValidator">The validator applied to each item in the collection.</param>
-    /// <param name="isNullCheckingEnabled">Indicates whether the method should automatically handle <c>null</c> collection values.</param>
-    /// <returns>The updated check reflecting the validated collection or error state.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <c>null</c>.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when a null collection is encountered but an automatic null error cannot be created.</exception>
+    /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// </exception>
     public static ValidatedValue<TCollection> ValidateItems<TCollection, TItem>(
         this Check<TCollection> check,
-        Validator<TItem> itemValidator,
-        bool isNullCheckingEnabled = true
+        Validator<TItem> itemValidator
     )
         where TCollection : IList<TItem>
     {
@@ -86,36 +169,741 @@ public static class CheckExtensions
             throw new ArgumentNullException(nameof(itemValidator));
         }
 
-        var collectionContext = check.Context.ForMember(check.Target);
-        if (isNullCheckingEnabled && check.IsValueNull)
+        if (check.IsShortCircuited)
         {
-            check = check.NormalizeTargetIfNecessary();
-
-            if (collectionContext.TryCreateAutomaticNullError(
-                    check.Value,
-                    check.Target,
-                    check.DisplayName,
-                    out var error
-                ))
-            {
-                check.AddError(error);
-                return ValidatedValue<TCollection>.NoValue;
-            }
-
-            throw new InvalidOperationException("Failed to create automatic null error.");
+            return ValidatedValue<TCollection>.NoValue;
         }
 
-        var collection = check.Value;
+        var collection = GetRequiredCollectionValue(check);
         for (var i = 0; i < collection.Count; i++)
         {
-            var indexContext = collectionContext.ForIndex(i);
-            var validatedValue = itemValidator.ValidateChildValue(collection[i], indexContext, i.ToString());
+            var validatedValue = itemValidator.ValidateChildValue(
+                collection[i],
+                check.CreateChildContextForIndex(i),
+                target: string.Empty,
+                displayName: CreateIndexedDisplayName(check, i)
+            );
+
             if (validatedValue.TryGetValue(out var normalizedValue))
             {
                 collection[i] = normalizedValue;
             }
         }
 
-        return check.Context.HasErrors ? ValidatedValue<TCollection>.NoValue : ValidatedValue.Success(collection);
+        return CreateCollectionResult(check.Context, collection);
     }
+
+    /// <summary>
+    /// Validates each item of a read-only list without replacing items.
+    /// For collection shapes outside the built-in overload set, create a dedicated child validator instead.
+    /// </summary>
+    /// <typeparam name="TItem">The item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="itemValidator">The validator applied to each item in the collection.</param>
+    /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// </exception>
+    public static ValidatedValue<IReadOnlyList<TItem>> ValidateItems<TItem>(
+        this Check<IReadOnlyList<TItem>> check,
+        Validator<TItem> itemValidator
+    )
+    {
+        if (itemValidator is null)
+        {
+            throw new ArgumentNullException(nameof(itemValidator));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<IReadOnlyList<TItem>>.NoValue;
+        }
+
+        var collection = GetRequiredCollectionValue(check);
+        for (var i = 0; i < collection.Count; i++)
+        {
+            _ = itemValidator.ValidateChildValue(
+                collection[i],
+                check.CreateChildContextForIndex(i),
+                target: string.Empty,
+                displayName: CreateIndexedDisplayName(check, i)
+            );
+        }
+
+        return CreateCollectionResult(check.Context, collection);
+    }
+
+    /// <summary>
+    /// Validates each item of an immutable array without replacing items.
+    /// Use the transforming overload when item validation should materialize a new immutable array.
+    /// </summary>
+    /// <typeparam name="TItem">The item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="itemValidator">The validator applied to each item in the collection.</param>
+    /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
+    public static ValidatedValue<ImmutableArray<TItem>> ValidateItems<TItem>(
+        this Check<ImmutableArray<TItem>> check,
+        Validator<TItem> itemValidator
+    )
+    {
+        if (itemValidator is null)
+        {
+            throw new ArgumentNullException(nameof(itemValidator));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<ImmutableArray<TItem>>.NoValue;
+        }
+
+        var collection = check.Value;
+        for (var i = 0; i < collection.Length; i++)
+        {
+            _ = itemValidator.ValidateChildValue(
+                collection[i],
+                check.CreateChildContextForIndex(i),
+                target: string.Empty,
+                displayName: CreateIndexedDisplayName(check, i)
+            );
+        }
+
+        return CreateCollectionResult(check.Context, collection);
+    }
+
+    /// <summary>
+    /// Validates each item of a collection with an ad-hoc delegate without replacing items.
+    /// This overload is intended for primitive items or lightweight collection-specific rules.
+    /// </summary>
+    /// <typeparam name="TCollection">The read-only collection type.</typeparam>
+    /// <typeparam name="TItem">The item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="validateItem">The item-validation delegate.</param>
+    /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="validateItem" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// </exception>
+    public static ValidatedValue<TCollection> ValidateItems<TCollection, TItem>(
+        this Check<TCollection> check,
+        Action<Check<TItem>> validateItem
+    )
+        where TCollection : IReadOnlyList<TItem>
+    {
+        if (validateItem is null)
+        {
+            throw new ArgumentNullException(nameof(validateItem));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<TCollection>.NoValue;
+        }
+
+        var collection = GetRequiredCollectionValue(check);
+        for (var i = 0; i < collection.Count; i++)
+        {
+            validateItem(CreateItemCheck(check, collection[i], i));
+        }
+
+        return CreateCollectionResult(check.Context, collection);
+    }
+
+    /// <summary>
+    /// Validates and potentially normalizes each item of a mutable indexed collection in place with an ad-hoc
+    /// delegate.
+    /// </summary>
+    /// <typeparam name="TCollection">The mutable collection type.</typeparam>
+    /// <typeparam name="TItem">The item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="validateItem">The item-validation delegate that can return a replacement item value.</param>
+    /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="validateItem" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// </exception>
+    public static ValidatedValue<TCollection> ValidateItems<TCollection, TItem>(
+        this Check<TCollection> check,
+        Func<Check<TItem>, ValidatedValue<TItem>> validateItem
+    )
+        where TCollection : IList<TItem>
+    {
+        if (validateItem is null)
+        {
+            throw new ArgumentNullException(nameof(validateItem));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<TCollection>.NoValue;
+        }
+
+        var collection = GetRequiredCollectionValue(check);
+        for (var i = 0; i < collection.Count; i++)
+        {
+            var validatedValue = validateItem(CreateItemCheck(check, collection[i], i));
+            if (validatedValue.TryGetValue(out var normalizedValue))
+            {
+                collection[i] = normalizedValue;
+            }
+        }
+
+        return CreateCollectionResult(check.Context, collection);
+    }
+
+    /// <summary>
+    /// Validates array items with a transforming validator and materializes a new array.
+    /// For unsupported collection shapes, create a dedicated child validator for the collection itself.
+    /// </summary>
+    /// <typeparam name="TItem">The source item type.</typeparam>
+    /// <typeparam name="TValidated">The validated item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="itemValidator">The validator applied to each item in the collection.</param>
+    /// <returns>The transformed array or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// </exception>
+    public static ValidatedValue<TValidated[]> ValidateItems<TItem, TValidated>(
+        this Check<TItem[]> check,
+        Validator<TItem, TValidated> itemValidator
+    )
+    {
+        if (itemValidator is null)
+        {
+            throw new ArgumentNullException(nameof(itemValidator));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<TValidated[]>.NoValue;
+        }
+
+        var collection = GetRequiredCollectionValue(check);
+        var validatedItems = new TValidated[collection.Length];
+        for (var i = 0; i < collection.Length; i++)
+        {
+            var validatedValue = itemValidator.ValidateChildValue(
+                collection[i],
+                check.CreateChildContextForIndex(i),
+                target: string.Empty,
+                displayName: CreateIndexedDisplayName(check, i)
+            );
+
+            if (validatedValue.TryGetValue(out var transformedValue))
+            {
+                validatedItems[i] = transformedValue;
+            }
+        }
+
+        return CreateCollectionResult(check.Context, validatedItems);
+    }
+
+    /// <summary>
+    /// Validates list items with a transforming validator and materializes a new list.
+    /// </summary>
+    /// <typeparam name="TItem">The source item type.</typeparam>
+    /// <typeparam name="TValidated">The validated item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="itemValidator">The validator applied to each item in the collection.</param>
+    /// <returns>The transformed list or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// </exception>
+    public static ValidatedValue<List<TValidated>> ValidateItems<TItem, TValidated>(
+        this Check<List<TItem>> check,
+        Validator<TItem, TValidated> itemValidator
+    )
+    {
+        if (itemValidator is null)
+        {
+            throw new ArgumentNullException(nameof(itemValidator));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<List<TValidated>>.NoValue;
+        }
+
+        var collection = GetRequiredCollectionValue(check);
+        var validatedItems = new List<TValidated>(collection.Count);
+        for (var i = 0; i < collection.Count; i++)
+        {
+            var validatedValue = itemValidator.ValidateChildValue(
+                collection[i],
+                check.CreateChildContextForIndex(i),
+                target: string.Empty,
+                displayName: CreateIndexedDisplayName(check, i)
+            );
+
+            if (validatedValue.TryGetValue(out var transformedValue))
+            {
+                validatedItems.Add(transformedValue);
+            }
+        }
+
+        return CreateCollectionResult(check.Context, validatedItems);
+    }
+
+    /// <summary>
+    /// Validates immutable-array items with a transforming validator and materializes a new immutable array.
+    /// </summary>
+    /// <typeparam name="TItem">The source item type.</typeparam>
+    /// <typeparam name="TValidated">The validated item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="itemValidator">The validator applied to each item in the collection.</param>
+    /// <returns>The transformed immutable array or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
+    public static ValidatedValue<ImmutableArray<TValidated>> ValidateItems<TItem, TValidated>(
+        this Check<ImmutableArray<TItem>> check,
+        Validator<TItem, TValidated> itemValidator
+    )
+    {
+        if (itemValidator is null)
+        {
+            throw new ArgumentNullException(nameof(itemValidator));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<ImmutableArray<TValidated>>.NoValue;
+        }
+
+        var collection = check.Value;
+        var validatedItems = ImmutableArray.CreateBuilder<TValidated>(collection.Length);
+        for (var i = 0; i < collection.Length; i++)
+        {
+            var validatedValue = itemValidator.ValidateChildValue(
+                collection[i],
+                check.CreateChildContextForIndex(i),
+                target: string.Empty,
+                displayName: CreateIndexedDisplayName(check, i)
+            );
+
+            if (validatedValue.TryGetValue(out var transformedValue))
+            {
+                validatedItems.Add(transformedValue);
+            }
+        }
+
+        return CreateCollectionResult(check.Context, validatedItems.MoveToImmutable());
+    }
+
+    /// <summary>
+    /// Validates and potentially normalizes each item of a mutable indexed collection in place with an asynchronous
+    /// validator.
+    /// Nullable collections must be guarded explicitly, for example with <c>IsNotNull()</c>, before calling this
+    /// method.
+    /// </summary>
+    /// <typeparam name="TCollection">The mutable collection type.</typeparam>
+    /// <typeparam name="TItem">The item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="itemValidator">The asynchronous validator applied to each item in the collection.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// </exception>
+    public static async ValueTask<ValidatedValue<TCollection>> ValidateItemsAsync<TCollection, TItem>(
+        this Check<TCollection> check,
+        AsyncValidator<TItem> itemValidator,
+        CancellationToken cancellationToken = default
+    )
+        where TCollection : IList<TItem>
+    {
+        if (itemValidator is null)
+        {
+            throw new ArgumentNullException(nameof(itemValidator));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<TCollection>.NoValue;
+        }
+
+        var collection = GetRequiredCollectionValue(check);
+        for (var i = 0; i < collection.Count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var validatedValue = await itemValidator.ValidateChildValueAsync(
+                    collection[i],
+                    check.CreateChildContextForIndex(i),
+                    cancellationToken,
+                    target: string.Empty,
+                    displayName: CreateIndexedDisplayName(check, i)
+                )
+               .ConfigureAwait(false);
+
+            if (validatedValue.TryGetValue(out var normalizedValue))
+            {
+                collection[i] = normalizedValue;
+            }
+        }
+
+        return CreateCollectionResult(check.Context, collection);
+    }
+
+    /// <summary>
+    /// Validates each item of a read-only list with an asynchronous validator without replacing items.
+    /// </summary>
+    /// <typeparam name="TItem">The item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="itemValidator">The asynchronous validator applied to each item in the collection.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// </exception>
+    public static async ValueTask<ValidatedValue<IReadOnlyList<TItem>>> ValidateItemsAsync<TItem>(
+        this Check<IReadOnlyList<TItem>> check,
+        AsyncValidator<TItem> itemValidator,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (itemValidator is null)
+        {
+            throw new ArgumentNullException(nameof(itemValidator));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<IReadOnlyList<TItem>>.NoValue;
+        }
+
+        var collection = GetRequiredCollectionValue(check);
+        for (var i = 0; i < collection.Count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            _ = await itemValidator.ValidateChildValueAsync(
+                    collection[i],
+                    check.CreateChildContextForIndex(i),
+                    cancellationToken,
+                    target: string.Empty,
+                    displayName: CreateIndexedDisplayName(check, i)
+                )
+               .ConfigureAwait(false);
+        }
+
+        return CreateCollectionResult(check.Context, collection);
+    }
+
+    /// <summary>
+    /// Validates each item of an immutable array with an asynchronous validator without replacing items.
+    /// </summary>
+    /// <typeparam name="TItem">The item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="itemValidator">The asynchronous validator applied to each item in the collection.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
+    public static async ValueTask<ValidatedValue<ImmutableArray<TItem>>> ValidateItemsAsync<TItem>(
+        this Check<ImmutableArray<TItem>> check,
+        AsyncValidator<TItem> itemValidator,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (itemValidator is null)
+        {
+            throw new ArgumentNullException(nameof(itemValidator));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<ImmutableArray<TItem>>.NoValue;
+        }
+
+        var collection = check.Value;
+        for (var i = 0; i < collection.Length; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            _ = await itemValidator.ValidateChildValueAsync(
+                    collection[i],
+                    check.CreateChildContextForIndex(i),
+                    cancellationToken,
+                    target: string.Empty,
+                    displayName: CreateIndexedDisplayName(check, i)
+                )
+               .ConfigureAwait(false);
+        }
+
+        return CreateCollectionResult(check.Context, collection);
+    }
+
+    /// <summary>
+    /// Validates each item of a collection with an asynchronous ad-hoc delegate without replacing items.
+    /// </summary>
+    /// <typeparam name="TCollection">The read-only collection type.</typeparam>
+    /// <typeparam name="TItem">The item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="validateItem">The asynchronous item-validation delegate.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="validateItem" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// </exception>
+    public static async ValueTask<ValidatedValue<TCollection>> ValidateItemsAsync<TCollection, TItem>(
+        this Check<TCollection> check,
+        Func<Check<TItem>, CancellationToken, ValueTask> validateItem,
+        CancellationToken cancellationToken = default
+    )
+        where TCollection : IReadOnlyList<TItem>
+    {
+        if (validateItem is null)
+        {
+            throw new ArgumentNullException(nameof(validateItem));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<TCollection>.NoValue;
+        }
+
+        var collection = GetRequiredCollectionValue(check);
+        for (var i = 0; i < collection.Count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await validateItem(CreateItemCheck(check, collection[i], i), cancellationToken).ConfigureAwait(false);
+        }
+
+        return CreateCollectionResult(check.Context, collection);
+    }
+
+    /// <summary>
+    /// Validates and potentially normalizes each item of a mutable indexed collection in place with an asynchronous
+    /// ad-hoc delegate.
+    /// </summary>
+    /// <typeparam name="TCollection">The mutable collection type.</typeparam>
+    /// <typeparam name="TItem">The item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="validateItem">The asynchronous item-validation delegate that can return a replacement item value.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="validateItem" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// </exception>
+    public static async ValueTask<ValidatedValue<TCollection>> ValidateItemsAsync<TCollection, TItem>(
+        this Check<TCollection> check,
+        Func<Check<TItem>, CancellationToken, ValueTask<ValidatedValue<TItem>>> validateItem,
+        CancellationToken cancellationToken = default
+    )
+        where TCollection : IList<TItem>
+    {
+        if (validateItem is null)
+        {
+            throw new ArgumentNullException(nameof(validateItem));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<TCollection>.NoValue;
+        }
+
+        var collection = GetRequiredCollectionValue(check);
+        for (var i = 0; i < collection.Count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var validatedValue =
+                await validateItem(CreateItemCheck(check, collection[i], i), cancellationToken).ConfigureAwait(false);
+            if (validatedValue.TryGetValue(out var normalizedValue))
+            {
+                collection[i] = normalizedValue;
+            }
+        }
+
+        return CreateCollectionResult(check.Context, collection);
+    }
+
+    /// <summary>
+    /// Validates array items with an asynchronous transforming validator and materializes a new array.
+    /// For unsupported collection shapes, create a dedicated child validator for the collection itself.
+    /// </summary>
+    /// <typeparam name="TItem">The source item type.</typeparam>
+    /// <typeparam name="TValidated">The validated item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="itemValidator">The asynchronous validator applied to each item in the collection.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The transformed array or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// </exception>
+    public static async ValueTask<ValidatedValue<TValidated[]>> ValidateItemsAsync<TItem, TValidated>(
+        this Check<TItem[]> check,
+        AsyncValidator<TItem, TValidated> itemValidator,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (itemValidator is null)
+        {
+            throw new ArgumentNullException(nameof(itemValidator));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<TValidated[]>.NoValue;
+        }
+
+        var collection = GetRequiredCollectionValue(check);
+        var validatedItems = new TValidated[collection.Length];
+        for (var i = 0; i < collection.Length; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var validatedValue = await itemValidator.ValidateChildValueAsync(
+                    collection[i],
+                    check.CreateChildContextForIndex(i),
+                    cancellationToken,
+                    target: string.Empty,
+                    displayName: CreateIndexedDisplayName(check, i)
+                )
+               .ConfigureAwait(false);
+
+            if (validatedValue.TryGetValue(out var transformedValue))
+            {
+                validatedItems[i] = transformedValue;
+            }
+        }
+
+        return CreateCollectionResult(check.Context, validatedItems);
+    }
+
+    /// <summary>
+    /// Validates list items with an asynchronous transforming validator and materializes a new list.
+    /// </summary>
+    /// <typeparam name="TItem">The source item type.</typeparam>
+    /// <typeparam name="TValidated">The validated item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="itemValidator">The asynchronous validator applied to each item in the collection.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The transformed list or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// </exception>
+    public static async ValueTask<ValidatedValue<List<TValidated>>> ValidateItemsAsync<TItem, TValidated>(
+        this Check<List<TItem>> check,
+        AsyncValidator<TItem, TValidated> itemValidator,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (itemValidator is null)
+        {
+            throw new ArgumentNullException(nameof(itemValidator));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<List<TValidated>>.NoValue;
+        }
+
+        var collection = GetRequiredCollectionValue(check);
+        var validatedItems = new List<TValidated>(collection.Count);
+        for (var i = 0; i < collection.Count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var validatedValue = await itemValidator.ValidateChildValueAsync(
+                    collection[i],
+                    check.CreateChildContextForIndex(i),
+                    cancellationToken,
+                    target: string.Empty,
+                    displayName: CreateIndexedDisplayName(check, i)
+                )
+               .ConfigureAwait(false);
+
+            if (validatedValue.TryGetValue(out var transformedValue))
+            {
+                validatedItems.Add(transformedValue);
+            }
+        }
+
+        return CreateCollectionResult(check.Context, validatedItems);
+    }
+
+    /// <summary>
+    /// Validates immutable-array items with an asynchronous transforming validator and materializes a new immutable
+    /// array.
+    /// </summary>
+    /// <typeparam name="TItem">The source item type.</typeparam>
+    /// <typeparam name="TValidated">The validated item type.</typeparam>
+    /// <param name="check">The check that provides the collection value and validation context.</param>
+    /// <param name="itemValidator">The asynchronous validator applied to each item in the collection.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The transformed immutable array or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
+    public static async ValueTask<ValidatedValue<ImmutableArray<TValidated>>> ValidateItemsAsync<TItem, TValidated>(
+        this Check<ImmutableArray<TItem>> check,
+        AsyncValidator<TItem, TValidated> itemValidator,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (itemValidator is null)
+        {
+            throw new ArgumentNullException(nameof(itemValidator));
+        }
+
+        if (check.IsShortCircuited)
+        {
+            return ValidatedValue<ImmutableArray<TValidated>>.NoValue;
+        }
+
+        var collection = check.Value;
+        var validatedItems = ImmutableArray.CreateBuilder<TValidated>(collection.Length);
+        for (var i = 0; i < collection.Length; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var validatedValue = await itemValidator.ValidateChildValueAsync(
+                    collection[i],
+                    check.CreateChildContextForIndex(i),
+                    cancellationToken,
+                    target: string.Empty,
+                    displayName: CreateIndexedDisplayName(check, i)
+                )
+               .ConfigureAwait(false);
+
+            if (validatedValue.TryGetValue(out var transformedValue))
+            {
+                validatedItems.Add(transformedValue);
+            }
+        }
+
+        return CreateCollectionResult(check.Context, validatedItems.MoveToImmutable());
+    }
+
+    private static TCollection GetRequiredCollectionValue<TCollection>(Check<TCollection> check)
+    {
+        if (check.Value is null)
+        {
+            throw new InvalidOperationException(
+                "ValidateItems requires a non-null collection. Guard nullable collections explicitly, for example " +
+                "with IsNotNull(), before validating items."
+            );
+        }
+
+        return check.Value;
+    }
+
+    private static ValidatedValue<TCollection> CreateCollectionResult<TCollection>(
+        ValidationContext context,
+        TCollection collection
+    ) =>
+        context.HasErrors ? ValidatedValue<TCollection>.NoValue : ValidatedValue.Success(collection);
+
+    private static Check<TItem> CreateItemCheck<TCollection, TItem>(Check<TCollection> check, TItem item, int index) =>
+        check.CreateChildContextForIndex(index)
+           .Check(item, target: string.Empty, displayName: CreateIndexedDisplayName(check, index));
+
+    private static string CreateIndexedDisplayName<TCollection>(Check<TCollection> check, int index) =>
+        check.DisplayName.Length == 0 ? $"[{index}]" : $"{check.DisplayName}[{index}]";
 }

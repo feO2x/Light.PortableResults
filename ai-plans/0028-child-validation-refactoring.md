@@ -6,16 +6,16 @@ The recent child-validation refactoring moved composition from `BaseValidator<TS
 
 ## Acceptance Criteria
 
-- [ ] `Check<T>` exposes child-context helpers that preserve target ownership and target-normalization state for nested validation scenarios.
-- [ ] The fluent child-validation APIs use those helpers instead of composing child scopes manually, so already-normalized or already-composed targets are not normalized or prefixed a second time.
-- [ ] `ValidateItems` no longer performs automatic null-error creation; callers must guard nullable collections explicitly, and the method only tolerates `null` when the check has already been short-circuited.
-- [ ] Collection validation supports delegate-based item validation for primitive and ad-hoc validation scenarios, including a normalization-capable overload that can return `ValidatedValue<TItem>`.
-- [ ] Collection validation supports transforming item validators for `T[]`, `List<T>`, and `ImmutableArray<T>` in addition to same-type item validators.
-- [ ] Async parity is added for child and collection validation, including async validator overloads and async delegate-based item validation.
-- [ ] The completed API preserves deterministic error ordering, target composition, and existing short-circuit behavior across synchronous and asynchronous flows.
-- [ ] Unsupported collection shapes are intentionally left to user-defined child validators, and this scope boundary is documented in the public API guidance.
-- [ ] Automated tests cover target-normalization ownership, short-circuited null collections, delegate-based item validation, transforming item validation, async child validation, async collection validation, and representative root/member/index target paths.
-- [ ] XML documentation and representative usage examples in README.md are updated for the completed child-validation and collection-validation API surface.
+- [x] `Check<T>` exposes child-context helpers that preserve target ownership and target-normalization state for nested validation scenarios.
+- [x] The fluent child-validation APIs use those helpers instead of composing child scopes manually, so already-normalized or already-composed targets are not normalized or prefixed a second time.
+- [x] `ValidateItems` no longer performs automatic null-error creation; callers must guard nullable collections explicitly, and the method only tolerates `null` when the check has already been short-circuited.
+- [x] Collection validation supports delegate-based item validation for primitive and ad-hoc validation scenarios, including a normalization-capable overload that can return `ValidatedValue<TItem>`.
+- [x] Collection validation supports transforming item validators for `T[]`, `List<T>`, and `ImmutableArray<T>` in addition to same-type item validators.
+- [x] Async parity is added for child and collection validation, including async validator overloads and async delegate-based item validation.
+- [x] The completed API preserves deterministic error ordering, target composition, and existing short-circuit behavior across synchronous and asynchronous flows.
+- [x] Unsupported collection shapes are intentionally left to user-defined child validators, and this scope boundary is documented in the public API guidance.
+- [x] Automated tests cover target-normalization ownership, short-circuited null collections, delegate-based item validation, transforming item validation, async child validation, async collection validation, and representative root/member/index target paths.
+- [x] XML documentation and representative usage examples in README.md are updated for the completed child-validation and collection-validation API surface.
 
 ## Technical Details
 
