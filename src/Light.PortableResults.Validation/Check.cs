@@ -435,8 +435,7 @@ public readonly struct Check<T>
             return string.Empty;
         }
 
-        if (
-            normalizedTarget.Length > targetPrefix.Length &&
+        if (normalizedTarget.Length > targetPrefix.Length &&
             string.Compare(
                 normalizedTarget,
                 0,
@@ -446,7 +445,7 @@ public readonly struct Check<T>
                 StringComparison.Ordinal
             ) ==
             0
-        )
+           )
         {
             var separator = normalizedTarget[targetPrefix.Length];
             if (separator == '.')
@@ -481,8 +480,7 @@ public readonly struct Check<T>
             return normalizedTarget;
         }
 
-        if (
-            normalizedTarget.Length > targetPrefix.Length &&
+        if (normalizedTarget.Length > targetPrefix.Length &&
             string.Compare(
                 normalizedTarget,
                 0,
@@ -492,10 +490,10 @@ public readonly struct Check<T>
                 StringComparison.Ordinal
             ) ==
             0
-        )
+           )
         {
             var separator = normalizedTarget[targetPrefix.Length];
-            if (separator == '.' || separator == '[')
+            if (separator is '.' or '[')
             {
                 return normalizedTarget;
             }
