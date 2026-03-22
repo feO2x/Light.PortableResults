@@ -32,6 +32,12 @@ Install only the packages you need for your scenario.
 dotnet add package Light.PortableResults
 ```
 
+- Validation contexts, checks, synchronous/asynchronous validators, and flat hierarchical validation errors:
+
+```bash
+dotnet add package Light.PortableResults.Validation
+```
+
 - ASP.NET Core Minimal APIs integration with support for Dependency Injection and `IResult`:
 
 ```bash
@@ -45,6 +51,118 @@ dotnet add package Light.PortableResults.AspNetCore.Mvc
 ```
 
 If you only need the Result Pattern itself, install `Light.PortableResults` only.
+
+## Validation Quick Start
+
+`Light.PortableResults.Validation` keeps validation targets flat across nested objects and collections, so child
+validation produces paths such as
+`address.zipCode` and
+`lines[0].sku`. Nullable collections must be guarded
+explicitly before item validation, typically with
+`IsNotNull()`.
+
+```csharp
+using System.Collections.Generic;
+using Light.PortableResults.Validation;
+
+public sealed class CreateOrderValidator : Validator<CreateOrderRequest, CreateOrderCommand>
+{
+	private readonly AddressValidator _addressValidator;
+	private readonly OrderLineValidator _lineValidator;
+
+	public CreateOrderValidator(IValidationContextFactory validationContextFactory)
+		: base(validationContextFactory)
+	{
+		_addressValidator = new AddressValidator(validationContextFactory);
+		_lineValidator = new OrderLineValidator(validationContextFactory);
+	}
+
+	protected override ValidatedValue<CreateOrderCommand> PerformValidation(
+		ValidationContext context,
+		CreateOrderRequest value
+	)
+	{
+		var address = context.Check(value.Address).IsNotNull().ValidateChild(_addressValidator);
+
+		var tags = context.Check(value.Tags).IsNotNull().ValidateItems(static tag =>
+		{
+			if (string.IsNullOrWhiteSpace(tag.Value))
+			{
+				tag.AddError("tag must not be empty", "NotEmpty");
+			}
+		});
+
+		var lines = context.Check(value.Lines).IsNotNull().ValidateItems(_lineValidator);
+
+		if (context.HasErrors)
+		{
+			return ValidatedValue<CreateOrderCommand>.NoValue;
+		}
+
+		return ValidatedValue.Success(new CreateOrderCommand(address.Value, tags.Value, lines.Value));
+	}
+}
+```
+
+Delegate-based item validation works well for primitive collections, while validator-based item transformation is
+intentionally limited to
+`T[]`,
+`List<T>`, and
+`ImmutableArray<T>`. For custom collection shapes, validate the
+collection through a dedicated child validator instead of expecting the built-in item helpers to preserve that shape.
+
+Async child and collection validation follows the same model and uses
+`ValueTask` plus
+`CancellationToken` throughout:
+
+```csharp
+using System.Threading;
+using System.Threading.Tasks;
+using Light.PortableResults.Validation;
+
+public sealed class ImportValidator : AsyncValidator<ImportRequest, ImportCommand>
+{
+	private readonly AsyncCustomerValidator _customerValidator;
+
+	public ImportValidator(IValidationContextFactory validationContextFactory)
+		: base(validationContextFactory) =>
+		_customerValidator = new AsyncCustomerValidator(validationContextFactory);
+
+	protected override async ValueTask<ValidatedValue<ImportCommand>> PerformValidationAsync(
+		ValidationContext context,
+		ImportRequest value,
+		CancellationToken cancellationToken
+	)
+	{
+		var customer = await context.Check(value.Customer)
+			.IsNotNull()
+			.ValidateChildAsync(_customerValidator, cancellationToken);
+
+		var amounts = await context.Check(value.Amounts)
+			.IsNotNull()
+			.ValidateItemsAsync(
+				async (amount, ct) =>
+				{
+					await Task.Yield();
+					ct.ThrowIfCancellationRequested();
+
+					if (amount.Value < 0)
+					{
+						amount.AddError("amount must be zero or greater", "NonNegative");
+					}
+				},
+				cancellationToken
+			);
+
+		if (context.HasErrors)
+		{
+			return ValidatedValue<ImportCommand>.NoValue;
+		}
+
+		return ValidatedValue.Success(new ImportCommand(customer.Value, amounts.Value));
+	}
+}
+```
 
 ## 🚀 HTTP Quick Start
 

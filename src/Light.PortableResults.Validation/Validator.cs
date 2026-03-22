@@ -49,7 +49,7 @@ public abstract class Validator<T> : BaseValidator<T>
         ValidationContext context,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
-    ) => FinalizeValidation(context, ValidateValue(value, context, target, displayName));
+    ) => FinalizeValidation(context, ValidateChildValue(value, context, target, displayName));
 
     /// <summary>
     /// Validates the value and materializes failures as a non-generic <see cref="Result" />.
@@ -149,7 +149,19 @@ public abstract class Validator<T> : BaseValidator<T>
         return false;
     }
 
-    internal ValidatedValue<T> ValidateValue(
+    /// <summary>
+    /// Validates the specified value with the provided validation context.
+    /// This method is used to validate child values, thus producing a <see cref="ValidatedValue{T}" /> instead
+    /// of a <see cref="Result{T}" />. Call Validate to run the complete validation pipeline.
+    /// </summary>
+    /// <param name="value">The value to be validated.</param>
+    /// <param name="context">The validation context.</param>
+    /// <param name="target">
+    /// The raw caller expression for the value. Will be used to automatically create the target of an error.
+    /// </param>
+    /// <param name="displayName">The optional display name which is used in formatted error messages.</param>
+    /// <returns>The validated and potentially normalized value.</returns>
+    public ValidatedValue<T> ValidateChildValue(
         T? value,
         ValidationContext context,
         [CallerArgumentExpression("value")] string target = "",
@@ -224,7 +236,7 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
         ValidationContext context,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
-    ) => FinalizeValidation(context, ValidateValue(value, context, target, displayName));
+    ) => FinalizeValidation(context, ValidateChildValue(value, context, target, displayName));
 
     /// <summary>
     /// Validates the value and materializes failures as a non-generic <see cref="Result" />.
@@ -325,7 +337,18 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
         return false;
     }
 
-    internal ValidatedValue<TValidated> ValidateValue(
+    /// <summary>
+    /// Validates a child value using the existing validation context without emitting failures to the caller.
+    /// </summary>
+    /// <param name="value">The child value that should be validated.</param>
+    /// <param name="context">The ambient validation context shared with the parent validator.</param>
+    /// <param name="target">The caller expression associated with the value.</param>
+    /// <param name="displayName">An optional friendly name for the value; defaults to <paramref name="target" /> when omitted.</param>
+    /// <returns>
+    /// A <see cref="ValidatedValue{TValidated}" /> representing the successful child result or <see cref="ValidatedValue{TValidated}.NoValue" /> when
+    /// validation is bypassed.
+    /// </returns>
+    public ValidatedValue<TValidated> ValidateChildValue(
         TSource? value,
         ValidationContext context,
         [CallerArgumentExpression("value")] string target = "",

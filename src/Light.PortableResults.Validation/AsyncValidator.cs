@@ -48,11 +48,13 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
     /// <summary>
     /// Validates the specified value with the provided validation context.
     /// </summary>
-    /// <param name="value">The value to validate.</param>
+    /// <param name="value">The value to be validated.</param>
     /// <param name="context">The validation context.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <param name="target">The raw caller expression for the value.</param>
-    /// <param name="displayName">The optional display name.</param>
+    /// <param name="cancellationToken">The optional token to cancel the asynchronous operation.</param>
+    /// <param name="target">
+    /// The raw caller expression for the value. Will be used to automatically create the target of an error.
+    /// </param>
+    /// <param name="displayName">The optional display name which is used in formatted error messages.</param>
     /// <returns>The validation result.</returns>
     public async ValueTask<Result<T>> ValidateAsync(
         T? value,
@@ -63,10 +65,23 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
     ) =>
         FinalizeValidation(
             context,
-            await ValidateValueAsync(value, context, cancellationToken, target, displayName).ConfigureAwait(false)
+            await ValidateChildValueAsync(value, context, cancellationToken, target, displayName).ConfigureAwait(false)
         );
 
-    internal async ValueTask<ValidatedValue<T>> ValidateValueAsync(
+    /// <summary>
+    /// Validates the specified value with the provided validation context.
+    /// This method is used to validate child values, thus producing a <see cref="ValidatedValue{T}" /> instead
+    /// of a <see cref="Result{T}" />. Call ValidateAsync to run the complete validation pipeline.
+    /// </summary>
+    /// <param name="value">The value to be validated.</param>
+    /// <param name="context">The validation context.</param>
+    /// <param name="cancellationToken">The optional token to cancel the asynchronous operation.</param>
+    /// <param name="target">
+    /// The raw caller expression for the value. Will be used to automatically create the target of an error.
+    /// </param>
+    /// <param name="displayName">The optional display name which is used in formatted error messages.</param>
+    /// <returns>A value task containing the validated and potentially normalized value.</returns>
+    public async ValueTask<ValidatedValue<T>> ValidateChildValueAsync(
         T? value,
         ValidationContext context,
         CancellationToken cancellationToken = default,
@@ -161,10 +176,23 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
     ) =>
         FinalizeValidation(
             context,
-            await ValidateValueAsync(value, context, cancellationToken, target, displayName).ConfigureAwait(false)
+            await ValidateChildValueAsync(value, context, cancellationToken, target, displayName).ConfigureAwait(false)
         );
 
-    internal async ValueTask<ValidatedValue<TValidated>> ValidateValueAsync(
+    /// <summary>
+    /// Validates the specified value with the provided validation context.
+    /// This method is used to validate child values, thus producing a <see cref="ValidatedValue{T}" /> instead
+    /// of a <see cref="Result{T}" />. Call ValidateAsync to run the complete validation pipeline.
+    /// </summary>
+    /// <param name="value">The value to be validated.</param>
+    /// <param name="context">The validation context.</param>
+    /// <param name="cancellationToken">The optional token to cancel the asynchronous operation.</param>
+    /// <param name="target">
+    /// The raw caller expression for the value. Will be used to automatically create the target of an error.
+    /// </param>
+    /// <param name="displayName">The optional display name which is used in formatted error messages.</param>
+    /// <returns>A value task containing the validated and potentially normalized value.</returns>
+    public async ValueTask<ValidatedValue<TValidated>> ValidateChildValueAsync(
         TSource? value,
         ValidationContext context,
         CancellationToken cancellationToken = default,
@@ -179,7 +207,7 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
             return ValidatedValue<TValidated>.NoValue;
         }
 
-        return await PerformValidationAsync(context, value!, cancellationToken).ConfigureAwait(false);
+        return await PerformValidationAsync(context, value, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

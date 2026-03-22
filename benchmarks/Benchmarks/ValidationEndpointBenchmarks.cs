@@ -170,11 +170,8 @@ internal sealed class PortableComplexRequestValidator : Validator<ComplexRequest
         AddressCommand? addressCommand = null;
         if (value.Address is not null)
         {
-            var addressOutcome = ValidateChild(_addressValidator, value.Address, context.For(value.Address));
-            if (addressOutcome.TryGetValue(out var validatedAddress))
-            {
-                addressCommand = validatedAddress;
-            }
+            var validatedValue = context.Check(value.Address).ValidateChild(_addressValidator);
+            validatedValue.TryGetValue(out addressCommand);
         }
 
         var items = value.Items ?? new List<ItemRequest>();
@@ -183,7 +180,7 @@ internal sealed class PortableComplexRequestValidator : Validator<ComplexRequest
         for (var i = 0; i < items.Count; i++)
         {
             var childContext = itemsContext.ForIndex(i);
-            var itemOutcome = ValidateChild(_itemValidator, items[i], childContext);
+            var itemOutcome = _itemValidator.ValidateChildValue(items[i], childContext);
             if (itemOutcome.TryGetValue(out var validatedItem))
             {
                 itemCommands[i] = validatedItem;
