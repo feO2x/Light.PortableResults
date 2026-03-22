@@ -49,7 +49,7 @@ public static class CheckExtensions
     /// <typeparam name="TValidated">The type produced by the child validator when validation succeeds.</typeparam>
     /// <param name="check">The check instance supplying the value and context.</param>
     /// <param name="childValidator">The validator that transforms and validates the source value.</param>
-    /// <returns>The validated child value or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <returns>The validated child value or no value when validation failed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="childValidator" /> is <see langword="null" />.</exception>
     public static ValidatedValue<TValidated> ValidateChild<TSource, TValidated>(
         this Check<TSource> check,
@@ -117,7 +117,7 @@ public static class CheckExtensions
     /// <param name="check">The check instance supplying the value and context.</param>
     /// <param name="childValidator">The asynchronous validator that transforms and validates the source value.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The validated child value or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <returns>The validated child value or no value when validation failed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="childValidator" /> is <see langword="null" />.</exception>
     public static ValueTask<ValidatedValue<TValidated>> ValidateChildAsync<TSource, TValidated>(
         this Check<TSource> check,
