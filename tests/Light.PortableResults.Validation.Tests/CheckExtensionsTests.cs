@@ -383,7 +383,7 @@ public sealed class CheckExtensionsTests
         public string? ZipCode { get; set; }
     }
 
-    // ReSharper disable once NotAccessedPositionalProperty.Local -- requried for test scenario
+    // ReSharper disable once NotAccessedPositionalProperty.Local -- required for test scenario
     private sealed record AddressCommand(string ZipCode);
 
     private sealed class AddressValidator : Validator<AddressDto>
