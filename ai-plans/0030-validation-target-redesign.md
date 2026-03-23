@@ -6,16 +6,16 @@ The current validation target model overloads plain strings with too many meanin
 
 ## Acceptance Criteria
 
-- [ ] A dedicated validation-target type is introduced that explicitly distinguishes caller-expression targets, relative targets, and absolute targets instead of encoding these semantics implicitly in plain strings.
-- [ ] The redesign keeps lazy target resolution so that normalized absolute targets are not allocated unless a validation flow actually needs them.
-- [ ] `Check<T>` no longer decides target ownership by comparing target strings with `ValidationContext.TargetPrefix`; target ownership comes from the explicit `ValidationTarget` semantics and the current prefix-detection logic is removed or reduced to trivial assertions.
-- [ ] `ValidationContext` exposes explicit APIs for creating checks from caller-expression, relative, and absolute targets, and for creating child scopes from resolved absolute targets without ambiguous prefixing rules.
-- [ ] Caller-expression normalization is separated from validation-path normalization so that direct relative paths are not treated like caller expressions.
-- [ ] The public check-creation API remains ergonomic for the common case while also exposing explicit advanced entry points for relative and absolute targets.
-- [ ] Child validation, collection validation, error creation, and message-context creation all use the new target model consistently across synchronous and asynchronous flows.
-- [ ] The redesign preserves deterministic target composition and does not regress the current flat-path behavior for representative root, member, and indexed targets.
-- [ ] Automated tests cover the new target semantics, including caller-expression, relative, and absolute targets, plus representative child-validation and collection-validation scenarios.
-- [ ] XML documentation and README examples are updated to describe the explicit target semantics and the recommended APIs for advanced manual target control.
+- [x] A dedicated validation-target type is introduced that explicitly distinguishes caller-expression targets, relative targets, and absolute targets instead of encoding these semantics implicitly in plain strings.
+- [x] The redesign keeps lazy target resolution so that normalized absolute targets are not allocated unless a validation flow actually needs them.
+- [x] `Check<T>` no longer decides target ownership by comparing target strings with `ValidationContext.TargetPrefix`; target ownership comes from the explicit `ValidationTarget` semantics and the current prefix-detection logic is removed or reduced to trivial assertions.
+- [x] `ValidationContext` exposes explicit APIs for creating checks from caller-expression, relative, and absolute targets, and for creating child scopes from resolved absolute targets without ambiguous prefixing rules.
+- [x] Caller-expression normalization is separated from validation-path normalization so that direct relative paths are not treated like caller expressions.
+- [x] The public check-creation API remains ergonomic for the common case while also exposing explicit advanced entry points for relative and absolute targets.
+- [x] Child validation, collection validation, error creation, and message-context creation all use the new target model consistently across synchronous and asynchronous flows.
+- [x] The redesign preserves deterministic target composition and does not regress the current flat-path behavior for representative root, member, and indexed targets.
+- [x] Automated tests cover the new target semantics, including caller-expression, relative, and absolute targets, plus representative child-validation and collection-validation scenarios.
+- [x] XML documentation and README examples are updated to describe the explicit target semantics and the recommended APIs for advanced manual target control.
 
 ## Technical Details
 

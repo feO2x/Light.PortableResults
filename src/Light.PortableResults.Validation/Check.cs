@@ -9,34 +9,42 @@ namespace Light.PortableResults.Validation;
 /// <typeparam name="T">The type of the value being validated.</typeparam>
 public readonly struct Check<T>
 {
+    private readonly string? _resolvedAbsoluteTarget;
+
     /// <summary>
     /// Initializes a new instance of <see cref="Check{T}" />.
     /// </summary>
     /// <param name="context">The validation context.</param>
-    /// <param name="target">The raw or normalized target.</param>
+    /// <param name="target">The target descriptor.</param>
     /// <param name="displayName">The human-readable display name.</param>
     /// <param name="value">The value being validated.</param>
-    /// <param name="isTargetNormalized">Indicates whether <paramref name="target" /> is already normalized.</param>
+    /// <param name="resolvedAbsoluteTarget">
+    /// The already-resolved absolute target, or <see langword="null" /> when it has not been materialized yet.
+    /// </param>
     /// <param name="isShortCircuited">Indicates whether further checks should be skipped.</param>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="context" /> is the default instance.</exception>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="target" /> or <paramref name="displayName" /> are <see langword="null" />.
-    /// </exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="target" /> is the default instance.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="displayName" /> is <see langword="null" />.</exception>
     public Check(
         ValidationContext context,
-        string target,
+        ValidationTarget target,
         string displayName,
         T value,
-        bool isTargetNormalized,
+        string? resolvedAbsoluteTarget,
         bool isShortCircuited
     )
     {
         context.ThrowIfDefault();
+        if (target.IsDefault)
+        {
+            throw new ArgumentException("The validation target must not be the default instance.", nameof(target));
+        }
+
         Context = context;
-        Target = target ?? throw new ArgumentNullException(nameof(target));
+        TargetDescriptor = target;
         DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
         Value = value;
-        IsTargetNormalized = isTargetNormalized;
+        _resolvedAbsoluteTarget = resolvedAbsoluteTarget;
         IsShortCircuited = isShortCircuited;
     }
 
@@ -46,9 +54,14 @@ public readonly struct Check<T>
     public ValidationContext Context { get; }
 
     /// <summary>
-    /// Gets the raw or normalized target path.
+    /// Gets the explicit target descriptor supplied when the check was created.
     /// </summary>
-    public string Target { get; }
+    public ValidationTarget TargetDescriptor { get; }
+
+    /// <summary>
+    /// Gets the original target input or the resolved absolute target once it has been materialized.
+    /// </summary>
+    public string Target => _resolvedAbsoluteTarget ?? TargetDescriptor.Input;
 
     /// <summary>
     /// Gets the display name for the current value.
@@ -59,11 +72,6 @@ public readonly struct Check<T>
     /// Gets the current value.
     /// </summary>
     public T Value { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether the target path has already been normalized.
-    /// </summary>
-    public bool IsTargetNormalized { get; }
 
     /// <summary>
     /// Gets a value indicating whether subsequent checks should be skipped.
@@ -81,7 +89,7 @@ public readonly struct Check<T>
     /// <param name="value">The new value.</param>
     /// <returns>The updated check.</returns>
     public Check<T> WithValue(T value) =>
-        new (Context, Target, DisplayName, value, IsTargetNormalized, IsShortCircuited);
+        new (Context, TargetDescriptor, DisplayName, value, _resolvedAbsoluteTarget, IsShortCircuited);
 
     /// <summary>
     /// Creates a new check with a different display name.
@@ -91,10 +99,10 @@ public readonly struct Check<T>
     public Check<T> WithDisplayName(string displayName) =>
         new (
             Context,
-            Target,
+            TargetDescriptor,
             displayName ?? throw new ArgumentNullException(nameof(displayName)),
             Value,
-            IsTargetNormalized,
+            _resolvedAbsoluteTarget,
             IsShortCircuited
         );
 
@@ -102,7 +110,8 @@ public readonly struct Check<T>
     /// Creates a new short-circuited check.
     /// </summary>
     /// <returns>The updated check.</returns>
-    public Check<T> ShortCircuit() => new (Context, Target, DisplayName, Value, IsTargetNormalized, true);
+    public Check<T> ShortCircuit() =>
+        new (Context, TargetDescriptor, DisplayName, Value, _resolvedAbsoluteTarget, true);
 
     /// <summary>
     /// Creates a new short-circuited check if requested.
@@ -113,30 +122,29 @@ public readonly struct Check<T>
         shortCircuitOnError ? ShortCircuit() : this;
 
     /// <summary>
-    /// Normalizes the target if necessary.
+    /// Resolves the target to an absolute path if necessary.
     /// </summary>
-    /// <returns>The normalized check.</returns>
+    /// <returns>The check with a resolved absolute target.</returns>
     public Check<T> NormalizeTargetIfNecessary()
     {
-        if (IsTargetNormalized)
+        if (_resolvedAbsoluteTarget is not null)
         {
             return this;
         }
 
-        var normalizedTarget = Context.NormalizeTarget(Target);
-        var resolvedTarget = ResolveAbsoluteTarget(normalizedTarget);
-        var displayName = string.Equals(DisplayName, Target, StringComparison.Ordinal) ? resolvedTarget : DisplayName;
-        return new Check<T>(Context, resolvedTarget, displayName, Value, isTargetNormalized: true, IsShortCircuited);
+        var resolvedTarget = Context.ResolveTarget(TargetDescriptor);
+        var displayName = string.Equals(DisplayName, TargetDescriptor.Input, StringComparison.Ordinal) ?
+            resolvedTarget :
+            DisplayName;
+        return new Check<T>(Context, TargetDescriptor, displayName, Value, resolvedTarget, IsShortCircuited);
     }
 
     /// <summary>
     /// Creates a child validation context for the current check target.
-    /// Already-normalized targets that are already absolute within the current scope are reused without adding the
-    /// current scope prefix again.
     /// </summary>
     /// <returns>The child validation context.</returns>
     public ValidationContext CreateChildContext() =>
-        Context.ForMember(GetChildContextTarget(), isNormalized: true);
+        Context.ForAbsolute(GetResolvedAbsoluteTarget(), isNormalized: true);
 
     /// <summary>
     /// Creates a child validation context for the specified member below the current check target.
@@ -148,7 +156,7 @@ public readonly struct Check<T>
     /// </param>
     /// <returns>The child validation context.</returns>
     public ValidationContext CreateChildContextForMember(string memberName, bool isNormalized = false) =>
-        CreateChildContext().ForMember(memberName, isNormalized);
+        CreateChildContext().ForRelative(memberName, isNormalized);
 
     /// <summary>
     /// Creates a child validation context for the specified collection index below the current check target.
@@ -167,7 +175,7 @@ public readonly struct Check<T>
         var normalizedCheck = NormalizeTargetIfNecessary();
         return normalizedCheck.Context.CreateAbsoluteMessageContext(
             normalizedCheck.Value,
-            normalizedCheck.Target,
+            normalizedCheck.GetResolvedAbsoluteTarget(),
             normalizedCheck.DisplayName
         );
     }
@@ -190,7 +198,7 @@ public readonly struct Check<T>
         var normalizedCheck = NormalizeTargetIfNecessary();
         if (error.Target is null)
         {
-            error = error with { Target = normalizedCheck.Target };
+            error = error with { Target = normalizedCheck.GetResolvedAbsoluteTarget() };
         }
 
         normalizedCheck.Context.AddError(error);
@@ -204,7 +212,8 @@ public readonly struct Check<T>
     /// <param name="code">The optional error code.</param>
     /// <param name="metadata">The optional metadata.</param>
     /// <param name="target">
-    /// The optional explicit normalized target, composed relative to the current context.
+    /// The optional explicit target. Relative targets are composed with the current validation scope, absolute targets
+    /// are used unchanged, and caller-expression targets are normalized before composition.
     /// </param>
     /// <param name="category">The error category.</param>
     /// <param name="respectShortCircuit">
@@ -215,7 +224,7 @@ public readonly struct Check<T>
         ValidationErrorMessage message,
         string? code = null,
         MetadataObject? metadata = null,
-        string? target = null,
+        ValidationTarget? target = null,
         ErrorCategory category = ErrorCategory.Validation,
         bool respectShortCircuit = true
     )
@@ -227,8 +236,8 @@ public readonly struct Check<T>
 
         var normalizedCheck = NormalizeTargetIfNecessary();
         var resolvedTarget = target is null ?
-            normalizedCheck.Target :
-            normalizedCheck.Context.ComposeTarget(target, isTargetNormalized: true);
+            normalizedCheck.GetResolvedAbsoluteTarget() :
+            normalizedCheck.Context.ResolveTarget(target.Value);
         normalizedCheck.Context.AddError(
             message.ToError(code, resolvedTarget, category, metadata)
         );
@@ -242,7 +251,8 @@ public readonly struct Check<T>
     /// <param name="code">The optional override for the definition's default code.</param>
     /// <param name="metadata">The optional override for the definition's default metadata.</param>
     /// <param name="target">
-    /// The optional override normalized target, composed relative to the current context.
+    /// The optional override target. Relative targets are composed with the current validation scope, absolute targets
+    /// are used unchanged, and caller-expression targets are normalized before composition.
     /// </param>
     /// <param name="category">The optional override for the definition's default category.</param>
     /// <param name="respectShortCircuit">
@@ -253,7 +263,7 @@ public readonly struct Check<T>
         ValidationErrorDefinition definition,
         string? code = null,
         MetadataObject? metadata = null,
-        string? target = null,
+        ValidationTarget? target = null,
         ErrorCategory? category = null,
         bool respectShortCircuit = true
     )
@@ -290,7 +300,8 @@ public readonly struct Check<T>
     /// <param name="code">The optional error code.</param>
     /// <param name="metadata">The optional metadata.</param>
     /// <param name="target">
-    /// The optional explicit normalized target, composed relative to the current context.
+    /// The optional explicit target. Relative targets are composed with the current validation scope, absolute targets
+    /// are used unchanged, and caller-expression targets are normalized before composition.
     /// </param>
     /// <param name="respectShortCircuit">
     /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
@@ -300,7 +311,7 @@ public readonly struct Check<T>
         IValidationErrorMessageTemplate template,
         string? code = null,
         MetadataObject? metadata = null,
-        string? target = null,
+        ValidationTarget? target = null,
         bool respectShortCircuit = true
     )
     {
@@ -335,7 +346,8 @@ public readonly struct Check<T>
     /// <param name="code">The optional error code.</param>
     /// <param name="metadata">The optional metadata.</param>
     /// <param name="target">
-    /// The optional explicit normalized target, composed relative to the current context.
+    /// The optional explicit target. Relative targets are composed with the current validation scope, absolute targets
+    /// are used unchanged, and caller-expression targets are normalized before composition.
     /// </param>
     /// <param name="respectShortCircuit">
     /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
@@ -346,7 +358,7 @@ public readonly struct Check<T>
         TParameter parameter,
         string? code = null,
         MetadataObject? metadata = null,
-        string? target = null,
+        ValidationTarget? target = null,
         bool respectShortCircuit = true
     )
     {
@@ -379,7 +391,8 @@ public readonly struct Check<T>
     /// <param name="code">The optional error code.</param>
     /// <param name="metadata">The optional metadata.</param>
     /// <param name="target">
-    /// The optional explicit normalized target, composed relative to the current context.
+    /// The optional explicit target. Relative targets are composed with the current validation scope, absolute targets
+    /// are used unchanged, and caller-expression targets are normalized before composition.
     /// </param>
     /// <param name="respectShortCircuit">
     /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
@@ -389,7 +402,7 @@ public readonly struct Check<T>
         string message,
         string? code = null,
         MetadataObject? metadata = null,
-        string? target = null,
+        ValidationTarget? target = null,
         bool respectShortCircuit = true
     ) =>
         AddError(
@@ -407,98 +420,24 @@ public readonly struct Check<T>
     /// <param name="check">The check to convert.</param>
     public static implicit operator T(Check<T> check) => check.Value;
 
+    internal ValidationTarget GetResolvedAbsoluteTargetDescriptor() =>
+        ValidationTarget.Absolute(GetResolvedAbsoluteTarget(), isNormalized: true);
+
     private static string ResolveDefinitionTarget(
         Check<T> normalizedCheck,
-        string? definitionTarget,
-        string? overrideTarget
+        ValidationTarget? definitionTarget,
+        ValidationTarget? overrideTarget
     )
     {
         if (overrideTarget is not null)
         {
-            return normalizedCheck.Context.ComposeTarget(overrideTarget, isTargetNormalized: true);
+            return normalizedCheck.Context.ResolveTarget(overrideTarget.Value);
         }
 
-        return definitionTarget ?? normalizedCheck.Target;
+        return definitionTarget is not null ?
+            normalizedCheck.Context.ResolveTarget(definitionTarget.Value) :
+            normalizedCheck.GetResolvedAbsoluteTarget();
     }
 
-    private string GetChildContextTarget()
-    {
-        var normalizedTarget = IsTargetNormalized ? Target : ResolveAbsoluteTarget(Context.NormalizeTarget(Target));
-        var targetPrefix = Context.TargetPrefix;
-        if (targetPrefix.Length == 0 || normalizedTarget.Length == 0)
-        {
-            return normalizedTarget;
-        }
-
-        if (string.Equals(normalizedTarget, targetPrefix, StringComparison.Ordinal))
-        {
-            return string.Empty;
-        }
-
-        if (normalizedTarget.Length > targetPrefix.Length &&
-            string.Compare(
-                normalizedTarget,
-                0,
-                targetPrefix,
-                0,
-                targetPrefix.Length,
-                StringComparison.Ordinal
-            ) ==
-            0
-           )
-        {
-            var separator = normalizedTarget[targetPrefix.Length];
-            if (separator == '.')
-            {
-                return normalizedTarget.Substring(targetPrefix.Length + 1);
-            }
-
-            if (separator == '[')
-            {
-                return normalizedTarget.Substring(targetPrefix.Length);
-            }
-        }
-
-        return normalizedTarget;
-    }
-
-    private string ResolveAbsoluteTarget(string normalizedTarget)
-    {
-        var targetPrefix = Context.TargetPrefix;
-        if (targetPrefix.Length == 0)
-        {
-            return normalizedTarget;
-        }
-
-        if (normalizedTarget.Length == 0)
-        {
-            return targetPrefix;
-        }
-
-        if (string.Equals(normalizedTarget, targetPrefix, StringComparison.Ordinal))
-        {
-            return normalizedTarget;
-        }
-
-        if (normalizedTarget.Length > targetPrefix.Length &&
-            string.Compare(
-                normalizedTarget,
-                0,
-                targetPrefix,
-                0,
-                targetPrefix.Length,
-                StringComparison.Ordinal
-            ) ==
-            0
-           )
-        {
-            var separator = normalizedTarget[targetPrefix.Length];
-            if (separator is '.' or '[')
-            {
-                return normalizedTarget;
-            }
-        }
-
-        return ValidationTargets.Compose(targetPrefix, normalizedTarget);
-    }
+    private string GetResolvedAbsoluteTarget() => _resolvedAbsoluteTarget ?? Context.ResolveTarget(TargetDescriptor);
 }

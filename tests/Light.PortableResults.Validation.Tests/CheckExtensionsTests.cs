@@ -39,12 +39,16 @@ public sealed class CheckExtensionsTests
     }
 
     [Fact]
-    public void ValidateChild_ShouldTreatNormalizedTargetsAsAbsoluteWithinCurrentScope()
+    public void ValidateChild_ShouldRespectExplicitAbsoluteTargetsWithinCurrentScope()
     {
         var context = ValidationContextFactory.CreateValidationContext();
         var addressContext = context.ForMember("address", isNormalized: true);
         var check = addressContext
-           .Check(new AddressDto { ZipCode = " " }, target: "address", displayName: "Address")
+           .Check(
+                new AddressDto { ZipCode = " " },
+                ValidationTarget.Absolute("address", isNormalized: true),
+                displayName: "Address"
+            )
            .NormalizeTargetIfNecessary();
 
         var result = check.ValidateChild(new AddressValidator(ValidationContextFactory));
@@ -64,14 +68,14 @@ public sealed class CheckExtensionsTests
     }
 
     [Fact]
-    public void ValidateItems_ShouldTreatNormalizedCollectionTargetsAsAbsoluteWithinCurrentScope()
+    public void ValidateItems_ShouldRespectExplicitAbsoluteCollectionTargetsWithinCurrentScope()
     {
         var context = ValidationContextFactory.CreateValidationContext();
         var addressesContext = context.ForMember("addresses", isNormalized: true);
         var check = addressesContext
            .Check(
                 new List<AddressDto> { new () { ZipCode = " " } },
-                target: "addresses",
+                ValidationTarget.Absolute("addresses", isNormalized: true),
                 displayName: "Addresses"
             )
            .NormalizeTargetIfNecessary();

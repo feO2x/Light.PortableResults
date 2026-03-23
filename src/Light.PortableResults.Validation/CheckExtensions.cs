@@ -37,7 +37,7 @@ public static class CheckExtensions
         return childValidator.ValidateChildValue(
             check.Value,
             check.CreateChildContext(),
-            check.Target,
+            check.GetResolvedAbsoluteTargetDescriptor(),
             check.DisplayName
         );
     }
@@ -69,7 +69,7 @@ public static class CheckExtensions
         return childValidator.ValidateChildValue(
             check.Value,
             check.CreateChildContext(),
-            check.Target,
+            check.GetResolvedAbsoluteTargetDescriptor(),
             check.DisplayName
         );
     }
@@ -103,7 +103,7 @@ public static class CheckExtensions
             check.Value,
             check.CreateChildContext(),
             cancellationToken,
-            check.Target,
+            check.GetResolvedAbsoluteTargetDescriptor(),
             check.DisplayName
         );
     }
@@ -139,7 +139,7 @@ public static class CheckExtensions
             check.Value,
             check.CreateChildContext(),
             cancellationToken,
-            check.Target,
+            check.GetResolvedAbsoluteTargetDescriptor(),
             check.DisplayName
         );
     }
@@ -180,7 +180,7 @@ public static class CheckExtensions
             var validatedValue = itemValidator.ValidateChildValue(
                 collection[i],
                 check.CreateChildContextForIndex(i),
-                target: string.Empty,
+                ValidationTarget.Relative(string.Empty, isNormalized: true),
                 displayName: CreateIndexedDisplayName(check, i)
             );
 
@@ -226,7 +226,7 @@ public static class CheckExtensions
             _ = itemValidator.ValidateChildValue(
                 collection[i],
                 check.CreateChildContextForIndex(i),
-                target: string.Empty,
+                ValidationTarget.Relative(string.Empty, isNormalized: true),
                 displayName: CreateIndexedDisplayName(check, i)
             );
         }
@@ -264,7 +264,7 @@ public static class CheckExtensions
             _ = itemValidator.ValidateChildValue(
                 collection[i],
                 check.CreateChildContextForIndex(i),
-                target: string.Empty,
+                ValidationTarget.Relative(string.Empty, isNormalized: true),
                 displayName: CreateIndexedDisplayName(check, i)
             );
         }
@@ -387,7 +387,7 @@ public static class CheckExtensions
             var validatedValue = itemValidator.ValidateChildValue(
                 collection[i],
                 check.CreateChildContextForIndex(i),
-                target: string.Empty,
+                ValidationTarget.Relative(string.Empty, isNormalized: true),
                 displayName: CreateIndexedDisplayName(check, i)
             );
 
@@ -434,7 +434,7 @@ public static class CheckExtensions
             var validatedValue = itemValidator.ValidateChildValue(
                 collection[i],
                 check.CreateChildContextForIndex(i),
-                target: string.Empty,
+                ValidationTarget.Relative(string.Empty, isNormalized: true),
                 displayName: CreateIndexedDisplayName(check, i)
             );
 
@@ -478,7 +478,7 @@ public static class CheckExtensions
             var validatedValue = itemValidator.ValidateChildValue(
                 collection[i],
                 check.CreateChildContextForIndex(i),
-                target: string.Empty,
+                ValidationTarget.Relative(string.Empty, isNormalized: true),
                 displayName: CreateIndexedDisplayName(check, i)
             );
 
@@ -533,7 +533,7 @@ public static class CheckExtensions
                     collection[i],
                     check.CreateChildContextForIndex(i),
                     cancellationToken,
-                    target: string.Empty,
+                    ValidationTarget.Relative(string.Empty, isNormalized: true),
                     displayName: CreateIndexedDisplayName(check, i)
                 )
                .ConfigureAwait(false);
@@ -584,7 +584,7 @@ public static class CheckExtensions
                     collection[i],
                     check.CreateChildContextForIndex(i),
                     cancellationToken,
-                    target: string.Empty,
+                    ValidationTarget.Relative(string.Empty, isNormalized: true),
                     displayName: CreateIndexedDisplayName(check, i)
                 )
                .ConfigureAwait(false);
@@ -627,7 +627,7 @@ public static class CheckExtensions
                     collection[i],
                     check.CreateChildContextForIndex(i),
                     cancellationToken,
-                    target: string.Empty,
+                    ValidationTarget.Relative(string.Empty, isNormalized: true),
                     displayName: CreateIndexedDisplayName(check, i)
                 )
                .ConfigureAwait(false);
@@ -763,7 +763,7 @@ public static class CheckExtensions
                     collection[i],
                     check.CreateChildContextForIndex(i),
                     cancellationToken,
-                    target: string.Empty,
+                    ValidationTarget.Relative(string.Empty, isNormalized: true),
                     displayName: CreateIndexedDisplayName(check, i)
                 )
                .ConfigureAwait(false);
@@ -816,7 +816,7 @@ public static class CheckExtensions
                     collection[i],
                     check.CreateChildContextForIndex(i),
                     cancellationToken,
-                    target: string.Empty,
+                    ValidationTarget.Relative(string.Empty, isNormalized: true),
                     displayName: CreateIndexedDisplayName(check, i)
                 )
                .ConfigureAwait(false);
@@ -867,7 +867,7 @@ public static class CheckExtensions
                     collection[i],
                     check.CreateChildContextForIndex(i),
                     cancellationToken,
-                    target: string.Empty,
+                    ValidationTarget.Relative(string.Empty, isNormalized: true),
                     displayName: CreateIndexedDisplayName(check, i)
                 )
                .ConfigureAwait(false);
@@ -902,7 +902,11 @@ public static class CheckExtensions
 
     private static Check<TItem> CreateItemCheck<TCollection, TItem>(Check<TCollection> check, TItem item, int index) =>
         check.CreateChildContextForIndex(index)
-           .Check(item, target: string.Empty, displayName: CreateIndexedDisplayName(check, index));
+           .Check(
+                item,
+                ValidationTarget.Relative(string.Empty, isNormalized: true),
+                displayName: CreateIndexedDisplayName(check, index)
+            );
 
     private static string CreateIndexedDisplayName<TCollection>(Check<TCollection> check, int index) =>
         check.DisplayName.Length == 0 ? $"[{index}]" : $"{check.DisplayName}[{index}]";

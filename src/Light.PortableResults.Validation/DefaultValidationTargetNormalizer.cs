@@ -5,10 +5,7 @@ using System.Collections.Concurrent;
 namespace Light.PortableResults.Validation;
 
 /// <summary>
-/// The built-in validation target normalizer for raw caller-expression paths.
-/// It preserves member paths, removes the leading parameter root when present, and applies a configurable casing
-/// convention to member segments.
-/// Already normalized absolute targets should usually not be passed to this normalizer again.
+/// The built-in validation target normalizer for caller-expression, relative, and absolute validation targets.
 /// </summary>
 public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormalizer
 {
@@ -18,8 +15,8 @@ public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormali
     public const int DefaultStackBufferThreshold = 512;
 
     private readonly ArrayPool<char> _arrayPool;
-    private readonly ConcurrentDictionary<string, string> _cache = new (StringComparer.Ordinal);
-    private readonly Func<string, string> _normalizeDelegate;
+    private readonly ConcurrentDictionary<string, string> _callerExpressionCache = new (StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, string> _pathCache = new (StringComparer.Ordinal);
 
     /// <summary>
     /// Initializes a new instance of <see cref="DefaultValidationTargetNormalizer" />.
@@ -47,7 +44,6 @@ public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormali
         Casing = casing;
         _arrayPool = arrayPool ?? ArrayPool<char>.Shared;
         ArrayPoolThreshold = arrayPoolThreshold;
-        _normalizeDelegate = NormalizeCore;
     }
 
     /// <summary>
@@ -61,12 +57,29 @@ public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormali
     public int ArrayPoolThreshold { get; }
 
     /// <inheritdoc />
-    public string Normalize(string rawPath) =>
-        rawPath is null ?
-            throw new ArgumentNullException(nameof(rawPath)) :
-            _cache.GetOrAdd(rawPath, _normalizeDelegate);
+    public string Normalize(string rawPath, ValidationTargetSemantics semantics)
+    {
+        if (rawPath is null)
+        {
+            throw new ArgumentNullException(nameof(rawPath));
+        }
 
-    private string NormalizeCore(string rawPath)
+        if (!semantics.IsDefined())
+        {
+            throw new ArgumentOutOfRangeException(nameof(semantics));
+        }
+
+        return semantics == ValidationTargetSemantics.CallerExpression ?
+            _callerExpressionCache.GetOrAdd(rawPath, NormalizeCallerExpressionCore) :
+            _pathCache.GetOrAdd(rawPath, NormalizePathCore);
+    }
+
+    private string NormalizeCallerExpressionCore(string rawPath) =>
+        NormalizeCore(rawPath, ValidationTargetSemantics.CallerExpression);
+
+    private string NormalizePathCore(string rawPath) => NormalizeCore(rawPath, ValidationTargetSemantics.Relative);
+
+    private string NormalizeCore(string rawPath, ValidationTargetSemantics semantics)
     {
         var trimmedPath = rawPath.AsSpan().Trim();
         if (trimmedPath.IsEmpty)
@@ -74,7 +87,9 @@ public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormali
             return string.Empty;
         }
 
-        var parsingStart = FindParsingStart(trimmedPath);
+        var parsingStart = semantics == ValidationTargetSemantics.CallerExpression ?
+            FindCallerExpressionParsingStart(trimmedPath) :
+            0;
         if (parsingStart >= trimmedPath.Length)
         {
             return string.Empty;
@@ -97,7 +112,7 @@ public sealed class DefaultValidationTargetNormalizer : IValidationTargetNormali
         }
     }
 
-    private static int FindParsingStart(ReadOnlySpan<char> rawPath)
+    private static int FindCallerExpressionParsingStart(ReadOnlySpan<char> rawPath)
     {
         var indexOfDot = rawPath.IndexOf('.');
         return indexOfDot == -1 ? 0 : indexOfDot + 1;

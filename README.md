@@ -164,6 +164,36 @@ public sealed class ImportValidator : AsyncValidator<ImportRequest, ImportComman
 }
 ```
 
+For advanced manual target control, use
+`ValidationTarget`
+instead of overloading the string-based `target:` parameter on
+`Check(...)`.
+The common overload still interprets that string like a caller expression, even when you pass it explicitly.
+Use
+`ValidationTarget.Relative(...)`
+for paths below the current validation scope and
+`ValidationTarget.Absolute(...)`
+for already-rooted paths:
+
+```csharp
+using Light.PortableResults.Validation;
+
+var context = validationContextFactory.CreateValidationContext();
+var customerContext = context.ForMember("customer", isNormalized: true);
+
+var relativeCheck = customerContext.Check(
+	request.FirstName,
+	ValidationTarget.Relative("firstName", isNormalized: true),
+	displayName: "First name"
+);
+
+var absoluteCheck = customerContext.Check(
+	request.OwnerName,
+	ValidationTarget.Absolute("account.ownerName", isNormalized: true),
+	displayName: "Owner name"
+);
+```
+
 ## 🚀 HTTP Quick Start
 
 ### Minimal APIs

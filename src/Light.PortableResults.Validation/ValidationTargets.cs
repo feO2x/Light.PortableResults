@@ -13,6 +13,24 @@ public static class ValidationTargets
     public static IValidationTargetNormalizer DefaultNormalizer { get; } = new DefaultValidationTargetNormalizer();
 
     /// <summary>
+    /// Creates a caller-expression validation target.
+    /// </summary>
+    public static ValidationTarget CallerExpression(string input, bool isNormalized = false) =>
+        ValidationTarget.CallerExpression(input, isNormalized);
+
+    /// <summary>
+    /// Creates a relative validation target.
+    /// </summary>
+    public static ValidationTarget Relative(string input, bool isNormalized = false) =>
+        ValidationTarget.Relative(input, isNormalized);
+
+    /// <summary>
+    /// Creates an absolute validation target.
+    /// </summary>
+    public static ValidationTarget Absolute(string input, bool isNormalized = false) =>
+        ValidationTarget.Absolute(input, isNormalized);
+
+    /// <summary>
     /// Composes a parent prefix and child target using the same flat-path rules as the validation infrastructure.
     /// </summary>
     /// <param name="prefix">The parent prefix. Use an empty string for the root object.</param>

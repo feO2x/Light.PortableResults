@@ -13,12 +13,12 @@ public abstract class ValidationErrorDefinition
     /// </summary>
     /// <param name="code">The default error code.</param>
     /// <param name="metadata">The default error metadata.</param>
-    /// <param name="target">The default absolute error target.</param>
+    /// <param name="target">The default error target.</param>
     /// <param name="category">The default error category.</param>
     protected ValidationErrorDefinition(
         string? code = null,
         MetadataObject? metadata = null,
-        string? target = null,
+        ValidationTarget? target = null,
         ErrorCategory category = ErrorCategory.Validation
     )
     {
@@ -39,9 +39,9 @@ public abstract class ValidationErrorDefinition
     public MetadataObject? Metadata { get; }
 
     /// <summary>
-    /// Gets the default absolute error target.
+    /// Gets the default error target.
     /// </summary>
-    public string? Target { get; }
+    public ValidationTarget? Target { get; }
 
     /// <summary>
     /// Gets the default error category.
@@ -69,13 +69,13 @@ public abstract class ValidationErrorDefinition<TParameter> : ValidationErrorDef
     /// <param name="parameter">The fixed rule parameter.</param>
     /// <param name="code">The default error code.</param>
     /// <param name="metadata">The default error metadata.</param>
-    /// <param name="target">The default absolute error target.</param>
+    /// <param name="target">The default error target.</param>
     /// <param name="category">The default error category.</param>
     protected ValidationErrorDefinition(
         TParameter parameter,
         string? code = null,
         MetadataObject? metadata = null,
-        string? target = null,
+        ValidationTarget? target = null,
         ErrorCategory category = ErrorCategory.Validation
     )
         : base(code, metadata, target, category)
@@ -100,13 +100,13 @@ public class TemplateValidationErrorDefinition : ValidationErrorDefinition
     /// <param name="template">The reusable message template.</param>
     /// <param name="code">The default error code.</param>
     /// <param name="metadata">The default error metadata.</param>
-    /// <param name="target">The default absolute error target.</param>
+    /// <param name="target">The default error target.</param>
     /// <param name="category">The default error category.</param>
     public TemplateValidationErrorDefinition(
         IValidationErrorMessageTemplate template,
         string? code = null,
         MetadataObject? metadata = null,
-        string? target = null,
+        ValidationTarget? target = null,
         ErrorCategory category = ErrorCategory.Validation
     )
         : base(code, metadata, target, category)
@@ -137,14 +137,14 @@ public class TemplateValidationErrorDefinition<TParameter> : ValidationErrorDefi
     /// <param name="parameter">The fixed rule parameter.</param>
     /// <param name="code">The default error code.</param>
     /// <param name="metadata">The default error metadata.</param>
-    /// <param name="target">The default absolute error target.</param>
+    /// <param name="target">The default error target.</param>
     /// <param name="category">The default error category.</param>
     public TemplateValidationErrorDefinition(
         IValidationErrorMessageTemplate<TParameter> template,
         TParameter parameter,
         string? code = null,
         MetadataObject? metadata = null,
-        string? target = null,
+        ValidationTarget? target = null,
         ErrorCategory category = ErrorCategory.Validation
     )
         : base(parameter, code, metadata, target, category)
