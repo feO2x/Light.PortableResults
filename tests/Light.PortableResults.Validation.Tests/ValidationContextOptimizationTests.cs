@@ -40,7 +40,8 @@ public sealed class ValidationContextOptimizationTests
 
         context.AddError("firstName must not be empty", "NotEmpty", ValidationTarget.Relative("firstName", true));
         addressContext.AddError("zipCode must not be empty", "NotEmpty", ValidationTarget.Relative("zipCode", true));
-        addressesContext.ForIndex(0)
+        addressesContext
+           .ForIndex(0)
            .AddError("zipCode must not be empty", "NotEmpty", ValidationTarget.Relative("zipCode", true));
 
         context.ToErrors().Should().Equal(
