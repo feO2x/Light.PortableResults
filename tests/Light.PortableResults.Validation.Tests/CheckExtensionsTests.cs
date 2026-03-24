@@ -16,13 +16,11 @@ public sealed class CheckExtensionsTests
     public void ValidateChild_ShouldNormalizeRawTargetsOnlyOnce()
     {
         var context = ValidationContextFactory.CreateValidationContext();
-        var check = context.Check(
-            new AddressDto { ZipCode = " " },
-            target: "request.Address",
-            displayName: "Address"
-        );
+        var addressValidator = new AddressValidator(ValidationContextFactory);
 
-        var result = check.ValidateChild(new AddressValidator(ValidationContextFactory));
+        var result = context
+           .Check(new AddressDto { ZipCode = " " }, target: "request.Address", displayName: "Address")
+           .ValidateChild(addressValidator);
 
         result.Should().Be(ValidatedValue<AddressDto>.NoValue);
         context.ToErrors().Should().Equal(
