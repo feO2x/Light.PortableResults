@@ -135,7 +135,18 @@ public readonly struct ValidationContext
     /// <param name="target">The raw caller expression for the child value.</param>
     /// <returns>The scoped validation context.</returns>
     public ValidationContext For<T>(T child, [CallerArgumentExpression("child")] string target = "") =>
-        WithPrefix(target);
+        ForCallerExpression(target);
+
+    /// <summary>
+    /// Creates a scoped validation context from a caller-expression-style target.
+    /// </summary>
+    /// <param name="target">The caller-expression-style target.</param>
+    /// <param name="isNormalized">
+    /// <see langword="true" /> when <paramref name="target" /> is already normalized for caller-expression semantics.
+    /// </param>
+    /// <returns>The scoped validation context.</returns>
+    public ValidationContext ForCallerExpression(string target, bool isNormalized = false) =>
+        ForTarget(ValidationTarget.CallerExpression(target, isNormalized));
 
     /// <summary>
     /// Creates a scoped validation context for the specified member path segment.
@@ -146,7 +157,45 @@ public readonly struct ValidationContext
     /// </param>
     /// <returns>The scoped validation context.</returns>
     public ValidationContext ForMember(string memberName, bool isNormalized = false) =>
-        WithPrefix(memberName, isNormalized);
+        ForRelative(memberName, isNormalized);
+
+    /// <summary>
+    /// Creates a scoped validation context for a target path relative to the current validation scope.
+    /// </summary>
+    /// <param name="target">The relative target path.</param>
+    /// <param name="isNormalized">
+    /// <see langword="true" /> when <paramref name="target" /> is already normalized; otherwise, <see langword="false" />.
+    /// </param>
+    /// <returns>The scoped validation context.</returns>
+    public ValidationContext ForRelative(string target, bool isNormalized = false) =>
+        ForTarget(ValidationTarget.Relative(target, isNormalized));
+
+    /// <summary>
+    /// Creates a scoped validation context from an absolute target path.
+    /// </summary>
+    /// <param name="target">The absolute target path.</param>
+    /// <param name="isNormalized">
+    /// <see langword="true" /> when <paramref name="target" /> is already normalized; otherwise, <see langword="false" />.
+    /// </param>
+    /// <returns>The scoped validation context.</returns>
+    public ValidationContext ForAbsolute(string target, bool isNormalized = false) =>
+        ForTarget(ValidationTarget.Absolute(target, isNormalized));
+
+    /// <summary>
+    /// Creates a scoped validation context from an explicit validation target descriptor.
+    /// </summary>
+    /// <param name="target">The target descriptor.</param>
+    /// <returns>The scoped validation context.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="target" /> is the default instance.</exception>
+    public ValidationContext ForTarget(ValidationTarget target)
+    {
+        EnsureInitialized();
+
+        var resolvedTarget = ResolveTarget(target);
+        return string.Equals(resolvedTarget, _targetPrefix, StringComparison.Ordinal) ?
+            this :
+            new ValidationContext(State, resolvedTarget);
+    }
 
     /// <summary>
     /// Creates a scoped validation context for the specified collection index.
@@ -160,40 +209,24 @@ public readonly struct ValidationContext
     }
 
     /// <summary>
-    /// Creates a scoped validation context with the specified target prefix.
+    /// Creates a scoped validation context with the specified relative target prefix.
     /// </summary>
-    /// <param name="prefix">The prefix to append to this scope.</param>
+    /// <param name="prefix">The relative prefix to append to this scope.</param>
     /// <param name="isNormalized">
     /// <see langword="true" /> when <paramref name="prefix" /> is already normalized; otherwise, <see langword="false" />.
     /// </param>
     /// <returns>The scoped validation context.</returns>
-    public ValidationContext WithPrefix(string prefix, bool isNormalized = false)
-    {
-        EnsureInitialized();
-        if (prefix is null)
-        {
-            throw new ArgumentNullException(nameof(prefix));
-        }
-
-        if (prefix.Length == 0)
-        {
-            return this;
-        }
-
-        var normalizedPrefix = isNormalized ? prefix : NormalizeTarget(prefix);
-        var composedPrefix = ValidationTargets.Compose(_targetPrefix, normalizedPrefix);
-        return new ValidationContext(State, composedPrefix);
-    }
+    public ValidationContext WithPrefix(string prefix, bool isNormalized = false) => ForRelative(prefix, isNormalized);
 
     /// <summary>
-    /// Creates a check for the specified value and raw caller expression target.
+    /// Creates a check for the specified value and caller-expression target.
     /// </summary>
     /// <typeparam name="T">The type of the value to validate.</typeparam>
     /// <param name="value">The value to validate.</param>
     /// <param name="stringValueNormalizer">
     /// Overrides the context-wide string normalization behavior for this specific check when set.
     /// </param>
-    /// <param name="target">The raw target expression.</param>
+    /// <param name="target">The caller-expression-style target.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The created check.</returns>
     /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
@@ -206,16 +239,49 @@ public readonly struct ValidationContext
     )
     {
         EnsureInitialized();
-        // ReSharper disable once JoinNullCheckWithUsage -- false positive, for display name, we use the ??= operator.
-        // This would mean that the null check for target is only executed when displayName is null.
         if (target is null)
         {
             throw new ArgumentNullException(nameof(target));
         }
 
-        displayName ??= target;
+        return Check(
+            value,
+            ValidationTarget.CallerExpression(target),
+            stringValueNormalizer,
+            displayName
+        );
+    }
+
+    /// <summary>
+    /// Creates a check for the specified value and explicit validation target descriptor.
+    /// </summary>
+    /// <typeparam name="T">The type of the value to validate.</typeparam>
+    /// <param name="value">The value to validate.</param>
+    /// <param name="target">The explicit target descriptor.</param>
+    /// <param name="stringValueNormalizer">
+    /// Overrides the context-wide string normalization behavior for this specific check when set.
+    /// </param>
+    /// <param name="displayName">The optional display name.</param>
+    /// <returns>The created check.</returns>
+    public Check<T> Check<T>(
+        T value,
+        ValidationTarget target,
+        IStringValueNormalizer? stringValueNormalizer = null,
+        string? displayName = null
+    )
+    {
+        EnsureInitialized();
+        var validatedTarget = EnsureTarget(target, nameof(target));
+        displayName ??= validatedTarget.Input;
         value = NormalizeValueIfNecessary(value, stringValueNormalizer ?? Options.StringValueNormalizer);
-        return new Check<T>(this, target, displayName, value, isTargetNormalized: false, isShortCircuited: false);
+        return new Check<T>(
+            this,
+            validatedTarget,
+            displayName,
+            value,
+            resolvedAbsoluteTarget: null,
+            isShortCircuited: false
+        );
     }
 
     /// <summary>
@@ -242,18 +308,19 @@ public readonly struct ValidationContext
     /// <param name="message">The generated validation error message.</param>
     /// <param name="code">The optional error code.</param>
     /// <param name="target">
-    /// The optional normalized target path, composed relative to this context.
+    /// The optional validation target. Relative targets are composed with the current scope, absolute targets are used
+    /// unchanged, and caller-expression targets are normalized before composition.
     /// </param>
     /// <param name="metadata">The optional error metadata.</param>
     public void AddError(
         ValidationErrorMessage message,
         string? code = null,
-        string? target = null,
+        ValidationTarget? target = null,
         MetadataObject? metadata = null
     )
     {
         EnsureInitialized();
-        var resolvedTarget = target is null ? _targetPrefix : ComposeTarget(target, isTargetNormalized: true);
+        var resolvedTarget = target is null ? _targetPrefix : ResolveTarget(target.Value);
         AddError(message.ToError(code, resolvedTarget, ErrorCategory.Validation, metadata));
     }
 
@@ -263,12 +330,18 @@ public readonly struct ValidationContext
     /// <param name="message">The error message.</param>
     /// <param name="code">The optional error code.</param>
     /// <param name="target">
-    /// The optional normalized target path, composed relative to this context.
+    /// The optional validation target. Relative targets are composed with the current scope, absolute targets are used
+    /// unchanged, and caller-expression targets are normalized before composition.
     /// </param>
     /// <param name="metadata">The optional error metadata.</param>
     /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="message" /> is null.</exception>
-    public void AddError(string message, string? code = null, string? target = null, MetadataObject? metadata = null)
+    public void AddError(
+        string message,
+        string? code = null,
+        ValidationTarget? target = null,
+        MetadataObject? metadata = null
+    )
     {
         EnsureInitialized();
         if (message is null)
@@ -280,15 +353,57 @@ public readonly struct ValidationContext
     }
 
     /// <summary>
-    /// Normalizes a raw target expression using the configured target normalizer.
+    /// Normalizes the specified caller-expression target.
     /// </summary>
-    /// <param name="rawTarget">The raw target expression.</param>
+    /// <param name="target">The caller-expression target.</param>
     /// <returns>The normalized target.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
-    public string NormalizeTarget(string rawTarget)
+    public string NormalizeCallerExpression(string target)
     {
         EnsureInitialized();
-        return Options.TargetNormalizer.Normalize(rawTarget);
+        return Options.TargetNormalizer.Normalize(target, ValidationTargetSemantics.CallerExpression);
+    }
+
+    /// <summary>
+    /// Normalizes the specified direct validation path without applying caller-expression rules.
+    /// </summary>
+    /// <param name="target">The direct validation path.</param>
+    /// <returns>The normalized path.</returns>
+    public string NormalizePath(string target)
+    {
+        EnsureInitialized();
+        return Options.TargetNormalizer.Normalize(target, ValidationTargetSemantics.Relative);
+    }
+
+    /// <summary>
+    /// Normalizes the specified validation target according to its explicit semantics.
+    /// </summary>
+    /// <param name="target">The target descriptor.</param>
+    /// <returns>The normalized target.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="target" /> is the default instance.</exception>
+    public string NormalizeTarget(ValidationTarget target)
+    {
+        EnsureInitialized();
+        var validatedTarget = EnsureTarget(target, nameof(target));
+        return validatedTarget.IsNormalized ?
+            validatedTarget.Input :
+            Options.TargetNormalizer.Normalize(validatedTarget.Input, validatedTarget.Semantics);
+    }
+
+    /// <summary>
+    /// Resolves the specified validation target to an absolute flat validation path.
+    /// </summary>
+    /// <param name="target">The target descriptor.</param>
+    /// <returns>The resolved absolute target.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="target" /> is the default instance.</exception>
+    public string ResolveTarget(ValidationTarget target)
+    {
+        EnsureInitialized();
+        var validatedTarget = EnsureTarget(target, nameof(target));
+        var normalizedTarget = NormalizeTarget(validatedTarget);
+
+        return validatedTarget.Semantics == ValidationTargetSemantics.Absolute ?
+            normalizedTarget :
+            ValidationTargets.Compose(_targetPrefix, normalizedTarget);
     }
 
     /// <summary>
@@ -308,24 +423,20 @@ public readonly struct ValidationContext
     /// </summary>
     /// <typeparam name="T">The validated value type.</typeparam>
     /// <param name="value">The validated value.</param>
-    /// <param name="target">The normalized validation target.</param>
+    /// <param name="target">The target that identifies the validated value.</param>
     /// <param name="displayName">The display name.</param>
     /// <param name="error">The created error when one should be produced.</param>
     /// <returns><see langword="true" /> when an error was created; otherwise, <see langword="false" />.</returns>
-    public bool TryCreateAutomaticNullError<T>(T value, string target, string displayName, out Error error)
+    public bool TryCreateAutomaticNullError<T>(T value, ValidationTarget target, string displayName, out Error error)
     {
         EnsureInitialized();
-        if (target is null)
-        {
-            throw new ArgumentNullException(nameof(target));
-        }
-
         if (displayName is null)
         {
             throw new ArgumentNullException(nameof(displayName));
         }
 
-        var messageContext = CreateAbsoluteMessageContext(value, target, displayName);
+        var resolvedTarget = GetAutomaticNullTarget(target);
+        var messageContext = CreateAbsoluteMessageContext(value, resolvedTarget, displayName);
         return Options.AutomaticNullErrorProvider.TryCreateError(in messageContext, out error);
     }
 
@@ -365,56 +476,23 @@ public readonly struct ValidationContext
     }
 
     /// <summary>
-    /// Gets the target path for the automatic null check.
+    /// Gets the absolute target path to use when the validated value is <see langword="null" />.
     /// </summary>
-    /// <param name="rawTarget">The non-normalized target path.</param>
-    /// <returns>The normalized flat target.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
-    public string GetAutomaticNullTarget(string rawTarget)
+    /// <param name="target">The target descriptor for the validated value.</param>
+    /// <returns>The absolute target path.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="target" /> is the default instance.</exception>
+    public string GetAutomaticNullTarget(ValidationTarget target)
     {
         EnsureInitialized();
-        if (_targetPrefix.Length > 0)
+        var validatedTarget = EnsureTarget(target, nameof(target));
+        if (validatedTarget.Semantics == ValidationTargetSemantics.CallerExpression &&
+            ValidationTargets.IsSimpleIdentifier(NormalizeTarget(validatedTarget))
+           )
         {
-            if (ValidationTargets.IsSimpleIdentifier(rawTarget))
-            {
-                return _targetPrefix;
-            }
-
-            var normalizedTarget = NormalizeTarget(rawTarget);
-            if (string.Equals(normalizedTarget, _targetPrefix, StringComparison.Ordinal))
-            {
-                return _targetPrefix;
-            }
+            return _targetPrefix;
         }
 
-        if (_targetPrefix.Length == 0 && ValidationTargets.IsSimpleIdentifier(rawTarget))
-        {
-            return string.Empty;
-        }
-
-        return ComposeTarget(rawTarget, isTargetNormalized: false);
-    }
-
-    /// <summary>
-    /// Composes a target path by combining the context's target prefix with the specified target.
-    /// </summary>
-    /// <param name="target">The target to compose with the prefix.</param>
-    /// <param name="isTargetNormalized">
-    /// <see langword="true" /> when <paramref name="target" /> is already normalized; otherwise, <see langword="false" />.
-    /// </param>
-    /// <returns>The composed target path.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
-    public string ComposeTarget(string target, bool isTargetNormalized)
-    {
-        EnsureInitialized();
-        if (target is null)
-        {
-            throw new ArgumentNullException(nameof(target));
-        }
-
-        var normalizedTarget = isTargetNormalized ? target : NormalizeTarget(target);
-        return ValidationTargets.Compose(_targetPrefix, normalizedTarget);
+        return ResolveTarget(validatedTarget);
     }
 
     /// <summary>
@@ -430,6 +508,16 @@ public readonly struct ValidationContext
     {
         EnsureInitialized();
         return new ValidationErrorMessageContext<T>(AsReadOnly(), displayName, target, value);
+    }
+
+    private static ValidationTarget EnsureTarget(ValidationTarget target, string paramName)
+    {
+        if (target.IsDefault)
+        {
+            throw new ArgumentException("The validation target must not be the default instance.", paramName);
+        }
+
+        return target;
     }
 
     private static T NormalizeValueIfNecessary<T>(T value, IStringValueNormalizer normalizer)

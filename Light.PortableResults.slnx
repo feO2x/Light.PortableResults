@@ -32,6 +32,7 @@
     <File Path="ai-plans\0024-validation-outcome-removal.md" />
     <File Path="ai-plans\0024-validation-support.md" />
     <File Path="ai-plans\0028-child-validation-refactoring.md" />
+    <File Path="ai-plans\0030-validation-target-redesign.md" />
     <File Path="ai-plans\AGENTS.md" />
   </Folder>
   <Folder Name="/benchmarks/">

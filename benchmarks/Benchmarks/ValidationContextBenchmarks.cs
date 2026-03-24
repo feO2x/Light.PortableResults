@@ -37,7 +37,11 @@ public class ValidationErrorAccumulationBenchmarks
         var context = ValidationBenchmarkHelpers.ValidationContextFactory.CreateValidationContext();
         for (var i = 0; i < errorCount; i++)
         {
-            context.AddError($"message {i}", $"Code{i}", $"items[{i}]");
+            context.AddError(
+                $"message {i}",
+                $"Code{i}",
+                ValidationTarget.Relative($"items[{i}]", isNormalized: true)
+            );
         }
 
         return context.ToErrors();
@@ -78,7 +82,11 @@ public class ValidationErrorMaterializationBenchmarks
         var context = ValidationBenchmarkHelpers.ValidationContextFactory.CreateValidationContext();
         for (var i = 0; i < errorCount; i++)
         {
-            context.AddError($"message {i}", $"Code{i}", $"items[{i}]");
+            context.AddError(
+                $"message {i}",
+                $"Code{i}",
+                ValidationTarget.Relative($"items[{i}]", isNormalized: true)
+            );
         }
 
         return context;

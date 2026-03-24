@@ -85,7 +85,7 @@ public sealed class ValidationErrorDefinitionTests
             new ConstantValidationErrorMessageTemplate("Zip code is invalid"),
             code: "InvalidZipCode",
             metadata: MetadataObject.Create(("hint", (MetadataValue) "definition")),
-            target: "orders[2].postalCode",
+            target: ValidationTarget.Absolute("orders[2].postalCode", isNormalized: true),
             category: ErrorCategory.Validation
         );
         var overrideMetadata = MetadataObject.Create(("hint", (MetadataValue) "override"));
@@ -95,7 +95,7 @@ public sealed class ValidationErrorDefinitionTests
             definition,
             code: "Overridden",
             metadata: overrideMetadata,
-            target: "postalCode",
+            target: ValidationTarget.Relative("postalCode", isNormalized: true),
             category: ErrorCategory.Conflict
         );
 
@@ -122,7 +122,7 @@ public sealed class ValidationErrorDefinitionTests
            .Check("X", target: "address.zipCode", displayName: "Postal code")
            .NormalizeTargetIfNecessary();
 
-        check.AddError(definition, target: "address.postalCode");
+        check.AddError(definition, target: ValidationTarget.Relative("address.postalCode", isNormalized: true));
 
         context.ToErrors().Should().Equal(
             new Errors(
@@ -143,7 +143,7 @@ public sealed class ValidationErrorDefinitionTests
         var childContext = context.ForMember("address", isNormalized: true);
         var definition = new TemplateValidationErrorDefinition(
             new ConstantValidationErrorMessageTemplate("Zip code is invalid"),
-            target: "address.zipCode"
+            target: ValidationTarget.Absolute("address.zipCode", isNormalized: true)
         );
         var check = childContext.Check("X", target: "zipCode", displayName: "Zip code").NormalizeTargetIfNecessary();
 

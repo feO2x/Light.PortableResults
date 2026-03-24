@@ -42,13 +42,13 @@ public abstract class BaseValidator<TSource>
     /// </summary>
     /// <param name="value">The source value to inspect.</param>
     /// <param name="context">The active validation context.</param>
-    /// <param name="rawTarget">The raw caller expression for the source value.</param>
+    /// <param name="target">The target for the source value.</param>
     /// <param name="displayName">The display name for the value.</param>
     /// <returns><see langword="true" /> when an automatic null-validation error was added; otherwise, <see langword="false" />.</returns>
     protected bool TryHandleAutomaticNull(
         [NotNullWhen(false)] TSource? value,
         ValidationContext context,
-        string rawTarget,
+        ValidationTarget target,
         string displayName
     )
     {
@@ -57,7 +57,6 @@ public abstract class BaseValidator<TSource>
             return false;
         }
 
-        var target = context.GetAutomaticNullTarget(rawTarget);
         if (!context.TryCreateAutomaticNullError(value, target, displayName, out var error))
         {
             return false;
@@ -71,19 +70,21 @@ public abstract class BaseValidator<TSource>
     /// Validates the specified validation call arguments.
     /// </summary>
     /// <param name="context">The validation context.</param>
-    /// <param name="target">The raw caller expression target.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="context" /> is the default instance.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
-    protected static void ValidateCallArguments(ValidationContext context, string target)
+    /// <param name="target">The target descriptor.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="context" /> is the default instance or <paramref name="target" /> is the default
+    /// instance.
+    /// </exception>
+    protected static void ValidateCallArguments(ValidationContext context, ValidationTarget target)
     {
         if (context.IsDefault)
         {
             throw new ArgumentException("The validation context must not be the default instance.", nameof(context));
         }
 
-        if (target is null)
+        if (target.IsDefault)
         {
-            throw new ArgumentNullException(nameof(target));
+            throw new ArgumentException("The validation target must not be the default instance.", nameof(target));
         }
     }
 

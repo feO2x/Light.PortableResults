@@ -38,9 +38,11 @@ public sealed class ValidationContextOptimizationTests
         var addressContext = context.ForMember("address", isNormalized: true);
         var addressesContext = context.ForMember("addresses", isNormalized: true);
 
-        context.AddError("firstName must not be empty", "NotEmpty", "firstName");
-        addressContext.AddError("zipCode must not be empty", "NotEmpty", "zipCode");
-        addressesContext.ForIndex(0).AddError("zipCode must not be empty", "NotEmpty", "zipCode");
+        context.AddError("firstName must not be empty", "NotEmpty", ValidationTarget.Relative("firstName", true));
+        addressContext.AddError("zipCode must not be empty", "NotEmpty", ValidationTarget.Relative("zipCode", true));
+        addressesContext
+           .ForIndex(0)
+           .AddError("zipCode must not be empty", "NotEmpty", ValidationTarget.Relative("zipCode", true));
 
         context.ToErrors().Should().Equal(
             new Errors(
@@ -58,7 +60,7 @@ public sealed class ValidationContextOptimizationTests
     public void ToErrors_ShouldMaterializeSingleErrorInline()
     {
         var context = ValidationContextFactory.CreateValidationContext();
-        context.AddError("firstName must not be empty", "NotEmpty", "firstName");
+        context.AddError("firstName must not be empty", "NotEmpty", ValidationTarget.Relative("firstName", true));
 
         var errors = context.ToErrors();
         var manyErrors = GetManyErrorsMemory(errors);
@@ -73,8 +75,8 @@ public sealed class ValidationContextOptimizationTests
     public void ToErrors_ShouldWrapOwnedArrayWithoutCopyForTwoErrors()
     {
         var context = ValidationContextFactory.CreateValidationContext();
-        context.AddError("firstName must not be empty", "NotEmpty", "firstName");
-        context.AddError("age must be at least 18", "Adult", "age");
+        context.AddError("firstName must not be empty", "NotEmpty", ValidationTarget.Relative("firstName", true));
+        context.AddError("age must be at least 18", "Adult", ValidationTarget.Relative("age", true));
 
         var errors = context.ToErrors();
         var segment = GetBackingSegment(errors);

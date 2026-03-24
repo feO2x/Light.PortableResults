@@ -27,21 +27,36 @@ public abstract class Validator<T> : BaseValidator<T>
     /// Validates the specified value with a fresh validation context.
     /// </summary>
     /// <param name="value">The value to validate.</param>
-    /// <param name="target">The raw caller expression for the value.</param>
+    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The validation result.</returns>
     public Result<T> Validate(
         T? value,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
-    ) => Validate(value, ValidationContextFactory.CreateValidationContext(), target, displayName);
+    ) => Validate(
+        value,
+        ValidationContextFactory.CreateValidationContext(),
+        ValidationTarget.CallerExpression(target),
+        displayName
+    );
+
+    /// <summary>
+    /// Validates the specified value with a fresh validation context and explicit target semantics.
+    /// </summary>
+    /// <param name="value">The value to validate.</param>
+    /// <param name="target">The explicit target descriptor.</param>
+    /// <param name="displayName">The optional display name.</param>
+    /// <returns>The validation result.</returns>
+    public Result<T> Validate(T? value, ValidationTarget target, string? displayName = null) =>
+        Validate(value, ValidationContextFactory.CreateValidationContext(), target, displayName);
 
     /// <summary>
     /// Validates the specified value with the provided validation context.
     /// </summary>
     /// <param name="value">The value to validate.</param>
     /// <param name="context">The validation context.</param>
-    /// <param name="target">The raw caller expression for the value.</param>
+    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The validation result.</returns>
     public Result<T> Validate(
@@ -49,14 +64,33 @@ public abstract class Validator<T> : BaseValidator<T>
         ValidationContext context,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
-    ) => FinalizeValidation(context, ValidateChildValue(value, context, target, displayName));
+    ) => FinalizeValidation(
+        context,
+        ValidateChildValue(value, context, ValidationTarget.CallerExpression(target), displayName)
+    );
+
+    /// <summary>
+    /// Validates the specified value with the provided validation context and explicit target semantics.
+    /// </summary>
+    /// <param name="value">The value to validate.</param>
+    /// <param name="context">The validation context.</param>
+    /// <param name="target">The explicit target descriptor.</param>
+    /// <param name="displayName">The optional display name.</param>
+    /// <returns>The validation result.</returns>
+    public Result<T> Validate(
+        T? value,
+        ValidationContext context,
+        ValidationTarget target,
+        string? displayName = null
+    ) =>
+        FinalizeValidation(context, ValidateChildValue(value, context, target, displayName));
 
     /// <summary>
     /// Validates the value and materializes failures as a non-generic <see cref="Result" />.
     /// </summary>
     /// <param name="value">The value to validate.</param>
     /// <param name="failure">The failure result when validation fails.</param>
-    /// <param name="target">The raw caller expression for the value.</param>
+    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns><see langword="true" /> when validation failed; otherwise, <see langword="false" />.</returns>
     public bool CheckForErrors(
@@ -64,7 +98,25 @@ public abstract class Validator<T> : BaseValidator<T>
         out Result failure,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
-    ) => CheckForErrors(value, ValidationContextFactory.CreateValidationContext(), out failure, target, displayName);
+    ) =>
+        CheckForErrors(
+            value,
+            ValidationContextFactory.CreateValidationContext(),
+            out failure,
+            ValidationTarget.CallerExpression(target),
+            displayName
+        );
+
+    /// <summary>
+    /// Validates the value and materializes failures as a non-generic <see cref="Result" /> using an explicit target descriptor.
+    /// </summary>
+    /// <param name="value">The value to validate.</param>
+    /// <param name="failure">The failure result when validation fails.</param>
+    /// <param name="target">The explicit target descriptor.</param>
+    /// <param name="displayName">The optional display name.</param>
+    /// <returns><see langword="true" /> when validation failed; otherwise, <see langword="false" />.</returns>
+    public bool CheckForErrors(T? value, out Result failure, ValidationTarget target, string? displayName = null) =>
+        CheckForErrors(value, ValidationContextFactory.CreateValidationContext(), out failure, target, displayName);
 
     /// <summary>
     /// Validates the value with the specified context and materializes failures as a non-generic <see cref="Result" />.
@@ -72,7 +124,7 @@ public abstract class Validator<T> : BaseValidator<T>
     /// <param name="value">The value to validate.</param>
     /// <param name="context">The validation context.</param>
     /// <param name="failure">The failure result when validation fails.</param>
-    /// <param name="target">The raw caller expression for the value.</param>
+    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns><see langword="true" /> when validation failed; otherwise, <see langword="false" />.</returns>
     public bool CheckForErrors(
@@ -80,6 +132,23 @@ public abstract class Validator<T> : BaseValidator<T>
         ValidationContext context,
         out Result failure,
         [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
+    ) => CheckForErrors(value, context, out failure, ValidationTarget.CallerExpression(target), displayName);
+
+    /// <summary>
+    /// Validates the value with the specified context and materializes failures as a non-generic <see cref="Result" />.
+    /// </summary>
+    /// <param name="value">The value to validate.</param>
+    /// <param name="context">The validation context.</param>
+    /// <param name="failure">The failure result when validation fails.</param>
+    /// <param name="target">The explicit target descriptor.</param>
+    /// <param name="displayName">The optional display name.</param>
+    /// <returns><see langword="true" /> when validation failed; otherwise, <see langword="false" />.</returns>
+    public bool CheckForErrors(
+        T? value,
+        ValidationContext context,
+        out Result failure,
+        ValidationTarget target,
         string? displayName = null
     )
     {
@@ -100,7 +169,7 @@ public abstract class Validator<T> : BaseValidator<T>
     /// <param name="value">The value to validate.</param>
     /// <param name="validatedValue">The validated value on success.</param>
     /// <param name="failure">The failure result when validation fails.</param>
-    /// <param name="target">The raw caller expression for the value.</param>
+    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns><see langword="true" /> on success; otherwise, <see langword="false" />.</returns>
     public bool TryValidate(
@@ -109,12 +178,64 @@ public abstract class Validator<T> : BaseValidator<T>
         out Result failure,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
+    ) =>
+        TryValidate(
+            value,
+            ValidationContextFactory.CreateValidationContext(),
+            out validatedValue,
+            out failure,
+            ValidationTarget.CallerExpression(target),
+            displayName
+        );
+
+    /// <summary>
+    /// Validates the specified value and returns the normalized value on success using an explicit target descriptor.
+    /// </summary>
+    /// <param name="value">The value to validate.</param>
+    /// <param name="validatedValue">The validated value on success.</param>
+    /// <param name="failure">The failure result when validation fails.</param>
+    /// <param name="target">The explicit target descriptor.</param>
+    /// <param name="displayName">The optional display name.</param>
+    /// <returns><see langword="true" /> on success; otherwise, <see langword="false" />.</returns>
+    public bool TryValidate(
+        T? value,
+        [MaybeNullWhen(false)] out T validatedValue,
+        out Result failure,
+        ValidationTarget target,
+        string? displayName = null
+    ) =>
+        TryValidate(
+            value,
+            ValidationContextFactory.CreateValidationContext(),
+            out validatedValue,
+            out failure,
+            target,
+            displayName
+        );
+
+    /// <summary>
+    /// Validates the specified value with the provided context and returns the normalized value on success.
+    /// </summary>
+    /// <param name="value">The value to validate.</param>
+    /// <param name="context">The validation context.</param>
+    /// <param name="validatedValue">The validated value on success.</param>
+    /// <param name="failure">The failure result when validation fails.</param>
+    /// <param name="target">The caller-expression target for the value.</param>
+    /// <param name="displayName">The optional display name.</param>
+    /// <returns><see langword="true" /> on success; otherwise, <see langword="false" />.</returns>
+    public bool TryValidate(
+        T? value,
+        ValidationContext context,
+        [MaybeNullWhen(false)] out T validatedValue,
+        out Result failure,
+        [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
     ) => TryValidate(
         value,
-        ValidationContextFactory.CreateValidationContext(),
+        context,
         out validatedValue,
         out failure,
-        target,
+        ValidationTarget.CallerExpression(target),
         displayName
     );
 
@@ -125,7 +246,7 @@ public abstract class Validator<T> : BaseValidator<T>
     /// <param name="context">The validation context.</param>
     /// <param name="validatedValue">The validated value on success.</param>
     /// <param name="failure">The failure result when validation fails.</param>
-    /// <param name="target">The raw caller expression for the value.</param>
+    /// <param name="target">The explicit target descriptor.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns><see langword="true" /> on success; otherwise, <see langword="false" />.</returns>
     public bool TryValidate(
@@ -133,7 +254,7 @@ public abstract class Validator<T> : BaseValidator<T>
         ValidationContext context,
         [MaybeNullWhen(false)] out T validatedValue,
         out Result failure,
-        [CallerArgumentExpression("value")] string target = "",
+        ValidationTarget target,
         string? displayName = null
     )
     {
@@ -156,9 +277,7 @@ public abstract class Validator<T> : BaseValidator<T>
     /// </summary>
     /// <param name="value">The value to be validated.</param>
     /// <param name="context">The validation context.</param>
-    /// <param name="target">
-    /// The raw caller expression for the value. Will be used to automatically create the target of an error.
-    /// </param>
+    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name which is used in formatted error messages.</param>
     /// <returns>The validated and potentially normalized value.</returns>
     public ValidatedValue<T> ValidateChildValue(
@@ -166,10 +285,25 @@ public abstract class Validator<T> : BaseValidator<T>
         ValidationContext context,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
+    ) => ValidateChildValue(value, context, ValidationTarget.CallerExpression(target), displayName);
+
+    /// <summary>
+    /// Validates the specified value with the provided validation context and explicit target semantics.
+    /// </summary>
+    /// <param name="value">The value to be validated.</param>
+    /// <param name="context">The validation context.</param>
+    /// <param name="target">The explicit target descriptor.</param>
+    /// <param name="displayName">The optional display name which is used in formatted error messages.</param>
+    /// <returns>The validated and potentially normalized value.</returns>
+    public ValidatedValue<T> ValidateChildValue(
+        T? value,
+        ValidationContext context,
+        ValidationTarget target,
+        string? displayName = null
     )
     {
         ValidateCallArguments(context, target);
-        displayName ??= target;
+        displayName ??= target.Input;
         if (TryHandleAutomaticNull(value, context, target, displayName))
         {
             return ValidatedValue<T>.NoValue;
@@ -214,27 +348,60 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
     /// Validates the specified source value and transforms it into a validated output.
     /// </summary>
     /// <param name="value">The source value.</param>
-    /// <param name="target">The raw caller expression for the value.</param>
+    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The validation result.</returns>
     public Result<TValidated> Validate(
         TSource? value,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
-    ) => Validate(value, ValidationContextFactory.CreateValidationContext(), target, displayName);
+    ) => Validate(
+        value,
+        ValidationContextFactory.CreateValidationContext(),
+        ValidationTarget.CallerExpression(target),
+        displayName
+    );
+
+    /// <summary>
+    /// Validates the specified source value and transforms it into a validated output using an explicit target descriptor.
+    /// </summary>
+    /// <param name="value">The source value.</param>
+    /// <param name="target">The explicit target descriptor.</param>
+    /// <param name="displayName">The optional display name.</param>
+    /// <returns>The validation result.</returns>
+    public Result<TValidated> Validate(TSource? value, ValidationTarget target, string? displayName = null) =>
+        Validate(value, ValidationContextFactory.CreateValidationContext(), target, displayName);
 
     /// <summary>
     /// Validates the specified source value with the provided context and transforms it into a validated output.
     /// </summary>
     /// <param name="value">The source value.</param>
     /// <param name="context">The validation context.</param>
-    /// <param name="target">The raw caller expression for the value.</param>
+    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The validation result.</returns>
     public Result<TValidated> Validate(
         TSource? value,
         ValidationContext context,
         [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
+    ) => FinalizeValidation(
+        context,
+        ValidateChildValue(value, context, ValidationTarget.CallerExpression(target), displayName)
+    );
+
+    /// <summary>
+    /// Validates the specified source value with the provided context and transforms it into a validated output.
+    /// </summary>
+    /// <param name="value">The source value.</param>
+    /// <param name="context">The validation context.</param>
+    /// <param name="target">The explicit target descriptor.</param>
+    /// <param name="displayName">The optional display name.</param>
+    /// <returns>The validation result.</returns>
+    public Result<TValidated> Validate(
+        TSource? value,
+        ValidationContext context,
+        ValidationTarget target,
         string? displayName = null
     ) => FinalizeValidation(context, ValidateChildValue(value, context, target, displayName));
 
@@ -243,13 +410,35 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
     /// </summary>
     /// <param name="value">The source value.</param>
     /// <param name="failure">The failure result when validation fails.</param>
-    /// <param name="target">The raw caller expression for the value.</param>
+    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns><see langword="true" /> when validation failed; otherwise, <see langword="false" />.</returns>
     public bool CheckForErrors(
         TSource? value,
         out Result failure,
         [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
+    ) =>
+        CheckForErrors(
+            value,
+            ValidationContextFactory.CreateValidationContext(),
+            out failure,
+            ValidationTarget.CallerExpression(target),
+            displayName
+        );
+
+    /// <summary>
+    /// Validates the value and materializes failures as a non-generic <see cref="Result" /> using an explicit target descriptor.
+    /// </summary>
+    /// <param name="value">The source value.</param>
+    /// <param name="failure">The failure result when validation fails.</param>
+    /// <param name="target">The explicit target descriptor.</param>
+    /// <param name="displayName">The optional display name.</param>
+    /// <returns><see langword="true" /> when validation failed; otherwise, <see langword="false" />.</returns>
+    public bool CheckForErrors(
+        TSource? value,
+        out Result failure,
+        ValidationTarget target,
         string? displayName = null
     ) =>
         CheckForErrors(value, ValidationContextFactory.CreateValidationContext(), out failure, target, displayName);
@@ -260,7 +449,7 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
     /// <param name="value">The source value.</param>
     /// <param name="context">The validation context.</param>
     /// <param name="failure">The failure result when validation fails.</param>
-    /// <param name="target">The raw caller expression for the value.</param>
+    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns><see langword="true" /> when validation failed; otherwise, <see langword="false" />.</returns>
     public bool CheckForErrors(
@@ -268,6 +457,23 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
         ValidationContext context,
         out Result failure,
         [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
+    ) => CheckForErrors(value, context, out failure, ValidationTarget.CallerExpression(target), displayName);
+
+    /// <summary>
+    /// Validates the value with the specified context and materializes failures as a non-generic <see cref="Result" />.
+    /// </summary>
+    /// <param name="value">The source value.</param>
+    /// <param name="context">The validation context.</param>
+    /// <param name="failure">The failure result when validation fails.</param>
+    /// <param name="target">The explicit target descriptor.</param>
+    /// <param name="displayName">The optional display name.</param>
+    /// <returns><see langword="true" /> when validation failed; otherwise, <see langword="false" />.</returns>
+    public bool CheckForErrors(
+        TSource? value,
+        ValidationContext context,
+        out Result failure,
+        ValidationTarget target,
         string? displayName = null
     )
     {
@@ -288,7 +494,7 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
     /// <param name="value">The source value.</param>
     /// <param name="validatedValue">The validated output on success.</param>
     /// <param name="failure">The failure result when validation fails.</param>
-    /// <param name="target">The raw caller expression for the value.</param>
+    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns><see langword="true" /> on success; otherwise, <see langword="false" />.</returns>
     public bool TryValidate(
@@ -297,12 +503,64 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
         out Result failure,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
+    ) =>
+        TryValidate(
+            value,
+            ValidationContextFactory.CreateValidationContext(),
+            out validatedValue,
+            out failure,
+            ValidationTarget.CallerExpression(target),
+            displayName
+        );
+
+    /// <summary>
+    /// Validates the specified source value and returns the transformed validated output on success using an explicit target descriptor.
+    /// </summary>
+    /// <param name="value">The source value.</param>
+    /// <param name="validatedValue">The validated output on success.</param>
+    /// <param name="failure">The failure result when validation fails.</param>
+    /// <param name="target">The explicit target descriptor.</param>
+    /// <param name="displayName">The optional display name.</param>
+    /// <returns><see langword="true" /> on success; otherwise, <see langword="false" />.</returns>
+    public bool TryValidate(
+        TSource? value,
+        [MaybeNullWhen(false)] out TValidated validatedValue,
+        out Result failure,
+        ValidationTarget target,
+        string? displayName = null
+    ) =>
+        TryValidate(
+            value,
+            ValidationContextFactory.CreateValidationContext(),
+            out validatedValue,
+            out failure,
+            target,
+            displayName
+        );
+
+    /// <summary>
+    /// Validates the specified source value with the provided context and returns the transformed validated output on success.
+    /// </summary>
+    /// <param name="value">The source value.</param>
+    /// <param name="context">The validation context.</param>
+    /// <param name="validatedValue">The validated output on success.</param>
+    /// <param name="failure">The failure result when validation fails.</param>
+    /// <param name="target">The caller-expression target for the value.</param>
+    /// <param name="displayName">The optional display name.</param>
+    /// <returns><see langword="true" /> on success; otherwise, <see langword="false" />.</returns>
+    public bool TryValidate(
+        TSource? value,
+        ValidationContext context,
+        [MaybeNullWhen(false)] out TValidated validatedValue,
+        out Result failure,
+        [CallerArgumentExpression("value")] string target = "",
+        string? displayName = null
     ) => TryValidate(
         value,
-        ValidationContextFactory.CreateValidationContext(),
+        context,
         out validatedValue,
         out failure,
-        target,
+        ValidationTarget.CallerExpression(target),
         displayName
     );
 
@@ -313,7 +571,7 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
     /// <param name="context">The validation context.</param>
     /// <param name="validatedValue">The validated output on success.</param>
     /// <param name="failure">The failure result when validation fails.</param>
-    /// <param name="target">The raw caller expression for the value.</param>
+    /// <param name="target">The explicit target descriptor.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns><see langword="true" /> on success; otherwise, <see langword="false" />.</returns>
     public bool TryValidate(
@@ -321,7 +579,7 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
         ValidationContext context,
         [MaybeNullWhen(false)] out TValidated validatedValue,
         out Result failure,
-        [CallerArgumentExpression("value")] string target = "",
+        ValidationTarget target,
         string? displayName = null
     )
     {
@@ -342,7 +600,7 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
     /// </summary>
     /// <param name="value">The child value that should be validated.</param>
     /// <param name="context">The ambient validation context shared with the parent validator.</param>
-    /// <param name="target">The caller expression associated with the value.</param>
+    /// <param name="target">The caller-expression target associated with the value.</param>
     /// <param name="displayName">An optional friendly name for the value; defaults to <paramref name="target" /> when omitted.</param>
     /// <returns>
     /// A <see cref="ValidatedValue{TValidated}" /> representing the successful child result or <see cref="ValidatedValue{TValidated}.NoValue" /> when
@@ -353,10 +611,28 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
         ValidationContext context,
         [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
+    ) => ValidateChildValue(value, context, ValidationTarget.CallerExpression(target), displayName);
+
+    /// <summary>
+    /// Validates a child value using the existing validation context without emitting failures to the caller.
+    /// </summary>
+    /// <param name="value">The child value that should be validated.</param>
+    /// <param name="context">The ambient validation context shared with the parent validator.</param>
+    /// <param name="target">The explicit target descriptor associated with the value.</param>
+    /// <param name="displayName">An optional friendly name for the value; defaults to <paramref name="target" /> when omitted.</param>
+    /// <returns>
+    /// A <see cref="ValidatedValue{TValidated}" /> representing the successful child result or <see cref="ValidatedValue{TValidated}.NoValue" /> when
+    /// validation is bypassed.
+    /// </returns>
+    public ValidatedValue<TValidated> ValidateChildValue(
+        TSource? value,
+        ValidationContext context,
+        ValidationTarget target,
+        string? displayName = null
     )
     {
         ValidateCallArguments(context, target);
-        displayName ??= target;
+        displayName ??= target.Input;
         if (TryHandleAutomaticNull(value, context, target, displayName))
         {
             return ValidatedValue<TValidated>.NoValue;

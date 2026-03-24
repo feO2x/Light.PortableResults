@@ -56,12 +56,40 @@ public sealed class ValidationContextTests
     }
 
     [Fact]
+    public void Check_WithExplicitStringTarget_ShouldStillUseCallerExpressionSemantics()
+    {
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var childContext = context.ForMember("customer", isNormalized: true);
+
+        var check = childContext.Check("Alice", target: "request.FirstName").NormalizeTargetIfNecessary();
+
+        check.Target.Should().Be("customer.firstName");
+    }
+
+    [Fact]
+    public void Check_ShouldSupportExplicitRelativeAndAbsoluteTargets()
+    {
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var childContext = context.ForMember("customer", isNormalized: true);
+
+        var relativeCheck = childContext
+           .Check("Alice", ValidationTarget.Relative("firstName", isNormalized: true))
+           .NormalizeTargetIfNecessary();
+        var absoluteCheck = childContext
+           .Check("Alice", ValidationTarget.Absolute("account.ownerName", isNormalized: true))
+           .NormalizeTargetIfNecessary();
+
+        relativeCheck.Target.Should().Be("customer.firstName");
+        absoluteCheck.Target.Should().Be("account.ownerName");
+    }
+
+    [Fact]
     public void AddError_ShouldMaterializeFlatErrorsAndFailureResult()
     {
         var context = new DefaultValidationContextFactory().CreateValidationContext();
 
-        context.AddError("first name is required", "NotEmpty", "firstName");
-        context.AddError("age must be at least 18", "Adult", "age");
+        context.AddError("first name is required", "NotEmpty", ValidationTarget.Relative("firstName", true));
+        context.AddError("age must be at least 18", "Adult", ValidationTarget.Relative("age", true));
 
         context.TryGetErrors(out var errors).Should().BeTrue();
         errors.Should().Equal(
@@ -126,7 +154,11 @@ public sealed class ValidationContextTests
         var context = new DefaultValidationContextFactory().CreateValidationContext();
         var childContext = context.ForMember("address", isNormalized: true);
 
-        childContext.AddError("zip code is invalid", "InvalidZipCode", "zipCode");
+        childContext.AddError(
+            "zip code is invalid",
+            "InvalidZipCode",
+            ValidationTarget.Relative("zipCode", true)
+        );
 
         context.ToErrors().Should().Equal(
             new Errors(
