@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Immutable;
 
-namespace Light.PortableResults.Validation.Assertions;
+namespace Light.PortableResults.Validation;
 
 /// <summary>
 /// Provides assertions for <see cref="Check{T}" /> instances.

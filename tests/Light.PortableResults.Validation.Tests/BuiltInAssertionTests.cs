@@ -5,7 +5,6 @@ using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using Light.PortableResults.Metadata;
-using Light.PortableResults.Validation.Assertions;
 using Xunit;
 
 namespace Light.PortableResults.Validation.Tests;
