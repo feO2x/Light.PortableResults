@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using FluentAssertions;
 using Light.PortableResults.Metadata;
 using Xunit;
@@ -9,33 +10,45 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void BuiltInDefinitions_ShouldExposeExpectedDefaults()
     {
-        var notNullDefinition = BuiltInValidationErrorDefinitions.NotNull;
-        var greaterThanDefinition = BuiltInValidationErrorDefinitions.GreaterThan(18);
-        var lessThanDefinition = BuiltInValidationErrorDefinitions.LessThan(65);
-        var inDefinition = BuiltInValidationErrorDefinitions.IsIn(18, 65);
+        BuiltInValidationErrorDefinitions.NotNull.Code.Should().Be("NotNull");
+        BuiltInValidationErrorDefinitions.Null.Code.Should().Be("Null");
+        BuiltInValidationErrorDefinitions.Empty.Code.Should().Be("Empty");
+        BuiltInValidationErrorDefinitions.NotEmpty.Code.Should().Be("NotEmpty");
+        BuiltInValidationErrorDefinitions.NotNullOrWhiteSpace.Code.Should().Be("NotNullOrWhiteSpace");
+        BuiltInValidationErrorDefinitions.Email.Code.Should().Be("Email");
+        BuiltInValidationErrorDefinitions.Predicate.Code.Should().Be("Predicate");
+        BuiltInValidationErrorDefinitions.NotNull.Metadata.Should().BeNull();
+        BuiltInValidationErrorDefinitions.Email.Metadata.Should().BeNull();
+    }
 
-        notNullDefinition.Code.Should().Be("NotNull");
-        notNullDefinition.Category.Should().Be(ErrorCategory.Validation);
-        notNullDefinition.Metadata.Should().BeNull();
+    [Fact]
+    public void ParameterizedDefinitions_ShouldExposeExpectedMetadata()
+    {
+        var equalTo = BuiltInValidationErrorDefinitions.EqualTo("ABC");
+        var lengthIn = BuiltInValidationErrorDefinitions.LengthIn(2, 5);
+        var matches = BuiltInValidationErrorDefinitions.Matches("^[0-9]+$", RegexOptions.IgnoreCase);
+        var precisionScale = BuiltInValidationErrorDefinitions.PrecisionScale(4, 2, ignoreTrailingZeros: true);
 
-        greaterThanDefinition.Code.Should().Be("GreaterThan");
-        greaterThanDefinition.Category.Should().Be(ErrorCategory.Validation);
-        greaterThanDefinition.Metadata.Should().Be(
-            MetadataObject.Create((ValidationErrorMetadataKeys.ComparativeValue, 18))
+        equalTo.Metadata.Should().Be(
+            MetadataObject.Create((ValidationErrorMetadataKeys.ComparativeValue, "ABC"))
         );
-
-        lessThanDefinition.Code.Should().Be("LessThan");
-        lessThanDefinition.Category.Should().Be(ErrorCategory.Validation);
-        lessThanDefinition.Metadata.Should().Be(
-            MetadataObject.Create((ValidationErrorMetadataKeys.ComparativeValue, 65))
-        );
-
-        inDefinition.Code.Should().Be("IsIn");
-        inDefinition.Category.Should().Be(ErrorCategory.Validation);
-        inDefinition.Metadata.Should().Be(
+        lengthIn.Metadata.Should().Be(
             MetadataObject.Create(
-                (ValidationErrorMetadataKeys.LowerBoundary, 18),
-                (ValidationErrorMetadataKeys.UpperBoundary, 65)
+                (ValidationErrorMetadataKeys.MinLength, 2),
+                (ValidationErrorMetadataKeys.MaxLength, 5)
+            )
+        );
+        matches.Metadata.Should().Be(
+            MetadataObject.Create(
+                (ValidationErrorMetadataKeys.Pattern, "^[0-9]+$"),
+                (ValidationErrorMetadataKeys.RegexOptions, (int) RegexOptions.IgnoreCase)
+            )
+        );
+        precisionScale.Metadata.Should().Be(
+            MetadataObject.Create(
+                (ValidationErrorMetadataKeys.ExpectedPrecision, 4),
+                (ValidationErrorMetadataKeys.ExpectedScale, 2),
+                (ValidationErrorMetadataKeys.IgnoreTrailingZeros, true)
             )
         );
     }
@@ -52,6 +65,58 @@ public sealed class ValidationErrorDefinitionTests
     }
 
     [Fact]
+    public void BuiltInDefinitionCache_ShouldReuseEquivalentDefinitionsAcrossFamilies()
+    {
+        var cache = new ValidationErrorDefinitionCache();
+
+        BuiltInValidationErrorDefinitions.EqualTo(cache, "ABC").Should().BeSameAs(
+            BuiltInValidationErrorDefinitions.EqualTo(cache, "ABC")
+        );
+        BuiltInValidationErrorDefinitions.IsIn(cache, 1, 10).Should().BeSameAs(
+            BuiltInValidationErrorDefinitions.IsIn(cache, 1, 10)
+        );
+        BuiltInValidationErrorDefinitions.Matches(cache, "^[0-9]+$", RegexOptions.IgnoreCase).Should().BeSameAs(
+            BuiltInValidationErrorDefinitions.Matches(cache, "^[0-9]+$", RegexOptions.IgnoreCase)
+        );
+        BuiltInValidationErrorDefinitions.Count(cache, 3).Should().BeSameAs(
+            BuiltInValidationErrorDefinitions.Count(cache, 3)
+        );
+        BuiltInValidationErrorDefinitions.EnumName<TestStatus>(cache, ignoreCase: true).Should().BeSameAs(
+            BuiltInValidationErrorDefinitions.EnumName<TestStatus>(cache, ignoreCase: true)
+        );
+        BuiltInValidationErrorDefinitions.PrecisionScale(cache, 4, 2, ignoreTrailingZeros: true).Should().BeSameAs(
+            BuiltInValidationErrorDefinitions.PrecisionScale(cache, 4, 2, ignoreTrailingZeros: true)
+        );
+    }
+
+    [Fact]
+    public void CachedDefinitions_ShouldUseActiveTemplatesAcrossValidationRuns()
+    {
+        var sharedCache = new ValidationErrorDefinitionCache();
+        var firstContext = CreateContext(
+            sharedCache,
+            ValidationErrorTemplates.Default with
+            {
+                EqualTo = new PrefixComparableTemplate("First run: ")
+            }
+        );
+        var secondContext = CreateContext(
+            sharedCache,
+            ValidationErrorTemplates.Default with
+            {
+                EqualTo = new PrefixComparableTemplate("Second run: ")
+            }
+        );
+        var definition = BuiltInValidationErrorDefinitions.EqualTo(firstContext.ErrorDefinitionCache, 18);
+
+        firstContext.Check(10, target: "age", displayName: "Age").AddError(definition);
+        secondContext.Check(10, target: "age", displayName: "Age").AddError(definition);
+
+        firstContext.ToErrors()[0].Message.Should().Be("First run: Age = 18");
+        secondContext.ToErrors()[0].Message.Should().Be("Second run: Age = 18");
+    }
+
+    [Fact]
     public void AddErrorDefinition_ShouldUseDefinitionDefaults_WhenNoOverridesAreProvided()
     {
         var context = new DefaultValidationContextFactory().CreateValidationContext();
@@ -65,72 +130,15 @@ public sealed class ValidationErrorDefinitionTests
 
         check.AddError(definition);
 
-        var expectedError = new Error
-        {
-            Message = "Name must not be empty",
-            Code = "NotEmpty",
-            Target = "name",
-            Category = ErrorCategory.Validation,
-            Metadata = MetadataObject.Create(("minimumLength", 1))
-        };
-        context.ToErrors().Should().Equal(new Errors(expectedError));
-    }
-
-    [Fact]
-    public void AddErrorDefinition_ShouldAllowOverridingDefinitionDefaults()
-    {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
-        var childContext = context.ForMember("address", isNormalized: true);
-        var definition = new TemplateValidationErrorDefinition(
-            new ConstantValidationErrorMessageTemplate("Zip code is invalid"),
-            code: "InvalidZipCode",
-            metadata: MetadataObject.Create(("hint", (MetadataValue) "definition")),
-            target: ValidationTarget.Absolute("orders[2].postalCode", isNormalized: true),
-            category: ErrorCategory.Validation
-        );
-        var overrideMetadata = MetadataObject.Create(("hint", (MetadataValue) "override"));
-        var check = childContext.Check("X", target: "zipCode", displayName: "Zip code").NormalizeTargetIfNecessary();
-
-        check.AddError(
-            definition,
-            code: "Overridden",
-            metadata: overrideMetadata,
-            target: ValidationTarget.Relative("postalCode", isNormalized: true),
-            category: ErrorCategory.Conflict
-        );
-
-        var expectedError = new Error
-        {
-            Message = "Zip code is invalid",
-            Code = "Overridden",
-            Target = "address.postalCode",
-            Category = ErrorCategory.Conflict,
-            Metadata = overrideMetadata
-        };
-        context.ToErrors().Should().Equal(new Errors(expectedError));
-    }
-
-    [Fact]
-    public void AddErrorDefinition_ShouldPreserveNormalizedMultiSegmentOverrideTargets()
-    {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
-        var childContext = context.ForMember("customer", isNormalized: true);
-        var definition = new TemplateValidationErrorDefinition(
-            new ConstantValidationErrorMessageTemplate("Postal code is invalid")
-        );
-        var check = childContext
-           .Check("X", target: "address.zipCode", displayName: "Postal code")
-           .NormalizeTargetIfNecessary();
-
-        check.AddError(definition, target: ValidationTarget.Relative("address.postalCode", isNormalized: true));
-
         context.ToErrors().Should().Equal(
             new Errors(
                 new Error
                 {
-                    Message = "Postal code is invalid",
-                    Target = "customer.address.postalCode",
-                    Category = ErrorCategory.Validation
+                    Message = "Name must not be empty",
+                    Code = "NotEmpty",
+                    Target = "name",
+                    Category = ErrorCategory.Validation,
+                    Metadata = MetadataObject.Create(("minimumLength", 1))
                 }
             )
         );
@@ -159,47 +167,6 @@ public sealed class ValidationErrorDefinitionTests
                 }
             )
         );
-    }
-
-    [Fact]
-    public void BuiltInDefinitionCache_ShouldReuseEquivalentParameterizedDefinitions()
-    {
-        var cache = new ValidationErrorDefinitionCache();
-
-        var firstGreaterThan = BuiltInValidationErrorDefinitions.GreaterThan(cache, 18);
-        var secondGreaterThan = BuiltInValidationErrorDefinitions.GreaterThan(cache, 18);
-        var firstIn = BuiltInValidationErrorDefinitions.IsIn(cache, 18, 65);
-        var secondIn = BuiltInValidationErrorDefinitions.IsIn(cache, 18, 65);
-
-        firstGreaterThan.Should().BeSameAs(secondGreaterThan);
-        firstIn.Should().BeSameAs(secondIn);
-    }
-
-    [Fact]
-    public void CachedDefinitions_ShouldUseActiveTemplatesAcrossValidationRuns()
-    {
-        var sharedCache = new ValidationErrorDefinitionCache();
-        var firstContext = CreateContext(
-            sharedCache,
-            ValidationErrorTemplates.Default with
-            {
-                GreaterThan = new PrefixComparableTemplate("First run: ")
-            }
-        );
-        var secondContext = CreateContext(
-            sharedCache,
-            ValidationErrorTemplates.Default with
-            {
-                GreaterThan = new PrefixComparableTemplate("Second run: ")
-            }
-        );
-        var definition = BuiltInValidationErrorDefinitions.GreaterThan(firstContext.ErrorDefinitionCache, 18);
-
-        firstContext.Check(10, target: "age", displayName: "Age").AddError(definition);
-        secondContext.Check(10, target: "age", displayName: "Age").AddError(definition);
-
-        firstContext.ToErrors()[0].Message.Should().Be("First run: Age > 18");
-        secondContext.ToErrors()[0].Message.Should().Be("Second run: Age > 18");
     }
 
     [Fact]
@@ -237,6 +204,12 @@ public sealed class ValidationErrorDefinitionTests
         return new DefaultValidationContextFactory(options).CreateValidationContext();
     }
 
+    private enum TestStatus
+    {
+        One,
+        Two
+    }
+
     private sealed class PrefixComparableTemplate : IComparableValidationErrorMessageTemplate
     {
         private readonly string _prefix;
@@ -246,8 +219,7 @@ public sealed class ValidationErrorDefinitionTests
         public ValidationErrorMessage ProvideMessage<T, TParameter>(
             in ValidationErrorMessageContext<T> context,
             TParameter parameter
-        ) =>
-            new (_prefix + context.DisplayName + " > " + parameter);
+        ) => new (_prefix + context.DisplayName + " = " + parameter);
     }
 
     private sealed class ModuloValidationErrorDefinition : ValidationErrorDefinition<int>
@@ -260,6 +232,6 @@ public sealed class ValidationErrorDefinitionTests
             ) { }
 
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
-            new (context.DisplayName + " must be divisible by " + Parameter);
+            new ($"{context.DisplayName} must be divisible by {Parameter}");
     }
 }

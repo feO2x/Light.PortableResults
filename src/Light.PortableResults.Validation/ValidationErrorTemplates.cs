@@ -3,15 +3,51 @@ using System;
 namespace Light.PortableResults.Validation;
 
 /// <summary>
-/// Provides reusable immutable message templates for validation errors.
+/// Provides reusable immutable message templates for built-in validation rules.
 /// </summary>
 public sealed record ValidationErrorTemplates
 {
     private static readonly IValidationErrorMessageTemplate DefaultNotNullTemplate =
         new DisplayNameValidationErrorMessageTemplate(" must not be null");
 
-    private static readonly IValidationErrorMessageTemplate DefaultNotNullOrWhiteSpaceTemplate =
+    private static readonly IValidationErrorMessageTemplate DefaultNullTemplate =
+        new DisplayNameValidationErrorMessageTemplate(" must be null");
+
+    private static readonly IValidationErrorMessageTemplate DefaultEmptyTemplate =
+        new DisplayNameValidationErrorMessageTemplate(" must be empty");
+
+    private static readonly IValidationErrorMessageTemplate DefaultNotEmptyTemplate =
         new DisplayNameValidationErrorMessageTemplate(" must not be empty");
+
+    private static readonly IValidationErrorMessageTemplate DefaultNotNullOrWhiteSpaceTemplate =
+        new DisplayNameValidationErrorMessageTemplate(" must not be empty or whitespace");
+
+    private static readonly IComparableValidationErrorMessageTemplate DefaultEqualToTemplate =
+        new DisplayNameWithComparableValidationErrorMessageTemplate(" must be equal to ");
+
+    private static readonly IComparableValidationErrorMessageTemplate DefaultNotEqualToTemplate =
+        new DisplayNameWithComparableValidationErrorMessageTemplate(" must not be equal to ");
+
+    private static readonly IComparableValidationErrorMessageTemplate DefaultGreaterThanTemplate =
+        new DisplayNameWithComparableValidationErrorMessageTemplate(" must be greater than ");
+
+    private static readonly IComparableValidationErrorMessageTemplate DefaultGreaterThanOrEqualToTemplate =
+        new DisplayNameWithComparableValidationErrorMessageTemplate(" must be greater than or equal to ");
+
+    private static readonly IComparableValidationErrorMessageTemplate DefaultLessThanTemplate =
+        new DisplayNameWithComparableValidationErrorMessageTemplate(" must be less than ");
+
+    private static readonly IComparableValidationErrorMessageTemplate DefaultLessThanOrEqualToTemplate =
+        new DisplayNameWithComparableValidationErrorMessageTemplate(" must be less than or equal to ");
+
+    private static readonly IRangeValidationErrorMessageTemplate DefaultIsInTemplate =
+        new DisplayNameWithRangeValidationErrorMessageTemplate(" must be between ", " and ");
+
+    private static readonly IRangeValidationErrorMessageTemplate DefaultNotInTemplate =
+        new DisplayNameWithRangeValidationErrorMessageTemplate(" must not be between ", " and ");
+
+    private static readonly IRangeValidationErrorMessageTemplate DefaultExclusiveRangeTemplate =
+        new DisplayNameWithRangeValidationErrorMessageTemplate(" must be between ", " and ", " (exclusive)");
 
     private static readonly IValidationErrorMessageTemplate<int> DefaultMinLengthTemplate =
         new DisplayNameWithParameterValidationErrorMessageTemplate<int>(
@@ -25,20 +61,45 @@ public sealed record ValidationErrorTemplates
             " characters long"
         );
 
+    private static readonly IRangeValidationErrorMessageTemplate DefaultLengthInTemplate =
+        new DisplayNameWithRangeValidationErrorMessageTemplate(
+            " must be between ",
+            " and ",
+            " characters long"
+        );
+
     private static readonly IValidationErrorMessageTemplate DefaultPatternTemplate =
         new DisplayNameValidationErrorMessageTemplate(" has an invalid format");
 
     private static readonly IValidationErrorMessageTemplate DefaultEmailTemplate =
         new DisplayNameValidationErrorMessageTemplate(" must be an email address");
 
-    private static readonly IComparableValidationErrorMessageTemplate DefaultGreaterThanTemplate =
-        new DisplayNameWithComparableValidationErrorMessageTemplate(" must be greater than ");
+    private static readonly IValidationErrorMessageTemplate DefaultDigitsOnlyTemplate =
+        new DisplayNameValidationErrorMessageTemplate(" must contain only digits");
 
-    private static readonly IComparableValidationErrorMessageTemplate DefaultLessThanTemplate =
-        new DisplayNameWithComparableValidationErrorMessageTemplate(" must be less than ");
+    private static readonly IValidationErrorMessageTemplate DefaultLettersAndDigitsOnlyTemplate =
+        new DisplayNameValidationErrorMessageTemplate(" must contain only letters and digits");
 
-    private static readonly IRangeValidationErrorMessageTemplate DefaultIsInTemplate =
-        new DisplayNameWithRangeValidationErrorMessageTemplate(" must be between ", " and ");
+    private static readonly IValidationErrorMessageTemplate<int> DefaultCountTemplate =
+        new DisplayNameWithParameterValidationErrorMessageTemplate<int>(" must contain exactly ", " item(s)");
+
+    private static readonly IValidationErrorMessageTemplate<int> DefaultMinCountTemplate =
+        new DisplayNameWithParameterValidationErrorMessageTemplate<int>(" must contain at least ", " item(s)");
+
+    private static readonly IValidationErrorMessageTemplate<int> DefaultMaxCountTemplate =
+        new DisplayNameWithParameterValidationErrorMessageTemplate<int>(" must contain at most ", " item(s)");
+
+    private static readonly IValidationErrorMessageTemplate DefaultEnumTemplate =
+        new DisplayNameValidationErrorMessageTemplate(" must be a defined enum value");
+
+    private static readonly IValidationErrorMessageTemplate DefaultEnumNameTemplate =
+        new DisplayNameValidationErrorMessageTemplate(" must be a valid enum name");
+
+    private static readonly IValidationErrorMessageTemplate<PrecisionScaleDescriptor> DefaultPrecisionScaleTemplate =
+        new DisplayNameWithPrecisionScaleValidationErrorMessageTemplate();
+
+    private static readonly IValidationErrorMessageTemplate DefaultPredicateTemplate =
+        new DisplayNameValidationErrorMessageTemplate(" is invalid");
 
     /// <summary>
     /// Gets the shared default templates instance.
@@ -48,7 +109,6 @@ public sealed record ValidationErrorTemplates
     /// <summary>
     /// Gets the template for null-value validation failures.
     /// </summary>
-    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
     public IValidationErrorMessageTemplate NotNull
     {
         get;
@@ -56,9 +116,35 @@ public sealed record ValidationErrorTemplates
     } = DefaultNotNullTemplate;
 
     /// <summary>
-    /// Gets the template for empty or whitespace string validation failures.
+    /// Gets the template for must-be-null validation failures.
     /// </summary>
-    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
+    public IValidationErrorMessageTemplate Null
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultNullTemplate;
+
+    /// <summary>
+    /// Gets the template for empty-value validation failures.
+    /// </summary>
+    public IValidationErrorMessageTemplate Empty
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultEmptyTemplate;
+
+    /// <summary>
+    /// Gets the template for not-empty validation failures.
+    /// </summary>
+    public IValidationErrorMessageTemplate NotEmpty
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultNotEmptyTemplate;
+
+    /// <summary>
+    /// Gets the template for empty-or-whitespace string validation failures.
+    /// </summary>
     public IValidationErrorMessageTemplate NotNullOrWhiteSpace
     {
         get;
@@ -66,9 +152,89 @@ public sealed record ValidationErrorTemplates
     } = DefaultNotNullOrWhiteSpaceTemplate;
 
     /// <summary>
+    /// Gets the template for equality validation failures.
+    /// </summary>
+    public IComparableValidationErrorMessageTemplate EqualTo
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultEqualToTemplate;
+
+    /// <summary>
+    /// Gets the template for inequality validation failures.
+    /// </summary>
+    public IComparableValidationErrorMessageTemplate NotEqualTo
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultNotEqualToTemplate;
+
+    /// <summary>
+    /// Gets the template for greater-than validation failures.
+    /// </summary>
+    public IComparableValidationErrorMessageTemplate GreaterThan
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultGreaterThanTemplate;
+
+    /// <summary>
+    /// Gets the template for greater-than-or-equal validation failures.
+    /// </summary>
+    public IComparableValidationErrorMessageTemplate GreaterThanOrEqualTo
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultGreaterThanOrEqualToTemplate;
+
+    /// <summary>
+    /// Gets the template for less-than validation failures.
+    /// </summary>
+    public IComparableValidationErrorMessageTemplate LessThan
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultLessThanTemplate;
+
+    /// <summary>
+    /// Gets the template for less-than-or-equal validation failures.
+    /// </summary>
+    public IComparableValidationErrorMessageTemplate LessThanOrEqualTo
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultLessThanOrEqualToTemplate;
+
+    /// <summary>
+    /// Gets the template for inclusive-range validation failures.
+    /// </summary>
+    public IRangeValidationErrorMessageTemplate IsIn
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultIsInTemplate;
+
+    /// <summary>
+    /// Gets the template for outside-range validation failures.
+    /// </summary>
+    public IRangeValidationErrorMessageTemplate NotIn
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultNotInTemplate;
+
+    /// <summary>
+    /// Gets the template for exclusive-range validation failures.
+    /// </summary>
+    public IRangeValidationErrorMessageTemplate ExclusiveRange
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultExclusiveRangeTemplate;
+
+    /// <summary>
     /// Gets the template for minimum length validation failures.
     /// </summary>
-    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
     public IValidationErrorMessageTemplate<int> MinLength
     {
         get;
@@ -78,7 +244,6 @@ public sealed record ValidationErrorTemplates
     /// <summary>
     /// Gets the template for maximum length validation failures.
     /// </summary>
-    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
     public IValidationErrorMessageTemplate<int> MaxLength
     {
         get;
@@ -86,9 +251,17 @@ public sealed record ValidationErrorTemplates
     } = DefaultMaxLengthTemplate;
 
     /// <summary>
-    /// Gets the template for invalid pattern validation failures.
+    /// Gets the template for length-range validation failures.
     /// </summary>
-    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
+    public IRangeValidationErrorMessageTemplate LengthIn
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultLengthInTemplate;
+
+    /// <summary>
+    /// Gets the template for regular-expression validation failures.
+    /// </summary>
     public IValidationErrorMessageTemplate Pattern
     {
         get;
@@ -98,7 +271,6 @@ public sealed record ValidationErrorTemplates
     /// <summary>
     /// Gets the template for email validation failures.
     /// </summary>
-    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
     public IValidationErrorMessageTemplate Email
     {
         get;
@@ -106,32 +278,83 @@ public sealed record ValidationErrorTemplates
     } = DefaultEmailTemplate;
 
     /// <summary>
-    /// Gets the template for greater-than validation failures.
+    /// Gets the template for digits-only validation failures.
     /// </summary>
-    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
-    public IComparableValidationErrorMessageTemplate GreaterThan
+    public IValidationErrorMessageTemplate DigitsOnly
     {
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));
-    } = DefaultGreaterThanTemplate;
+    } = DefaultDigitsOnlyTemplate;
 
     /// <summary>
-    /// Gets the template for less-than validation failures.
+    /// Gets the template for letters-and-digits-only validation failures.
     /// </summary>
-    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
-    public IComparableValidationErrorMessageTemplate LessThan
+    public IValidationErrorMessageTemplate LettersAndDigitsOnly
     {
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));
-    } = DefaultLessThanTemplate;
+    } = DefaultLettersAndDigitsOnlyTemplate;
 
     /// <summary>
-    /// Gets the template for inclusive range validation failures.
+    /// Gets the template for exact-count validation failures.
     /// </summary>
-    /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
-    public IRangeValidationErrorMessageTemplate IsIn
+    public IValidationErrorMessageTemplate<int> Count
     {
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));
-    } = DefaultIsInTemplate;
+    } = DefaultCountTemplate;
+
+    /// <summary>
+    /// Gets the template for minimum-count validation failures.
+    /// </summary>
+    public IValidationErrorMessageTemplate<int> MinCount
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultMinCountTemplate;
+
+    /// <summary>
+    /// Gets the template for maximum-count validation failures.
+    /// </summary>
+    public IValidationErrorMessageTemplate<int> MaxCount
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultMaxCountTemplate;
+
+    /// <summary>
+    /// Gets the template for enum-value validation failures.
+    /// </summary>
+    public IValidationErrorMessageTemplate Enum
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultEnumTemplate;
+
+    /// <summary>
+    /// Gets the template for enum-name validation failures.
+    /// </summary>
+    public IValidationErrorMessageTemplate EnumName
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultEnumNameTemplate;
+
+    /// <summary>
+    /// Gets the template for decimal precision-and-scale validation failures.
+    /// </summary>
+    public IValidationErrorMessageTemplate<PrecisionScaleDescriptor> PrecisionScale
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultPrecisionScaleTemplate;
+
+    /// <summary>
+    /// Gets the template for predicate-based validation failures.
+    /// </summary>
+    public IValidationErrorMessageTemplate Predicate
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultPredicateTemplate;
 }

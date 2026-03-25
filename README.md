@@ -111,6 +111,64 @@ intentionally limited to
 `ImmutableArray<T>`. For custom collection shapes, validate the
 collection through a dedicated child validator instead of expecting the built-in item helpers to preserve that shape.
 
+The built-in check catalog covers common guard, comparison, string, collection, enum, decimal, and predicate-based
+scenarios:
+`IsNull`,
+`IsNotNull`,
+`IsEqualTo`,
+`IsNotEqualTo`,
+`IsEmpty`,
+`IsNotEmpty`,
+`IsGreaterThan`,
+`IsGreaterThanOrEqualTo`,
+`IsLessThan`,
+`IsLessThanOrEqualTo`,
+`IsIn`,
+`IsNotIn`,
+`IsInExclusiveRange`,
+`IsNotNullOrWhiteSpace`,
+`HasMinLength`,
+`HasMaxLength`,
+`HasLengthIn`,
+`Matches`,
+`IsEmail`,
+`ContainsOnlyDigits`,
+`ContainsOnlyLettersAndDigits`,
+`HasCount`,
+`HasMinCount`,
+`HasMaxCount`,
+`IsInEnum`,
+`IsEnumName`,
+`HasPrecisionAndScale`,
+and
+`Must`.
+Use
+`Custom`
+for imperative logic that may add zero, one, or many errors directly.
+
+Guard-style assertions such as
+`IsNotNull`,
+`IsNull`,
+`IsEmpty`,
+and
+`IsNotEmpty`
+own the null/default failure semantics.
+Follow-up assertions such as comparisons, length checks, pattern checks, enum-name checks, collection-count checks, and
+precision/scale checks throw
+`InvalidOperationException`
+when they encounter
+`null`
+on a non-short-circuited check. The intended flow is either automatic null checking, the default string normalization
+behavior, or an explicit
+`IsNotNull()`
+guard first. For strings, remember that the default string normalizer trims input and turns
+`null`
+into
+`string.Empty`,
+so
+`Check<string?>`
+usually reaches string assertions with an already-normalized value.
+
 Async child and collection validation follows the same model and uses
 `ValueTask` plus
 `CancellationToken` throughout:
