@@ -44,7 +44,7 @@ public sealed class ValidationContextOptimizationTests
            .ForIndex(0)
            .AddError("zipCode must not be empty", "NotEmpty", ValidationTarget.Relative("zipCode", true));
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new[]
                 {
@@ -62,7 +62,7 @@ public sealed class ValidationContextOptimizationTests
         var context = ValidationContextFactory.CreateValidationContext();
         context.AddError("firstName must not be empty", "NotEmpty", ValidationTarget.Relative("firstName", true));
 
-        var errors = context.ToErrors();
+        var errors = context.Errors;
         var manyErrors = GetManyErrorsMemory(errors);
 
         errors.Should().Equal(
@@ -78,7 +78,7 @@ public sealed class ValidationContextOptimizationTests
         context.AddError("firstName must not be empty", "NotEmpty", ValidationTarget.Relative("firstName", true));
         context.AddError("age must be at least 18", "Adult", ValidationTarget.Relative("age", true));
 
-        var errors = context.ToErrors();
+        var errors = context.Errors;
         var segment = GetBackingSegment(errors);
 
         errors.Should().Equal(
@@ -108,7 +108,7 @@ public sealed class ValidationContextOptimizationTests
             context.AddError(error);
         }
 
-        var errors = context.ToErrors();
+        var errors = context.Errors;
         var segment = GetBackingSegment(errors);
 
         errors.Should().Equal(new Errors(expectedErrors));

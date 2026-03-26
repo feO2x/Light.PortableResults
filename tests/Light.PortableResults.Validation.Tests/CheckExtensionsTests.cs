@@ -23,7 +23,7 @@ public sealed class CheckExtensionsTests
            .ValidateChild(addressValidator);
 
         result.Should().Be(ValidatedValue<AddressDto>.NoValue);
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new Error
                 {
@@ -52,7 +52,7 @@ public sealed class CheckExtensionsTests
         var result = check.ValidateChild(new AddressValidator(ValidationContextFactory));
 
         result.Should().Be(ValidatedValue<AddressDto>.NoValue);
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new Error
                 {
@@ -81,7 +81,7 @@ public sealed class CheckExtensionsTests
         var result = check.ValidateItems(new AddressValidator(ValidationContextFactory));
 
         result.Should().Be(ValidatedValue<List<AddressDto>>.NoValue);
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new Error
                 {
@@ -151,7 +151,7 @@ public sealed class CheckExtensionsTests
         );
 
         result.Should().Be(ValidatedValue<IReadOnlyList<string>>.NoValue);
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new[]
                 {
@@ -192,7 +192,7 @@ public sealed class CheckExtensionsTests
         );
 
         result.Should().Be(ValidatedValue<IReadOnlyList<int>>.NoValue);
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new Error
                 {
@@ -276,7 +276,7 @@ public sealed class CheckExtensionsTests
         );
 
         result.Should().Be(ValidatedValue<AddressDto>.NoValue);
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new Error
                 {
@@ -344,7 +344,7 @@ public sealed class CheckExtensionsTests
         );
 
         result.Should().Be(ValidatedValue<IReadOnlyList<int>>.NoValue);
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new Error
                 {

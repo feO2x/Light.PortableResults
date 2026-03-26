@@ -112,8 +112,8 @@ public sealed class ValidationErrorDefinitionTests
         firstContext.Check(10, target: "age", displayName: "Age").AddError(definition);
         secondContext.Check(10, target: "age", displayName: "Age").AddError(definition);
 
-        firstContext.ToErrors()[0].Message.Should().Be("First run: Age = 18");
-        secondContext.ToErrors()[0].Message.Should().Be("Second run: Age = 18");
+        firstContext.Errors[0].Message.Should().Be("First run: Age = 18");
+        secondContext.Errors[0].Message.Should().Be("Second run: Age = 18");
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public sealed class ValidationErrorDefinitionTests
 
         check.AddError(definition);
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new Error
                 {
@@ -157,7 +157,7 @@ public sealed class ValidationErrorDefinitionTests
 
         check.AddError(definition);
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new Error
                 {
@@ -177,7 +177,7 @@ public sealed class ValidationErrorDefinitionTests
 
         context.Check(3, target: "quantity", displayName: "Quantity").AddError(definition);
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new Error
                 {

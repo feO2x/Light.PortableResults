@@ -49,6 +49,18 @@ public sealed class ValidationState
     public bool HasErrors => ErrorCount > 0;
 
     /// <summary>
+    /// Gets the accumulated validation errors. If there are no errors, an empty
+    /// <see cref="Light.PortableResults.Errors" /> instance is returned.
+    /// </summary>
+    public Errors Errors =>
+        ErrorCount switch
+        {
+            0 => default,
+            1 => new Errors(_firstError),
+            _ => new Errors(_errors!.AsMemory(0, ErrorCount))
+        };
+
+    /// <summary>
     /// Adds or replaces a shared validation item for the current run.
     /// </summary>
     /// <typeparam name="T">The item type.</typeparam>
@@ -162,27 +174,6 @@ public sealed class ValidationState
                 _errors![ErrorCount] = error;
                 ErrorCount++;
                 return;
-        }
-    }
-
-    /// <summary>
-    /// Attempts to build an <see cref="Errors" /> collection from the accumulated validation errors.
-    /// </summary>
-    /// <param name="errors">When this method returns, contains the errors collection if any errors exist; otherwise, the default value.</param>
-    /// <returns><c>true</c> if one or more errors exist; otherwise, <c>false</c>.</returns>
-    public bool TryBuildErrors(out Errors errors)
-    {
-        switch (ErrorCount)
-        {
-            case 0:
-                errors = default;
-                return false;
-            case 1:
-                errors = new Errors(_firstError);
-                return true;
-            default:
-                errors = new Errors(_errors!.AsMemory(0, ErrorCount));
-                return true;
         }
     }
 

@@ -44,7 +44,7 @@ public class ValidationErrorAccumulationBenchmarks
             );
         }
 
-        return context.ToErrors();
+        return context.Errors;
     }
 }
 
@@ -66,16 +66,16 @@ public class ValidationErrorMaterializationBenchmarks
     }
 
     [Benchmark]
-    public Errors Materialize1Error() => _oneErrorContext.ToErrors();
+    public Errors Materialize1Error() => _oneErrorContext.Errors;
 
     [Benchmark]
-    public Errors Materialize2Errors() => _twoErrorContext.ToErrors();
+    public Errors Materialize2Errors() => _twoErrorContext.Errors;
 
     [Benchmark]
-    public Errors Materialize10Errors() => _tenErrorContext.ToErrors();
+    public Errors Materialize10Errors() => _tenErrorContext.Errors;
 
     [Benchmark]
-    public Errors Materialize11Errors() => _elevenErrorContext.ToErrors();
+    public Errors Materialize11Errors() => _elevenErrorContext.Errors;
 
     private static ValidationContext CreateContextWithErrors(int errorCount)
     {

@@ -132,7 +132,7 @@ public sealed class ValidationConfigurationTests
         var check = context.Check(" ", target: "firstName", displayName: "Vorname").NormalizeTargetIfNecessary();
 
         check.AddError(context.ErrorTemplates.NotNullOrWhiteSpace);
-        var error = context.ToErrors()[0];
+        var error = context.Errors[0];
 
         error.Message.Should().Be("Vorname ist erforderlich");
         error.Code.Should().Be("validation.person.firstName.required");

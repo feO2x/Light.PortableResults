@@ -135,7 +135,7 @@ public sealed class ValidationContextTests
             }
         );
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new Error
                 {
@@ -160,7 +160,7 @@ public sealed class ValidationContextTests
             ValidationTarget.Relative("zipCode", true)
         );
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new Error
                 {

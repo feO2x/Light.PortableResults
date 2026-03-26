@@ -48,6 +48,12 @@ public readonly struct ValidationContext
     public IValidationErrorDefinitionCache ErrorDefinitionCache => State.ErrorDefinitionCache;
 
     /// <summary>
+    /// Gets the accumulated validation errors. If there are no errors, an empty
+    /// <see cref="Light.PortableResults.Errors" /> instance is returned.
+    /// </summary>
+    public Errors Errors => State.Errors;
+
+    /// <summary>
     /// Gets the target prefix that is prepended to errors created within this context.
     /// </summary>
     public string TargetPrefix
@@ -64,8 +70,14 @@ public readonly struct ValidationContext
     /// </summary>
     public bool HasErrors => State.HasErrors;
 
-    private ValidationState State =>
-        _state ?? throw new InvalidOperationException("The validation context must not be the default instance");
+    private ValidationState State
+    {
+        get
+        {
+            EnsureInitialized();
+            return _state;
+        }
+    }
 
     /// <summary>
     /// Creates a readonly view for the current validation run and scope.
@@ -448,15 +460,9 @@ public readonly struct ValidationContext
     /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
     public bool TryGetErrors(out Errors errors)
     {
-        EnsureInitialized();
-        return State.TryBuildErrors(out errors);
+        errors = State.Errors;
+        return !errors.IsEmpty;
     }
-
-    /// <summary>
-    /// Materializes the accumulated errors.
-    /// </summary>
-    /// <returns>The accumulated errors or the empty <see cref="Errors" /> value on success.</returns>
-    public Errors ToErrors() => TryGetErrors(out var errors) ? errors : default;
 
     /// <summary>
     /// Materializes the accumulated errors as a failure <see cref="Result" />.
@@ -548,7 +554,7 @@ public readonly struct ValidationContext
             throw new InvalidOperationException("The validation context must not be the default instance");
         }
 
-#pragma warning disable CS8774
+#pragma warning disable CS8774 // When _state is not null, _targetPrefix cannot be null, see constructor
     }
 #pragma warning restore CS8774
 }

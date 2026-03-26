@@ -21,7 +21,7 @@ public sealed class BuiltInAssertionTests
         context.Check(nullableValue, NoOpStringValueNormalizer.Instance, target: "name", displayName: "Name")
            .IsNotNull();
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new[]
                 {
@@ -53,7 +53,7 @@ public sealed class BuiltInAssertionTests
            .IsEqualTo("ABC", StringComparer.OrdinalIgnoreCase)
            .IsNotEqualTo("ABC", StringComparer.OrdinalIgnoreCase);
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new Error
                 {
@@ -85,7 +85,7 @@ public sealed class BuiltInAssertionTests
         context.Check(Guid.Empty, target: "id", displayName: "Id").IsNotEmpty();
         context.Check(items!, displayName: "Items").IsNotEmpty();
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new[]
                 {
@@ -145,7 +145,7 @@ public sealed class BuiltInAssertionTests
            .IsNotIn(1, 10)
            .IsInExclusiveRange(10, 20);
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new[]
                 {
@@ -215,7 +215,7 @@ public sealed class BuiltInAssertionTests
             )
            .HasMinLength(2);
 
-        defaultContext.ToErrors().Should().Equal(
+        defaultContext.Errors.Should().Equal(
             new Errors(
                 new Error
                 {
@@ -244,7 +244,7 @@ public sealed class BuiltInAssertionTests
         childContext.Check<string?>(zipCode, displayName: "Zip code").ContainsOnlyLettersAndDigits();
         indexedContext.Check<string?>(phone, displayName: "Phone").ContainsOnlyDigits();
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new[]
                 {
@@ -283,7 +283,7 @@ public sealed class BuiltInAssertionTests
         context.Check<string?>(code, displayName: "Code")
            .Matches("^[0-9]+$", RegexOptions.IgnoreCase);
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new Error
                 {
@@ -311,7 +311,7 @@ public sealed class BuiltInAssertionTests
            .HasMinCount(4);
         context.Check(ImmutableArray.Create(1, 2), target: "tags", displayName: "Tags").HasMaxCount(1);
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new[]
                 {
@@ -379,7 +379,7 @@ public sealed class BuiltInAssertionTests
         context.Check(123.4500m, target: "amount", displayName: "Amount")
            .HasPrecisionAndScale(4, 2, ignoreTrailingZeros: true);
 
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new[]
                 {
@@ -457,7 +457,7 @@ public sealed class BuiltInAssertionTests
             );
 
         predicateInvocationCount.Should().Be(0);
-        context.ToErrors().Should().Equal(
+        context.Errors.Should().Equal(
             new Errors(
                 new[]
                 {
