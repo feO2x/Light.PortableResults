@@ -35,27 +35,32 @@ public readonly struct ValidationContext
     /// <summary>
     /// Gets the options applied by this context.
     /// </summary>
+    [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
     public ValidationContextOptions Options => State.Options;
 
     /// <summary>
     /// Gets the validation error templates used by this context.
     /// </summary>
+    [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
     public ValidationErrorTemplates ErrorTemplates => State.ErrorTemplates;
 
     /// <summary>
     /// Gets the shared cache for reusable validation error definitions.
     /// </summary>
+    [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
     public IValidationErrorDefinitionCache ErrorDefinitionCache => State.ErrorDefinitionCache;
 
     /// <summary>
     /// Gets the accumulated validation errors. If there are no errors, an empty
     /// <see cref="Light.PortableResults.Errors" /> instance is returned.
     /// </summary>
+    [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
     public Errors Errors => State.Errors;
 
     /// <summary>
     /// Gets the target prefix that is prepended to errors created within this context.
     /// </summary>
+    [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
     public string TargetPrefix
     {
         get
@@ -70,6 +75,7 @@ public readonly struct ValidationContext
     /// </summary>
     public bool HasErrors => State.HasErrors;
 
+    [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
     private ValidationState State
     {
         get
@@ -82,10 +88,11 @@ public readonly struct ValidationContext
     /// <summary>
     /// Creates a readonly view for the current validation run and scope.
     /// </summary>
+    [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
     public ReadOnlyValidationContext AsReadOnly()
     {
         EnsureInitialized();
-        return new ReadOnlyValidationContext(State, _targetPrefix);
+        return new ReadOnlyValidationContext(_state, _targetPrefix);
     }
 
     /// <summary>
@@ -94,11 +101,8 @@ public readonly struct ValidationContext
     /// <typeparam name="T">The item type.</typeparam>
     /// <param name="key">The typed key.</param>
     /// <param name="value">The value to store.</param>
-    public void SetItem<T>(ValidationContextKey<T> key, T value)
-    {
-        EnsureInitialized();
-        State.SetItem(key, value);
-    }
+    [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
+    public void SetItem<T>(ValidationContextKey<T> key, T value) => State.SetItem(key, value);
 
     /// <summary>
     /// Tries to read a shared validation item.
@@ -107,11 +111,8 @@ public readonly struct ValidationContext
     /// <param name="key">The typed key.</param>
     /// <param name="value">The stored value when present.</param>
     /// <returns><see langword="true" /> when the item exists; otherwise, <see langword="false" />.</returns>
-    public bool TryGetItem<T>(ValidationContextKey<T> key, out T value)
-    {
-        EnsureInitialized();
-        return State.TryGetItem(key, out value);
-    }
+    [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
+    public bool TryGetItem<T>(ValidationContextKey<T> key, out T value) => State.TryGetItem(key, out value);
 
     /// <summary>
     /// Gets a shared validation item or throws when it is missing.
@@ -121,11 +122,8 @@ public readonly struct ValidationContext
     /// <returns>The stored value.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="key" /> is <see langword="null" />.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the item does not exist.</exception>
-    public T GetRequiredItem<T>(ValidationContextKey<T> key)
-    {
-        EnsureInitialized();
-        return State.GetRequiredItem(key);
-    }
+    [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
+    public T GetRequiredItem<T>(ValidationContextKey<T> key) => State.GetRequiredItem(key);
 
     /// <summary>
     /// Removes a shared validation item.
@@ -133,11 +131,8 @@ public readonly struct ValidationContext
     /// <typeparam name="T">The item type.</typeparam>
     /// <param name="key">The typed key.</param>
     /// <returns><see langword="true" /> when the item existed; otherwise, <see langword="false" />.</returns>
-    public bool RemoveItem<T>(ValidationContextKey<T> key)
-    {
-        EnsureInitialized();
-        return State.RemoveItem(key);
-    }
+    [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
+    public bool RemoveItem<T>(ValidationContextKey<T> key) => State.RemoveItem(key);
 
     /// <summary>
     /// Creates a scoped validation context for the specified child value.
@@ -201,8 +196,6 @@ public readonly struct ValidationContext
     /// <exception cref="ArgumentException">Thrown when <paramref name="target" /> is the default instance.</exception>
     public ValidationContext ForTarget(ValidationTarget target)
     {
-        EnsureInitialized();
-
         var resolvedTarget = ResolveTarget(target);
         return string.Equals(resolvedTarget, _targetPrefix, StringComparison.Ordinal) ?
             this :
@@ -219,16 +212,6 @@ public readonly struct ValidationContext
         EnsureInitialized();
         return new ValidationContext(State, ValidationTargets.AppendIndex(_targetPrefix, index));
     }
-
-    /// <summary>
-    /// Creates a scoped validation context with the specified relative target prefix.
-    /// </summary>
-    /// <param name="prefix">The relative prefix to append to this scope.</param>
-    /// <param name="isNormalized">
-    /// <see langword="true" /> when <paramref name="prefix" /> is already normalized; otherwise, <see langword="false" />.
-    /// </param>
-    /// <returns>The scoped validation context.</returns>
-    public ValidationContext WithPrefix(string prefix, bool isNormalized = false) => ForRelative(prefix, isNormalized);
 
     /// <summary>
     /// Creates a check for the specified value and caller-expression target.
@@ -365,28 +348,6 @@ public readonly struct ValidationContext
     }
 
     /// <summary>
-    /// Normalizes the specified caller-expression target.
-    /// </summary>
-    /// <param name="target">The caller-expression target.</param>
-    /// <returns>The normalized target.</returns>
-    public string NormalizeCallerExpression(string target)
-    {
-        EnsureInitialized();
-        return Options.TargetNormalizer.Normalize(target, ValidationTargetSemantics.CallerExpression);
-    }
-
-    /// <summary>
-    /// Normalizes the specified direct validation path without applying caller-expression rules.
-    /// </summary>
-    /// <param name="target">The direct validation path.</param>
-    /// <returns>The normalized path.</returns>
-    public string NormalizePath(string target)
-    {
-        EnsureInitialized();
-        return Options.TargetNormalizer.Normalize(target, ValidationTargetSemantics.Relative);
-    }
-
-    /// <summary>
     /// Normalizes the specified validation target according to its explicit semantics.
     /// </summary>
     /// <param name="target">The target descriptor.</param>
@@ -394,7 +355,6 @@ public readonly struct ValidationContext
     /// <exception cref="ArgumentException">Thrown when <paramref name="target" /> is the default instance.</exception>
     public string NormalizeTarget(ValidationTarget target)
     {
-        EnsureInitialized();
         var validatedTarget = EnsureTarget(target, nameof(target));
         return validatedTarget.IsNormalized ?
             validatedTarget.Input :
@@ -409,13 +369,10 @@ public readonly struct ValidationContext
     /// <exception cref="ArgumentException">Thrown when <paramref name="target" /> is the default instance.</exception>
     public string ResolveTarget(ValidationTarget target)
     {
-        EnsureInitialized();
-        var validatedTarget = EnsureTarget(target, nameof(target));
-        var normalizedTarget = NormalizeTarget(validatedTarget);
-
-        return validatedTarget.Semantics == ValidationTargetSemantics.Absolute ?
+        var normalizedTarget = NormalizeTarget(target);
+        return target.Semantics == ValidationTargetSemantics.Absolute ?
             normalizedTarget :
-            ValidationTargets.Compose(_targetPrefix, normalizedTarget);
+            ValidationTargets.Compose(TargetPrefix, normalizedTarget);
     }
 
     /// <summary>
@@ -424,11 +381,7 @@ public readonly struct ValidationContext
     /// <param name="value">The string value to normalize.</param>
     /// <returns>The normalized string value.</returns>
     /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
-    public string? NormalizeStringValue(string? value)
-    {
-        EnsureInitialized();
-        return Options.StringValueNormalizer.Normalize(value);
-    }
+    public string? NormalizeStringValue(string? value) => Options.StringValueNormalizer.Normalize(value);
 
     /// <summary>
     /// Tries to create the automatic null-validation error for the specified target and display name.
@@ -441,7 +394,6 @@ public readonly struct ValidationContext
     /// <returns><see langword="true" /> when an error was created; otherwise, <see langword="false" />.</returns>
     public bool TryCreateAutomaticNullError<T>(T value, ValidationTarget target, string displayName, out Error error)
     {
-        EnsureInitialized();
         if (displayName is null)
         {
             throw new ArgumentNullException(nameof(displayName));
@@ -510,21 +462,13 @@ public readonly struct ValidationContext
         T value,
         string target,
         string displayName
-    )
-    {
-        EnsureInitialized();
-        return new ValidationErrorMessageContext<T>(AsReadOnly(), displayName, target, value);
-    }
+    ) =>
+        new (AsReadOnly(), displayName, target, value);
 
-    private static ValidationTarget EnsureTarget(ValidationTarget target, string paramName)
-    {
-        if (target.IsDefault)
-        {
-            throw new ArgumentException("The validation target must not be the default instance.", paramName);
-        }
-
-        return target;
-    }
+    private static ValidationTarget EnsureTarget(ValidationTarget target, string paramName) =>
+        target.IsDefault ?
+            throw new ArgumentException("The validation target must not be the default instance.", paramName) :
+            target;
 
     private static T NormalizeValueIfNecessary<T>(T value, IStringValueNormalizer normalizer)
     {
