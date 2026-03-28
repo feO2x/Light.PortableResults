@@ -173,11 +173,7 @@ public readonly struct Check<T>
     public ValidationErrorMessageContext<T> CreateMessageContext()
     {
         var normalizedCheck = NormalizeTargetIfNecessary();
-        return normalizedCheck.Context.CreateAbsoluteMessageContext(
-            normalizedCheck.Value,
-            normalizedCheck.GetResolvedAbsoluteTarget(),
-            normalizedCheck.DisplayName
-        );
+        return normalizedCheck.CreateMessageContextCore();
     }
 
     /// <summary>
@@ -279,7 +275,7 @@ public readonly struct Check<T>
         }
 
         var normalizedCheck = NormalizeTargetIfNecessary();
-        var messageContext = normalizedCheck.CreateMessageContext();
+        var messageContext = normalizedCheck.CreateMessageContextCore();
         var message = definition.ProvideMessage(in messageContext);
         var resolvedTarget = ResolveDefinitionTarget(normalizedCheck, definition.Target, target);
         normalizedCheck.Context.AddError(
@@ -326,7 +322,7 @@ public readonly struct Check<T>
         }
 
         var normalizedCheck = NormalizeTargetIfNecessary();
-        var messageContext = normalizedCheck.CreateMessageContext();
+        var messageContext = normalizedCheck.CreateMessageContextCore();
         var message = template.ProvideMessage(in messageContext);
         return normalizedCheck.AddError(
             message,
@@ -373,7 +369,7 @@ public readonly struct Check<T>
         }
 
         var normalizedCheck = NormalizeTargetIfNecessary();
-        var messageContext = normalizedCheck.CreateMessageContext();
+        var messageContext = normalizedCheck.CreateMessageContextCore();
         var message = template.ProvideMessage(in messageContext, parameter);
         return normalizedCheck.AddError(
             message,
@@ -422,6 +418,9 @@ public readonly struct Check<T>
 
     internal ValidationTarget GetResolvedAbsoluteTargetDescriptor() =>
         ValidationTarget.Absolute(GetResolvedAbsoluteTarget(), isNormalized: true);
+
+    private ValidationErrorMessageContext<T> CreateMessageContextCore() =>
+        Context.CreateAbsoluteMessageContext(Value, _resolvedAbsoluteTarget!, DisplayName);
 
     private static string ResolveDefinitionTarget(
         Check<T> normalizedCheck,
