@@ -18,7 +18,7 @@ public interface IValidationErrorMessageTemplate
 /// Creates validation error messages that require an additional typed parameter.
 /// </summary>
 /// <typeparam name="TParameter">The parameter type.</typeparam>
-public interface IValidationErrorMessageTemplate<TParameter>
+public interface IValidationErrorMessageTemplate<in TParameter>
 {
     /// <summary>
     /// Creates a message for the specified context and parameter.
