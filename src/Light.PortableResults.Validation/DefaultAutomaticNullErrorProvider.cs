@@ -16,7 +16,27 @@ public sealed class DefaultAutomaticNullErrorProvider : IAutomaticNullErrorProvi
     public bool TryCreateError<T>(in ValidationErrorMessageContext<T> context, out Error error)
     {
         var definition = BuiltInValidationErrorDefinitions.NotNull;
-        var message = definition.ProvideMessage(in context);
+        var cache = context.ValidationContext.ErrorTemplates.MessageCache;
+        ValidationErrorMessage message;
+
+        if (definition.IsMessageStable && cache is not null)
+        {
+            var key = new ValidationErrorMessageCacheKey(
+                definition,
+                context.DisplayName,
+                context.ValidationContext.Options.CultureInfo
+            );
+            if (!cache.TryGet(key, out message))
+            {
+                message = definition.ProvideMessage(in context);
+                cache.Store(key, message);
+            }
+        }
+        else
+        {
+            message = definition.ProvideMessage(in context);
+        }
+
         error = message.ToError(definition.Code, context.Target, definition.Category, definition.Metadata);
         return true;
     }

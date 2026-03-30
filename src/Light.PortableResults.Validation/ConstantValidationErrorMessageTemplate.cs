@@ -20,5 +20,8 @@ public sealed class ConstantValidationErrorMessageTemplate : IValidationErrorMes
         _message = new ValidationErrorMessage(text, key);
 
     /// <inheritdoc />
+    public bool IsMessageStable => true;
+
+    /// <inheritdoc />
     public ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) => _message;
 }

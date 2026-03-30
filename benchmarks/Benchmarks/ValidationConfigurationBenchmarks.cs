@@ -73,6 +73,8 @@ public class ValidationErrorMessageTemplateBenchmarks
 
     private sealed class ValueTypeMessageTemplate : IValidationErrorMessageTemplate
     {
+        public bool IsMessageStable => false;
+
         public ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
             new ($"{context.DisplayName} must be at least {context.Value}");
     }

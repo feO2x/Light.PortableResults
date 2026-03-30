@@ -707,6 +707,9 @@ public static class BuiltInValidationErrorDefinitions
             : base(code: "NotNull") { }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
             context.ValidationContext.ErrorTemplates.NotNull.ProvideMessage(in context);
     }
@@ -721,6 +724,9 @@ public static class BuiltInValidationErrorDefinitions
         /// </summary>
         public NullValidationErrorDefinition()
             : base(code: "Null") { }
+
+        /// <inheritdoc />
+        public override bool IsMessageStable => true;
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -739,6 +745,9 @@ public static class BuiltInValidationErrorDefinitions
             : base(code: "Empty") { }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
             context.ValidationContext.ErrorTemplates.Empty.ProvideMessage(in context);
     }
@@ -755,6 +764,9 @@ public static class BuiltInValidationErrorDefinitions
             : base(code: "NotEmpty") { }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
             context.ValidationContext.ErrorTemplates.NotEmpty.ProvideMessage(in context);
     }
@@ -769,6 +781,9 @@ public static class BuiltInValidationErrorDefinitions
         /// </summary>
         public NotNullOrWhiteSpaceValidationErrorDefinition()
             : base(code: "NotNullOrWhiteSpace") { }
+
+        /// <inheritdoc />
+        public override bool IsMessageStable => true;
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -797,6 +812,9 @@ public static class BuiltInValidationErrorDefinitions
         /// Gets the expected value.
         /// </summary>
         public T ComparativeValue { get; }
+
+        /// <inheritdoc />
+        public override bool IsMessageStable => true;
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
@@ -829,6 +847,9 @@ public static class BuiltInValidationErrorDefinitions
         public T ComparativeValue { get; }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
             in ValidationErrorMessageContext<TValue> context
         ) =>
@@ -859,6 +880,9 @@ public static class BuiltInValidationErrorDefinitions
         public T ComparativeValue { get; }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
             in ValidationErrorMessageContext<TValue> context
         ) =>
@@ -887,6 +911,9 @@ public static class BuiltInValidationErrorDefinitions
         /// Gets the inclusive lower boundary.
         /// </summary>
         public T ComparativeValue { get; }
+
+        /// <inheritdoc />
+        public override bool IsMessageStable => true;
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
@@ -922,6 +949,9 @@ public static class BuiltInValidationErrorDefinitions
         public T ComparativeValue { get; }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
             in ValidationErrorMessageContext<TValue> context
         ) =>
@@ -950,6 +980,9 @@ public static class BuiltInValidationErrorDefinitions
         /// Gets the inclusive upper boundary.
         /// </summary>
         public T ComparativeValue { get; }
+
+        /// <inheritdoc />
+        public override bool IsMessageStable => true;
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
@@ -991,6 +1024,9 @@ public static class BuiltInValidationErrorDefinitions
         public T UpperBoundary { get; }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
             in ValidationErrorMessageContext<TValue> context
         ) =>
@@ -1025,6 +1061,9 @@ public static class BuiltInValidationErrorDefinitions
         /// Gets the upper boundary.
         /// </summary>
         public T UpperBoundary { get; }
+
+        /// <inheritdoc />
+        public override bool IsMessageStable => true;
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
@@ -1063,6 +1102,9 @@ public static class BuiltInValidationErrorDefinitions
         public T UpperBoundary { get; }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
             in ValidationErrorMessageContext<TValue> context
         ) =>
@@ -1097,6 +1139,9 @@ public static class BuiltInValidationErrorDefinitions
         public int MinLength { get; }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(
             in ValidationErrorMessageContext<T> context
         ) => context.ValidationContext.ErrorTemplates.MinLength.ProvideMessage(in context, MinLength);
@@ -1124,6 +1169,9 @@ public static class BuiltInValidationErrorDefinitions
         /// Gets the maximum allowed length.
         /// </summary>
         public int MaxLength { get; }
+
+        /// <inheritdoc />
+        public override bool IsMessageStable => true;
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(
@@ -1159,6 +1207,9 @@ public static class BuiltInValidationErrorDefinitions
         /// Gets the maximum allowed length.
         /// </summary>
         public int MaxLength { get; }
+
+        /// <inheritdoc />
+        public override bool IsMessageStable => true;
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(
@@ -1201,6 +1252,9 @@ public static class BuiltInValidationErrorDefinitions
         public Regex Regex { get; }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
             context.ValidationContext.ErrorTemplates.Pattern.ProvideMessage(in context);
     }
@@ -1215,6 +1269,9 @@ public static class BuiltInValidationErrorDefinitions
         /// </summary>
         public EmailValidationErrorDefinition()
             : base(code: "Email") { }
+
+        /// <inheritdoc />
+        public override bool IsMessageStable => true;
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -1233,6 +1290,9 @@ public static class BuiltInValidationErrorDefinitions
             : base(code: "DigitsOnly") { }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
             context.ValidationContext.ErrorTemplates.DigitsOnly.ProvideMessage(in context);
     }
@@ -1247,6 +1307,9 @@ public static class BuiltInValidationErrorDefinitions
         /// </summary>
         public LettersAndDigitsOnlyValidationErrorDefinition()
             : base(code: "LettersAndDigitsOnly") { }
+
+        /// <inheritdoc />
+        public override bool IsMessageStable => true;
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -1275,6 +1338,9 @@ public static class BuiltInValidationErrorDefinitions
         /// Gets the exact expected count.
         /// </summary>
         public int ExpectedCount { get; }
+
+        /// <inheritdoc />
+        public override bool IsMessageStable => true;
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(
@@ -1306,6 +1372,9 @@ public static class BuiltInValidationErrorDefinitions
         public int MinCount { get; }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(
             in ValidationErrorMessageContext<T> context
         ) => context.ValidationContext.ErrorTemplates.MinCount.ProvideMessage(in context, MinCount);
@@ -1335,6 +1404,9 @@ public static class BuiltInValidationErrorDefinitions
         public int MaxCount { get; }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(
             in ValidationErrorMessageContext<T> context
         ) => context.ValidationContext.ErrorTemplates.MaxCount.ProvideMessage(in context, MaxCount);
@@ -1354,6 +1426,9 @@ public static class BuiltInValidationErrorDefinitions
                 code: "Enum",
                 metadata: CreateEnumMetadata(typeof(TEnum))
             ) { }
+
+        /// <inheritdoc />
+        public override bool IsMessageStable => true;
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -1385,6 +1460,9 @@ public static class BuiltInValidationErrorDefinitions
         public bool IgnoreCase { get; }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
             context.ValidationContext.ErrorTemplates.EnumName.ProvideMessage(in context);
     }
@@ -1413,6 +1491,9 @@ public static class BuiltInValidationErrorDefinitions
         public PrecisionScaleDescriptor Descriptor { get; }
 
         /// <inheritdoc />
+        public override bool IsMessageStable => true;
+
+        /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
             context.ValidationContext.ErrorTemplates.PrecisionScale.ProvideMessage(in context, Descriptor);
     }
@@ -1427,6 +1508,9 @@ public static class BuiltInValidationErrorDefinitions
         /// </summary>
         public PredicateValidationErrorDefinition()
             : base(code: "Predicate") { }
+
+        /// <inheritdoc />
+        public override bool IsMessageStable => true;
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>

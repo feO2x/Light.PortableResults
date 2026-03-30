@@ -22,6 +22,9 @@ public sealed class
     public IValidationErrorMessageTemplate InnerTemplate { get; }
 
     /// <inheritdoc />
+    public bool IsMessageStable => true;
+
+    /// <inheritdoc />
     public ValidationErrorMessage ProvideMessage<T>(
         in ValidationErrorMessageContext<T> context,
         TParameter parameter

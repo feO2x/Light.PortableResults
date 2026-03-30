@@ -22,6 +22,9 @@ public sealed class DisplayNameWithComparableValidationErrorMessageTemplate : IC
     }
 
     /// <inheritdoc />
+    public bool IsMessageStable => true;
+
+    /// <inheritdoc />
     public ValidationErrorMessage ProvideMessage<T, TParameter>(
         in ValidationErrorMessageContext<T> context,
         TParameter parameter

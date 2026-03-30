@@ -26,6 +26,9 @@ public sealed class DisplayNameValidationErrorMessageTemplate : IValidationError
     }
 
     /// <inheritdoc />
+    public bool IsMessageStable => true;
+
+    /// <inheritdoc />
     public ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
         new ($"{_prefix}{context.DisplayName}{_suffix}", _key);
 }

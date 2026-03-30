@@ -101,10 +101,82 @@ public sealed record ValidationErrorTemplates
     private static readonly IValidationErrorMessageTemplate DefaultPredicateTemplate =
         new DisplayNameValidationErrorMessageTemplate(" is invalid");
 
+    private readonly bool _hasExplicitMessageCache;
+    private readonly IValidationErrorMessageCache? _messageCache;
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="ValidationErrorTemplates" />.
+    /// </summary>
+    public ValidationErrorTemplates()
+    {
+        _messageCache = new DefaultValidationErrorMessageCache();
+    }
+
+    private ValidationErrorTemplates(ValidationErrorTemplates original)
+    {
+        NotNull = original.NotNull;
+        Null = original.Null;
+        Empty = original.Empty;
+        NotEmpty = original.NotEmpty;
+        NotNullOrWhiteSpace = original.NotNullOrWhiteSpace;
+        EqualTo = original.EqualTo;
+        NotEqualTo = original.NotEqualTo;
+        GreaterThan = original.GreaterThan;
+        GreaterThanOrEqualTo = original.GreaterThanOrEqualTo;
+        LessThan = original.LessThan;
+        LessThanOrEqualTo = original.LessThanOrEqualTo;
+        IsIn = original.IsIn;
+        NotIn = original.NotIn;
+        ExclusiveRange = original.ExclusiveRange;
+        MinLength = original.MinLength;
+        MaxLength = original.MaxLength;
+        LengthIn = original.LengthIn;
+        Pattern = original.Pattern;
+        Email = original.Email;
+        DigitsOnly = original.DigitsOnly;
+        LettersAndDigitsOnly = original.LettersAndDigitsOnly;
+        Count = original.Count;
+        MinCount = original.MinCount;
+        MaxCount = original.MaxCount;
+        Enum = original.Enum;
+        EnumName = original.EnumName;
+        PrecisionScale = original.PrecisionScale;
+        Predicate = original.Predicate;
+
+        if (original._hasExplicitMessageCache)
+        {
+            _messageCache = original._messageCache;
+            _hasExplicitMessageCache = true;
+        }
+        else
+        {
+            _messageCache = original._messageCache is null ? null : new DefaultValidationErrorMessageCache();
+        }
+    }
+
+    private ValidationErrorTemplates(IValidationErrorMessageCache? messageCache)
+    {
+        _messageCache = messageCache;
+    }
+
     /// <summary>
     /// Gets the shared default templates instance.
     /// </summary>
-    public static ValidationErrorTemplates Default { get; } = new ();
+    public static ValidationErrorTemplates Default { get; } =
+        new (DefaultValidationErrorMessageCache.Default);
+
+    /// <summary>
+    /// Gets the cache for stable validation error messages. When <see langword="null" />, message caching is disabled.
+    /// </summary>
+    public IValidationErrorMessageCache? MessageCache
+    {
+        get => _messageCache;
+        init
+        {
+            _messageCache = value;
+            _hasExplicitMessageCache = true;
+        }
+    }
 
     /// <summary>
     /// Gets the template for null-value validation failures.

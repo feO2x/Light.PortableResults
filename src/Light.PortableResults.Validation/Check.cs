@@ -276,7 +276,7 @@ public readonly struct Check<T>
 
         var normalizedCheck = NormalizeTargetIfNecessary();
         var messageContext = normalizedCheck.CreateMessageContextCore();
-        var message = definition.ProvideMessage(in messageContext);
+        var message = normalizedCheck.GetMessage(definition, in messageContext);
         var resolvedTarget = ResolveDefinitionTarget(normalizedCheck, definition.Target, target);
         normalizedCheck.Context.AddError(
             message.ToError(
@@ -323,7 +323,7 @@ public readonly struct Check<T>
 
         var normalizedCheck = NormalizeTargetIfNecessary();
         var messageContext = normalizedCheck.CreateMessageContextCore();
-        var message = template.ProvideMessage(in messageContext);
+        var message = normalizedCheck.GetMessage(template, in messageContext);
         return normalizedCheck.AddError(
             message,
             code,
@@ -421,6 +421,68 @@ public readonly struct Check<T>
 
     private ValidationErrorMessageContext<T> CreateMessageContextCore() =>
         Context.CreateAbsoluteMessageContext(Value, _resolvedAbsoluteTarget!, DisplayName);
+
+    private ValidationErrorMessage GetMessage(
+        ValidationErrorDefinition definition,
+        in ValidationErrorMessageContext<T> messageContext
+    )
+    {
+        if (!definition.IsMessageStable)
+        {
+            return definition.ProvideMessage(in messageContext);
+        }
+
+        var cache = Context.ErrorTemplates.MessageCache;
+        if (cache is null)
+        {
+            return definition.ProvideMessage(in messageContext);
+        }
+
+        var key = new ValidationErrorMessageCacheKey(
+            definition,
+            DisplayName,
+            Context.Options.CultureInfo
+        );
+        if (cache.TryGet(key, out var message))
+        {
+            return message;
+        }
+
+        message = definition.ProvideMessage(in messageContext);
+        cache.Store(key, message);
+        return message;
+    }
+
+    private ValidationErrorMessage GetMessage(
+        IValidationErrorMessageTemplate template,
+        in ValidationErrorMessageContext<T> messageContext
+    )
+    {
+        if (!template.IsMessageStable)
+        {
+            return template.ProvideMessage(in messageContext);
+        }
+
+        var cache = Context.ErrorTemplates.MessageCache;
+        if (cache is null)
+        {
+            return template.ProvideMessage(in messageContext);
+        }
+
+        var key = new ValidationErrorMessageCacheKey(
+            template,
+            DisplayName,
+            Context.Options.CultureInfo
+        );
+        if (cache.TryGet(key, out var message))
+        {
+            return message;
+        }
+
+        message = template.ProvideMessage(in messageContext);
+        cache.Store(key, message);
+        return message;
+    }
 
     private static string ResolveDefinitionTarget(
         Check<T> normalizedCheck,

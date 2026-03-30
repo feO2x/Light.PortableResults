@@ -232,12 +232,16 @@ public sealed class ValidationConfigurationTests
 
     private sealed class EchoValueTemplate : IValidationErrorMessageTemplate
     {
+        public bool IsMessageStable => false;
+
         public ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
             new ($"{context.DisplayName}={context.Value}@{context.Target}");
     }
 
     private sealed class LocalizedRequiredTemplate : IValidationErrorMessageTemplate
     {
+        public bool IsMessageStable => true;
+
         public ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context)
         {
             var isGerman = string.Equals(
@@ -255,6 +259,8 @@ public sealed class ValidationConfigurationTests
     private sealed class CountingTemplate : IValidationErrorMessageTemplate
     {
         public int InvocationCount { get; private set; }
+
+        public bool IsMessageStable => true;
 
         public ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context)
         {

@@ -7,6 +7,9 @@ public sealed class DisplayNameWithPrecisionScaleValidationErrorMessageTemplate 
     IValidationErrorMessageTemplate<PrecisionScaleDescriptor>
 {
     /// <inheritdoc />
+    public bool IsMessageStable => true;
+
+    /// <inheritdoc />
     public ValidationErrorMessage ProvideMessage<T>(
         in ValidationErrorMessageContext<T> context,
         PrecisionScaleDescriptor parameter

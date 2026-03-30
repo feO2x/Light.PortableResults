@@ -6,6 +6,11 @@ namespace Light.PortableResults.Validation;
 public interface IRangeValidationErrorMessageTemplate
 {
     /// <summary>
+    /// Gets a value indicating whether the produced messages depend only on the display name and fixed parameters.
+    /// </summary>
+    bool IsMessageStable { get; }
+
+    /// <summary>
     /// Creates a message for the specified context and range boundaries.
     /// </summary>
     /// <typeparam name="T">The checked value type.</typeparam>

@@ -6,6 +6,11 @@ namespace Light.PortableResults.Validation;
 public interface IValidationErrorMessageTemplate
 {
     /// <summary>
+    /// Gets a value indicating whether the produced messages depend only on the display name and fixed parameters.
+    /// </summary>
+    bool IsMessageStable { get; }
+
+    /// <summary>
     /// Creates a message for the specified context.
     /// </summary>
     /// <typeparam name="T">The validated value type.</typeparam>
@@ -20,6 +25,11 @@ public interface IValidationErrorMessageTemplate
 /// <typeparam name="TParameter">The parameter type.</typeparam>
 public interface IValidationErrorMessageTemplate<in TParameter>
 {
+    /// <summary>
+    /// Gets a value indicating whether the produced messages depend only on the display name and fixed parameters.
+    /// </summary>
+    bool IsMessageStable { get; }
+
     /// <summary>
     /// Creates a message for the specified context and parameter.
     /// </summary>

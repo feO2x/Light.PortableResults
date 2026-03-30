@@ -29,6 +29,9 @@ public sealed class DisplayNameWithRangeValidationErrorMessageTemplate : IRangeV
     }
 
     /// <inheritdoc />
+    public bool IsMessageStable => true;
+
+    /// <inheritdoc />
     public ValidationErrorMessage ProvideMessage<T, TBoundary>(
         in ValidationErrorMessageContext<T> context,
         TBoundary lowerBoundary,

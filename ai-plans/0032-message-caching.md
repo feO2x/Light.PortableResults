@@ -6,16 +6,16 @@ Validation error messages are currently formatted every time an assertion fails:
 
 ## Acceptance Criteria
 
-- [ ] Templates indicate whether their output is stable (depends only on display name and fixed parameters, not on the validated value) via a new `IsMessageStable` property on all four template interfaces.
-- [ ] All built-in template implementations return `true` for `IsMessageStable`.
-- [ ] `ValidationErrorDefinition` exposes a `virtual bool IsMessageStable` property that defaults to `false`. `TemplateValidationErrorDefinition` and `TemplateValidationErrorDefinition<TParameter>` override it to delegate to their template's `IsMessageStable`.
-- [ ] A new `IValidationErrorMessageCache` interface provides pluggable message cache storage.
-- [ ] A `ValidationErrorMessageCacheKey` readonly record struct encapsulates the cache key components: the message provider reference, display name, and culture.
-- [ ] A default implementation backed by concurrent dictionaries is provided, keyed by `ValidationErrorMessageCacheKey`.
-- [ ] `ValidationErrorTemplates` exposes the message cache via a new property. The default templates instance uses the default cache implementation. This couples the cache to the templates that determine message content, ensuring consistency and preventing stale messages when templates are customized.
-- [ ] All `Check<T>.AddError` overloads that produce messages check `IsMessageStable` and delegate to the cache's `TryGet`/`Store` when caching is applicable, falling back to direct `ProvideMessage` otherwise.
-- [ ] Built-in definition classes that override `ProvideMessage` directly (instead of delegating to a stored template) also set `IsMessageStable` appropriately.
-- [ ] Automated tests cover cache hit/miss behavior, stable vs. unstable templates, culture-aware keying, disabled cache path, and custom `ErrorTemplates` using a separate cache.
+- [x] Templates indicate whether their output is stable (depends only on display name and fixed parameters, not on the validated value) via a new `IsMessageStable` property on all four template interfaces.
+- [x] All built-in template implementations return `true` for `IsMessageStable`.
+- [x] `ValidationErrorDefinition` exposes a `virtual bool IsMessageStable` property that defaults to `false`. `TemplateValidationErrorDefinition` and `TemplateValidationErrorDefinition<TParameter>` override it to delegate to their template's `IsMessageStable`.
+- [x] A new `IValidationErrorMessageCache` interface provides pluggable message cache storage.
+- [x] A `ValidationErrorMessageCacheKey` readonly record struct encapsulates the cache key components: the message provider reference, display name, and culture.
+- [x] A default implementation backed by concurrent dictionaries is provided, keyed by `ValidationErrorMessageCacheKey`.
+- [x] `ValidationErrorTemplates` exposes the message cache via a new property. The default templates instance uses the default cache implementation. This couples the cache to the templates that determine message content, ensuring consistency and preventing stale messages when templates are customized.
+- [x] All `Check<T>.AddError` overloads that produce messages check `IsMessageStable` and delegate to the cache's `TryGet`/`Store` when caching is applicable, falling back to direct `ProvideMessage` otherwise.
+- [x] Built-in definition classes that override `ProvideMessage` directly (instead of delegating to a stored template) also set `IsMessageStable` appropriately.
+- [x] Automated tests cover cache hit/miss behavior, stable vs. unstable templates, culture-aware keying, disabled cache path, and custom `ErrorTemplates` using a separate cache.
 
 ## Technical Details
 

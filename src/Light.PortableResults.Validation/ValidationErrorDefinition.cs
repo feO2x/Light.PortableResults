@@ -49,6 +49,11 @@ public abstract class ValidationErrorDefinition
     public ErrorCategory Category { get; }
 
     /// <summary>
+    /// Gets a value indicating whether the produced message depends only on the display name and fixed parameters.
+    /// </summary>
+    public virtual bool IsMessageStable => false;
+
+    /// <summary>
     /// Creates the validation error message for the specified check context.
     /// </summary>
     /// <typeparam name="T">The checked value type.</typeparam>
@@ -120,6 +125,9 @@ public class TemplateValidationErrorDefinition : ValidationErrorDefinition
     public IValidationErrorMessageTemplate Template { get; }
 
     /// <inheritdoc />
+    public override bool IsMessageStable => Template.IsMessageStable;
+
+    /// <inheritdoc />
     public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
         Template.ProvideMessage(in context);
 }
@@ -156,6 +164,9 @@ public class TemplateValidationErrorDefinition<TParameter> : ValidationErrorDefi
     /// Gets the reusable message template.
     /// </summary>
     public IValidationErrorMessageTemplate<TParameter> Template { get; }
+
+    /// <inheritdoc />
+    public override bool IsMessageStable => Template.IsMessageStable;
 
     /// <inheritdoc />
     public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
