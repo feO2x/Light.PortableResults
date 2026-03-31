@@ -120,7 +120,53 @@ public sealed class ValidationErrorMessageCachingTests
     }
 
     [Fact]
-    public void BuiltInTemplatesAndDefinitions_ShouldReportStableMessages()
+    public void BuiltInComparableDefinitions_ShouldUseComparableTemplateStabilityForCaching()
+    {
+        var cache = new SpyValidationErrorMessageCache();
+        var template = new StableCountingComparableTemplate(" = ");
+        var templates = new ValidationErrorTemplates
+        {
+            MessageCache = cache,
+            EqualTo = template
+        };
+        var definition = BuiltInValidationErrorDefinitions.EqualTo(18);
+        var firstContext = CreateContext(templates);
+        var secondContext = CreateContext(templates);
+
+        firstContext.Check(10, target: "age", displayName: "Age").AddError(definition);
+        secondContext.Check(10, target: "age", displayName: "Age").AddError(definition);
+
+        template.InvocationCount.Should().Be(1);
+        cache.TryGetCalls.Should().Be(2);
+        cache.StoreCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public void BuiltInRangeDefinitions_ShouldBypassCaching_WhenActiveRangeTemplateIsUnstable()
+    {
+        var cache = new SpyValidationErrorMessageCache();
+        var template = new UnstableRangeTemplate();
+        var templates = new ValidationErrorTemplates
+        {
+            MessageCache = cache,
+            IsIn = template
+        };
+        var definition = BuiltInValidationErrorDefinitions.IsIn(1, 10);
+        var firstContext = CreateContext(templates);
+        var secondContext = CreateContext(templates);
+
+        firstContext.Check(0, target: "age", displayName: "Age").AddError(definition);
+        secondContext.Check(11, target: "age", displayName: "Age").AddError(definition);
+
+        template.InvocationCount.Should().Be(2);
+        cache.TryGetCalls.Should().Be(0);
+        cache.StoreCalls.Should().Be(0);
+        firstContext.Errors[0].Message.Should().Be("Age = 0, range = 1..10");
+        secondContext.Errors[0].Message.Should().Be("Age = 11, range = 1..10");
+    }
+
+    [Fact]
+    public void TemplateImplementationsAndTemplateBackedDefinitions_ShouldReportStableMessages()
     {
         new DisplayNameValidationErrorMessageTemplate(" suffix").IsMessageStable.Should().BeTrue();
         new DisplayNameWithComparableValidationErrorMessageTemplate(" suffix").IsMessageStable.Should().BeTrue();
@@ -144,12 +190,12 @@ public sealed class ValidationErrorMessageCachingTests
             5
         );
 
-        BuiltInValidationErrorDefinitions.NotNull.IsMessageStable.Should().BeTrue();
-        BuiltInValidationErrorDefinitions.EqualTo(18).IsMessageStable.Should().BeTrue();
         stableDefinition.IsMessageStable.Should().BeTrue();
         unstableDefinition.IsMessageStable.Should().BeFalse();
         stableParameterizedDefinition.IsMessageStable.Should().BeTrue();
         new ValueAwareValidationErrorDefinition().IsMessageStable.Should().BeFalse();
+        BuiltInValidationErrorDefinitions.NotNull.IsMessageStable.Should().BeFalse();
+        BuiltInValidationErrorDefinitions.EqualTo(18).IsMessageStable.Should().BeFalse();
     }
 
     private static ValidationContext CreateContext(
@@ -208,6 +254,51 @@ public sealed class ValidationErrorMessageCachingTests
         {
             InvocationCount++;
             return new ValidationErrorMessage(context.DisplayName + " >= " + parameter);
+        }
+    }
+
+    private sealed class StableCountingComparableTemplate : IComparableValidationErrorMessageTemplate
+    {
+        private readonly string _separator;
+
+        public StableCountingComparableTemplate(string separator) => _separator = separator;
+
+        public int InvocationCount { get; private set; }
+
+        public bool IsMessageStable => true;
+
+        public ValidationErrorMessage ProvideMessage<T, TParameter>(
+            in ValidationErrorMessageContext<T> context,
+            TParameter parameter
+        )
+        {
+            InvocationCount++;
+            return new ValidationErrorMessage(context.DisplayName + _separator + parameter);
+        }
+    }
+
+    private sealed class UnstableRangeTemplate : IRangeValidationErrorMessageTemplate
+    {
+        public int InvocationCount { get; private set; }
+
+        public bool IsMessageStable => false;
+
+        public ValidationErrorMessage ProvideMessage<T, TBoundary>(
+            in ValidationErrorMessageContext<T> context,
+            TBoundary lowerBoundary,
+            TBoundary upperBoundary
+        )
+        {
+            InvocationCount++;
+            return new ValidationErrorMessage(
+                context.DisplayName +
+                " = " +
+                context.Value +
+                ", range = " +
+                lowerBoundary +
+                ".." +
+                upperBoundary
+            );
         }
     }
 

@@ -427,19 +427,14 @@ public readonly struct Check<T>
         in ValidationErrorMessageContext<T> messageContext
     )
     {
-        if (!definition.IsMessageStable)
-        {
-            return definition.ProvideMessage(in messageContext);
-        }
-
         var cache = Context.ErrorTemplates.MessageCache;
-        if (cache is null)
+        if (cache is null || !definition.TryGetStableMessageProvider(in messageContext, out var provider))
         {
             return definition.ProvideMessage(in messageContext);
         }
 
         var key = new ValidationErrorMessageCacheKey(
-            definition,
+            provider,
             DisplayName,
             Context.Options.CultureInfo
         );

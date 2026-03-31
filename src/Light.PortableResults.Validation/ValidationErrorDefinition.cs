@@ -54,6 +54,25 @@ public abstract class ValidationErrorDefinition
     public virtual bool IsMessageStable => false;
 
     /// <summary>
+    /// Tries to get the effective provider that determines a stable message for the specified context.
+    /// </summary>
+    /// <typeparam name="T">The checked value type.</typeparam>
+    /// <param name="context">The message context.</param>
+    /// <param name="provider">The effective message provider when the message is stable.</param>
+    /// <returns>
+    /// <see langword="true" /> when the message is stable for the current context and can participate in caching;
+    /// otherwise, <see langword="false" />.
+    /// </returns>
+    public virtual bool TryGetStableMessageProvider<T>(
+        in ValidationErrorMessageContext<T> context,
+        out object provider
+    )
+    {
+        provider = null!;
+        return false;
+    }
+
+    /// <summary>
     /// Creates the validation error message for the specified check context.
     /// </summary>
     /// <typeparam name="T">The checked value type.</typeparam>
@@ -128,6 +147,22 @@ public class TemplateValidationErrorDefinition : ValidationErrorDefinition
     public override bool IsMessageStable => Template.IsMessageStable;
 
     /// <inheritdoc />
+    public override bool TryGetStableMessageProvider<T>(
+        in ValidationErrorMessageContext<T> context,
+        out object provider
+    )
+    {
+        if (!Template.IsMessageStable)
+        {
+            provider = null!;
+            return false;
+        }
+
+        provider = Template;
+        return true;
+    }
+
+    /// <inheritdoc />
     public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
         Template.ProvideMessage(in context);
 }
@@ -167,6 +202,22 @@ public class TemplateValidationErrorDefinition<TParameter> : ValidationErrorDefi
 
     /// <inheritdoc />
     public override bool IsMessageStable => Template.IsMessageStable;
+
+    /// <inheritdoc />
+    public override bool TryGetStableMessageProvider<T>(
+        in ValidationErrorMessageContext<T> context,
+        out object provider
+    )
+    {
+        if (!Template.IsMessageStable)
+        {
+            provider = null!;
+            return false;
+        }
+
+        provider = Template;
+        return true;
+    }
 
     /// <inheritdoc />
     public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>

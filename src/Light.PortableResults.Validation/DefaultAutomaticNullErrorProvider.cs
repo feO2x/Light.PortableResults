@@ -19,10 +19,13 @@ public sealed class DefaultAutomaticNullErrorProvider : IAutomaticNullErrorProvi
         var cache = context.ValidationContext.ErrorTemplates.MessageCache;
         ValidationErrorMessage message;
 
-        if (definition.IsMessageStable && cache is not null)
+        if (
+            cache is not null &&
+            definition.TryGetStableMessageProvider(in context, out var provider)
+        )
         {
             var key = new ValidationErrorMessageCacheKey(
-                definition,
+                provider,
                 context.DisplayName,
                 context.ValidationContext.Options.CultureInfo
             );

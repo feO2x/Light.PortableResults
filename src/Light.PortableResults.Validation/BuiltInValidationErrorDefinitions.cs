@@ -695,6 +695,63 @@ public static class BuiltInValidationErrorDefinitions
         return MetadataValue.FromString(value.ToString());
     }
 
+    private static bool TryGetStableProvider(IValidationErrorMessageTemplate template, out object provider)
+    {
+        if (!template.IsMessageStable)
+        {
+            provider = null!;
+            return false;
+        }
+
+        provider = template;
+        return true;
+    }
+
+    private static bool TryGetStableProvider<TParameter>(
+        IValidationErrorMessageTemplate<TParameter> template,
+        out object provider
+    )
+    {
+        if (!template.IsMessageStable)
+        {
+            provider = null!;
+            return false;
+        }
+
+        provider = template;
+        return true;
+    }
+
+    private static bool TryGetStableProvider(
+        IComparableValidationErrorMessageTemplate template,
+        out object provider
+    )
+    {
+        if (!template.IsMessageStable)
+        {
+            provider = null!;
+            return false;
+        }
+
+        provider = template;
+        return true;
+    }
+
+    private static bool TryGetStableProvider(
+        IRangeValidationErrorMessageTemplate template,
+        out object provider
+    )
+    {
+        if (!template.IsMessageStable)
+        {
+            provider = null!;
+            return false;
+        }
+
+        provider = template;
+        return true;
+    }
+
     /// <summary>
     /// Reusable built-in validation error definition for null-value validation failures.
     /// </summary>
@@ -707,7 +764,10 @@ public static class BuiltInValidationErrorDefinitions
             : base(code: "NotNull") { }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.NotNull, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -726,7 +786,10 @@ public static class BuiltInValidationErrorDefinitions
             : base(code: "Null") { }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.Null, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -745,7 +808,10 @@ public static class BuiltInValidationErrorDefinitions
             : base(code: "Empty") { }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.Empty, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -764,7 +830,10 @@ public static class BuiltInValidationErrorDefinitions
             : base(code: "NotEmpty") { }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.NotEmpty, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -783,7 +852,10 @@ public static class BuiltInValidationErrorDefinitions
             : base(code: "NotNullOrWhiteSpace") { }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.NotNullOrWhiteSpace, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -814,7 +886,10 @@ public static class BuiltInValidationErrorDefinitions
         public T ComparativeValue { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<TValue>(
+            in ValidationErrorMessageContext<TValue> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.EqualTo, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
@@ -847,7 +922,10 @@ public static class BuiltInValidationErrorDefinitions
         public T ComparativeValue { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<TValue>(
+            in ValidationErrorMessageContext<TValue> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.NotEqualTo, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
@@ -880,7 +958,10 @@ public static class BuiltInValidationErrorDefinitions
         public T ComparativeValue { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<TValue>(
+            in ValidationErrorMessageContext<TValue> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.GreaterThan, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
@@ -913,7 +994,10 @@ public static class BuiltInValidationErrorDefinitions
         public T ComparativeValue { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<TValue>(
+            in ValidationErrorMessageContext<TValue> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.GreaterThanOrEqualTo, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
@@ -949,7 +1033,10 @@ public static class BuiltInValidationErrorDefinitions
         public T ComparativeValue { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<TValue>(
+            in ValidationErrorMessageContext<TValue> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.LessThan, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
@@ -982,7 +1069,10 @@ public static class BuiltInValidationErrorDefinitions
         public T ComparativeValue { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<TValue>(
+            in ValidationErrorMessageContext<TValue> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.LessThanOrEqualTo, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
@@ -1024,7 +1114,10 @@ public static class BuiltInValidationErrorDefinitions
         public T UpperBoundary { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<TValue>(
+            in ValidationErrorMessageContext<TValue> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.IsIn, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
@@ -1063,7 +1156,10 @@ public static class BuiltInValidationErrorDefinitions
         public T UpperBoundary { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<TValue>(
+            in ValidationErrorMessageContext<TValue> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.NotIn, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
@@ -1102,7 +1198,10 @@ public static class BuiltInValidationErrorDefinitions
         public T UpperBoundary { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<TValue>(
+            in ValidationErrorMessageContext<TValue> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.ExclusiveRange, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
@@ -1139,7 +1238,10 @@ public static class BuiltInValidationErrorDefinitions
         public int MinLength { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.MinLength, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(
@@ -1171,7 +1273,10 @@ public static class BuiltInValidationErrorDefinitions
         public int MaxLength { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.MaxLength, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(
@@ -1209,7 +1314,10 @@ public static class BuiltInValidationErrorDefinitions
         public int MaxLength { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.LengthIn, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(
@@ -1252,7 +1360,10 @@ public static class BuiltInValidationErrorDefinitions
         public Regex Regex { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.Pattern, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -1271,7 +1382,10 @@ public static class BuiltInValidationErrorDefinitions
             : base(code: "Email") { }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.Email, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -1290,7 +1404,10 @@ public static class BuiltInValidationErrorDefinitions
             : base(code: "DigitsOnly") { }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.DigitsOnly, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -1309,7 +1426,10 @@ public static class BuiltInValidationErrorDefinitions
             : base(code: "LettersAndDigitsOnly") { }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.LettersAndDigitsOnly, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -1340,7 +1460,10 @@ public static class BuiltInValidationErrorDefinitions
         public int ExpectedCount { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.Count, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(
@@ -1372,7 +1495,10 @@ public static class BuiltInValidationErrorDefinitions
         public int MinCount { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.MinCount, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(
@@ -1404,7 +1530,10 @@ public static class BuiltInValidationErrorDefinitions
         public int MaxCount { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.MaxCount, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(
@@ -1428,7 +1557,10 @@ public static class BuiltInValidationErrorDefinitions
             ) { }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.Enum, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -1460,7 +1592,10 @@ public static class BuiltInValidationErrorDefinitions
         public bool IgnoreCase { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.EnumName, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -1491,7 +1626,10 @@ public static class BuiltInValidationErrorDefinitions
         public PrecisionScaleDescriptor Descriptor { get; }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.PrecisionScale, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
@@ -1510,7 +1648,10 @@ public static class BuiltInValidationErrorDefinitions
             : base(code: "Predicate") { }
 
         /// <inheritdoc />
-        public override bool IsMessageStable => true;
+        public override bool TryGetStableMessageProvider<T>(
+            in ValidationErrorMessageContext<T> context,
+            out object provider
+        ) => TryGetStableProvider(context.ValidationContext.ErrorTemplates.Predicate, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
