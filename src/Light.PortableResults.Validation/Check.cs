@@ -16,7 +16,10 @@ public readonly struct Check<T>
     /// </summary>
     /// <param name="context">The validation context.</param>
     /// <param name="target">The target descriptor.</param>
-    /// <param name="displayName">The human-readable display name.</param>
+    /// <param name="displayName">
+    /// The human-readable display name, or <see langword="null" /> to derive it from the resolved target at
+    /// message-formatting time.
+    /// </param>
     /// <param name="value">The value being validated.</param>
     /// <param name="resolvedAbsoluteTarget">
     /// The already-resolved absolute target, or <see langword="null" /> when it has not been materialized yet.
@@ -24,11 +27,10 @@ public readonly struct Check<T>
     /// <param name="isShortCircuited">Indicates whether further checks should be skipped.</param>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="context" /> is the default instance.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="target" /> is the default instance.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="displayName" /> is <see langword="null" />.</exception>
     public Check(
         ValidationContext context,
         ValidationTarget target,
-        string displayName,
+        string? displayName,
         T value,
         string? resolvedAbsoluteTarget,
         bool isShortCircuited
@@ -42,7 +44,7 @@ public readonly struct Check<T>
 
         Context = context;
         TargetDescriptor = target;
-        DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
+        DisplayName = displayName;
         Value = value;
         _resolvedAbsoluteTarget = resolvedAbsoluteTarget;
         IsShortCircuited = isShortCircuited;
@@ -64,9 +66,10 @@ public readonly struct Check<T>
     public string Target => _resolvedAbsoluteTarget ?? TargetDescriptor.Input;
 
     /// <summary>
-    /// Gets the display name for the current value.
+    /// Gets the display name for the current value, or <see langword="null" /> when the display name should be
+    /// derived from the resolved target at message-formatting time.
     /// </summary>
-    public string DisplayName { get; }
+    public string? DisplayName { get; }
 
     /// <summary>
     /// Gets the current value.
@@ -133,10 +136,7 @@ public readonly struct Check<T>
         }
 
         var resolvedTarget = Context.ResolveTarget(TargetDescriptor);
-        var displayName = string.Equals(DisplayName, TargetDescriptor.Input, StringComparison.Ordinal) ?
-            resolvedTarget :
-            DisplayName;
-        return new Check<T>(Context, TargetDescriptor, displayName, Value, resolvedTarget, IsShortCircuited);
+        return new Check<T>(Context, TargetDescriptor, DisplayName, Value, resolvedTarget, IsShortCircuited);
     }
 
     /// <summary>
@@ -274,14 +274,87 @@ public readonly struct Check<T>
             return this;
         }
 
+        var cache = Context.ErrorTemplates.MessageCache;
+        return cache is not null && definition.TryGetStableMessageProvider(Context.AsReadOnly(), out var provider) ?
+            AddErrorWithMessageCaching(definition, code, metadata, target, category, provider, cache) :
+            AddErrorWithoutMessageCaching(definition, code, metadata, target, category);
+    }
+
+    private Check<T> AddErrorWithoutMessageCaching(
+        ValidationErrorDefinition definition,
+        string? code,
+        MetadataObject? metadata,
+        ValidationTarget? target,
+        ErrorCategory? category
+    )
+    {
         var normalizedCheck = NormalizeTargetIfNecessary();
         var messageContext = normalizedCheck.CreateMessageContextCore();
-        var message = normalizedCheck.GetMessage(definition, in messageContext);
+        var message = definition.ProvideMessage(in messageContext);
         var resolvedTarget = ResolveDefinitionTarget(normalizedCheck, definition.Target, target);
         normalizedCheck.Context.AddError(
             message.ToError(
                 code ?? definition.Code,
                 resolvedTarget,
+                category ?? definition.Category,
+                metadata ?? definition.Metadata
+            )
+        );
+        return normalizedCheck;
+    }
+
+    private Check<T> AddErrorWithMessageCaching(
+        ValidationErrorDefinition definition,
+        string? code,
+        MetadataObject? metadata,
+        ValidationTarget? target,
+        ErrorCategory? category,
+        object provider,
+        IValidationErrorMessageCache cache
+    )
+    {
+        var key = new ValidationErrorMessageCacheKey(
+            provider,
+            TargetDescriptor,
+            Context.TargetPrefix,
+            DisplayName,
+            Context.Options.CultureInfo
+        );
+        if (cache.TryGet(key, out var entry))
+        {
+            var resolvedTarget = target is null && definition.Target is null ?
+                entry.ResolvedTarget :
+                ResolveOverrideOrDefinitionTarget(entry.ResolvedTarget, definition.Target, target);
+            Context.AddError(
+                entry.Message.ToError(
+                    code ?? definition.Code,
+                    resolvedTarget,
+                    category ?? definition.Category,
+                    metadata ?? definition.Metadata
+                )
+            );
+            return new Check<T>(
+                Context,
+                TargetDescriptor,
+                DisplayName,
+                Value,
+                entry.ResolvedTarget,
+                IsShortCircuited
+            );
+        }
+
+        var normalizedCheck = NormalizeTargetIfNecessary();
+        var messageContext = normalizedCheck.CreateMessageContextCore();
+        var message = definition.ProvideMessage(in messageContext);
+        cache.Store(
+            key,
+            new CachedValidationErrorMessage(message, normalizedCheck.GetResolvedAbsoluteTarget())
+        );
+        var defTarget = ResolveDefinitionTarget(normalizedCheck, definition.Target, target);
+        normalizedCheck.Context.AddError(
+            message.ToError(
+                code ?? definition.Code,
+                defTarget,
                 category ?? definition.Category,
                 metadata ?? definition.Metadata
             )
@@ -321,16 +394,60 @@ public readonly struct Check<T>
             return this;
         }
 
-        var normalizedCheck = NormalizeTargetIfNecessary();
-        var messageContext = normalizedCheck.CreateMessageContextCore();
-        var message = normalizedCheck.GetMessage(template, in messageContext);
-        return normalizedCheck.AddError(
-            message,
-            code,
-            metadata,
-            target,
-            respectShortCircuit: false
-        );
+        var cache = Context.ErrorTemplates.MessageCache;
+        if (template.IsMessageStable && cache is not null)
+        {
+            var key = new ValidationErrorMessageCacheKey(
+                template,
+                TargetDescriptor,
+                Context.TargetPrefix,
+                DisplayName,
+                Context.Options.CultureInfo
+            );
+            if (cache.TryGet(key, out var entry))
+            {
+                var resolvedTarget = target is null ? entry.ResolvedTarget : Context.ResolveTarget(target.Value);
+                Context.AddError(
+                    entry.Message.ToError(code, resolvedTarget, ErrorCategory.Validation, metadata)
+                );
+                return new Check<T>(
+                    Context,
+                    TargetDescriptor,
+                    DisplayName,
+                    Value,
+                    entry.ResolvedTarget,
+                    IsShortCircuited
+                );
+            }
+
+            var normalizedCheck = NormalizeTargetIfNecessary();
+            var messageContext = normalizedCheck.CreateMessageContextCore();
+            var message = template.ProvideMessage(in messageContext);
+            cache.Store(
+                key,
+                new CachedValidationErrorMessage(message, normalizedCheck.GetResolvedAbsoluteTarget())
+            );
+            var tplTarget = target is null ?
+                normalizedCheck.GetResolvedAbsoluteTarget() :
+                normalizedCheck.Context.ResolveTarget(target.Value);
+            normalizedCheck.Context.AddError(
+                message.ToError(code, tplTarget, ErrorCategory.Validation, metadata)
+            );
+            return normalizedCheck;
+        }
+
+        {
+            var normalizedCheck = NormalizeTargetIfNecessary();
+            var messageContext = normalizedCheck.CreateMessageContextCore();
+            var message = template.ProvideMessage(in messageContext);
+            return normalizedCheck.AddError(
+                message,
+                code,
+                metadata,
+                target,
+                respectShortCircuit: false
+            );
+        }
     }
 
     /// <summary>
@@ -420,64 +537,11 @@ public readonly struct Check<T>
         ValidationTarget.Absolute(GetResolvedAbsoluteTarget(), isNormalized: true);
 
     private ValidationErrorMessageContext<T> CreateMessageContextCore() =>
-        Context.CreateAbsoluteMessageContext(Value, _resolvedAbsoluteTarget!, DisplayName);
-
-    private ValidationErrorMessage GetMessage(
-        ValidationErrorDefinition definition,
-        in ValidationErrorMessageContext<T> messageContext
-    )
-    {
-        var cache = Context.ErrorTemplates.MessageCache;
-        if (cache is null || !definition.TryGetStableMessageProvider(in messageContext, out var provider))
-        {
-            return definition.ProvideMessage(in messageContext);
-        }
-
-        var key = new ValidationErrorMessageCacheKey(
-            provider,
-            DisplayName,
-            Context.Options.CultureInfo
+        Context.CreateAbsoluteMessageContext(
+            Value,
+            _resolvedAbsoluteTarget!,
+            DisplayName ?? _resolvedAbsoluteTarget ?? TargetDescriptor.Input
         );
-        if (cache.TryGet(key, out var message))
-        {
-            return message;
-        }
-
-        message = definition.ProvideMessage(in messageContext);
-        cache.Store(key, message);
-        return message;
-    }
-
-    private ValidationErrorMessage GetMessage(
-        IValidationErrorMessageTemplate template,
-        in ValidationErrorMessageContext<T> messageContext
-    )
-    {
-        if (!template.IsMessageStable)
-        {
-            return template.ProvideMessage(in messageContext);
-        }
-
-        var cache = Context.ErrorTemplates.MessageCache;
-        if (cache is null)
-        {
-            return template.ProvideMessage(in messageContext);
-        }
-
-        var key = new ValidationErrorMessageCacheKey(
-            template,
-            DisplayName,
-            Context.Options.CultureInfo
-        );
-        if (cache.TryGet(key, out var message))
-        {
-            return message;
-        }
-
-        message = template.ProvideMessage(in messageContext);
-        cache.Store(key, message);
-        return message;
-    }
 
     private static string ResolveDefinitionTarget(
         Check<T> normalizedCheck,
@@ -493,6 +557,22 @@ public readonly struct Check<T>
         return definitionTarget is not null ?
             normalizedCheck.Context.ResolveTarget(definitionTarget.Value) :
             normalizedCheck.GetResolvedAbsoluteTarget();
+    }
+
+    private string ResolveOverrideOrDefinitionTarget(
+        string cachedResolvedTarget,
+        ValidationTarget? definitionTarget,
+        ValidationTarget? overrideTarget
+    )
+    {
+        if (overrideTarget is not null)
+        {
+            return Context.ResolveTarget(overrideTarget.Value);
+        }
+
+        return definitionTarget is not null ?
+            Context.ResolveTarget(definitionTarget.Value) :
+            cachedResolvedTarget;
     }
 
     private string GetResolvedAbsoluteTarget() => _resolvedAbsoluteTarget ?? Context.ResolveTarget(TargetDescriptor);

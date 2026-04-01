@@ -15,7 +15,51 @@ public sealed class ValidationContextTests
 
         check.Value.Should().Be("Alice");
         check.Target.Should().Be("firstName");
-        check.DisplayName.Should().Be("firstName");
+        check.DisplayName.Should().BeNull();
+    }
+
+    [Fact]
+    public void Check_DisplayName_ShouldBeNull_WhenNotExplicitlySet()
+    {
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+
+        var check = context.Check("value", target: "myTarget");
+
+        check.DisplayName.Should().BeNull();
+    }
+
+    [Fact]
+    public void Check_DisplayName_ShouldRetainExplicitValue()
+    {
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+
+        var check = context.Check("value", target: "myTarget", displayName: "My Display Name");
+
+        check.DisplayName.Should().Be("My Display Name");
+    }
+
+    [Fact]
+    public void Check_DisplayName_ShouldNotChangeAfterNormalization()
+    {
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+
+        var check = context.Check("Alice", target: "person.FirstName")
+           .NormalizeTargetIfNecessary();
+
+        check.DisplayName.Should().BeNull();
+        check.Target.Should().Be("firstName");
+    }
+
+    [Fact]
+    public void Check_WithDisplayName_ShouldNotBeAffectedByNormalization()
+    {
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+
+        var check = context.Check("Alice", target: "person.FirstName", displayName: "Custom Name")
+           .NormalizeTargetIfNecessary();
+
+        check.DisplayName.Should().Be("Custom Name");
+        check.Target.Should().Be("firstName");
     }
 
     [Fact]

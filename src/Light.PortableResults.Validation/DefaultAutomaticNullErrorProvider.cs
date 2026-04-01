@@ -5,7 +5,10 @@ namespace Light.PortableResults.Validation;
 /// </summary>
 public sealed class DefaultAutomaticNullErrorProvider : IAutomaticNullErrorProvider
 {
-    private DefaultAutomaticNullErrorProvider() { }
+    /// <summary>
+    /// Initializes a new instance of <see cref="DefaultAutomaticNullErrorProvider" />.
+    /// </summary>
+    public DefaultAutomaticNullErrorProvider() { }
 
     /// <summary>
     /// Gets the shared singleton instance.
@@ -21,18 +24,28 @@ public sealed class DefaultAutomaticNullErrorProvider : IAutomaticNullErrorProvi
 
         if (
             cache is not null &&
-            definition.TryGetStableMessageProvider(in context, out var provider)
+            definition.TryGetStableMessageProvider(context.ValidationContext, out var provider)
         )
         {
+            // The automatic null error provider is called with an already-resolved target, so we use
+            // ValidationTarget.Absolute for the cache key. The target prefix is empty because the target
+            // is pre-composed.
+            var absoluteTarget = ValidationTarget.Absolute(context.Target, isNormalized: true);
             var key = new ValidationErrorMessageCacheKey(
                 provider,
+                absoluteTarget,
+                string.Empty,
                 context.DisplayName,
                 context.ValidationContext.Options.CultureInfo
             );
-            if (!cache.TryGet(key, out message))
+            if (!cache.TryGet(key, out var entry))
             {
                 message = definition.ProvideMessage(in context);
-                cache.Store(key, message);
+                cache.Store(key, new CachedValidationErrorMessage(message, context.Target));
+            }
+            else
+            {
+                message = entry.Message;
             }
         }
         else

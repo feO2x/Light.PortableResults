@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Light.PortableResults.Metadata;
 
 namespace Light.PortableResults.Validation;
@@ -56,19 +57,18 @@ public abstract class ValidationErrorDefinition
     /// <summary>
     /// Tries to get the effective provider that determines a stable message for the specified context.
     /// </summary>
-    /// <typeparam name="T">The checked value type.</typeparam>
-    /// <param name="context">The message context.</param>
+    /// <param name="context">The readonly validation context.</param>
     /// <param name="provider">The effective message provider when the message is stable.</param>
     /// <returns>
     /// <see langword="true" /> when the message is stable for the current context and can participate in caching;
     /// otherwise, <see langword="false" />.
     /// </returns>
-    public virtual bool TryGetStableMessageProvider<T>(
-        in ValidationErrorMessageContext<T> context,
-        out object provider
+    public virtual bool TryGetStableMessageProvider(
+        ReadOnlyValidationContext context,
+        [NotNullWhen(true)] out object? provider
     )
     {
-        provider = null!;
+        provider = null;
         return false;
     }
 
@@ -147,14 +147,14 @@ public class TemplateValidationErrorDefinition : ValidationErrorDefinition
     public override bool IsMessageStable => Template.IsMessageStable;
 
     /// <inheritdoc />
-    public override bool TryGetStableMessageProvider<T>(
-        in ValidationErrorMessageContext<T> context,
-        out object provider
+    public override bool TryGetStableMessageProvider(
+        ReadOnlyValidationContext context,
+        [NotNullWhen(true)] out object? provider
     )
     {
         if (!Template.IsMessageStable)
         {
-            provider = null!;
+            provider = null;
             return false;
         }
 
@@ -204,14 +204,14 @@ public class TemplateValidationErrorDefinition<TParameter> : ValidationErrorDefi
     public override bool IsMessageStable => Template.IsMessageStable;
 
     /// <inheritdoc />
-    public override bool TryGetStableMessageProvider<T>(
-        in ValidationErrorMessageContext<T> context,
-        out object provider
+    public override bool TryGetStableMessageProvider(
+        ReadOnlyValidationContext context,
+        [NotNullWhen(true)] out object? provider
     )
     {
         if (!Template.IsMessageStable)
         {
-            provider = null!;
+            provider = null;
             return false;
         }
 

@@ -267,7 +267,6 @@ public readonly struct ValidationContext
     {
         EnsureInitialized();
         var validatedTarget = EnsureTarget(target, nameof(target));
-        displayName ??= validatedTarget.Input;
         value = NormalizeValueIfNecessary(value, stringValueNormalizer ?? Options.StringValueNormalizer);
         return new Check<T>(
             this,

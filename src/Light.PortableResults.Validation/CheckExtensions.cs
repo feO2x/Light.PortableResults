@@ -908,6 +908,9 @@ public static class CheckExtensions
                 displayName: CreateIndexedDisplayName(check, index)
             );
 
-    private static string CreateIndexedDisplayName<TCollection>(Check<TCollection> check, int index) =>
-        check.DisplayName.Length == 0 ? $"[{index}]" : $"{check.DisplayName}[{index}]";
+    private static string CreateIndexedDisplayName<TCollection>(Check<TCollection> check, int index)
+    {
+        var name = check.DisplayName ?? check.Target;
+        return name.Length == 0 ? $"[{index}]" : $"{name}[{index}]";
+    }
 }

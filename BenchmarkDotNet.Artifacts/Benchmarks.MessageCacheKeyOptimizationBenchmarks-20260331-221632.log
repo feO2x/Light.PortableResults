@@ -1,0 +1,264 @@
+// Validating benchmarks:
+// ***** BenchmarkRunner: Start   *****
+// ***** Found 2 benchmark(s) in total *****
+// ***** Building 1 exe(s) in Parallel: Start   *****
+// start dotnet  restore --nodeReuse:false /p:UseSharedCompilation=false /p:Deterministic=true /p:Optimize=true /p:ArtifactsPath="/Users/kenny/Code/Light.PortableResults/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-Job-MEHJPP-1/" /p:OutDir="/Users/kenny/Code/Light.PortableResults/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-Job-MEHJPP-1/bin/Release/net10.0/" /p:OutputPath="/Users/kenny/Code/Light.PortableResults/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-Job-MEHJPP-1/bin/Release/net10.0/" /p:PublishDir="/Users/kenny/Code/Light.PortableResults/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-Job-MEHJPP-1/publish/" in /Users/kenny/Code/Light.PortableResults/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-Job-MEHJPP-1
+// command took 0.91 sec and exited with 0
+// start dotnet  build -c Release --no-restore --nodeReuse:false /p:UseSharedCompilation=false /p:Deterministic=true /p:Optimize=true /p:ArtifactsPath="/Users/kenny/Code/Light.PortableResults/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-Job-MEHJPP-1/" /p:OutDir="/Users/kenny/Code/Light.PortableResults/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-Job-MEHJPP-1/bin/Release/net10.0/" /p:OutputPath="/Users/kenny/Code/Light.PortableResults/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-Job-MEHJPP-1/bin/Release/net10.0/" /p:PublishDir="/Users/kenny/Code/Light.PortableResults/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-Job-MEHJPP-1/publish/" --output "/Users/kenny/Code/Light.PortableResults/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-Job-MEHJPP-1/bin/Release/net10.0/" in /Users/kenny/Code/Light.PortableResults/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-Job-MEHJPP-1
+// command took 6.91 sec and exited with 0
+// ***** Done, took 00:00:07 (7.88 sec)   *****
+// Found 2 benchmarks:
+//   MessageCacheKeyOptimizationBenchmarks.NestedValidationWithoutCache: Job-MEHJPP(IterationCount=5, WarmupCount=1)
+//   MessageCacheKeyOptimizationBenchmarks.NestedValidationWithCache: Job-MEHJPP(IterationCount=5, WarmupCount=1)
+
+// **************************
+// Benchmark: MessageCacheKeyOptimizationBenchmarks.NestedValidationWithoutCache: Job-MEHJPP(IterationCount=5, WarmupCount=1)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet Benchmarks-Job-MEHJPP-1.dll --anonymousPipes 134 135 --benchmarkName Benchmarks.MessageCacheKeyOptimizationBenchmarks.NestedValidationWithoutCache --job "IterationCount=5, WarmupCount=1" --benchmarkId 0 in /Users/kenny/Code/Light.PortableResults/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-Job-MEHJPP-1/bin/Release/net10.0
+// Failed to set up high priority (Permission denied). In order to run benchmarks with high priority, make sure you have the right permissions.
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.15.8
+// Runtime=.NET 10.0.5 (10.0.5, 10.0.526.15411), Arm64 RyuJIT armv8.0-a
+// GC=Concurrent Workstation
+// HardwareIntrinsics=ArmBase+AdvSimd,AES,CRC32,DP,RDM,SHA1,SHA256 VectorSize=128
+// Job: Job-MEHJPP(IterationCount=5, WarmupCount=1)
+
+OverheadJitting  1: 1 op, 72708.00 ns, 72.7080 us/op
+WorkloadJitting  1: 1 op, 3210209.00 ns, 3.2102 ms/op
+
+OverheadJitting  2: 16 op, 188000.00 ns, 11.7500 us/op
+WorkloadJitting  2: 16 op, 490583.00 ns, 30.6614 us/op
+
+WorkloadPilot    1: 16 op, 52042.00 ns, 3.2526 us/op
+WorkloadPilot    2: 32 op, 87875.00 ns, 2.7461 us/op
+WorkloadPilot    3: 64 op, 173625.00 ns, 2.7129 us/op
+WorkloadPilot    4: 128 op, 379125.00 ns, 2.9619 us/op
+WorkloadPilot    5: 256 op, 708458.00 ns, 2.7674 us/op
+WorkloadPilot    6: 512 op, 1340250.00 ns, 2.6177 us/op
+WorkloadPilot    7: 1024 op, 2741375.00 ns, 2.6771 us/op
+WorkloadPilot    8: 2048 op, 5086083.00 ns, 2.4834 us/op
+WorkloadPilot    9: 4096 op, 10639458.00 ns, 2.5975 us/op
+WorkloadPilot   10: 8192 op, 21375375.00 ns, 2.6093 us/op
+WorkloadPilot   11: 16384 op, 41731500.00 ns, 2.5471 us/op
+WorkloadPilot   12: 32768 op, 77364084.00 ns, 2.3610 us/op
+WorkloadPilot   13: 65536 op, 48973958.00 ns, 747.2833 ns/op
+WorkloadPilot   14: 131072 op, 78354833.00 ns, 597.7999 ns/op
+WorkloadPilot   15: 262144 op, 91220834.00 ns, 347.9799 ns/op
+WorkloadPilot   16: 524288 op, 181117583.00 ns, 345.4544 ns/op
+WorkloadPilot   17: 1048576 op, 359293875.00 ns, 342.6493 ns/op
+WorkloadPilot   18: 2097152 op, 718472709.00 ns, 342.5945 ns/op
+
+OverheadWarmup   1: 2097152 op, 4111834.00 ns, 1.9607 ns/op
+OverheadWarmup   2: 2097152 op, 4237167.00 ns, 2.0204 ns/op
+OverheadWarmup   3: 2097152 op, 4355792.00 ns, 2.0770 ns/op
+OverheadWarmup   4: 2097152 op, 4316541.00 ns, 2.0583 ns/op
+OverheadWarmup   5: 2097152 op, 4251084.00 ns, 2.0271 ns/op
+OverheadWarmup   6: 2097152 op, 4291250.00 ns, 2.0462 ns/op
+OverheadWarmup   7: 2097152 op, 4042125.00 ns, 1.9274 ns/op
+
+OverheadActual   1: 2097152 op, 4242875.00 ns, 2.0232 ns/op
+OverheadActual   2: 2097152 op, 4263667.00 ns, 2.0331 ns/op
+OverheadActual   3: 2097152 op, 4054750.00 ns, 1.9335 ns/op
+OverheadActual   4: 2097152 op, 4331542.00 ns, 2.0654 ns/op
+OverheadActual   5: 2097152 op, 4020000.00 ns, 1.9169 ns/op
+OverheadActual   6: 2097152 op, 4184625.00 ns, 1.9954 ns/op
+OverheadActual   7: 2097152 op, 3993458.00 ns, 1.9042 ns/op
+OverheadActual   8: 2097152 op, 4352458.00 ns, 2.0754 ns/op
+OverheadActual   9: 2097152 op, 4246208.00 ns, 2.0247 ns/op
+OverheadActual  10: 2097152 op, 4202125.00 ns, 2.0037 ns/op
+OverheadActual  11: 2097152 op, 4150917.00 ns, 1.9793 ns/op
+OverheadActual  12: 2097152 op, 4255375.00 ns, 2.0291 ns/op
+OverheadActual  13: 2097152 op, 4308167.00 ns, 2.0543 ns/op
+OverheadActual  14: 2097152 op, 4190208.00 ns, 1.9980 ns/op
+OverheadActual  15: 2097152 op, 4303375.00 ns, 2.0520 ns/op
+
+WorkloadWarmup   1: 2097152 op, 719136292.00 ns, 342.9109 ns/op
+
+// BeforeActualRun
+WorkloadActual   1: 2097152 op, 723741916.00 ns, 345.1070 ns/op
+WorkloadActual   2: 2097152 op, 744979792.00 ns, 355.2340 ns/op
+WorkloadActual   3: 2097152 op, 739050833.00 ns, 352.4069 ns/op
+WorkloadActual   4: 2097152 op, 732707667.00 ns, 349.3822 ns/op
+WorkloadActual   5: 2097152 op, 724067917.00 ns, 345.2625 ns/op
+
+// AfterActualRun
+WorkloadResult   1: 2097152 op, 719499041.00 ns, 343.0839 ns/op
+WorkloadResult   2: 2097152 op, 740736917.00 ns, 353.2109 ns/op
+WorkloadResult   3: 2097152 op, 734807958.00 ns, 350.3837 ns/op
+WorkloadResult   4: 2097152 op, 728464792.00 ns, 347.3591 ns/op
+WorkloadResult   5: 2097152 op, 719825042.00 ns, 343.2393 ns/op
+// GC:  429 2 0 3590324224 2097152
+// Threading:  0 0 2097152
+
+// AfterAll
+// Benchmark Process 67998 has exited with code 0.
+
+Mean = 347.455 ns, StdErr = 1.982 ns (0.57%), N = 5, StdDev = 4.433 ns
+Min = 343.084 ns, Q1 = 343.239 ns, Median = 347.359 ns, Q3 = 350.384 ns, Max = 353.211 ns
+IQR = 7.144 ns, LowerFence = 332.523 ns, UpperFence = 361.100 ns
+ConfidenceInterval = [330.387 ns; 364.524 ns] (CI 99.9%), Margin = 17.069 ns (4.91% of Mean)
+Skewness = 0.13, Kurtosis = 0.96, MValue = 2
+
+// ** Remained 1 (50,0 %) benchmark(s) to run. Estimated finish 2026-03-31 22:16 (0h 0m from now) **
+// **************************
+// Benchmark: MessageCacheKeyOptimizationBenchmarks.NestedValidationWithCache: Job-MEHJPP(IterationCount=5, WarmupCount=1)
+// *** Execute ***
+// Launch: 1 / 1
+// Execute: dotnet Benchmarks-Job-MEHJPP-1.dll --anonymousPipes 134 135 --benchmarkName Benchmarks.MessageCacheKeyOptimizationBenchmarks.NestedValidationWithCache --job "IterationCount=5, WarmupCount=1" --benchmarkId 1 in /Users/kenny/Code/Light.PortableResults/benchmarks/Benchmarks/bin/Release/net10.0/Benchmarks-Job-MEHJPP-1/bin/Release/net10.0
+// Failed to set up high priority (Permission denied). In order to run benchmarks with high priority, make sure you have the right permissions.
+// BeforeAnythingElse
+
+// Benchmark Process Environment Information:
+// BenchmarkDotNet v0.15.8
+// Runtime=.NET 10.0.5 (10.0.5, 10.0.526.15411), Arm64 RyuJIT armv8.0-a
+// GC=Concurrent Workstation
+// HardwareIntrinsics=ArmBase+AdvSimd,AES,CRC32,DP,RDM,SHA1,SHA256 VectorSize=128
+// Job: Job-MEHJPP(IterationCount=5, WarmupCount=1)
+
+OverheadJitting  1: 1 op, 80917.00 ns, 80.9170 us/op
+WorkloadJitting  1: 1 op, 4436166.00 ns, 4.4362 ms/op
+
+OverheadJitting  2: 16 op, 221500.00 ns, 13.8438 us/op
+WorkloadJitting  2: 16 op, 537333.00 ns, 33.5833 us/op
+
+WorkloadPilot    1: 16 op, 55166.00 ns, 3.4479 us/op
+WorkloadPilot    2: 32 op, 110834.00 ns, 3.4636 us/op
+WorkloadPilot    3: 64 op, 231792.00 ns, 3.6218 us/op
+WorkloadPilot    4: 128 op, 396959.00 ns, 3.1012 us/op
+WorkloadPilot    5: 256 op, 800250.00 ns, 3.1260 us/op
+WorkloadPilot    6: 512 op, 1559791.00 ns, 3.0465 us/op
+WorkloadPilot    7: 1024 op, 3227375.00 ns, 3.1517 us/op
+WorkloadPilot    8: 2048 op, 6403541.00 ns, 3.1267 us/op
+WorkloadPilot    9: 4096 op, 12639625.00 ns, 3.0858 us/op
+WorkloadPilot   10: 8192 op, 25134959.00 ns, 3.0682 us/op
+WorkloadPilot   11: 16384 op, 53400667.00 ns, 3.2593 us/op
+WorkloadPilot   12: 32768 op, 68526209.00 ns, 2.0913 us/op
+WorkloadPilot   13: 65536 op, 61219209.00 ns, 934.1310 ns/op
+WorkloadPilot   14: 131072 op, 99580750.00 ns, 759.7408 ns/op
+WorkloadPilot   15: 262144 op, 115132458.00 ns, 439.1955 ns/op
+WorkloadPilot   16: 524288 op, 179108625.00 ns, 341.6226 ns/op
+WorkloadPilot   17: 1048576 op, 359727875.00 ns, 343.0632 ns/op
+WorkloadPilot   18: 2097152 op, 719596458.00 ns, 343.1303 ns/op
+
+OverheadWarmup   1: 2097152 op, 4003958.00 ns, 1.9092 ns/op
+OverheadWarmup   2: 2097152 op, 4183125.00 ns, 1.9947 ns/op
+OverheadWarmup   3: 2097152 op, 4298208.00 ns, 2.0495 ns/op
+OverheadWarmup   4: 2097152 op, 4351375.00 ns, 2.0749 ns/op
+OverheadWarmup   5: 2097152 op, 4286667.00 ns, 2.0440 ns/op
+OverheadWarmup   6: 2097152 op, 3845250.00 ns, 1.8336 ns/op
+OverheadWarmup   7: 2097152 op, 4293750.00 ns, 2.0474 ns/op
+OverheadWarmup   8: 2097152 op, 4255083.00 ns, 2.0290 ns/op
+
+OverheadActual   1: 2097152 op, 4184583.00 ns, 1.9954 ns/op
+OverheadActual   2: 2097152 op, 4307000.00 ns, 2.0537 ns/op
+OverheadActual   3: 2097152 op, 4120000.00 ns, 1.9646 ns/op
+OverheadActual   4: 2097152 op, 4119250.00 ns, 1.9642 ns/op
+OverheadActual   5: 2097152 op, 4266292.00 ns, 2.0343 ns/op
+OverheadActual   6: 2097152 op, 4131375.00 ns, 1.9700 ns/op
+OverheadActual   7: 2097152 op, 4077792.00 ns, 1.9444 ns/op
+OverheadActual   8: 2097152 op, 4102792.00 ns, 1.9564 ns/op
+OverheadActual   9: 2097152 op, 4359542.00 ns, 2.0788 ns/op
+OverheadActual  10: 2097152 op, 4334709.00 ns, 2.0670 ns/op
+OverheadActual  11: 2097152 op, 4343958.00 ns, 2.0714 ns/op
+OverheadActual  12: 2097152 op, 4275875.00 ns, 2.0389 ns/op
+OverheadActual  13: 2097152 op, 4294750.00 ns, 2.0479 ns/op
+OverheadActual  14: 2097152 op, 4301291.00 ns, 2.0510 ns/op
+OverheadActual  15: 2097152 op, 4237625.00 ns, 2.0207 ns/op
+
+WorkloadWarmup   1: 2097152 op, 720142708.00 ns, 343.3908 ns/op
+
+// BeforeActualRun
+WorkloadActual   1: 2097152 op, 719366250.00 ns, 343.0206 ns/op
+WorkloadActual   2: 2097152 op, 722523750.00 ns, 344.5262 ns/op
+WorkloadActual   3: 2097152 op, 717554042.00 ns, 342.1564 ns/op
+WorkloadActual   4: 2097152 op, 719769833.00 ns, 343.2130 ns/op
+WorkloadActual   5: 2097152 op, 716799167.00 ns, 341.7965 ns/op
+
+// AfterActualRun
+WorkloadResult   1: 2097152 op, 715099958.00 ns, 340.9862 ns/op
+WorkloadResult   2: 2097152 op, 718257458.00 ns, 342.4918 ns/op
+WorkloadResult   3: 2097152 op, 713287750.00 ns, 340.1221 ns/op
+WorkloadResult   4: 2097152 op, 715503541.00 ns, 341.1787 ns/op
+WorkloadResult   5: 2097152 op, 712532875.00 ns, 339.7622 ns/op
+// GC:  172 0 0 1442840576 2097152
+// Threading:  0 0 2097152
+
+// AfterAll
+// Benchmark Process 68040 has exited with code 0.
+
+Mean = 340.908 ns, StdErr = 0.475 ns (0.14%), N = 5, StdDev = 1.063 ns
+Min = 339.762 ns, Q1 = 340.122 ns, Median = 340.986 ns, Q3 = 341.179 ns, Max = 342.492 ns
+IQR = 1.057 ns, LowerFence = 338.537 ns, UpperFence = 342.764 ns
+ConfidenceInterval = [336.816 ns; 345.001 ns] (CI 99.9%), Margin = 4.093 ns (1.20% of Mean)
+Skewness = 0.33, Kurtosis = 1.32, MValue = 2
+
+// ** Remained 0 (0,0 %) benchmark(s) to run. Estimated finish 2026-03-31 22:16 (0h 0m from now) **
+// ***** BenchmarkRunner: Finish  *****
+
+// * Export *
+  BenchmarkDotNet.Artifacts/results/Benchmarks.MessageCacheKeyOptimizationBenchmarks-report.csv
+  BenchmarkDotNet.Artifacts/results/Benchmarks.MessageCacheKeyOptimizationBenchmarks-report-github.md
+  BenchmarkDotNet.Artifacts/results/Benchmarks.MessageCacheKeyOptimizationBenchmarks-report.html
+
+// * Detailed results *
+MessageCacheKeyOptimizationBenchmarks.NestedValidationWithoutCache: Job-MEHJPP(IterationCount=5, WarmupCount=1)
+Runtime = .NET 10.0.5 (10.0.5, 10.0.526.15411), Arm64 RyuJIT armv8.0-a; GC = Concurrent Workstation
+Mean = 347.455 ns, StdErr = 1.982 ns (0.57%), N = 5, StdDev = 4.433 ns
+Min = 343.084 ns, Q1 = 343.239 ns, Median = 347.359 ns, Q3 = 350.384 ns, Max = 353.211 ns
+IQR = 7.144 ns, LowerFence = 332.523 ns, UpperFence = 361.100 ns
+ConfidenceInterval = [330.387 ns; 364.524 ns] (CI 99.9%), Margin = 17.069 ns (4.91% of Mean)
+Skewness = 0.13, Kurtosis = 0.96, MValue = 2
+-------------------- Histogram --------------------
+[341.769 ns ; 356.613 ns) | @@@@@
+---------------------------------------------------
+
+MessageCacheKeyOptimizationBenchmarks.NestedValidationWithCache: Job-MEHJPP(IterationCount=5, WarmupCount=1)
+Runtime = .NET 10.0.5 (10.0.5, 10.0.526.15411), Arm64 RyuJIT armv8.0-a; GC = Concurrent Workstation
+Mean = 340.908 ns, StdErr = 0.475 ns (0.14%), N = 5, StdDev = 1.063 ns
+Min = 339.762 ns, Q1 = 340.122 ns, Median = 340.986 ns, Q3 = 341.179 ns, Max = 342.492 ns
+IQR = 1.057 ns, LowerFence = 338.537 ns, UpperFence = 342.764 ns
+ConfidenceInterval = [336.816 ns; 345.001 ns] (CI 99.9%), Margin = 4.093 ns (1.20% of Mean)
+Skewness = 0.33, Kurtosis = 1.32, MValue = 2
+-------------------- Histogram --------------------
+[338.946 ns ; 343.308 ns) | @@@@@
+---------------------------------------------------
+
+// * Summary *
+
+BenchmarkDotNet v0.15.8, macOS Tahoe 26.4 (25E246) [Darwin 25.4.0]
+Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
+.NET SDK 10.0.103
+  [Host]     : .NET 10.0.5 (10.0.5, 10.0.526.15411), Arm64 RyuJIT armv8.0-a
+  Job-MEHJPP : .NET 10.0.5 (10.0.5, 10.0.526.15411), Arm64 RyuJIT armv8.0-a
+
+IterationCount=5  WarmupCount=1  
+
+| Method                       | Mean     | Error    | StdDev  | Ratio | RatioSD | Gen0   | Gen1   | Allocated | Alloc Ratio |
+|----------------------------- |---------:|---------:|--------:|------:|--------:|-------:|-------:|----------:|------------:|
+| NestedValidationWithoutCache | 347.5 ns | 17.07 ns | 4.43 ns |  1.00 |    0.02 | 0.2046 | 0.0010 |    1712 B |        1.00 |
+| NestedValidationWithCache    | 340.9 ns |  4.09 ns | 1.06 ns |  0.98 |    0.01 | 0.0820 |      - |     688 B |        0.40 |
+
+// * Legends *
+  Mean        : Arithmetic mean of all measurements
+  Error       : Half of 99.9% confidence interval
+  StdDev      : Standard deviation of all measurements
+  Ratio       : Mean of the ratio distribution ([Current]/[Baseline])
+  RatioSD     : Standard deviation of the ratio distribution ([Current]/[Baseline])
+  Gen0        : GC Generation 0 collects per 1000 operations
+  Gen1        : GC Generation 1 collects per 1000 operations
+  Allocated   : Allocated memory per single operation (managed only, inclusive, 1KB = 1024B)
+  Alloc Ratio : Allocated memory ratio distribution ([Current]/[Baseline])
+  1 ns        : 1 Nanosecond (0.000000001 sec)
+
+// * Diagnostic Output - MemoryDiagnoser *
+
+
+// ***** BenchmarkRunner: End *****
+Run time: 00:00:14 (14.04 sec), executed benchmarks: 2
+
+Global total time: 00:00:22 (22.15 sec), executed benchmarks: 2
+// * Artifacts cleanup *
+Artifacts cleanup is finished

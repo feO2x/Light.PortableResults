@@ -120,6 +120,200 @@ public sealed class ValidationErrorMessageCachingTests
     }
 
     [Fact]
+    public void CacheHit_ShouldResolveTargetFromCachedEntry()
+    {
+        var cache = new SpyValidationErrorMessageCache();
+        var templates = new ValidationErrorTemplates { MessageCache = cache };
+        var template = new StableCountingTemplate(" is required");
+        var firstContext = CreateContext(templates);
+        var secondContext = CreateContext(templates);
+
+        firstContext.Check(string.Empty, target: "name").AddError(template);
+        secondContext.Check(string.Empty, target: "name").AddError(template);
+
+        template.InvocationCount.Should().Be(1);
+        firstContext.Errors[0].Target.Should().Be("name");
+        secondContext.Errors[0].Target.Should().Be("name");
+    }
+
+    [Fact]
+    public void CacheHit_ShouldSetResolvedAbsoluteTarget_SoThatSubsequentAssertionsWork()
+    {
+        var cache = new SpyValidationErrorMessageCache();
+        var templates = new ValidationErrorTemplates { MessageCache = cache };
+        var definition = new TemplateValidationErrorDefinition(
+            new StableCountingTemplate(" is required"),
+            code: "Required"
+        );
+        var context = CreateContext(templates);
+
+        var check = context
+           .Check(string.Empty, target: "name")
+           .AddError(definition)
+           .AddError(definition, code: "Required2");
+
+        check.Target.Should().Be("name");
+        context.Errors.Count.Should().Be(2);
+        context.Errors[0].Target.Should().Be("name");
+        context.Errors[1].Target.Should().Be("name");
+    }
+
+    [Fact]
+    public void CustomDisplayName_ShouldProduceDifferentCacheEntries()
+    {
+        var cache = new SpyValidationErrorMessageCache();
+        var templates = new ValidationErrorTemplates { MessageCache = cache };
+        var template = new StableCountingTemplate(" is required");
+        var context = CreateContext(templates);
+
+        context.Check(string.Empty, target: "name", displayName: "First Name").AddError(template);
+        context.Check(string.Empty, target: "name", displayName: "Last Name").AddError(template);
+
+        template.InvocationCount.Should().Be(2);
+        cache.StoreCalls.Should().Be(2);
+        context.Errors[0].Message.Should().Be("First Name is required");
+        context.Errors[1].Message.Should().Be("Last Name is required");
+    }
+
+    [Fact]
+    public void NestedValidationScope_ShouldUsePrefixInCacheKey()
+    {
+        var cache = new SpyValidationErrorMessageCache();
+        var templates = new ValidationErrorTemplates { MessageCache = cache };
+        var template = new StableCountingTemplate(" is required");
+        var rootContext = CreateContext(templates);
+        var addressContext = rootContext.ForMember("address", isNormalized: true);
+        var billingContext = rootContext.ForMember("billing", isNormalized: true);
+
+        addressContext.Check(string.Empty, target: "city").AddError(template);
+        billingContext.Check(string.Empty, target: "city").AddError(template);
+
+        template.InvocationCount.Should().Be(2);
+        cache.StoreCalls.Should().Be(2);
+        rootContext.Errors[0].Target.Should().Be("address.city");
+        rootContext.Errors[1].Target.Should().Be("billing.city");
+        rootContext.Errors[0].Message.Should().Be("address.city is required");
+        rootContext.Errors[1].Message.Should().Be("billing.city is required");
+    }
+
+    [Fact]
+    public void NestedSamePrefix_ShouldHitCacheOnSecondCall()
+    {
+        var cache = new SpyValidationErrorMessageCache();
+        var templates = new ValidationErrorTemplates { MessageCache = cache };
+        var template = new StableCountingTemplate(" is required");
+        var firstContext = CreateContext(templates);
+        var secondContext = CreateContext(templates);
+        var firstChild = firstContext.ForMember("address", isNormalized: true);
+        var secondChild = secondContext.ForMember("address", isNormalized: true);
+
+        firstChild.Check(string.Empty, target: "city").AddError(template);
+        secondChild.Check(string.Empty, target: "city").AddError(template);
+
+        template.InvocationCount.Should().Be(1);
+        cache.TryGetCalls.Should().Be(2);
+        cache.StoreCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public void DefinitionTarget_ShouldNotAffectCacheKeyButShouldResolveCorrectly()
+    {
+        var cache = new SpyValidationErrorMessageCache();
+        var templates = new ValidationErrorTemplates { MessageCache = cache };
+        var definition = new TemplateValidationErrorDefinition(
+            new StableCountingTemplate(" is required"),
+            code: "Required",
+            target: ValidationTarget.Relative("customTarget", isNormalized: true)
+        );
+        var firstContext = CreateContext(templates);
+        var secondContext = CreateContext(templates);
+
+        firstContext.Check(string.Empty, target: "name").AddError(definition);
+        secondContext.Check(string.Empty, target: "name").AddError(definition);
+
+        firstContext.Errors[0].Target.Should().Be("customTarget");
+        secondContext.Errors[0].Target.Should().Be("customTarget");
+    }
+
+    [Fact]
+    public void OverrideTarget_ShouldBeResolvedOnCacheHit()
+    {
+        var cache = new SpyValidationErrorMessageCache();
+        var templates = new ValidationErrorTemplates { MessageCache = cache };
+        var definition = new TemplateValidationErrorDefinition(
+            new StableCountingTemplate(" is required"),
+            code: "Required"
+        );
+        var firstContext = CreateContext(templates);
+        var secondContext = CreateContext(templates);
+        var overrideTarget = ValidationTarget.Relative("overriddenTarget", isNormalized: true);
+
+        firstContext.Check(string.Empty, target: "name").AddError(definition, target: overrideTarget);
+        secondContext.Check(string.Empty, target: "name").AddError(definition, target: overrideTarget);
+
+        firstContext.Errors[0].Target.Should().Be("overriddenTarget");
+        secondContext.Errors[0].Target.Should().Be("overriddenTarget");
+    }
+
+    [Fact]
+    public void NullableDisplayName_ShouldDeriveFromResolvedTarget()
+    {
+        var context = CreateContext(new ValidationErrorTemplates());
+        var template = new StableCountingTemplate(" is required");
+
+        context.Check(string.Empty, target: "firstName").AddError(template);
+
+        context.Errors[0].Message.Should().Be("firstName is required");
+        context.Errors[0].Target.Should().Be("firstName");
+    }
+
+    [Fact]
+    public void NullableDisplayName_InNestedScope_ShouldDeriveFromComposedTarget()
+    {
+        var context = CreateContext(new ValidationErrorTemplates());
+        var childContext = context.ForMember("address", isNormalized: true);
+        var template = new StableCountingTemplate(" is required");
+
+        childContext.Check(string.Empty, target: "zipCode").AddError(template);
+
+        context.Errors[0].Message.Should().Be("address.zipCode is required");
+        context.Errors[0].Target.Should().Be("address.zipCode");
+    }
+
+    [Fact]
+    public void ExplicitDisplayName_ShouldOverrideNullDefaultInMessage()
+    {
+        var context = CreateContext(new ValidationErrorTemplates());
+        var template = new StableCountingTemplate(" is required");
+
+        context.Check(string.Empty, target: "firstName", displayName: "First Name").AddError(template);
+
+        context.Errors[0].Message.Should().Be("First Name is required");
+        context.Errors[0].Target.Should().Be("firstName");
+    }
+
+    [Fact]
+    public void CacheHit_ForParameterlessTemplate_ShouldBuildErrorDirectly()
+    {
+        var cache = new SpyValidationErrorMessageCache();
+        var templates = new ValidationErrorTemplates { MessageCache = cache };
+        var template = new StableCountingTemplate(" is invalid");
+        var firstContext = CreateContext(templates);
+        var secondContext = CreateContext(templates);
+
+        firstContext.Check("A", target: "code").AddError(template, code: "Invalid");
+        secondContext.Check("B", target: "code").AddError(template, code: "Invalid");
+
+        template.InvocationCount.Should().Be(1);
+        cache.TryGetCalls.Should().Be(2);
+        cache.StoreCalls.Should().Be(1);
+        firstContext.Errors[0].Message.Should().Be("code is invalid");
+        secondContext.Errors[0].Message.Should().Be("code is invalid");
+        firstContext.Errors[0].Code.Should().Be("Invalid");
+        secondContext.Errors[0].Code.Should().Be("Invalid");
+    }
+
+    [Fact]
     public void BuiltInComparableDefinitions_ShouldUseComparableTemplateStabilityForCaching()
     {
         var cache = new SpyValidationErrorMessageCache();
@@ -310,21 +504,21 @@ public sealed class ValidationErrorMessageCachingTests
 
     private sealed class SpyValidationErrorMessageCache : IValidationErrorMessageCache
     {
-        private readonly Dictionary<ValidationErrorMessageCacheKey, ValidationErrorMessage> _messages = new ();
+        private readonly Dictionary<ValidationErrorMessageCacheKey, CachedValidationErrorMessage> _messages = new ();
 
         public int TryGetCalls { get; private set; }
         public int StoreCalls { get; private set; }
 
-        public bool TryGet(ValidationErrorMessageCacheKey key, out ValidationErrorMessage message)
+        public bool TryGet(ValidationErrorMessageCacheKey key, out CachedValidationErrorMessage entry)
         {
             TryGetCalls++;
-            return _messages.TryGetValue(key, out message);
+            return _messages.TryGetValue(key, out entry);
         }
 
-        public void Store(ValidationErrorMessageCacheKey key, ValidationErrorMessage message)
+        public void Store(ValidationErrorMessageCacheKey key, CachedValidationErrorMessage entry)
         {
             StoreCalls++;
-            _messages[key] = message;
+            _messages[key] = entry;
         }
     }
 }

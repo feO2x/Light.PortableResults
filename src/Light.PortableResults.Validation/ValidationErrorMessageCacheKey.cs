@@ -5,7 +5,8 @@ using System.Runtime.CompilerServices;
 namespace Light.PortableResults.Validation;
 
 /// <summary>
-/// Identifies a cached validation error message by provider, display name, and culture.
+/// Identifies a cached validation error message by provider, target descriptor, target prefix, display name, and
+/// culture.
 /// </summary>
 public readonly record struct ValidationErrorMessageCacheKey
 {
@@ -13,16 +14,34 @@ public readonly record struct ValidationErrorMessageCacheKey
     /// Initializes a new instance of <see cref="ValidationErrorMessageCacheKey" />.
     /// </summary>
     /// <param name="provider">The message provider.</param>
-    /// <param name="displayName">The display name used to generate the message.</param>
+    /// <param name="target">The validation target descriptor.</param>
+    /// <param name="targetPrefix">The target prefix of the validation scope.</param>
+    /// <param name="displayName">The display name, or <see langword="null" /> when derived from the resolved target.</param>
     /// <param name="culture">The culture used to format the message.</param>
     /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="provider" />, <paramref name="displayName" />, or <paramref name="culture" /> is
+    /// Thrown when <paramref name="provider" />, <paramref name="targetPrefix" />, or <paramref name="culture" /> is
     /// <see langword="null" />.
     /// </exception>
-    public ValidationErrorMessageCacheKey(object provider, string displayName, CultureInfo culture)
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="target" /> is the default instance.
+    /// </exception>
+    public ValidationErrorMessageCacheKey(
+        object provider,
+        ValidationTarget target,
+        string targetPrefix,
+        string? displayName,
+        CultureInfo culture
+    )
     {
         Provider = provider ?? throw new ArgumentNullException(nameof(provider));
-        DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
+        if (target.IsDefault)
+        {
+            throw new ArgumentException("The validation target must not be the default instance.", nameof(target));
+        }
+
+        Target = target;
+        TargetPrefix = targetPrefix ?? throw new ArgumentNullException(nameof(targetPrefix));
+        DisplayName = displayName;
         Culture = culture ?? throw new ArgumentNullException(nameof(culture));
     }
 
@@ -32,9 +51,19 @@ public readonly record struct ValidationErrorMessageCacheKey
     public object Provider { get; }
 
     /// <summary>
-    /// Gets the display name used during message creation.
+    /// Gets the validation target descriptor.
     /// </summary>
-    public string DisplayName { get; }
+    public ValidationTarget Target { get; }
+
+    /// <summary>
+    /// Gets the target prefix of the validation scope.
+    /// </summary>
+    public string TargetPrefix { get; }
+
+    /// <summary>
+    /// Gets the display name, or <see langword="null" /> when derived from the resolved target.
+    /// </summary>
+    public string? DisplayName { get; }
 
     /// <summary>
     /// Gets the culture used to format the message.
@@ -44,6 +73,8 @@ public readonly record struct ValidationErrorMessageCacheKey
     /// <inheritdoc />
     public bool Equals(ValidationErrorMessageCacheKey other) =>
         ReferenceEquals(Provider, other.Provider) &&
+        Target.Equals(other.Target) &&
+        string.Equals(TargetPrefix, other.TargetPrefix, StringComparison.Ordinal) &&
         string.Equals(DisplayName, other.DisplayName, StringComparison.Ordinal) &&
         ReferenceEquals(Culture, other.Culture);
 
@@ -51,6 +82,8 @@ public readonly record struct ValidationErrorMessageCacheKey
     public override int GetHashCode() =>
         HashCode.Combine(
             RuntimeHelpers.GetHashCode(Provider),
+            Target,
+            TargetPrefix,
             DisplayName,
             RuntimeHelpers.GetHashCode(Culture)
         );
