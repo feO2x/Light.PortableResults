@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Light.PortableResults.Metadata;
 
 namespace Light.PortableResults.Validation;
@@ -84,6 +85,7 @@ public readonly struct Check<T>
     /// <summary>
     /// Gets a value indicating whether the current value is <see langword="null" />.
     /// </summary>
+    [MemberNotNullWhen(false, nameof(Value))]
     public bool IsValueNull => Value is null;
 
     /// <summary>
@@ -91,7 +93,7 @@ public readonly struct Check<T>
     /// </summary>
     /// <param name="value">The new value.</param>
     /// <returns>The updated check.</returns>
-    public Check<T> WithValue(T value) =>
+    public Check<TValue> WithValue<TValue>(TValue value) =>
         new (Context, TargetDescriptor, DisplayName, value, _resolvedAbsoluteTarget, IsShortCircuited);
 
     /// <summary>

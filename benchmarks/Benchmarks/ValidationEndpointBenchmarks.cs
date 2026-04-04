@@ -44,7 +44,7 @@ public class SimpleValidationEndpointBenchmarks
             return ValidationBenchmarkHelpers.ToFailureResult(validationResult).ToMinimalApiResult();
         }
 
-        var command = new SimpleCommand(request.FirstName!, request.Age);
+        var command = new SimpleCommand(request.FirstName, request.Age);
         return Result<SimpleCommand>.Ok(command).ToMinimalApiResult();
     }
 
@@ -100,7 +100,7 @@ public class ComplexValidationEndpointBenchmarks
         }
 
         var command = new ComplexCommand(
-            request.Email!,
+            request.Email,
             new AddressCommand(request.Address!.ZipCode!),
             new[]
             {
@@ -124,25 +124,15 @@ internal sealed class PortableSimpleRequestValidator : Validator<SimpleRequest, 
 
     protected override ValidatedValue<SimpleCommand> PerformValidation(ValidationContext context, SimpleRequest value)
     {
-        var firstName = context.Check(value.FirstName).NormalizeTargetIfNecessary();
-        value.FirstName = firstName.Value ?? string.Empty;
-
-        if (string.IsNullOrWhiteSpace(value.FirstName))
-        {
-            firstName.AddError("firstName must not be empty", "NotEmpty");
-        }
-
-        if (value.Age < 18)
-        {
-            context.Check(value.Age).AddError("age must be at least 18", "Adult");
-        }
+        var firstName = context.Check(value.FirstName).IsNotNullOrWhiteSpace();
+        context.Check(value.Age).IsGreaterThanOrEqualTo(18);
 
         if (context.HasErrors)
         {
             return ValidatedValue<SimpleCommand>.NoValue;
         }
 
-        return ValidatedValue.Success(new SimpleCommand(value.FirstName, value.Age));
+        return ValidatedValue.Success(new SimpleCommand(firstName.Value, value.Age));
     }
 }
 
@@ -160,39 +150,23 @@ internal sealed class PortableComplexRequestValidator : Validator<ComplexRequest
 
     protected override ValidatedValue<ComplexCommand> PerformValidation(ValidationContext context, ComplexRequest value)
     {
-        var email = context.Check(value.Email).NormalizeTargetIfNecessary();
-        value.Email = email.Value ?? string.Empty;
-        if (!value.Email.Contains("@", StringComparison.Ordinal))
-        {
-            email.AddError("email must be an email address", "Email");
-        }
+        value.Email = context.Check(value.Email).IsEmail();
 
         AddressCommand? addressCommand = null;
         if (value.Address is not null)
         {
-            var validatedValue = context.Check(value.Address).ValidateChild(_addressValidator);
-            validatedValue.TryGetValue(out addressCommand);
+            var addressResult = context.Check(value.Address).ValidateChild(_addressValidator);
+            addressCommand = addressResult.Value;
         }
 
-        var items = value.Items ?? new List<ItemRequest>();
-        var itemCommands = new ItemCommand[items.Count];
-        var itemsContext = context.ForMember("items", isNormalized: true);
-        for (var i = 0; i < items.Count; i++)
-        {
-            var childContext = itemsContext.ForIndex(i);
-            var itemOutcome = _itemValidator.ValidateChildValue(items[i], childContext);
-            if (itemOutcome.TryGetValue(out var validatedItem))
-            {
-                itemCommands[i] = validatedItem;
-            }
-        }
+        var itemsResult = context.Check(value.Items).IsNotNull().ValidateItems(_itemValidator);
 
         if (context.HasErrors)
         {
             return ValidatedValue<ComplexCommand>.NoValue;
         }
 
-        return ValidatedValue.Success(new ComplexCommand(value.Email, addressCommand!, itemCommands));
+        return ValidatedValue.Success(new ComplexCommand(value.Email, addressCommand!, itemsResult.Value));
     }
 }
 
@@ -203,19 +177,14 @@ internal sealed class PortableAddressValidator : Validator<AddressRequest, Addre
 
     protected override ValidatedValue<AddressCommand> PerformValidation(ValidationContext context, AddressRequest value)
     {
-        var zipCode = context.Check(value.ZipCode).NormalizeTargetIfNecessary();
-        value.ZipCode = zipCode.Value ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(value.ZipCode))
-        {
-            zipCode.AddError("zipCode must not be empty", "NotEmpty");
-        }
+        var zipCode = context.Check(value.ZipCode).IsNotNullOrWhiteSpace();
 
         if (context.HasErrors)
         {
             return ValidatedValue<AddressCommand>.NoValue;
         }
 
-        return ValidatedValue.Success(new AddressCommand(value.ZipCode));
+        return ValidatedValue.Success(new AddressCommand(zipCode.Value!));
     }
 }
 
@@ -226,24 +195,15 @@ internal sealed class PortableItemValidator : Validator<ItemRequest, ItemCommand
 
     protected override ValidatedValue<ItemCommand> PerformValidation(ValidationContext context, ItemRequest value)
     {
-        var sku = context.Check(value.Sku).NormalizeTargetIfNecessary();
-        value.Sku = sku.Value ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(value.Sku))
-        {
-            sku.AddError("sku must not be empty", "NotEmpty");
-        }
-
-        if (value.Quantity < 1)
-        {
-            context.Check(value.Quantity).AddError("quantity must be at least 1", "MinQuantity");
-        }
+        var sku = context.Check(value.Sku).IsNotNullOrWhiteSpace();
+        context.Check(value.Quantity).IsGreaterThanOrEqualTo(1);
 
         if (context.HasErrors)
         {
             return ValidatedValue<ItemCommand>.NoValue;
         }
 
-        return ValidatedValue.Success(new ItemCommand(value.Sku, value.Quantity));
+        return ValidatedValue.Success(new ItemCommand(sku.Value!, value.Quantity));
     }
 }
 
@@ -357,35 +317,35 @@ internal sealed class FluentComplexRequestValidator : AbstractValidator<ComplexR
 
 internal sealed class SimpleRequest
 {
-    public string? FirstName { get; set; }
+    public string FirstName { get; set; } = string.Empty;
 
     public int Age { get; set; }
 }
 
 internal sealed class ComplexRequest
 {
-    public string? Email { get; set; }
+    public string Email { get; set; } = string.Empty;
 
     public AddressRequest? Address { get; set; }
 
-    public List<ItemRequest>? Items { get; set; }
+    public List<ItemRequest> Items { get; set; } = null!;
 }
 
 internal sealed class AddressRequest
 {
-    public string? ZipCode { get; set; }
+    public string ZipCode { get; set; } = string.Empty;
 }
 
 internal sealed class ItemRequest
 {
-    public string? Sku { get; set; }
+    public string Sku { get; set; } = string.Empty;
 
     public int Quantity { get; set; }
 }
 
 internal sealed record SimpleCommand(string FirstName, int Age);
 
-internal sealed record ComplexCommand(string Email, AddressCommand Address, ItemCommand[] Items);
+internal sealed record ComplexCommand(string Email, AddressCommand Address, IReadOnlyList<ItemCommand> Items);
 
 internal sealed record AddressCommand(string ZipCode);
 

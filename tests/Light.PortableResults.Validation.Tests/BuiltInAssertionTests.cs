@@ -199,7 +199,7 @@ public sealed class BuiltInAssertionTests
     [Fact]
     public void StringAssertions_ShouldRespectNormalizationAndThrowForNullFollowUpChecks()
     {
-        string? nullableValue = null;
+        string nullableValue = null!;
         var defaultContext = new DefaultValidationContextFactory().CreateValidationContext();
         var noOpContext = new DefaultValidationContextFactory(
             ValidationContextOptions.Default with { StringValueNormalizer = NoOpStringValueNormalizer.Instance }
@@ -240,9 +240,9 @@ public sealed class BuiltInAssertionTests
         var zipCode = "A!";
         var phone = "12A";
 
-        context.Check<string?>(email, displayName: "Email").IsEmail();
-        childContext.Check<string?>(zipCode, displayName: "Zip code").ContainsOnlyLettersAndDigits();
-        indexedContext.Check<string?>(phone, displayName: "Phone").ContainsOnlyDigits();
+        context.Check(email, displayName: "Email").IsEmail();
+        childContext.Check(zipCode, displayName: "Zip code").ContainsOnlyLettersAndDigits();
+        indexedContext.Check(phone, displayName: "Phone").ContainsOnlyDigits();
 
         context.Errors.Should().Equal(
             new Errors(
@@ -280,7 +280,7 @@ public sealed class BuiltInAssertionTests
         var context = new DefaultValidationContextFactory().CreateValidationContext();
         var code = "AB12";
 
-        context.Check<string?>(code, displayName: "Code")
+        context.Check(code, displayName: "Code")
            .Matches("^[0-9]+$", RegexOptions.IgnoreCase);
 
         context.Errors.Should().Equal(
@@ -353,12 +353,12 @@ public sealed class BuiltInAssertionTests
     [Fact]
     public void CollectionAssertions_ShouldThrowOnNullUnlessTheCheckWasShortCircuited()
     {
-        IEnumerable<int>? items = null;
+        IEnumerable<int> items = null!;
         var context = new DefaultValidationContextFactory().CreateValidationContext();
 
         Action throwingAct = () =>
-            context.Check<IEnumerable<int>>(items!, displayName: "Items").HasCount(1);
-        Action shortCircuitedAct = () => context.Check<IEnumerable<int>>(items!, displayName: "Items")
+            context.Check(items!, displayName: "Items").HasCount(1);
+        Action shortCircuitedAct = () => context.Check(items, displayName: "Items")
            .IsNotNull()
            .HasCount(1);
 

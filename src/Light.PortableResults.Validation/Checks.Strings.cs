@@ -13,16 +13,27 @@ public static partial class Checks
     /// With the default string normalizer, <see langword="null" /> is normalized to <see cref="string.Empty" />
     /// before this assertion sees the value.
     /// </summary>
-    public static Check<string?> IsNotNullOrWhiteSpace(this Check<string?> check, bool shortCircuitOnError = false) =>
-        check.IsShortCircuited || !string.IsNullOrWhiteSpace(check.Value) ?
-            check :
-            AddBuiltInError(check, BuiltInValidationErrorDefinitions.NotNullOrWhiteSpace, shortCircuitOnError);
+    public static Check<string> IsNotNullOrWhiteSpace(this Check<string> check, bool shortCircuitOnError = false)
+    {
+        if (check.IsShortCircuited)
+        {
+            return check;
+        }
+
+        var value = check.Value;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return AddBuiltInError(check, BuiltInValidationErrorDefinitions.NotNullOrWhiteSpace, shortCircuitOnError);
+        }
+
+        return check.WithValue(value);
+    }
 
     /// <summary>
     /// Adds a validation error when the checked string is shorter than the specified minimum length.
     /// </summary>
-    public static Check<string?> HasMinLength(
-        this Check<string?> check,
+    public static Check<string> HasMinLength(
+        this Check<string> check,
         int minLength,
         bool shortCircuitOnError = false
     )
@@ -71,8 +82,8 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string length lies outside the inclusive range.
     /// </summary>
-    public static Check<string?> HasLengthIn(
-        this Check<string?> check,
+    public static Check<string> HasLengthIn(
+        this Check<string> check,
         int minLength,
         int maxLength,
         bool shortCircuitOnError = false
@@ -101,7 +112,7 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string does not match the specified regular expression.
     /// </summary>
-    public static Check<string?> Matches(this Check<string?> check, Regex regex, bool shortCircuitOnError = false)
+    public static Check<string> Matches(this Check<string> check, Regex regex, bool shortCircuitOnError = false)
     {
         if (regex is null)
         {
@@ -130,8 +141,8 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string does not match the specified regular expression pattern.
     /// </summary>
-    public static Check<string?> Matches(
-        this Check<string?> check,
+    public static Check<string> Matches(
+        this Check<string> check,
         string pattern,
         RegexOptions options = RegexOptions.None,
         bool shortCircuitOnError = false
@@ -161,7 +172,7 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string does not look like an email address.
     /// </summary>
-    public static Check<string?> IsEmail(this Check<string?> check, bool shortCircuitOnError = false)
+    public static Check<string> IsEmail(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)
         {
@@ -177,7 +188,7 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string is empty or contains a non-digit character.
     /// </summary>
-    public static Check<string?> ContainsOnlyDigits(this Check<string?> check, bool shortCircuitOnError = false)
+    public static Check<string> ContainsOnlyDigits(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)
         {
@@ -193,10 +204,7 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string is empty or contains characters other than letters or digits.
     /// </summary>
-    public static Check<string?> ContainsOnlyLettersAndDigits(
-        this Check<string?> check,
-        bool shortCircuitOnError = false
-    )
+    public static Check<string> ContainsOnlyLettersAndDigits(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)
         {

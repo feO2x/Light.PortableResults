@@ -25,14 +25,14 @@ public class MessageCacheKeyOptimizationBenchmarks
     {
         var context = _factoryWithoutCache.CreateValidationContext();
         var addressContext = context.ForMember("address", isNormalized: true);
-        addressContext.Check<string?>(string.Empty, target: "zipCode").IsNotNullOrWhiteSpace();
-        addressContext.Check<string?>(string.Empty, target: "city").IsNotNullOrWhiteSpace();
-        addressContext.Check<string?>(string.Empty, target: "street").IsNotNullOrWhiteSpace();
+        addressContext.Check(string.Empty, target: "zipCode").IsNotNullOrWhiteSpace();
+        addressContext.Check(string.Empty, target: "city").IsNotNullOrWhiteSpace();
+        addressContext.Check(string.Empty, target: "street").IsNotNullOrWhiteSpace();
 
         var billingContext = context.ForMember("billing", isNormalized: true);
-        billingContext.Check<string?>(string.Empty, target: "zipCode").IsNotNullOrWhiteSpace();
-        billingContext.Check<string?>(string.Empty, target: "city").IsNotNullOrWhiteSpace();
-        billingContext.Check<string?>(string.Empty, target: "street").IsNotNullOrWhiteSpace();
+        billingContext.Check(string.Empty, target: "zipCode").IsNotNullOrWhiteSpace();
+        billingContext.Check(string.Empty, target: "city").IsNotNullOrWhiteSpace();
+        billingContext.Check(string.Empty, target: "street").IsNotNullOrWhiteSpace();
 
         return context.Errors.Count;
     }
@@ -42,14 +42,14 @@ public class MessageCacheKeyOptimizationBenchmarks
     {
         var context = _factoryWithCache.CreateValidationContext();
         var addressContext = context.ForMember("address", isNormalized: true);
-        addressContext.Check<string?>(string.Empty, target: "zipCode").IsNotNullOrWhiteSpace();
-        addressContext.Check<string?>(string.Empty, target: "city").IsNotNullOrWhiteSpace();
-        addressContext.Check<string?>(string.Empty, target: "street").IsNotNullOrWhiteSpace();
+        addressContext.Check(string.Empty, target: "zipCode").IsNotNullOrWhiteSpace();
+        addressContext.Check(string.Empty, target: "city").IsNotNullOrWhiteSpace();
+        addressContext.Check(string.Empty, target: "street").IsNotNullOrWhiteSpace();
 
         var billingContext = context.ForMember("billing", isNormalized: true);
-        billingContext.Check<string?>(string.Empty, target: "zipCode").IsNotNullOrWhiteSpace();
-        billingContext.Check<string?>(string.Empty, target: "city").IsNotNullOrWhiteSpace();
-        billingContext.Check<string?>(string.Empty, target: "street").IsNotNullOrWhiteSpace();
+        billingContext.Check(string.Empty, target: "zipCode").IsNotNullOrWhiteSpace();
+        billingContext.Check(string.Empty, target: "city").IsNotNullOrWhiteSpace();
+        billingContext.Check(string.Empty, target: "street").IsNotNullOrWhiteSpace();
 
         return context.Errors.Count;
     }
