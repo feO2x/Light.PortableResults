@@ -4,8 +4,10 @@ using FluentValidation;
 using FluentValidation.Results;
 using Light.PortableResults;
 using Light.PortableResults.AspNetCore.MinimalApis;
+using Light.PortableResults.AspNetCore.Mvc;
 using Light.PortableResults.Validation;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Benchmarks;
 
@@ -78,6 +80,59 @@ public class InvalidFlatDtoValidationBenchmarks
     private readonly FluentValidationMovieRatingDtoValidator _singletonFluentValidationValidator = new ();
 
     [Benchmark(Baseline = true)]
+    public ValidationResult FluentValidationScopedOrTransient()
+    {
+        var validator = new FluentValidationMovieRatingDtoValidator();
+        var validationResult = validator.Validate(_invalidDto);
+        if (validationResult.Errors.Count != 3)
+        {
+            throw new InvalidOperationException("Validation should fail in this benchmark");
+        }
+
+        return validationResult;
+    }
+
+    [Benchmark]
+    public ValidationResult FluentValidationSingleton()
+    {
+        var validationResult = _singletonFluentValidationValidator.Validate(_invalidDto);
+        if (validationResult.Errors.Count != 3)
+        {
+            throw new InvalidOperationException("Validation should fail in this benchmark");
+        }
+
+        return validationResult;
+    }
+
+    [Benchmark]
+    public Result<MovieRatingDto> LightPortableResults()
+    {
+        var result = _lightPortableResultsValidator.Validate(_invalidDto);
+        if (result.Errors.Count != 3)
+        {
+            throw new InvalidOperationException("Validation should fail in this benchmark");
+        }
+
+        return result;
+    }
+}
+
+[MemoryDiagnoser]
+public class InvalidFlatDtoValidationBenchmarksForMinimalApis
+{
+    private readonly MovieRatingDto _invalidDto = new ()
+    {
+        Id = Guid.Empty,
+        Comment = "Too short",
+        Rating = 0
+    };
+
+    private readonly LightPortableResultsMovieRatingDtoValidator _lightPortableResultsValidator =
+        new (new DefaultValidationContextFactory());
+
+    private readonly FluentValidationMovieRatingDtoValidator _singletonFluentValidationValidator = new ();
+
+    [Benchmark(Baseline = true)]
     public IResult FluentValidationScopedOrTransient()
     {
         var validator = new FluentValidationMovieRatingDtoValidator();
@@ -112,6 +167,69 @@ public class InvalidFlatDtoValidationBenchmarks
         }
 
         return result.ToMinimalApiResult();
+    }
+}
+
+[MemoryDiagnoser]
+public class InvalidFlatDtoValidationBenchmarksForMvc : ControllerBase
+{
+    private readonly MovieRatingDto _invalidDto = new ()
+    {
+        Id = Guid.Empty,
+        Comment = "Too short",
+        Rating = 0
+    };
+
+    private readonly LightPortableResultsMovieRatingDtoValidator _lightPortableResultsValidator =
+        new (new DefaultValidationContextFactory());
+
+    private readonly FluentValidationMovieRatingDtoValidator _singletonFluentValidationValidator = new ();
+
+    [Benchmark(Baseline = true)]
+    public IActionResult FluentValidationScopedOrTransient()
+    {
+        var validator = new FluentValidationMovieRatingDtoValidator();
+        var validationResult = validator.Validate(_invalidDto);
+        if (validationResult.Errors.Count != 3)
+        {
+            throw new InvalidOperationException("Validation should fail in this benchmark");
+        }
+
+        foreach (var error in validationResult.Errors)
+        {
+            ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+        }
+
+        return ValidationProblem();
+    }
+
+    [Benchmark]
+    public IActionResult FluentValidationSingleton()
+    {
+        var validationResult = _singletonFluentValidationValidator.Validate(_invalidDto);
+        if (validationResult.Errors.Count != 3)
+        {
+            throw new InvalidOperationException("Validation should fail in this benchmark");
+        }
+
+        foreach (var error in validationResult.Errors)
+        {
+            ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+        }
+
+        return ValidationProblem();
+    }
+
+    [Benchmark]
+    public IActionResult LightPortableResults()
+    {
+        var result = _lightPortableResultsValidator.Validate(_invalidDto);
+        if (result.Errors.Count != 3)
+        {
+            throw new InvalidOperationException("Validation should fail in this benchmark");
+        }
+
+        return result.ToMvcActionResult();
     }
 }
 

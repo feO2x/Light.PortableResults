@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
     <meta charset='utf-8'/>
-    <title>Benchmarks.InvalidFlatDtoValidationBenchmarks-20260404-121820</title>
+    <title>Benchmarks.InvalidFlatDtoValidationBenchmarksForMinimalApis-20260404-121915</title>
 
     <style type="text/css">
         table {
@@ -45,8 +45,8 @@ Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
         <th>Mean</th>
         <th>Error</th>
         <th>StdDev</th>
-        <th>Median</th>
         <th>Ratio</th>
+        <th>RatioSD</th>
         <th>Gen0</th>
         <th>Gen1</th>
         <th>Allocated</th>
@@ -56,38 +56,38 @@ Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
     <tbody>
     <tr>
         <td>FluentValidationScopedOrTransient</td>
-        <td>3,162.1 ns</td>
-        <td>24.82 ns</td>
-        <td>22.01 ns</td>
-        <td>3,153.7 ns</td>
+        <td>3,493.1 ns</td>
+        <td>54.50 ns</td>
+        <td>45.51 ns</td>
         <td>1.00</td>
-        <td>1.7395</td>
-        <td>0.0153</td>
-        <td>14672 B</td>
+        <td>0.02</td>
+        <td>1.9073</td>
+        <td>0.0305</td>
+        <td>16048 B</td>
         <td>1.00</td>
     </tr>
     <tr>
         <td>FluentValidationSingleton</td>
-        <td>1,786.9 ns</td>
-        <td>6.96 ns</td>
-        <td>6.17 ns</td>
-        <td>1,786.4 ns</td>
-        <td>0.57</td>
-        <td>0.9937</td>
-        <td>0.0095</td>
-        <td>8320 B</td>
-        <td>0.57</td>
+        <td>2,068.1 ns</td>
+        <td>9.03 ns</td>
+        <td>7.54 ns</td>
+        <td>0.59</td>
+        <td>0.01</td>
+        <td>1.1559</td>
+        <td>0.0114</td>
+        <td>9696 B</td>
+        <td>0.60</td>
     </tr>
     <tr>
         <td>LightPortableResults</td>
-        <td>284.9 ns</td>
-        <td>5.65 ns</td>
-        <td>7.34 ns</td>
-        <td>280.3 ns</td>
-        <td>0.09</td>
-        <td>0.0820</td>
+        <td>276.5 ns</td>
+        <td>0.86 ns</td>
+        <td>0.71 ns</td>
+        <td>0.08</td>
+        <td>0.00</td>
+        <td>0.1001</td>
         <td>-</td>
-        <td>688 B</td>
+        <td>840 B</td>
         <td>0.05</td>
     </tr>
     </tbody>

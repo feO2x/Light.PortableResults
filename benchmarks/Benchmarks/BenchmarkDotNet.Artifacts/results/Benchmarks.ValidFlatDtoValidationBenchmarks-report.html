@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
     <meta charset='utf-8'/>
-    <title>Benchmarks.ValidFlatDtoValidationBenchmarks-20260404-115223</title>
+    <title>Benchmarks.ValidFlatDtoValidationBenchmarks-20260404-122031</title>
 
     <style type="text/css">
         table {
@@ -46,6 +46,7 @@ Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
         <th>Error</th>
         <th>StdDev</th>
         <th>Ratio</th>
+        <th>RatioSD</th>
         <th>Gen0</th>
         <th>Gen1</th>
         <th>Allocated</th>
@@ -55,21 +56,23 @@ Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
     <tbody>
     <tr>
         <td>FluentValidationScopedOrTransient</td>
-        <td>1,299.92 ns</td>
-        <td>4.880 ns</td>
-        <td>4.565 ns</td>
+        <td>1,325.57 ns</td>
+        <td>25.325 ns</td>
+        <td>23.689 ns</td>
         <td>1.00</td>
-        <td>0.8335</td>
+        <td>0.02</td>
+        <td>0.8316</td>
         <td>0.0076</td>
         <td>6984 B</td>
         <td>1.00</td>
     </tr>
     <tr>
         <td>FluentValidationSingleton</td>
-        <td>107.97 ns</td>
-        <td>0.746 ns</td>
-        <td>0.698 ns</td>
+        <td>108.72 ns</td>
+        <td>0.209 ns</td>
+        <td>0.185 ns</td>
         <td>0.08</td>
+        <td>0.00</td>
         <td>0.0755</td>
         <td>0.0001</td>
         <td>632 B</td>
@@ -77,10 +80,11 @@ Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
     </tr>
     <tr>
         <td>LightPortableResults</td>
-        <td>47.62 ns</td>
-        <td>0.322 ns</td>
-        <td>0.252 ns</td>
+        <td>47.79 ns</td>
+        <td>0.065 ns</td>
+        <td>0.061 ns</td>
         <td>0.04</td>
+        <td>0.00</td>
         <td>0.0124</td>
         <td>-</td>
         <td>104 B</td>
