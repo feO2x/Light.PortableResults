@@ -5,9 +5,9 @@ using Light.PortableResults.Validation;
 namespace Benchmarks;
 
 [MemoryDiagnoser]
-public class StringValueNormalizerBenchmarks
+public class ValueNormalizerBenchmarks
 {
-    private readonly IStringValueNormalizer _normalizer = TrimStringValueNormalizer.Instance;
+    private readonly IValueNormalizer _normalizer = TrimStringNormalizer.Instance;
     private readonly string? _value = "  Alice  ";
 
     [Benchmark]
@@ -24,7 +24,7 @@ public class AutomaticNullErrorProviderBenchmarks
     {
         var validationContext = ValidationBenchmarkHelpers.ValidationContextFactory.CreateValidationContext();
         _context = validationContext
-           .Check<string?>(null, NoOpStringValueNormalizer.Instance, target: "request", displayName: "request")
+           .Check<string?>(null, NoOpValueNormalizer.Instance, target: "request", displayName: "request")
            .CreateMessageContext();
     }
 

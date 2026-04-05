@@ -17,8 +17,9 @@ public sealed class BuiltInAssertionTests
         string? nullableValue = null;
         var context = new DefaultValidationContextFactory().CreateValidationContext();
 
-        context.Check("abc", NoOpStringValueNormalizer.Instance, target: "code", displayName: "Code").IsNull();
-        context.Check(nullableValue, NoOpStringValueNormalizer.Instance, target: "name", displayName: "Name")
+        context.Check("abc", NoOpValueNormalizer.Instance, target: "code", displayName: "Code").IsNull();
+        context
+           .Check(nullableValue, NoOpValueNormalizer.Instance, target: "name", displayName: "Name")
            .IsNotNull();
 
         context.Errors.Should().Equal(
@@ -76,9 +77,10 @@ public sealed class BuiltInAssertionTests
         IEnumerable<int>? items = null;
         var context = new DefaultValidationContextFactory().CreateValidationContext();
 
-        context.Check<string?>(
+        context
+           .Check<string?>(
                 displayName,
-                NoOpStringValueNormalizer.Instance,
+                NoOpValueNormalizer.Instance,
                 displayName: "Display name"
             )
            .IsEmpty();
@@ -202,14 +204,14 @@ public sealed class BuiltInAssertionTests
         string nullableValue = null!;
         var defaultContext = new DefaultValidationContextFactory().CreateValidationContext();
         var noOpContext = new DefaultValidationContextFactory(
-            ValidationContextOptions.Default with { StringValueNormalizer = NoOpStringValueNormalizer.Instance }
+            ValidationContextOptions.Default with { ValueNormalizer = NoOpValueNormalizer.Instance }
         ).CreateValidationContext();
 
         defaultContext.Check(nullableValue, target: "name", displayName: "Name").IsNotNullOrWhiteSpace();
 
         Action act = () => noOpContext.Check(
                 nullableValue,
-                NoOpStringValueNormalizer.Instance,
+                NoOpValueNormalizer.Instance,
                 target: "code",
                 displayName: "Code"
             )
@@ -426,12 +428,12 @@ public sealed class BuiltInAssertionTests
     public void MustAndCustom_ShouldRespectShortCircuitingAndScopedTargets()
     {
         var context = new DefaultValidationContextFactory(
-            ValidationContextOptions.Default with { StringValueNormalizer = NoOpStringValueNormalizer.Instance }
+            ValidationContextOptions.Default with { ValueNormalizer = NoOpValueNormalizer.Instance }
         ).CreateValidationContext();
         string? nullableValue = null;
         var predicateInvocationCount = 0;
 
-        context.Check(nullableValue, NoOpStringValueNormalizer.Instance, target: "name", displayName: "Name")
+        context.Check(nullableValue, NoOpValueNormalizer.Instance, target: "name", displayName: "Name")
            .IsNotNull()
            .Must(
                 value =>

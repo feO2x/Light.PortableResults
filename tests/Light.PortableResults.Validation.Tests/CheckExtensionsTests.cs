@@ -100,7 +100,7 @@ public sealed class CheckExtensionsTests
         var context = ValidationContextFactory.CreateValidationContext();
         IReadOnlyList<string> tags = null!;
         var check = context
-           .Check(tags, NoOpStringValueNormalizer.Instance, target: "request.Tags", displayName: "Tags")
+           .Check(tags, NoOpValueNormalizer.Instance, target: "request.Tags", displayName: "Tags")
            .ShortCircuit();
         var wasCalled = false;
 
@@ -120,7 +120,7 @@ public sealed class CheckExtensionsTests
         IReadOnlyList<string> tags = null!;
         var check = context.Check(
             tags,
-            NoOpStringValueNormalizer.Instance,
+            NoOpValueNormalizer.Instance,
             target: "request.Tags",
             displayName: "Tags"
         );

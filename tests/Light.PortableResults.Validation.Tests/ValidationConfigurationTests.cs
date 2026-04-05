@@ -19,7 +19,7 @@ public sealed class ValidationConfigurationTests
         };
         var customizedOptions = ValidationContextOptions.Default with
         {
-            StringValueNormalizer = NoOpStringValueNormalizer.Instance,
+            ValueNormalizer = NoOpValueNormalizer.Instance,
             ErrorTemplates = customizedTemplates
         };
 
@@ -33,7 +33,7 @@ public sealed class ValidationConfigurationTests
 
         defaultCheck.Value.Should().BeEmpty();
         customizedCheck.Value.Should().BeNull();
-        ValidationContextOptions.Default.StringValueNormalizer.Should().BeSameAs(TrimStringValueNormalizer.Instance);
+        ValidationContextOptions.Default.ValueNormalizer.Should().BeSameAs(TrimStringNormalizer.Instance);
         ValidationContextOptions.Default.ErrorTemplates.Should().BeSameAs(ValidationErrorTemplates.Default);
         ValidationErrorTemplates.Default.NotNull.Should().NotBeSameAs(customizedTemplates.NotNull);
     }

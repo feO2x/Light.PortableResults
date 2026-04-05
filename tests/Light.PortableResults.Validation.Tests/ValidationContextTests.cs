@@ -78,7 +78,7 @@ public sealed class ValidationContextTests
     {
         var options = ValidationContextOptions.Default with
         {
-            StringValueNormalizer = NoOpStringValueNormalizer.Instance
+            ValueNormalizer = NoOpValueNormalizer.Instance
         };
         var context = new DefaultValidationContextFactory(options).CreateValidationContext();
         string? firstName = null;
@@ -94,7 +94,7 @@ public sealed class ValidationContextTests
         var context = new DefaultValidationContextFactory().CreateValidationContext();
         const string firstName = "  Alice  ";
 
-        var check = context.Check(firstName, NoOpStringValueNormalizer.Instance);
+        var check = context.Check(firstName, NoOpValueNormalizer.Instance);
 
         check.Value.Should().Be("  Alice  ");
     }

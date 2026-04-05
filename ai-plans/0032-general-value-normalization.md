@@ -6,15 +6,15 @@
 
 ## Acceptance Criteria
 
-- [ ] `IStringValueNormalizer` is deleted and replaced by `IValueNormalizer` with a single generic method `T Normalize<T>(T value)`.
-- [ ] `TrimStringValueNormalizer` is renamed `TrimStringNormalizer` and implements `IValueNormalizer`. The class remains `sealed`. Behavior: when `T` is `string`, trim whitespace and replace `null` with `string.Empty`; when `T` is `object` and the value is a non-null string, trim it; otherwise return the value unchanged. The constructor is public; the static `Instance` property is retained.
-- [ ] `NoOpStringValueNormalizer` is renamed `NoOpValueNormalizer` and implements `IValueNormalizer`. The class remains `sealed`. Its `Normalize<T>` unconditionally returns `value`. The constructor is public; the static `Instance` property is retained.
-- [ ] `ValidationContextOptions.StringValueNormalizer` is renamed `ValueNormalizer` with type `IValueNormalizer`. Default remains `TrimStringNormalizer.Instance`. The null guard is preserved.
-- [ ] Both `Check<T>` overloads on `ValidationContext` replace `IStringValueNormalizer? stringValueNormalizer` with `IValueNormalizer? valueNormalizer`.
-- [ ] `ValidationContext.NormalizeStringValue(string?)` is replaced by `NormalizeValue<T>(T value)` which delegates to `Options.ValueNormalizer.Normalize(value)`.
-- [ ] The private static `NormalizeValueIfNecessary` helper on `ValidationContext` is deleted. Its call site simplifies to `(valueNormalizer ?? Options.ValueNormalizer).Normalize(value)`.
-- [ ] All affected tests are updated to use the new type and member names.
-- [ ] Benchmarks are updated to use the new type and member names.
+- [x] `IStringValueNormalizer` is deleted and replaced by `IValueNormalizer` with a single generic method `T Normalize<T>(T value)`.
+- [x] `TrimStringValueNormalizer` is renamed `TrimStringNormalizer` and implements `IValueNormalizer`. The class remains `sealed`. Behavior: when `T` is `string`, trim whitespace and replace `null` with `string.Empty`; when `T` is `object` and the value is a non-null string, trim it; otherwise return the value unchanged. The constructor is public; the static `Instance` property is retained.
+- [x] `NoOpStringValueNormalizer` is renamed `NoOpValueNormalizer` and implements `IValueNormalizer`. The class remains `sealed`. Its `Normalize<T>` unconditionally returns `value`. The constructor is public; the static `Instance` property is retained.
+- [x] `ValidationContextOptions.StringValueNormalizer` is renamed `ValueNormalizer` with type `IValueNormalizer`. Default remains `TrimStringNormalizer.Instance`. The null guard is preserved.
+- [x] Both `Check<T>` overloads on `ValidationContext` replace `IStringValueNormalizer? stringValueNormalizer` with `IValueNormalizer? valueNormalizer`.
+- [x] `ValidationContext.NormalizeStringValue(string?)` is replaced by `NormalizeValue<T>(T value)` which delegates to `Options.ValueNormalizer.Normalize(value)`.
+- [x] The private static `NormalizeValueIfNecessary` helper on `ValidationContext` is deleted. Its call site simplifies to `(valueNormalizer ?? Options.ValueNormalizer).Normalize(value)`.
+- [x] All affected tests are updated to use the new type and member names.
+- [x] Benchmarks are updated to use the new type and member names.
 
 ## Technical Details
 

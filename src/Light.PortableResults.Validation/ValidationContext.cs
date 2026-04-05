@@ -218,8 +218,8 @@ public readonly struct ValidationContext
     /// </summary>
     /// <typeparam name="T">The type of the value to validate.</typeparam>
     /// <param name="value">The value to validate.</param>
-    /// <param name="stringValueNormalizer">
-    /// Overrides the context-wide string normalization behavior for this specific check when set.
+    /// <param name="valueNormalizer">
+    /// Overrides the context-wide normalization behavior for this specific check when set.
     /// </param>
     /// <param name="target">The caller-expression-style target.</param>
     /// <param name="displayName">The optional display name.</param>
@@ -228,12 +228,11 @@ public readonly struct ValidationContext
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="target" /> is null.</exception>
     public Check<T> Check<T>(
         T value,
-        IStringValueNormalizer? stringValueNormalizer = null,
+        IValueNormalizer? valueNormalizer = null,
         [CallerArgumentExpression("value")] string? target = null,
         string? displayName = null
     )
     {
-        EnsureInitialized();
         if (target is null)
         {
             throw new ArgumentNullException(nameof(target));
@@ -242,7 +241,7 @@ public readonly struct ValidationContext
         return Check(
             value,
             ValidationTarget.CallerExpression(target),
-            stringValueNormalizer,
+            valueNormalizer,
             displayName
         );
     }
@@ -253,21 +252,21 @@ public readonly struct ValidationContext
     /// <typeparam name="T">The type of the value to validate.</typeparam>
     /// <param name="value">The value to validate.</param>
     /// <param name="target">The explicit target descriptor.</param>
-    /// <param name="stringValueNormalizer">
-    /// Overrides the context-wide string normalization behavior for this specific check when set.
+    /// <param name="valueNormalizer">
+    /// Overrides the context-wide normalization behavior for this specific check when set.
     /// </param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The created check.</returns>
     public Check<T> Check<T>(
         T value,
         ValidationTarget target,
-        IStringValueNormalizer? stringValueNormalizer = null,
+        IValueNormalizer? valueNormalizer = null,
         string? displayName = null
     )
     {
         EnsureInitialized();
         var validatedTarget = EnsureTarget(target, nameof(target));
-        value = NormalizeValueIfNecessary(value, stringValueNormalizer ?? Options.StringValueNormalizer);
+        value = (valueNormalizer ?? Options.ValueNormalizer).Normalize(value);
         return new Check<T>(
             this,
             validatedTarget,
@@ -375,14 +374,6 @@ public readonly struct ValidationContext
     }
 
     /// <summary>
-    /// Normalizes a string value using the configured string normalization behavior.
-    /// </summary>
-    /// <param name="value">The string value to normalize.</param>
-    /// <returns>The normalized string value.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when this context is the default instance.</exception>
-    public string? NormalizeStringValue(string? value) => Options.StringValueNormalizer.Normalize(value);
-
-    /// <summary>
     /// Tries to create the automatic null-validation error for the specified target and display name.
     /// </summary>
     /// <typeparam name="T">The validated value type.</typeparam>
@@ -468,26 +459,6 @@ public readonly struct ValidationContext
         target.IsDefault ?
             throw new ArgumentException("The validation target must not be the default instance.", paramName) :
             target;
-
-    private static T NormalizeValueIfNecessary<T>(T value, IStringValueNormalizer normalizer)
-    {
-        // We have two different if blocks for strings here. The first one uses typeof(T) == typeof(string) so that
-        // the JIT will eliminate the first branch at compile time via generic specialization,
-        // making the second branch effectively dead code for T == string. However, T could be resolved to object and
-        // this is what the second if block handles.
-        if (typeof(T) == typeof(string))
-        {
-            var normalizedString = normalizer.Normalize((string?) (object?) value);
-            return (T) (object?) normalizedString!;
-        }
-
-        if (value is string stringValue)
-        {
-            return (T) (object?) normalizer.Normalize(stringValue)!;
-        }
-
-        return value;
-    }
 
     [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
     private void EnsureInitialized()

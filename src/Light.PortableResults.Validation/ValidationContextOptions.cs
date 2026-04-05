@@ -24,14 +24,14 @@ public sealed record ValidationContextOptions
     } = ValidationTargets.DefaultNormalizer;
 
     /// <summary>
-    /// Gets the string normalizer applied to string checks.
+    /// Gets the value normalizer applied to checks.
     /// </summary>
     /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
-    public IStringValueNormalizer StringValueNormalizer
+    public IValueNormalizer ValueNormalizer
     {
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));
-    } = TrimStringValueNormalizer.Instance;
+    } = TrimStringNormalizer.Instance;
 
     /// <summary>
     /// Gets the culture used for formatting validation message parameters and localization-aware templates.
