@@ -901,7 +901,8 @@ public static class CheckExtensions
         context.HasErrors ? ValidatedValue<TCollection>.NoValue : ValidatedValue.Success(collection);
 
     private static Check<TItem> CreateItemCheck<TCollection, TItem>(Check<TCollection> check, TItem item, int index) =>
-        check.CreateChildContextForIndex(index)
+        check
+           .CreateChildContextForIndex(index)
            .Check(
                 item,
                 ValidationTarget.Relative(string.Empty, isNormalized: true),

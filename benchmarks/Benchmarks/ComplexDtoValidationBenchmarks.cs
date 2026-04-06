@@ -249,19 +249,17 @@ public sealed class FluentPurchaseOrderDtoValidator : AbstractValidator<Purchase
         RuleFor(x => x.CustomerEmail).EmailAddress();
         RuleFor(x => x.ShippingAddress)
            .SetValidator(ShippingAddressValidator ?? new FluentShippingAddressDtoValidator());
-        RuleForEach(x => x.Tags).SetValidator(TagValidator ?? new FluentTagValidator());
+        RuleForEach(x => x.Tags).Cascade(CascadeMode.Stop).NotEmpty().Length(2, 30);
         RuleForEach(x => x.Items).SetValidator(OrderItemValidator ?? new FluentOrderItemDtoValidator());
     }
 
     public FluentShippingAddressDtoValidator? ShippingAddressValidator { get; set; }
-    public FluentTagValidator? TagValidator { get; set; }
     public FluentOrderItemDtoValidator? OrderItemValidator { get; set; }
 
     public static FluentPurchaseOrderDtoValidator CreateSingleton() =>
         new ()
         {
             ShippingAddressValidator = new FluentShippingAddressDtoValidator(),
-            TagValidator = new FluentTagValidator(),
             OrderItemValidator = new FluentOrderItemDtoValidator()
         };
 }
@@ -272,16 +270,8 @@ public sealed class FluentShippingAddressDtoValidator : AbstractValidator<Shippi
     {
         RuleFor(x => x.RecipientName).NotEmpty();
         RuleFor(x => x.Street).NotEmpty();
-        RuleFor(x => x.PostalCode).Cascade(CascadeMode.Stop).NotEmpty().Length(4, 12);
-        RuleFor(x => x.CountryCode).Length(2, 2);
-    }
-}
-
-public sealed class FluentTagValidator : AbstractValidator<string>
-{
-    public FluentTagValidator()
-    {
-        RuleFor(x => x).Cascade(CascadeMode.Stop).NotEmpty().Length(2, 30);
+        RuleFor(x => x.PostalCode).NotEmpty().Length(4, 12);
+        RuleFor(x => x.CountryCode).NotEmpty().Length(2, 2);
     }
 }
 
@@ -299,18 +289,15 @@ public sealed class PortablePurchaseOrderDtoValidator : Validator<PurchaseOrderD
 {
     private readonly PortableShippingAddressDtoValidator _addressValidator;
     private readonly PortableOrderItemDtoValidator _itemValidator;
-    private readonly PortableTagValidator _tagValidator;
 
     public PortablePurchaseOrderDtoValidator(
         IValidationContextFactory validationContextFactory,
         PortableShippingAddressDtoValidator addressValidator,
-        PortableTagValidator tagValidator,
         PortableOrderItemDtoValidator itemValidator
     )
         : base(validationContextFactory)
     {
         _addressValidator = addressValidator ?? throw new ArgumentNullException(nameof(addressValidator));
-        _tagValidator = tagValidator ?? throw new ArgumentNullException(nameof(tagValidator));
         _itemValidator = itemValidator ?? throw new ArgumentNullException(nameof(itemValidator));
     }
 
@@ -324,7 +311,6 @@ public sealed class PortablePurchaseOrderDtoValidator : Validator<PurchaseOrderD
         return new PortablePurchaseOrderDtoValidator(
             validationContextFactory,
             new PortableShippingAddressDtoValidator(validationContextFactory),
-            new PortableTagValidator(validationContextFactory),
             new PortableOrderItemDtoValidator(validationContextFactory)
         );
     }
@@ -337,7 +323,10 @@ public sealed class PortablePurchaseOrderDtoValidator : Validator<PurchaseOrderD
         context.Check(dto.OrderId).IsNotEmpty();
         dto.CustomerEmail = context.Check(dto.CustomerEmail).IsEmail();
         context.Check(dto.ShippingAddress).ValidateChild(_addressValidator);
-        context.Check(dto.Tags).IsNotNull().ValidateItems(_tagValidator);
+        // We don't need IsNotNullOrWhiteSpace because of the default string normalization
+        context.Check(dto.Tags).IsNotNull().ValidateItems(
+            static (Check<string> tag) => tag.HasLengthIn(2, 30)
+        );
         context.Check(dto.Items).IsNotNull().ValidateItems(_itemValidator);
         return ValidatedValue.Success(dto);
     }
@@ -353,26 +342,12 @@ public sealed class PortableShippingAddressDtoValidator : Validator<ShippingAddr
         ShippingAddressDto dto
     )
     {
-        context.Check(dto.RecipientName).IsNotNullOrWhiteSpace();
-        context.Check(dto.Street).IsNotNullOrWhiteSpace();
-        context.Check(dto.PostalCode).IsNotNullOrWhiteSpace(shortCircuitOnError: true).HasLengthIn(4, 12);
-        context.Check(dto.CountryCode).IsNotNullOrWhiteSpace(shortCircuitOnError: true).HasLengthIn(2, 2);
+        dto.RecipientName = context.Check(dto.RecipientName).IsNotNullOrWhiteSpace();
+        dto.Street = context.Check(dto.Street).IsNotNullOrWhiteSpace();
+        // We don't need IsNotNullOrWhiteSpace because of the default string normalization
+        dto.PostalCode = context.Check(dto.PostalCode).HasLengthIn(4, 12);
+        dto.CountryCode = context.Check(dto.CountryCode).HasLengthIn(2, 2);
         return ValidatedValue.Success(dto);
-    }
-}
-
-public sealed class PortableTagValidator : Validator<string>
-{
-    public PortableTagValidator(IValidationContextFactory validationContextFactory)
-        : base(validationContextFactory) { }
-
-    protected override ValidatedValue<string> PerformValidation(ValidationContext context, string value)
-    {
-        context
-           .Check(value, ValidationTarget.Relative(string.Empty, isNormalized: true), displayName: "tag")
-           .IsNotNullOrWhiteSpace(shortCircuitOnError: true)
-           .HasLengthIn(2, 30);
-        return ValidatedValue.Success(value);
     }
 }
 
