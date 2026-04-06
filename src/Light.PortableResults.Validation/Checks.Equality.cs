@@ -14,9 +14,9 @@ public static partial class Checks
     /// Adds a validation error when the checked value is <see langword="null" />.
     /// </summary>
     public static Check<T> IsNotNull<T>(this Check<T> check, bool shortCircuitOnError = true) =>
-        check.IsShortCircuited ? check :
-        !check.IsValueNull ? check.WithValue(check.Value) :
-        AddBuiltInError(check, BuiltInValidationErrorDefinitions.NotNull, shortCircuitOnError);
+        check.IsShortCircuited || !check.IsValueNull ?
+            check :
+            AddBuiltInError(check, BuiltInValidationErrorDefinitions.NotNull, shortCircuitOnError);
 
     /// <summary>
     /// Adds a validation error when the checked value is not <see langword="null" />.
