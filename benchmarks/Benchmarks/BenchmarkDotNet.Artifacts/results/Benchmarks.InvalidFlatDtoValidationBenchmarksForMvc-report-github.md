@@ -8,9 +8,8 @@ Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
 
 
 ```
-
-| Method                            |       Mean |    Error |   StdDev | Ratio |   Gen0 |   Gen1 | Allocated | Alloc Ratio |
-|-----------------------------------|-----------:|---------:|---------:|------:|-------:|-------:|----------:|------------:|
-| FluentValidationScopedOrTransient | 4,010.6 ns | 13.36 ns | 12.50 ns |  1.00 | 2.1057 | 0.0305 |   17680 B |        1.00 |
-| FluentValidationSingleton         | 2,377.0 ns |  9.12 ns |  7.12 ns |  0.59 | 1.3390 | 0.0114 |   11216 B |        0.63 |
-| LightPortableResults              |   288.1 ns |  0.32 ns |  0.27 ns |  0.07 | 0.1001 |      - |     840 B |        0.05 |
+| Method                            | Mean       | Error    | StdDev   | Ratio | Gen0   | Gen1   | Allocated | Alloc Ratio |
+|---------------------------------- |-----------:|---------:|---------:|------:|-------:|-------:|----------:|------------:|
+| FluentValidationScopedOrTransient | 3,965.8 ns | 23.03 ns | 21.54 ns |  1.00 | 2.0752 | 0.0305 |   17568 B |        1.00 |
+| FluentValidationSingleton         | 2,385.5 ns |  6.70 ns |  6.27 ns |  0.60 | 1.3390 | 0.0114 |   11216 B |        0.64 |
+| LightPortableResults              |   299.9 ns |  1.61 ns |  1.51 ns |  0.08 | 0.1001 |      - |     840 B |        0.05 |
