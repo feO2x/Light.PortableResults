@@ -36,6 +36,7 @@
     <File Path="ai-plans\0032-general-value-normalization.md" />
     <File Path="ai-plans\0032-message-cache-key-optimization.md" />
     <File Path="ai-plans\0032-message-caching.md" />
+    <File Path="ai-plans\0032-validation-checkpoints.md" />
     <File Path="ai-plans\0032-validation-checks.md" />
     <File Path="ai-plans\AGENTS.md" />
   </Folder>
