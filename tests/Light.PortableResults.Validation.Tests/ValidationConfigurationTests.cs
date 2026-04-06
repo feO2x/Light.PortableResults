@@ -211,8 +211,11 @@ public sealed class ValidationConfigurationTests
         public NullToEmptyStringValidator(IValidationContextFactory validationContextFactory)
             : base(validationContextFactory) { }
 
-        protected override ValidatedValue<string?> PerformValidation(ValidationContext context, string? value) =>
-            ValidatedValue<string?>.Success(value ?? string.Empty);
+        protected override ValidatedValue<string?> PerformValidation(
+            ValidationContext context,
+            ValidationCheckpoint checkpoint,
+            string? value
+        ) => checkpoint.ToValidatedValue<string?>(value ?? string.Empty);
     }
 
     private sealed class ContextAwareAutomaticNullErrorProvider : IAutomaticNullErrorProvider

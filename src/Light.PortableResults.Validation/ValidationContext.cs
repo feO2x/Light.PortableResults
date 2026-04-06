@@ -135,6 +135,13 @@ public readonly struct ValidationContext
     public bool RemoveItem<T>(ValidationContextKey<T> key) => State.RemoveItem(key);
 
     /// <summary>
+    /// Creates a checkpoint that can detect errors added after this call.
+    /// </summary>
+    /// <returns>The created checkpoint.</returns>
+    [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
+    public ValidationCheckpoint CreateCheckpoint() => State.CreateCheckpoint();
+
+    /// <summary>
     /// Creates a scoped validation context for the specified child value.
     /// </summary>
     /// <typeparam name="T">The type of the child value.</typeparam>

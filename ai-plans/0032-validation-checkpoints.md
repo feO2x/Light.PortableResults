@@ -24,16 +24,16 @@ matches the real semantic question: did this validator invocation add new errors
 
 ## Acceptance Criteria
 
-- [ ] A public `ValidationCheckpoint` value type is introduced in `Light.PortableResults.Validation` so it can appear in the protected extensibility points of the public validator base classes.
-- [ ] `ValidationCheckpoint` captures the shared `ValidationState` and the starting error count for one validator invocation, and exposes at least `HasNewErrors`, `NewErrorCount`, and `TryGetNewErrors(out Errors errors)` without allocating on the success path.
-- [ ] `ValidationCheckpoint` exposes a success-finalization helper such as `ToValidatedValue<T>(T value)` that returns `ValidatedValue<T>.NoValue` when new errors were added and `ValidatedValue.Success(value)` otherwise.
-- [ ] `Validator<T>`, `Validator<TSource, TValidated>`, `AsyncValidator<T>`, and `AsyncValidator<TSource, TValidated>` create a checkpoint automatically before calling `PerformValidation(...)` / `PerformValidationAsync(...)` and pass it into those protected methods.
-- [ ] The protected validator extensibility points are updated so validator implementations can finalize from the supplied checkpoint instead of consulting `ValidationContext.HasErrors` directly.
-- [ ] Child-validation and collection-validation helpers are updated to decide their `ValidatedValue<T>` results from a checkpoint local to the helper invocation instead of the shared `ValidationContext.HasErrors`, so valid later children/items are not suppressed by unrelated earlier errors in the same run.
-- [ ] `Check<T>` does not gain a `CausedErrors` or `HasErrors` property in this plan; validator and helper composition relies exclusively on checkpoint semantics.
-- [ ] Public exposure of newly added errors uses `Errors`-based APIs rather than a public `ReadOnlySpan<Error>` surface. Any lower-level span-based slicing that becomes useful for implementation or benchmarking remains internal.
-- [ ] Automated tests cover top-level validators, nested child validators, collection item validation, transforming validators, async validators, `TryGetNewErrors(...)`, and the invariant that a validator without newly added errors can still return a successful `ValidatedValue<T>` even when the shared run already contains unrelated earlier failures.
-- [ ] README examples, validator tests, and the existing validation benchmarks are updated to use checkpoint finalization. No new benchmark suite is introduced in this plan.
+- [x] A public `ValidationCheckpoint` value type is introduced in `Light.PortableResults.Validation` so it can appear in the protected extensibility points of the public validator base classes.
+- [x] `ValidationCheckpoint` captures the shared `ValidationState` and the starting error count for one validator invocation, and exposes at least `HasNewErrors`, `NewErrorCount`, and `TryGetNewErrors(out Errors errors)` without allocating on the success path.
+- [x] `ValidationCheckpoint` exposes a success-finalization helper such as `ToValidatedValue<T>(T value)` that returns `ValidatedValue<T>.NoValue` when new errors were added and `ValidatedValue.Success(value)` otherwise.
+- [x] `Validator<T>`, `Validator<TSource, TValidated>`, `AsyncValidator<T>`, and `AsyncValidator<TSource, TValidated>` create a checkpoint automatically before calling `PerformValidation(...)` / `PerformValidationAsync(...)` and pass it into those protected methods.
+- [x] The protected validator extensibility points are updated so validator implementations can finalize from the supplied checkpoint instead of consulting `ValidationContext.HasErrors` directly.
+- [x] Child-validation and collection-validation helpers are updated to decide their `ValidatedValue<T>` results from a checkpoint local to the helper invocation instead of the shared `ValidationContext.HasErrors`, so valid later children/items are not suppressed by unrelated earlier errors in the same run.
+- [x] `Check<T>` does not gain a `CausedErrors` or `HasErrors` property in this plan; validator and helper composition relies exclusively on checkpoint semantics.
+- [x] Public exposure of newly added errors uses `Errors`-based APIs rather than a public `ReadOnlySpan<Error>` surface. Any lower-level span-based slicing that becomes useful for implementation or benchmarking remains internal.
+- [x] Automated tests cover top-level validators, nested child validators, collection item validation, transforming validators, async validators, `TryGetNewErrors(...)`, and the invariant that a validator without newly added errors can still return a successful `ValidatedValue<T>` even when the shared run already contains unrelated earlier failures.
+- [x] README examples, validator tests, and the existing validation benchmarks are updated to use checkpoint finalization. No new benchmark suite is introduced in this plan.
 
 ## Technical Details
 

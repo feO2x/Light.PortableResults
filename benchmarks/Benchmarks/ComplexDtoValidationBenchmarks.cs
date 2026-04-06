@@ -317,6 +317,7 @@ public sealed class PortablePurchaseOrderDtoValidator : Validator<PurchaseOrderD
 
     protected override ValidatedValue<PurchaseOrderDto> PerformValidation(
         ValidationContext context,
+        ValidationCheckpoint checkpoint,
         PurchaseOrderDto dto
     )
     {
@@ -328,7 +329,7 @@ public sealed class PortablePurchaseOrderDtoValidator : Validator<PurchaseOrderD
             static (Check<string> tag) => tag.HasLengthIn(2, 30)
         );
         context.Check(dto.Items).IsNotNull().ValidateItems(_itemValidator);
-        return ValidatedValue.Success(dto);
+        return checkpoint.ToValidatedValue(dto);
     }
 }
 
@@ -339,6 +340,7 @@ public sealed class PortableShippingAddressDtoValidator : Validator<ShippingAddr
 
     protected override ValidatedValue<ShippingAddressDto> PerformValidation(
         ValidationContext context,
+        ValidationCheckpoint checkpoint,
         ShippingAddressDto dto
     )
     {
@@ -347,7 +349,7 @@ public sealed class PortableShippingAddressDtoValidator : Validator<ShippingAddr
         // We don't need IsNotNullOrWhiteSpace because of the default string normalization
         dto.PostalCode = context.Check(dto.PostalCode).HasLengthIn(4, 12);
         dto.CountryCode = context.Check(dto.CountryCode).HasLengthIn(2, 2);
-        return ValidatedValue.Success(dto);
+        return checkpoint.ToValidatedValue(dto);
     }
 }
 
@@ -356,12 +358,16 @@ public sealed class PortableOrderItemDtoValidator : Validator<OrderItemDto>
     public PortableOrderItemDtoValidator(IValidationContextFactory validationContextFactory)
         : base(validationContextFactory) { }
 
-    protected override ValidatedValue<OrderItemDto> PerformValidation(ValidationContext context, OrderItemDto dto)
+    protected override ValidatedValue<OrderItemDto> PerformValidation(
+        ValidationContext context,
+        ValidationCheckpoint checkpoint,
+        OrderItemDto dto
+    )
     {
         context.Check(dto.Sku).IsNotNullOrWhiteSpace();
         context.Check(dto.Quantity).IsGreaterThanOrEqualTo(1);
         context.Check(dto.UnitPrice).IsGreaterThan(0m);
-        return ValidatedValue.Success(dto);
+        return checkpoint.ToValidatedValue(dto);
     }
 }
 

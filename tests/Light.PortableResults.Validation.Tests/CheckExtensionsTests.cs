@@ -393,7 +393,11 @@ public sealed class CheckExtensionsTests
         public AddressValidator(IValidationContextFactory validationContextFactory)
             : base(validationContextFactory) { }
 
-        protected override ValidatedValue<AddressDto> PerformValidation(ValidationContext context, AddressDto value)
+        protected override ValidatedValue<AddressDto> PerformValidation(
+            ValidationContext context,
+            ValidationCheckpoint checkpoint,
+            AddressDto value
+        )
         {
             var zipCode = context.Check(value.ZipCode).NormalizeTargetIfNecessary();
             value.ZipCode = zipCode.Value ?? string.Empty;
@@ -402,7 +406,7 @@ public sealed class CheckExtensionsTests
                 zipCode.AddError("zipCode must not be empty", "NotEmpty");
             }
 
-            return context.HasErrors ? ValidatedValue<AddressDto>.NoValue : ValidatedValue.Success(value);
+            return checkpoint.ToValidatedValue(value);
         }
     }
 
@@ -413,6 +417,7 @@ public sealed class CheckExtensionsTests
 
         protected override async ValueTask<ValidatedValue<AddressDto>> PerformValidationAsync(
             ValidationContext context,
+            ValidationCheckpoint checkpoint,
             AddressDto value,
             CancellationToken cancellationToken
         )
@@ -427,7 +432,7 @@ public sealed class CheckExtensionsTests
                 zipCode.AddError("zipCode must not be empty", "NotEmpty");
             }
 
-            return context.HasErrors ? ValidatedValue<AddressDto>.NoValue : ValidatedValue.Success(value);
+            return checkpoint.ToValidatedValue(value);
         }
     }
 
@@ -438,6 +443,7 @@ public sealed class CheckExtensionsTests
 
         protected override async ValueTask<ValidatedValue<AddressCommand>> PerformValidationAsync(
             ValidationContext context,
+            ValidationCheckpoint checkpoint,
             AddressDto value,
             CancellationToken cancellationToken
         )
@@ -452,7 +458,7 @@ public sealed class CheckExtensionsTests
                 zipCode.AddError("zipCode must not be empty", "NotEmpty");
             }
 
-            return context.HasErrors ?
+            return checkpoint.HasNewErrors ?
                 ValidatedValue<AddressCommand>.NoValue :
                 ValidatedValue.Success(new AddressCommand(normalizedZipCode));
         }
@@ -463,7 +469,11 @@ public sealed class CheckExtensionsTests
         public StringLengthValidator(IValidationContextFactory validationContextFactory)
             : base(validationContextFactory) { }
 
-        protected override ValidatedValue<int> PerformValidation(ValidationContext context, string value)
+        protected override ValidatedValue<int> PerformValidation(
+            ValidationContext context,
+            ValidationCheckpoint checkpoint,
+            string value
+        )
         {
             var text = context.Check(value).NormalizeTargetIfNecessary();
             if (text.Value.Length == 0)
@@ -471,7 +481,7 @@ public sealed class CheckExtensionsTests
                 text.AddError("tag must not be empty", "NotEmpty");
             }
 
-            return context.HasErrors ? ValidatedValue<int>.NoValue : ValidatedValue.Success(text.Value.Length);
+            return checkpoint.ToValidatedValue(text.Value.Length);
         }
     }
 
@@ -482,6 +492,7 @@ public sealed class CheckExtensionsTests
 
         protected override async ValueTask<ValidatedValue<int>> PerformValidationAsync(
             ValidationContext context,
+            ValidationCheckpoint checkpoint,
             string value,
             CancellationToken cancellationToken
         )
@@ -495,7 +506,7 @@ public sealed class CheckExtensionsTests
                 text.AddError("tag must not be empty", "NotEmpty");
             }
 
-            return context.HasErrors ? ValidatedValue<int>.NoValue : ValidatedValue.Success(text.Value.Length);
+            return checkpoint.ToValidatedValue(text.Value.Length);
         }
     }
 }

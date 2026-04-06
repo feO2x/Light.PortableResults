@@ -79,6 +79,7 @@ public sealed class CreateOrderValidator : Validator<CreateOrderRequest, CreateO
 
 	protected override ValidatedValue<CreateOrderCommand> PerformValidation(
 		ValidationContext context,
+		ValidationCheckpoint checkpoint,
 		CreateOrderRequest value
 	)
 	{
@@ -94,12 +95,9 @@ public sealed class CreateOrderValidator : Validator<CreateOrderRequest, CreateO
 
 		var lines = context.Check(value.Lines).IsNotNull().ValidateItems(_lineValidator);
 
-		if (context.HasErrors)
-		{
-			return ValidatedValue<CreateOrderCommand>.NoValue;
-		}
-
-		return ValidatedValue.Success(new CreateOrderCommand(address.Value, tags.Value, lines.Value));
+		return checkpoint.HasNewErrors ?
+			ValidatedValue<CreateOrderCommand>.NoValue :
+			ValidatedValue.Success(new CreateOrderCommand(address.Value, tags.Value, lines.Value));
 	}
 }
 ```
@@ -188,6 +186,7 @@ public sealed class ImportValidator : AsyncValidator<ImportRequest, ImportComman
 
 	protected override async ValueTask<ValidatedValue<ImportCommand>> PerformValidationAsync(
 		ValidationContext context,
+		ValidationCheckpoint checkpoint,
 		ImportRequest value,
 		CancellationToken cancellationToken
 	)
@@ -212,12 +211,9 @@ public sealed class ImportValidator : AsyncValidator<ImportRequest, ImportComman
 				cancellationToken
 			);
 
-		if (context.HasErrors)
-		{
-			return ValidatedValue<ImportCommand>.NoValue;
-		}
-
-		return ValidatedValue.Success(new ImportCommand(customer.Value, amounts.Value));
+		return checkpoint.HasNewErrors ?
+			ValidatedValue<ImportCommand>.NoValue :
+			ValidatedValue.Success(new ImportCommand(customer.Value, amounts.Value));
 	}
 }
 ```

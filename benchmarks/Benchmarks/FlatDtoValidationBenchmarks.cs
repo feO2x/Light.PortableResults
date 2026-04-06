@@ -255,11 +255,15 @@ public sealed class LightPortableResultsMovieRatingDtoValidator : Validator<Movi
     public LightPortableResultsMovieRatingDtoValidator(IValidationContextFactory validationContextFactory)
         : base(validationContextFactory) { }
 
-    protected override ValidatedValue<MovieRatingDto> PerformValidation(ValidationContext context, MovieRatingDto dto)
+    protected override ValidatedValue<MovieRatingDto> PerformValidation(
+        ValidationContext context,
+        ValidationCheckpoint checkpoint,
+        MovieRatingDto dto
+    )
     {
         context.Check(dto.Id).IsNotEmpty();
         dto.Comment = context.Check(dto.Comment).IsNotNullOrWhiteSpace().HasLengthIn(10, 1000);
         context.Check(dto.Rating).IsIn(1, 5);
-        return ValidatedValue.Success(dto);
+        return checkpoint.ToValidatedValue(dto);
     }
 }

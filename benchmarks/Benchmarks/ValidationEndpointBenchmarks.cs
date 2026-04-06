@@ -122,17 +122,18 @@ internal sealed class PortableSimpleRequestValidator : Validator<SimpleRequest, 
     public PortableSimpleRequestValidator(IValidationContextFactory validationContextFactory)
         : base(validationContextFactory) { }
 
-    protected override ValidatedValue<SimpleCommand> PerformValidation(ValidationContext context, SimpleRequest value)
+    protected override ValidatedValue<SimpleCommand> PerformValidation(
+        ValidationContext context,
+        ValidationCheckpoint checkpoint,
+        SimpleRequest value
+    )
     {
         var firstName = context.Check(value.FirstName).IsNotNullOrWhiteSpace();
         context.Check(value.Age).IsGreaterThanOrEqualTo(18);
 
-        if (context.HasErrors)
-        {
-            return ValidatedValue<SimpleCommand>.NoValue;
-        }
-
-        return ValidatedValue.Success(new SimpleCommand(firstName.Value, value.Age));
+        return checkpoint.HasNewErrors ?
+            ValidatedValue<SimpleCommand>.NoValue :
+            ValidatedValue.Success(new SimpleCommand(firstName.Value, value.Age));
     }
 }
 
@@ -148,7 +149,11 @@ internal sealed class PortableComplexRequestValidator : Validator<ComplexRequest
         _itemValidator = new PortableItemValidator(validationContextFactory);
     }
 
-    protected override ValidatedValue<ComplexCommand> PerformValidation(ValidationContext context, ComplexRequest value)
+    protected override ValidatedValue<ComplexCommand> PerformValidation(
+        ValidationContext context,
+        ValidationCheckpoint checkpoint,
+        ComplexRequest value
+    )
     {
         value.Email = context.Check(value.Email).IsEmail();
 
@@ -161,12 +166,9 @@ internal sealed class PortableComplexRequestValidator : Validator<ComplexRequest
 
         var itemsResult = context.Check(value.Items).IsNotNull().ValidateItems(_itemValidator);
 
-        if (context.HasErrors)
-        {
-            return ValidatedValue<ComplexCommand>.NoValue;
-        }
-
-        return ValidatedValue.Success(new ComplexCommand(value.Email, addressCommand!, itemsResult.Value));
+        return checkpoint.HasNewErrors ?
+            ValidatedValue<ComplexCommand>.NoValue :
+            ValidatedValue.Success(new ComplexCommand(value.Email, addressCommand!, itemsResult.Value));
     }
 }
 
@@ -175,16 +177,17 @@ internal sealed class PortableAddressValidator : Validator<AddressRequest, Addre
     public PortableAddressValidator(IValidationContextFactory validationContextFactory)
         : base(validationContextFactory) { }
 
-    protected override ValidatedValue<AddressCommand> PerformValidation(ValidationContext context, AddressRequest value)
+    protected override ValidatedValue<AddressCommand> PerformValidation(
+        ValidationContext context,
+        ValidationCheckpoint checkpoint,
+        AddressRequest value
+    )
     {
         var zipCode = context.Check(value.ZipCode).IsNotNullOrWhiteSpace();
 
-        if (context.HasErrors)
-        {
-            return ValidatedValue<AddressCommand>.NoValue;
-        }
-
-        return ValidatedValue.Success(new AddressCommand(zipCode.Value!));
+        return checkpoint.HasNewErrors ?
+            ValidatedValue<AddressCommand>.NoValue :
+            ValidatedValue.Success(new AddressCommand(zipCode.Value!));
     }
 }
 
@@ -193,17 +196,18 @@ internal sealed class PortableItemValidator : Validator<ItemRequest, ItemCommand
     public PortableItemValidator(IValidationContextFactory validationContextFactory)
         : base(validationContextFactory) { }
 
-    protected override ValidatedValue<ItemCommand> PerformValidation(ValidationContext context, ItemRequest value)
+    protected override ValidatedValue<ItemCommand> PerformValidation(
+        ValidationContext context,
+        ValidationCheckpoint checkpoint,
+        ItemRequest value
+    )
     {
         var sku = context.Check(value.Sku).IsNotNullOrWhiteSpace();
         context.Check(value.Quantity).IsGreaterThanOrEqualTo(1);
 
-        if (context.HasErrors)
-        {
-            return ValidatedValue<ItemCommand>.NoValue;
-        }
-
-        return ValidatedValue.Success(new ItemCommand(sku.Value!, value.Quantity));
+        return checkpoint.HasNewErrors ?
+            ValidatedValue<ItemCommand>.NoValue :
+            ValidatedValue.Success(new ItemCommand(sku.Value!, value.Quantity));
     }
 }
 

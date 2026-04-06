@@ -245,7 +245,11 @@ public sealed class ValidatorTests
             _addressValidator = new AddressValidator(validationContextFactory);
         }
 
-        protected override ValidatedValue<PersonDto> PerformValidation(ValidationContext context, PersonDto value)
+        protected override ValidatedValue<PersonDto> PerformValidation(
+            ValidationContext context,
+            ValidationCheckpoint checkpoint,
+            PersonDto value
+        )
         {
             var firstName = context.Check(value.FirstName).NormalizeTargetIfNecessary();
             value.FirstName = firstName.Value;
@@ -269,9 +273,7 @@ public sealed class ValidatorTests
                 context.Check(value.Addresses).ValidateItems(_addressValidator);
             }
 
-            return context.HasErrors ?
-                ValidatedValue<PersonDto>.NoValue :
-                ValidatedValue.Success(value);
+            return checkpoint.ToValidatedValue(value);
         }
     }
 
@@ -280,7 +282,11 @@ public sealed class ValidatorTests
         public AddressValidator(IValidationContextFactory validationContextFactory)
             : base(validationContextFactory) { }
 
-        protected override ValidatedValue<AddressDto> PerformValidation(ValidationContext context, AddressDto value)
+        protected override ValidatedValue<AddressDto> PerformValidation(
+            ValidationContext context,
+            ValidationCheckpoint checkpoint,
+            AddressDto value
+        )
         {
             var zipCode = context.Check(value.ZipCode).NormalizeTargetIfNecessary();
             value.ZipCode = zipCode.Value;
@@ -289,7 +295,7 @@ public sealed class ValidatorTests
                 zipCode.AddError("zipCode must not be empty", "NotEmpty");
             }
 
-            return ValidatedValue.Success(value);
+            return checkpoint.ToValidatedValue(value);
         }
     }
 
@@ -300,6 +306,7 @@ public sealed class ValidatorTests
 
         protected override ValidatedValue<CreatePersonCommand> PerformValidation(
             ValidationContext context,
+            ValidationCheckpoint checkpoint,
             RegistrationDto value
         )
         {
@@ -320,12 +327,9 @@ public sealed class ValidatorTests
                 email.AddError("email must be an email address", "Email");
             }
 
-            if (context.HasErrors)
-            {
-                return ValidatedValue<CreatePersonCommand>.NoValue;
-            }
-
-            return ValidatedValue.Success(new CreatePersonCommand(normalizedFirstName, normalizedEmail));
+            return checkpoint.HasNewErrors ?
+                ValidatedValue<CreatePersonCommand>.NoValue :
+                ValidatedValue.Success(new CreatePersonCommand(normalizedFirstName, normalizedEmail));
         }
     }
 
@@ -339,13 +343,17 @@ public sealed class ValidatorTests
 
         protected override async ValueTask<ValidatedValue<CreatePersonCommand>> PerformValidationAsync(
             ValidationContext context,
+            ValidationCheckpoint checkpoint,
             RegistrationDto value,
             CancellationToken cancellationToken
         )
         {
             await Task.Yield();
             cancellationToken.ThrowIfCancellationRequested();
-            return context.Check(value).ValidateChild(_registrationValidator);
+            var child = context.Check(value).ValidateChild(_registrationValidator);
+            return checkpoint.HasNewErrors ?
+                ValidatedValue<CreatePersonCommand>.NoValue :
+                ValidatedValue.Success(child.Value);
         }
     }
 
@@ -356,6 +364,7 @@ public sealed class ValidatorTests
 
         protected override ValidatedValue<CountingCreatePersonCommand> PerformValidation(
             ValidationContext context,
+            ValidationCheckpoint checkpoint,
             RegistrationDto value
         )
         {
@@ -374,12 +383,9 @@ public sealed class ValidatorTests
                 email.AddError("email must be an email address", "Email");
             }
 
-            if (context.HasErrors)
-            {
-                return ValidatedValue<CountingCreatePersonCommand>.NoValue;
-            }
-
-            return ValidatedValue.Success(new CountingCreatePersonCommand(normalizedFirstName, normalizedEmail));
+            return checkpoint.HasNewErrors ?
+                ValidatedValue<CountingCreatePersonCommand>.NoValue :
+                ValidatedValue.Success(new CountingCreatePersonCommand(normalizedFirstName, normalizedEmail));
         }
     }
 
@@ -390,12 +396,13 @@ public sealed class ValidatorTests
 
         protected override async ValueTask<ValidatedValue<PersonDto>> PerformValidationAsync(
             ValidationContext context,
+            ValidationCheckpoint checkpoint,
             PersonDto value,
             CancellationToken cancellationToken
         )
         {
             await Task.Delay(TimeSpan.FromMilliseconds(1), cancellationToken);
-            return ValidatedValue.Success(value);
+            return checkpoint.ToValidatedValue(value);
         }
     }
 
@@ -406,6 +413,7 @@ public sealed class ValidatorTests
 
         protected override ValidatedValue<CreatePersonCommand> PerformValidation(
             ValidationContext context,
+            ValidationCheckpoint checkpoint,
             RegistrationDto value
         ) =>
             ValidatedValue<CreatePersonCommand>.NoValue;
