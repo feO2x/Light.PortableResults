@@ -177,6 +177,7 @@ public static partial class Checks
         }
 
         var collection = check.Value;
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (collection is not null && GetCollectionCount(collection) > 0)
         {
             return check;
