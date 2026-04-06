@@ -17,7 +17,7 @@ namespace Benchmarks;
 public class ValidComplexDtoValidationBenchmarks
 {
     private readonly PortablePurchaseOrderDtoValidator _lightPortableResultsValidator =
-        new (new DefaultValidationContextFactory());
+        PortablePurchaseOrderDtoValidator.CreateSingleton(new DefaultValidationContextFactory());
 
     private readonly FluentPurchaseOrderDtoValidator _singletonFluentValidationValidator =
         FluentPurchaseOrderDtoValidator.CreateSingleton();
@@ -68,7 +68,7 @@ public class InvalidComplexDtoValidationBenchmarks
     private readonly PurchaseOrderDto _invalidDto = ComplexDtoValidationBenchmarkData.CreateInvalidDto();
 
     private readonly PortablePurchaseOrderDtoValidator _lightPortableResultsValidator =
-        new (new DefaultValidationContextFactory());
+        PortablePurchaseOrderDtoValidator.CreateSingleton(new DefaultValidationContextFactory());
 
     private readonly FluentPurchaseOrderDtoValidator _singletonFluentValidationValidator =
         FluentPurchaseOrderDtoValidator.CreateSingleton();
@@ -117,7 +117,7 @@ public class InvalidComplexDtoValidationBenchmarksForMinimalApis
     private readonly PurchaseOrderDto _invalidDto = ComplexDtoValidationBenchmarkData.CreateInvalidDto();
 
     private readonly PortablePurchaseOrderDtoValidator _lightPortableResultsValidator =
-        new (new DefaultValidationContextFactory());
+        PortablePurchaseOrderDtoValidator.CreateSingleton(new DefaultValidationContextFactory());
 
     private readonly FluentPurchaseOrderDtoValidator _singletonFluentValidationValidator =
         FluentPurchaseOrderDtoValidator.CreateSingleton();
@@ -166,7 +166,7 @@ public class InvalidComplexDtoValidationBenchmarksForMvc : ControllerBase
     private readonly PurchaseOrderDto _invalidDto = ComplexDtoValidationBenchmarkData.CreateInvalidDto();
 
     private readonly PortablePurchaseOrderDtoValidator _lightPortableResultsValidator =
-        new (new DefaultValidationContextFactory());
+        PortablePurchaseOrderDtoValidator.CreateSingleton(new DefaultValidationContextFactory());
 
     private readonly FluentPurchaseOrderDtoValidator _singletonFluentValidationValidator =
         FluentPurchaseOrderDtoValidator.CreateSingleton();
@@ -301,12 +301,32 @@ public sealed class PortablePurchaseOrderDtoValidator : Validator<PurchaseOrderD
     private readonly PortableOrderItemDtoValidator _itemValidator;
     private readonly PortableTagValidator _tagValidator;
 
-    public PortablePurchaseOrderDtoValidator(IValidationContextFactory validationContextFactory)
+    public PortablePurchaseOrderDtoValidator(
+        IValidationContextFactory validationContextFactory,
+        PortableShippingAddressDtoValidator addressValidator,
+        PortableTagValidator tagValidator,
+        PortableOrderItemDtoValidator itemValidator
+    )
         : base(validationContextFactory)
     {
-        _addressValidator = new PortableShippingAddressDtoValidator(validationContextFactory);
-        _tagValidator = new PortableTagValidator(validationContextFactory);
-        _itemValidator = new PortableOrderItemDtoValidator(validationContextFactory);
+        _addressValidator = addressValidator ?? throw new ArgumentNullException(nameof(addressValidator));
+        _tagValidator = tagValidator ?? throw new ArgumentNullException(nameof(tagValidator));
+        _itemValidator = itemValidator ?? throw new ArgumentNullException(nameof(itemValidator));
+    }
+
+    public static PortablePurchaseOrderDtoValidator CreateSingleton(IValidationContextFactory validationContextFactory)
+    {
+        if (validationContextFactory is null)
+        {
+            throw new ArgumentNullException(nameof(validationContextFactory));
+        }
+
+        return new PortablePurchaseOrderDtoValidator(
+            validationContextFactory,
+            new PortableShippingAddressDtoValidator(validationContextFactory),
+            new PortableTagValidator(validationContextFactory),
+            new PortableOrderItemDtoValidator(validationContextFactory)
+        );
     }
 
     protected override ValidatedValue<PurchaseOrderDto> PerformValidation(
