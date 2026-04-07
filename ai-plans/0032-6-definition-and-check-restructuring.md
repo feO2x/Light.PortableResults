@@ -10,18 +10,18 @@ The goal of this plan is therefore to establish one consistent assertion-centric
 
 ## Acceptance Criteria
 
-- [ ] `Checks` is reorganized into assertion-centric partial files that use the same family boundaries as the built-in validation error definitions: `Null`, `Empty`, `Equality`, `Comparable`, `Strings`, `Count`, `Enums`, `Decimals`, and `Predicate`.
-- [ ] All overloads of `IsNotNull` and `IsNull` are colocated in `Checks.Null.cs`, and the corresponding built-in definitions are colocated in `BuiltInValidationErrorDefinitions.Null.cs`.
-- [ ] All overloads of `IsEmpty` and `IsNotEmpty` are colocated in `Checks.Empty.cs`, including the string, `Guid`, collection, and `ImmutableArray<T>` variants, and the corresponding built-in definitions are colocated in `BuiltInValidationErrorDefinitions.Empty.cs`.
-- [ ] `IsNotNullOrWhiteSpace` remains in the string-oriented group together with the other string assertions in `Checks.Strings.cs`, and its built-in definition remains with the other string-oriented definitions in `BuiltInValidationErrorDefinitions.Strings.cs`.
-- [ ] `Checks.Equality.cs` contains only equality assertions after the restructuring, and `Checks.Count.cs` contains only count-based assertions after the restructuring.
-- [ ] `BuiltInValidationErrorDefinitions` is converted to a public static partial type whose implementation is split across matching files: `BuiltInValidationErrorDefinitions.Null.cs`, `.Empty.cs`, `.Equality.cs`, `.Comparable.cs`, `.Strings.cs`, `.Count.cs`, `.Enums.cs`, `.Decimals.cs`, and `.Predicate.cs`.
-- [ ] `BuiltInValidationErrorDefinitions` remains the single public built-in definition catalog. This plan does not introduce additional public helper or catalog types for custom-definition authoring.
-- [ ] The built-in definition members and nested definition classes are colocated by assertion family so that each `Checks.*.cs` file has a directly corresponding `BuiltInValidationErrorDefinitions.*.cs` file wherever a built-in definition exists for that assertion family.
-- [ ] The old grouping files that are superseded by the new assertion-centric layout are removed or renamed as part of the restructuring, so the codebase does not retain obsolete parallel file structures such as `Checks.Collections.cs` beside `Checks.Count.cs`.
-- [ ] Private helper methods and private cache-key types from `BuiltInValidationErrorDefinitions` remain non-public. They are either kept in one shared implementation file or placed in the relevant family files when only used there.
-- [ ] The restructuring does not change the public names, including the existing nested built-in definition type names, validation behavior, error codes, metadata shape, caching semantics, or namespace placement of the existing built-in checks and definitions.
-- [ ] Automated tests are updated or extended as needed, and the validation test suite continues to verify that the restructuring caused no behavioral regressions.
+- [x] `Checks` is reorganized into assertion-centric partial files that use the same family boundaries as the built-in validation error definitions: `Null`, `Empty`, `Equality`, `Comparable`, `Strings`, `Count`, `Enums`, `Decimals`, and `Predicate`.
+- [x] All overloads of `IsNotNull` and `IsNull` are colocated in `Checks.Null.cs`, and the corresponding built-in definitions are colocated in `BuiltInValidationErrorDefinitions.Null.cs`.
+- [x] All overloads of `IsEmpty` and `IsNotEmpty` are colocated in `Checks.Empty.cs`, including the string, `Guid`, collection, and `ImmutableArray<T>` variants, and the corresponding built-in definitions are colocated in `BuiltInValidationErrorDefinitions.Empty.cs`.
+- [x] `IsNotNullOrWhiteSpace` remains in the string-oriented group together with the other string assertions in `Checks.Strings.cs`, and its built-in definition remains with the other string-oriented definitions in `BuiltInValidationErrorDefinitions.Strings.cs`.
+- [x] `Checks.Equality.cs` contains only equality assertions after the restructuring, and `Checks.Count.cs` contains only count-based assertions after the restructuring.
+- [x] `BuiltInValidationErrorDefinitions` is converted to a public static partial type whose implementation is split across matching files: `BuiltInValidationErrorDefinitions.Null.cs`, `.Empty.cs`, `.Equality.cs`, `.Comparable.cs`, `.Strings.cs`, `.Count.cs`, `.Enums.cs`, `.Decimals.cs`, and `.Predicate.cs`.
+- [x] `BuiltInValidationErrorDefinitions` remains the single public built-in definition catalog. This plan does not introduce additional public helper or catalog types for custom-definition authoring.
+- [x] The built-in definition members and nested definition classes are colocated by assertion family so that each `Checks.*.cs` file has a directly corresponding `BuiltInValidationErrorDefinitions.*.cs` file wherever a built-in definition exists for that assertion family.
+- [x] The old grouping files that are superseded by the new assertion-centric layout are removed or renamed as part of the restructuring, so the codebase does not retain obsolete parallel file structures such as `Checks.Collections.cs` beside `Checks.Count.cs`.
+- [x] Private helper methods and private cache-key types from `BuiltInValidationErrorDefinitions` remain non-public. They are either kept in one shared implementation file or placed in the relevant family files when only used there.
+- [x] The restructuring does not change the public names, including the existing nested built-in definition type names, validation behavior, error codes, metadata shape, caching semantics, or namespace placement of the existing built-in checks and definitions.
+- [x] Automated tests are updated or extended as needed, and the validation test suite continues to verify that the restructuring caused no behavioral regressions.
 
 ## Technical Details
 

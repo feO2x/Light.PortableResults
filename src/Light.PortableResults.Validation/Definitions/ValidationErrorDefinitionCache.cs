@@ -4,9 +4,9 @@ using System.Collections.Generic;
 
 namespace Light.PortableResults.Validation.Definitions;
 
-// See the comment at the top of BuiltInValidationErrorDefinitions.cs for the rationale behind using small immutable
-// value-type keys on the built-in definition path. This cache stays generic so callers can still bring their own key
-// type, but the built-in rules deliberately avoid per-lookup key allocations.
+// See the comment at the top of BuiltInValidationErrorDefinitions.Shared.cs for the rationale behind using small
+// immutable value-type keys on the built-in definition path. This cache stays generic so callers can still bring
+// their own key type, but the built-in rules deliberately avoid per-lookup key allocations.
 
 /// <summary>
 /// Default thread-safe cache for immutable validation error definitions.
