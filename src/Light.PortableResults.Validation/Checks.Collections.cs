@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Immutable;
+using Light.PortableResults.Validation.Definitions;
 
 namespace Light.PortableResults.Validation;
 

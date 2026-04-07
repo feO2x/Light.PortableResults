@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Light.PortableResults.Metadata;
+using Light.PortableResults.Validation.Caching;
+using Light.PortableResults.Validation.Messaging;
+using Light.PortableResults.Validation.Normalization;
+using Light.PortableResults.Validation.Targeting;
 
 namespace Light.PortableResults.Validation;
 

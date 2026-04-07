@@ -1,6 +1,10 @@
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using Light.PortableResults.Metadata;
+using Light.PortableResults.Validation.Caching;
+using Light.PortableResults.Validation.Definitions;
+using Light.PortableResults.Validation.Messaging;
+using Light.PortableResults.Validation.Targeting;
 using Xunit;
 
 namespace Light.PortableResults.Validation.Tests;
@@ -122,7 +126,7 @@ public sealed class ValidationErrorDefinitionTests
     {
         var context = new DefaultValidationContextFactory().CreateValidationContext();
         var definition = new TemplateValidationErrorDefinition(
-            new ConstantValidationErrorMessageTemplate("Name must not be empty"),
+            new ValidationErrorTemplates.Constant("Name must not be empty"),
             code: "NotEmpty",
             metadata: MetadataObject.Create(("minimumLength", 1)),
             category: ErrorCategory.Validation
@@ -151,7 +155,7 @@ public sealed class ValidationErrorDefinitionTests
         var context = new DefaultValidationContextFactory().CreateValidationContext();
         var childContext = context.ForMember("address", isNormalized: true);
         var definition = new TemplateValidationErrorDefinition(
-            new ConstantValidationErrorMessageTemplate("Zip code is invalid"),
+            new ValidationErrorTemplates.Constant("Zip code is invalid"),
             target: ValidationTarget.Absolute("address.zipCode", isNormalized: true)
         );
         var check = childContext.Check("X", target: "zipCode", displayName: "Zip code").NormalizeTargetIfNecessary();

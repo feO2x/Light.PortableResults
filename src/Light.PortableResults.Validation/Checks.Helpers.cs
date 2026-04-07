@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
+using Light.PortableResults.Validation.Definitions;
 
 namespace Light.PortableResults.Validation;
 

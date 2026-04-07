@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Light.PortableResults.Validation.Targeting;
 using Xunit;
 
 namespace Light.PortableResults.Validation.Tests;

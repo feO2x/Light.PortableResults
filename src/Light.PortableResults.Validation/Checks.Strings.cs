@@ -1,5 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
+using Light.PortableResults.Validation.Definitions;
 
 namespace Light.PortableResults.Validation;
 

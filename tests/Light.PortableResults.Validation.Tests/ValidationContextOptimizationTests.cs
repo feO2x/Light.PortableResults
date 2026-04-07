@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using FluentAssertions;
+using Light.PortableResults.Validation.Targeting;
 using Xunit;
 
 namespace Light.PortableResults.Validation.Tests;

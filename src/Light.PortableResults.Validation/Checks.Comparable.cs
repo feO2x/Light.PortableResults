@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Light.PortableResults.Validation.Definitions;
 
 namespace Light.PortableResults.Validation;
 

@@ -1,6 +1,7 @@
 using BenchmarkDotNet.Attributes;
 using Light.PortableResults;
 using Light.PortableResults.Validation;
+using Light.PortableResults.Validation.Targeting;
 
 namespace Benchmarks;
 

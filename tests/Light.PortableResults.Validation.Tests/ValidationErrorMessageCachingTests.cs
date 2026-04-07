@@ -1,6 +1,10 @@
 using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
+using Light.PortableResults.Validation.Caching;
+using Light.PortableResults.Validation.Definitions;
+using Light.PortableResults.Validation.Messaging;
+using Light.PortableResults.Validation.Targeting;
 using Xunit;
 
 namespace Light.PortableResults.Validation.Tests;
@@ -88,7 +92,7 @@ public sealed class ValidationErrorMessageCachingTests
         var cache = new SpyValidationErrorMessageCache();
         var templates = new ValidationErrorTemplates { MessageCache = cache };
         var definition = new TemplateValidationErrorDefinition<decimal>(
-            new DisplayNameWithParameterValidationErrorMessageTemplate<decimal>(
+            new ValidationErrorTemplates.DisplayNameWithParameter<decimal>(
                 " must be at least ",
                 " EUR"
             ),
@@ -362,25 +366,25 @@ public sealed class ValidationErrorMessageCachingTests
     [Fact]
     public void TemplateImplementationsAndTemplateBackedDefinitions_ShouldReportStableMessages()
     {
-        new DisplayNameValidationErrorMessageTemplate(" suffix").IsMessageStable.Should().BeTrue();
-        new DisplayNameWithComparableValidationErrorMessageTemplate(" suffix").IsMessageStable.Should().BeTrue();
-        new DisplayNameWithRangeValidationErrorMessageTemplate(" before ", " and ").IsMessageStable.Should().BeTrue();
-        new DisplayNameWithParameterValidationErrorMessageTemplate<int>(" before ", " after ").IsMessageStable
+        new ValidationErrorTemplates.DisplayName(" suffix").IsMessageStable.Should().BeTrue();
+        new ValidationErrorTemplates.DisplayNameWithComparable(" suffix").IsMessageStable.Should().BeTrue();
+        new ValidationErrorTemplates.DisplayNameWithRange(" before ", " and ").IsMessageStable.Should().BeTrue();
+        new ValidationErrorTemplates.DisplayNameWithParameter<int>(" before ", " after ").IsMessageStable
            .Should()
            .BeTrue();
-        new DisplayNameWithPrecisionScaleValidationErrorMessageTemplate().IsMessageStable.Should().BeTrue();
-        new ConstantValidationErrorMessageTemplate("Constant").IsMessageStable.Should().BeTrue();
-        new IgnoreParameterValidationErrorMessageTemplate<int>(
-            new ConstantValidationErrorMessageTemplate("Inner")
+        new ValidationErrorTemplates.DisplayNameWithPrecisionScale().IsMessageStable.Should().BeTrue();
+        new ValidationErrorTemplates.Constant("Constant").IsMessageStable.Should().BeTrue();
+        new ValidationErrorTemplates.IgnoreParameter<int>(
+            new ValidationErrorTemplates.Constant("Inner")
         ).IsMessageStable.Should().BeTrue();
 
         var unstableTemplate = new UnstableValueTemplate();
         var stableDefinition = new TemplateValidationErrorDefinition(
-            new ConstantValidationErrorMessageTemplate("Constant")
+            new ValidationErrorTemplates.Constant("Constant")
         );
         var unstableDefinition = new TemplateValidationErrorDefinition(unstableTemplate);
         var stableParameterizedDefinition = new TemplateValidationErrorDefinition<int>(
-            new DisplayNameWithParameterValidationErrorMessageTemplate<int>(" before ", " after "),
+            new ValidationErrorTemplates.DisplayNameWithParameter<int>(" before ", " after "),
             5
         );
 

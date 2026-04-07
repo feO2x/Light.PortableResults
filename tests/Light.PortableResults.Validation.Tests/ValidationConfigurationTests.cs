@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
+using Light.PortableResults.Validation.Messaging;
+using Light.PortableResults.Validation.Normalization;
 using Xunit;
 
 namespace Light.PortableResults.Validation.Tests;
@@ -15,7 +17,7 @@ public sealed class ValidationConfigurationTests
     {
         var customizedTemplates = ValidationErrorTemplates.Default with
         {
-            NotNull = new ConstantValidationErrorMessageTemplate("Custom null message")
+            NotNull = new ValidationErrorTemplates.Constant("Custom null message")
         };
         var customizedOptions = ValidationContextOptions.Default with
         {
@@ -104,7 +106,7 @@ public sealed class ValidationConfigurationTests
             CultureInfo = CultureInfo.GetCultureInfo("de-DE")
         };
         var context = new DefaultValidationContextFactory(options).CreateValidationContext();
-        var template = new DisplayNameWithParameterValidationErrorMessageTemplate<decimal>(
+        var template = new ValidationErrorTemplates.DisplayNameWithParameter<decimal>(
             " must be at least ",
             " EUR"
         );
