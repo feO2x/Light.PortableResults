@@ -1,6 +1,4 @@
-using Light.PortableResults.Validation.Messaging;
-
-namespace Light.PortableResults.Validation.Caching;
+namespace Light.PortableResults.Validation.Messaging;
 
 /// <summary>
 /// Represents a cached validation error message together with the resolved absolute target string.

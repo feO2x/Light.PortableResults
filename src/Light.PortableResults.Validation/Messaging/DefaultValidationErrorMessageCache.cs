@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace Light.PortableResults.Validation.Caching;
+namespace Light.PortableResults.Validation.Messaging;
 
 /// <summary>
 /// Default thread-safe cache for stable validation error messages.

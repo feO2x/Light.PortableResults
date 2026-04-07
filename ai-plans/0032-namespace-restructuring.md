@@ -1,5 +1,7 @@
 # Namespace Restructuring for Light.PortableResults.Validation
 
+> Update: The originally introduced `Light.PortableResults.Validation.Caching` namespace has since been dissolved again. The definition cache types now live in `Light.PortableResults.Validation.Definitions`, and the message cache types now live in `Light.PortableResults.Validation.Messaging`.
+
 ## Rationale
 
 The `Light.PortableResults.Validation` namespace currently contains roughly 60 public types in a flat structure. This makes the API surface appear larger than it is in day-to-day use: a consumer writing a typical validator interacts with at most a dozen of those types, but IntelliSense presents all 60 as equals. Types that are primarily implementation details or advanced configuration concerns compete for attention with the core entry points.

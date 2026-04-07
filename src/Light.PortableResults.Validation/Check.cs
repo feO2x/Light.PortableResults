@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using Light.PortableResults.Metadata;
-using Light.PortableResults.Validation.Caching;
 using Light.PortableResults.Validation.Definitions;
 using Light.PortableResults.Validation.Messaging;
 using Light.PortableResults.Validation.Targeting;

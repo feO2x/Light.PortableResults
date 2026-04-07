@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Light.PortableResults.Validation.Definitions;
 
-namespace Light.PortableResults.Validation.Caching;
+namespace Light.PortableResults.Validation.Definitions;
 
 // See the comment at the top of BuiltInValidationErrorDefinitions.cs for the rationale behind using small immutable
 // value-type keys on the built-in definition path. This cache stays generic so callers can still bring their own key

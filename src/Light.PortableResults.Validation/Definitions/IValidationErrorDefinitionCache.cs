@@ -1,7 +1,6 @@
 using System;
-using Light.PortableResults.Validation.Definitions;
 
-namespace Light.PortableResults.Validation.Caching;
+namespace Light.PortableResults.Validation.Definitions;
 
 /// <summary>
 /// Provides thread-safe reuse of immutable validation error definitions.

@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using Light.PortableResults.Validation.Targeting;
 
-namespace Light.PortableResults.Validation.Caching;
+namespace Light.PortableResults.Validation.Messaging;
 
 /// <summary>
 /// Identifies a cached validation error message by provider, target descriptor, target prefix, display name, and

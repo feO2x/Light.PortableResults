@@ -1,4 +1,3 @@
-using Light.PortableResults.Validation.Caching;
 using Light.PortableResults.Validation.Definitions;
 using Light.PortableResults.Validation.Messaging;
 using Light.PortableResults.Validation.Targeting;

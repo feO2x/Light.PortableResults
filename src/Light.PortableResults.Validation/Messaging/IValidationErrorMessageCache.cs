@@ -1,4 +1,4 @@
-namespace Light.PortableResults.Validation.Caching;
+namespace Light.PortableResults.Validation.Messaging;
 
 /// <summary>
 /// Provides thread-safe storage for reusable validation error messages.

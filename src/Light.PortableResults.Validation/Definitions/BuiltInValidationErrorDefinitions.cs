@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Light.PortableResults.Metadata;
-using Light.PortableResults.Validation.Caching;
 using Light.PortableResults.Validation.Messaging;
 
 namespace Light.PortableResults.Validation.Definitions;
