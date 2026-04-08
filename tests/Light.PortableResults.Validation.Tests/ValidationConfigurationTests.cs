@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using FluentAssertions;
+using Light.PortableResults.Validation.Definitions;
 using Light.PortableResults.Validation.Messaging;
 using Light.PortableResults.Validation.Normalization;
 using Xunit;
@@ -120,7 +121,7 @@ public sealed class ValidationConfigurationTests
     }
 
     [Fact]
-    public void MessageTemplates_ShouldSupportLocalizationAndTranslationKeys()
+    public void TemplateBackedDefinitions_ShouldSupportLocalizationAndTranslationKeys()
     {
         var options = ValidationContextOptions.Default with
         {
@@ -132,8 +133,9 @@ public sealed class ValidationConfigurationTests
         };
         var context = new DefaultValidationContextFactory(options).CreateValidationContext();
         var check = context.Check(" ", target: "firstName", displayName: "Vorname").NormalizeTargetIfNecessary();
+        var definition = new TemplateValidationErrorDefinition(context.ErrorTemplates.NotNullOrWhiteSpace);
 
-        check.AddError(context.ErrorTemplates.NotNullOrWhiteSpace);
+        check.AddError(definition);
         var error = context.Errors[0];
 
         error.Message.Should().Be("Vorname ist erforderlich");
@@ -144,13 +146,14 @@ public sealed class ValidationConfigurationTests
     }
 
     [Fact]
-    public void AddErrorTemplate_ShouldSkipMessageGeneration_WhenCheckIsShortCircuited()
+    public void AddErrorDefinition_ShouldSkipMessageGeneration_WhenCheckIsShortCircuited()
     {
         var context = new DefaultValidationContextFactory().CreateValidationContext();
         var template = new CountingTemplate();
+        var definition = new TemplateValidationErrorDefinition(template);
         var check = context.Check("Alice", target: "firstName", displayName: "First name").ShortCircuit();
 
-        var updatedCheck = check.AddError(template);
+        var updatedCheck = check.AddError(definition);
 
         template.InvocationCount.Should().Be(0);
         updatedCheck.IsShortCircuited.Should().BeTrue();

@@ -144,6 +144,37 @@ Use
 `Custom`
 for imperative logic that may add zero, one, or many errors directly.
 
+When you need to add errors manually inside a check, use
+`AddError(string, ...)`
+for one-off imperative failures,
+`AddError(ValidationErrorDefinition, ...)`
+for reusable rules and custom templates, and
+`AddError(Error, ...)`
+only when you already have the fully materialized final error.
+If you previously passed a message template directly to
+`AddError(...)`,
+wrap it in
+`TemplateValidationErrorDefinition`
+or
+`TemplateValidationErrorDefinition<TParameter>`
+instead:
+
+```csharp
+using Light.PortableResults;
+using Light.PortableResults.Validation;
+using Light.PortableResults.Validation.Definitions;
+using Light.PortableResults.Validation.Messaging;
+
+var invalidCode = new TemplateValidationErrorDefinition(
+	new ValidationErrorTemplates.DisplayName(" is invalid"),
+	code: "InvalidCode",
+	category: ErrorCategory.UnprocessableContent
+);
+
+context.Check(request.Code, target: "code", displayName: "Code")
+	.AddError(invalidCode);
+```
+
 Guard-style assertions such as
 `IsNotNull`,
 `IsNull`,

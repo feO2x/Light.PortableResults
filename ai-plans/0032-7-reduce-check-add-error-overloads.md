@@ -6,15 +6,15 @@
 
 ## Acceptance Criteria
 
-- [ ] `Check<T>` exposes only three public `AddError(...)` overload families: one for `Error`, one for `ValidationErrorDefinition`, and one for plain string messages.
-- [ ] The public `Check<T>.AddError(ValidationErrorMessage, ...)` overload is removed.
-- [ ] The public `Check<T>.AddError(IValidationErrorMessageTemplate, ...)` overload is removed.
-- [ ] The public generic `Check<T>.AddError<TParameter>(IValidationErrorMessageTemplate<TParameter>, TParameter, ...)` overload is removed.
-- [ ] The remaining string-based `AddError(...)` overload has the exact intended signature, including explicit `ErrorCategory` support for imperative custom-validation scenarios.
-- [ ] Existing built-in assertions and internal validation infrastructure continue to work after the public overload reduction, using `ValidationErrorDefinition` as the reusable rule abstraction.
-- [ ] Public tests that exist only to exercise the removed template-based `Check<T>.AddError(...)` overloads are deleted, and replacement tests validate the remaining public API, including template-backed definitions as the migration path for callers who previously passed templates directly.
-- [ ] The removed message- and template-based `Check<T>.AddError(...)` overloads are not reintroduced through new helper methods or extension methods that recreate the same public surface elsewhere.
-- [ ] README and XML documentation are updated so examples and API guidance reflect the reduced overload set and the intended distinction between raw errors, simple imperative messages, and reusable definitions.
+- [x] `Check<T>` exposes only three public `AddError(...)` overload families: one for `Error`, one for `ValidationErrorDefinition`, and one for plain string messages.
+- [x] The public `Check<T>.AddError(ValidationErrorMessage, ...)` overload is removed.
+- [x] The public `Check<T>.AddError(IValidationErrorMessageTemplate, ...)` overload is removed.
+- [x] The public generic `Check<T>.AddError<TParameter>(IValidationErrorMessageTemplate<TParameter>, TParameter, ...)` overload is removed.
+- [x] The remaining string-based `AddError(...)` overload has the exact intended signature, including explicit `ErrorCategory` support for imperative custom-validation scenarios.
+- [x] Existing built-in assertions and internal validation infrastructure continue to work after the public overload reduction, using `ValidationErrorDefinition` as the reusable rule abstraction.
+- [x] Public tests that exist only to exercise the removed template-based `Check<T>.AddError(...)` overloads are deleted, and replacement tests validate the remaining public API, including template-backed definitions as the migration path for callers who previously passed templates directly.
+- [x] The removed message- and template-based `Check<T>.AddError(...)` overloads are not reintroduced through new helper methods or extension methods that recreate the same public surface elsewhere.
+- [x] README and XML documentation are updated so examples and API guidance reflect the reduced overload set and the intended distinction between raw errors, simple imperative messages, and reusable definitions.
 
 ## Technical Details
 

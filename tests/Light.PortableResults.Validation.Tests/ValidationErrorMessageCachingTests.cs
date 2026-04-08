@@ -31,16 +31,17 @@ public sealed class ValidationErrorMessageCachingTests
     }
 
     [Fact]
-    public void StableParameterlessTemplates_ShouldUseConfiguredMessageCache()
+    public void StableTemplateBackedDefinitions_ShouldUseConfiguredMessageCache()
     {
         var cache = new SpyValidationErrorMessageCache();
         var templates = new ValidationErrorTemplates { MessageCache = cache };
         var template = new StableCountingTemplate(" is invalid");
+        var definition = new TemplateValidationErrorDefinition(template);
         var firstContext = CreateContext(templates);
         var secondContext = CreateContext(templates);
 
-        firstContext.Check("A", target: "code", displayName: "Code").AddError(template);
-        secondContext.Check("B", target: "code", displayName: "Code").AddError(template);
+        firstContext.Check("A", target: "code", displayName: "Code").AddError(definition);
+        secondContext.Check("B", target: "code", displayName: "Code").AddError(definition);
 
         template.InvocationCount.Should().Be(1);
         cache.TryGetCalls.Should().Be(2);
@@ -50,16 +51,17 @@ public sealed class ValidationErrorMessageCachingTests
     }
 
     [Fact]
-    public void UnstableTemplates_ShouldBypassMessageCache()
+    public void UnstableTemplateBackedDefinitions_ShouldBypassMessageCache()
     {
         var cache = new SpyValidationErrorMessageCache();
         var templates = new ValidationErrorTemplates { MessageCache = cache };
         var template = new UnstableValueTemplate();
+        var definition = new TemplateValidationErrorDefinition(template);
         var firstContext = CreateContext(templates);
         var secondContext = CreateContext(templates);
 
-        firstContext.Check("A", target: "code", displayName: "Code").AddError(template);
-        secondContext.Check("B", target: "code", displayName: "Code").AddError(template);
+        firstContext.Check("A", target: "code", displayName: "Code").AddError(definition);
+        secondContext.Check("B", target: "code", displayName: "Code").AddError(definition);
 
         template.InvocationCount.Should().Be(2);
         cache.TryGetCalls.Should().Be(0);
@@ -69,20 +71,21 @@ public sealed class ValidationErrorMessageCachingTests
     }
 
     [Fact]
-    public void ParameterizedTemplateOverload_ShouldBypassMessageCache()
+    public void StableParameterizedTemplateBackedDefinitions_ShouldUseConfiguredMessageCache()
     {
         var cache = new SpyValidationErrorMessageCache();
         var templates = new ValidationErrorTemplates { MessageCache = cache };
         var template = new StableCountingParameterizedTemplate();
+        var definition = new TemplateValidationErrorDefinition<int>(template, 3);
         var firstContext = CreateContext(templates);
         var secondContext = CreateContext(templates);
 
-        firstContext.Check("A", target: "code", displayName: "Code").AddError(template, 3);
-        secondContext.Check("A", target: "code", displayName: "Code").AddError(template, 3);
+        firstContext.Check("A", target: "code", displayName: "Code").AddError(definition);
+        secondContext.Check("A", target: "code", displayName: "Code").AddError(definition);
 
-        template.InvocationCount.Should().Be(2);
-        cache.TryGetCalls.Should().Be(0);
-        cache.StoreCalls.Should().Be(0);
+        template.InvocationCount.Should().Be(1);
+        cache.TryGetCalls.Should().Be(2);
+        cache.StoreCalls.Should().Be(1);
     }
 
     [Fact]
@@ -109,30 +112,32 @@ public sealed class ValidationErrorMessageCachingTests
     }
 
     [Fact]
-    public void MessageCaching_ShouldBeDisabled_WhenTemplatesDoNotExposeCache()
+    public void MessageCaching_ShouldBeDisabled_WhenTemplateBackedDefinitionsDoNotExposeCache()
     {
         var template = new StableCountingTemplate(" is required");
+        var definition = new TemplateValidationErrorDefinition(template);
         var templates = new ValidationErrorTemplates { MessageCache = null };
         var firstContext = CreateContext(templates);
         var secondContext = CreateContext(templates);
 
-        firstContext.Check(string.Empty, target: "name", displayName: "Name").AddError(template);
-        secondContext.Check(string.Empty, target: "name", displayName: "Name").AddError(template);
+        firstContext.Check(string.Empty, target: "name", displayName: "Name").AddError(definition);
+        secondContext.Check(string.Empty, target: "name", displayName: "Name").AddError(definition);
 
         template.InvocationCount.Should().Be(2);
     }
 
     [Fact]
-    public void CacheHit_ShouldResolveTargetFromCachedEntry()
+    public void CacheHit_ShouldResolveTargetFromCachedDefinitionEntry()
     {
         var cache = new SpyValidationErrorMessageCache();
         var templates = new ValidationErrorTemplates { MessageCache = cache };
         var template = new StableCountingTemplate(" is required");
+        var definition = new TemplateValidationErrorDefinition(template);
         var firstContext = CreateContext(templates);
         var secondContext = CreateContext(templates);
 
-        firstContext.Check(string.Empty, target: "name").AddError(template);
-        secondContext.Check(string.Empty, target: "name").AddError(template);
+        firstContext.Check(string.Empty, target: "name").AddError(definition);
+        secondContext.Check(string.Empty, target: "name").AddError(definition);
 
         template.InvocationCount.Should().Be(1);
         firstContext.Errors[0].Target.Should().Be("name");
@@ -162,15 +167,16 @@ public sealed class ValidationErrorMessageCachingTests
     }
 
     [Fact]
-    public void CustomDisplayName_ShouldProduceDifferentCacheEntries()
+    public void CustomDisplayName_ShouldProduceDifferentDefinitionCacheEntries()
     {
         var cache = new SpyValidationErrorMessageCache();
         var templates = new ValidationErrorTemplates { MessageCache = cache };
         var template = new StableCountingTemplate(" is required");
+        var definition = new TemplateValidationErrorDefinition(template);
         var context = CreateContext(templates);
 
-        context.Check(string.Empty, target: "name", displayName: "First Name").AddError(template);
-        context.Check(string.Empty, target: "name", displayName: "Last Name").AddError(template);
+        context.Check(string.Empty, target: "name", displayName: "First Name").AddError(definition);
+        context.Check(string.Empty, target: "name", displayName: "Last Name").AddError(definition);
 
         template.InvocationCount.Should().Be(2);
         cache.StoreCalls.Should().Be(2);
@@ -179,17 +185,18 @@ public sealed class ValidationErrorMessageCachingTests
     }
 
     [Fact]
-    public void NestedValidationScope_ShouldUsePrefixInCacheKey()
+    public void NestedValidationScope_ShouldUsePrefixInDefinitionCacheKey()
     {
         var cache = new SpyValidationErrorMessageCache();
         var templates = new ValidationErrorTemplates { MessageCache = cache };
         var template = new StableCountingTemplate(" is required");
+        var definition = new TemplateValidationErrorDefinition(template);
         var rootContext = CreateContext(templates);
         var addressContext = rootContext.ForMember("address", isNormalized: true);
         var billingContext = rootContext.ForMember("billing", isNormalized: true);
 
-        addressContext.Check(string.Empty, target: "city").AddError(template);
-        billingContext.Check(string.Empty, target: "city").AddError(template);
+        addressContext.Check(string.Empty, target: "city").AddError(definition);
+        billingContext.Check(string.Empty, target: "city").AddError(definition);
 
         template.InvocationCount.Should().Be(2);
         cache.StoreCalls.Should().Be(2);
@@ -200,18 +207,19 @@ public sealed class ValidationErrorMessageCachingTests
     }
 
     [Fact]
-    public void NestedSamePrefix_ShouldHitCacheOnSecondCall()
+    public void NestedSamePrefix_ShouldHitDefinitionCacheOnSecondCall()
     {
         var cache = new SpyValidationErrorMessageCache();
         var templates = new ValidationErrorTemplates { MessageCache = cache };
         var template = new StableCountingTemplate(" is required");
+        var definition = new TemplateValidationErrorDefinition(template);
         var firstContext = CreateContext(templates);
         var secondContext = CreateContext(templates);
         var firstChild = firstContext.ForMember("address", isNormalized: true);
         var secondChild = secondContext.ForMember("address", isNormalized: true);
 
-        firstChild.Check(string.Empty, target: "city").AddError(template);
-        secondChild.Check(string.Empty, target: "city").AddError(template);
+        firstChild.Check(string.Empty, target: "city").AddError(definition);
+        secondChild.Check(string.Empty, target: "city").AddError(definition);
 
         template.InvocationCount.Should().Be(1);
         cache.TryGetCalls.Should().Be(2);
@@ -259,53 +267,57 @@ public sealed class ValidationErrorMessageCachingTests
     }
 
     [Fact]
-    public void NullableDisplayName_ShouldDeriveFromResolvedTarget()
+    public void NullableDisplayName_ShouldDeriveFromResolvedTargetForTemplateBackedDefinitions()
     {
         var context = CreateContext(new ValidationErrorTemplates());
         var template = new StableCountingTemplate(" is required");
+        var definition = new TemplateValidationErrorDefinition(template);
 
-        context.Check(string.Empty, target: "firstName").AddError(template);
+        context.Check(string.Empty, target: "firstName").AddError(definition);
 
         context.Errors[0].Message.Should().Be("firstName is required");
         context.Errors[0].Target.Should().Be("firstName");
     }
 
     [Fact]
-    public void NullableDisplayName_InNestedScope_ShouldDeriveFromComposedTarget()
+    public void NullableDisplayName_InNestedScope_ShouldDeriveFromComposedTargetForTemplateBackedDefinitions()
     {
         var context = CreateContext(new ValidationErrorTemplates());
         var childContext = context.ForMember("address", isNormalized: true);
         var template = new StableCountingTemplate(" is required");
+        var definition = new TemplateValidationErrorDefinition(template);
 
-        childContext.Check(string.Empty, target: "zipCode").AddError(template);
+        childContext.Check(string.Empty, target: "zipCode").AddError(definition);
 
         context.Errors[0].Message.Should().Be("address.zipCode is required");
         context.Errors[0].Target.Should().Be("address.zipCode");
     }
 
     [Fact]
-    public void ExplicitDisplayName_ShouldOverrideNullDefaultInMessage()
+    public void ExplicitDisplayName_ShouldOverrideNullDefaultInTemplateBackedDefinitions()
     {
         var context = CreateContext(new ValidationErrorTemplates());
         var template = new StableCountingTemplate(" is required");
+        var definition = new TemplateValidationErrorDefinition(template);
 
-        context.Check(string.Empty, target: "firstName", displayName: "First Name").AddError(template);
+        context.Check(string.Empty, target: "firstName", displayName: "First Name").AddError(definition);
 
         context.Errors[0].Message.Should().Be("First Name is required");
         context.Errors[0].Target.Should().Be("firstName");
     }
 
     [Fact]
-    public void CacheHit_ForParameterlessTemplate_ShouldBuildErrorDirectly()
+    public void CacheHit_ForTemplateBackedDefinition_ShouldBuildErrorDirectly()
     {
         var cache = new SpyValidationErrorMessageCache();
         var templates = new ValidationErrorTemplates { MessageCache = cache };
         var template = new StableCountingTemplate(" is invalid");
+        var definition = new TemplateValidationErrorDefinition(template);
         var firstContext = CreateContext(templates);
         var secondContext = CreateContext(templates);
 
-        firstContext.Check("A", target: "code").AddError(template, code: "Invalid");
-        secondContext.Check("B", target: "code").AddError(template, code: "Invalid");
+        firstContext.Check("A", target: "code").AddError(definition, code: "Invalid");
+        secondContext.Check("B", target: "code").AddError(definition, code: "Invalid");
 
         template.InvocationCount.Should().Be(1);
         cache.TryGetCalls.Should().Be(2);
