@@ -57,12 +57,21 @@ context.Check(dto.Comment).IsNotNullOrWhiteSpace(
 );
 ```
 
-Do not add a new public `Check<T>.AddError(ValidationErrorDefinition, ValidationErrorOverrides, ...)` overload. The previous plan intentionally reduced `Check<T>.AddError(...)` to three public overload families. Re-expanding that surface would cut against the simplification goal. Instead, implement the new behavior through built-in assertion helpers, for example by extending the private helper in `Checks.Helpers.cs` or adding an internal helper next to it.
+Do not add a new public `Check<T>.AddError(ValidationErrorDefinition, ValidationErrorOverrides, ...)` overload. The previous plan intentionally reduced `Check<T>.AddError(...)` to three public overload families. Re-expanding that surface would cut against the simplification goal. Instead, add a private `AddBuiltInErrorWithOverrides` helper in `Checks.Helpers.cs` next to the existing `AddBuiltInError`:
 
-The built-in assertion helper should apply overrides according to two distinct paths:
+```csharp
+private static Check<T> AddBuiltInErrorWithOverrides<T>(
+    Check<T> check,
+    ValidationErrorDefinition definition,
+    ValidationErrorOverrides overrides,
+    bool shortCircuitOnError
+)
+```
+
+The helper should first throw `ArgumentException` when all four members are null — a fully empty `ValidationErrorOverrides` is a programmer error (the caller should use the no-override overload instead). It then applies overrides according to two distinct paths:
 
 1. When `overrides.Message` is not set:
-   Use the existing `check.AddError(definition, code: ..., metadata: ..., category: ..., respectShortCircuit: false)` path. This preserves the current `ValidationErrorDefinition` semantics, including message generation through templates and message caching for stable definitions.
+   Use `check.AddError(definition, code: overrides.Code, metadata: overrides.Metadata, category: overrides.Category, respectShortCircuit: false)` followed by `ShortCircuitOnErrorIfRequested`. This preserves message-template rendering and message caching for stable definitions while applying the non-message overrides.
 
 2. When `overrides.Message` is set:
    Skip `definition.ProvideMessage(...)` entirely and use `check.AddError(string, ...)` with the effective details merged from the built-in definition and the override object. The effective values should be:
@@ -74,9 +83,10 @@ The built-in assertion helper should apply overrides according to two distinct p
 
 This keeps the built-in rule identity and non-message defaults intact while allowing the human-readable message to be replaced without constructing a custom `TemplateValidationErrorDefinition`. Target resolution continues to follow the current built-in definition semantics, which means the check target remains the default unless the built-in definition itself already carries an explicit target.
 
-When `overrides.Message` is provided, it should be validated with the same contract as `ValidationErrorMessage`. A `null` value means that no message override is present and the built-in definition path should be used. An empty or whitespace-only value is invalid and should cause the assertion overload to throw `ArgumentException`. The new built-in assertion overloads must not silently accept message values that the existing low-level message path would reject.
+Both validations must happen before the `check.IsShortCircuited` guard so that programmer errors are surfaced unconditionally, regardless of runtime validation state:
 
-The override type should be treated as "empty" when all members are unset. In that case, the overload should behave exactly like the corresponding existing overload without overrides.
+- When all four members are null (default instance), throw `ArgumentException`. Calling the override overload without any overrides is a programmer error; callers should use the no-override overload instead.
+- When `overrides.Message` is a non-null but empty or whitespace-only string, throw `ArgumentException`. This matches the contract of `ValidationErrorMessage` and ensures the new overloads do not silently accept values the existing low-level message path would reject.
 
 ### Assertion Overload Shape
 
@@ -94,6 +104,7 @@ IsNull(this Check<T> check, ValidationErrorOverrides overrides, bool shortCircui
 IsNotNullOrWhiteSpace(this Check<string> check, ValidationErrorOverrides overrides, bool shortCircuitOnError = false)
 IsEmail(this Check<string> check, ValidationErrorOverrides overrides, bool shortCircuitOnError = false)
 IsInEnum<TEnum>(this Check<TEnum> check, ValidationErrorOverrides overrides, bool shortCircuitOnError = false)
+IsInEnum<TEnum>(this Check<TEnum?> check, ValidationErrorOverrides overrides, bool shortCircuitOnError = false)
 ```
 
 2. For assertions with required rule parameters and no additional optional rule parameters, place `overrides` after the required rule parameters and before `shortCircuitOnError`.
@@ -111,6 +122,7 @@ HasCount<T>(this Check<IEnumerable<T>> check, int expectedCount, ValidationError
 Representative signatures:
 
 ```csharp
+Matches(this Check<string> check, Regex regex, ValidationErrorOverrides overrides, bool shortCircuitOnError = false)
 Matches(
     this Check<string> check,
     string pattern,
@@ -167,6 +179,8 @@ Must<T>(this Check<T> check, Func<ReadOnlyValidationContext, T, bool> predicate,
 
 Do not add an overload that mixes `ValidationErrorDefinition definition` and `ValidationErrorOverrides overrides` on `Must`. Once a caller has chosen an explicit reusable definition, the existing API surface is already the more precise tool. The override-based overloads are for the built-in predicate failure case.
 
+The `IValidationErrorMessageTemplate`-based `Must` overload (`Must(predicate, IValidationErrorMessageTemplate template, string? code, MetadataObject? metadata, bool shortCircuitOnError)`) is also excluded from the override family. That overload already gives the caller direct control over code and metadata, so an additional override-object variant would not improve clarity.
+
 `Custom(...)` should remain unchanged. It already exposes full imperative control through `ValidationContext.AddError(...)`, so adding override-object overloads there would not improve clarity.
 
 ### Families Covered
@@ -179,7 +193,7 @@ The new overload family should be added consistently across the existing built-i
 - `IsGreaterThan`, `IsGreaterThanOrEqualTo`, `IsLessThan`, `IsLessThanOrEqualTo`, `IsIn`, `IsNotIn`, `IsInExclusiveRange`
 - `IsNotNullOrWhiteSpace`, `HasMinLength`, `HasMaxLength`, `HasLengthIn`, both `Matches` overloads, `IsEmail`, `ContainsOnlyDigits`, `ContainsOnlyLettersAndDigits`
 - all `HasCount`, `HasMinCount`, `HasMaxCount` overloads
-- `IsInEnum`, `IsEnumName`
+- `IsInEnum` (both the non-nullable `Check<TEnum>` and nullable `Check<TEnum?>` overloads), `IsEnumName`
 - `HasPrecisionAndScale`
 - the built-in-definition `Must` overloads described above
 
@@ -198,7 +212,9 @@ Automated tests should verify:
 - stable built-in definitions still use message caching when only non-message overrides are present
 - overriding `Message` bypasses template rendering and therefore bypasses definition-based message caching for that specific call
 - existing overloads continue to resolve correctly for calls that only pass the old optional boolean parameters
-- representative special cases such as `Matches(pattern, "message")`, `IsEnumName<OrderStatus>("message")`, `HasPrecisionAndScale(4, 2, "message")`, and `IsEqualTo(expected, comparer, "message")`
+- passing `default(ValidationErrorOverrides)` or `new ValidationErrorOverrides()` throws `ArgumentException` regardless of whether the check is short-circuited
+- representative special cases such as `Matches(pattern, "message")`, `Matches(pattern, "message", RegexOptions.IgnoreCase)`, `IsEnumName<OrderStatus>("message")`, `HasPrecisionAndScale(4, 2, "message")`, and `IsEqualTo(expected, comparer, "message")`
+- an empty or whitespace-only `overrides.Message` value throws `ArgumentException` even when the check is short-circuited
 
 Documentation and XML comments should be updated with guidance that:
 
