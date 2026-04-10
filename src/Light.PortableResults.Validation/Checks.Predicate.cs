@@ -35,6 +35,36 @@ public static partial class Checks
     }
 
     /// <summary>
+    /// Evaluates the predicate for the current value and adds one validation error backed by the built-in predicate
+    /// definition when it returns <see langword="false" />, applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> Must<T>(
+        this Check<T> check,
+        Func<T, bool> predicate,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        if (predicate is null)
+        {
+            throw new ArgumentNullException(nameof(predicate));
+        }
+
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited || predicate(check.Value))
+        {
+            return check;
+        }
+
+        return AddBuiltInErrorWithOverrides(
+            check,
+            BuiltInValidationErrorDefinitions.Predicate,
+            overrides,
+            shortCircuitOnError
+        );
+    }
+
+    /// <summary>
     /// Evaluates the predicate for the current value and the scoped readonly validation context, then adds one
     /// validation error when it returns <see langword="false" />.
     /// </summary>
@@ -65,6 +95,44 @@ public static partial class Checks
         return AddBuiltInError(
             normalizedCheck,
             definition ?? BuiltInValidationErrorDefinitions.Predicate,
+            shortCircuitOnError
+        );
+    }
+
+    /// <summary>
+    /// Evaluates the predicate for the current value and the scoped readonly validation context, then adds one
+    /// validation error backed by the built-in predicate definition when it returns <see langword="false" />,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> Must<T>(
+        this Check<T> check,
+        Func<ReadOnlyValidationContext, T, bool> predicate,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        if (predicate is null)
+        {
+            throw new ArgumentNullException(nameof(predicate));
+        }
+
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited)
+        {
+            return check;
+        }
+
+        var normalizedCheck = check.NormalizeTargetIfNecessary();
+        var context = normalizedCheck.CreateChildContext().AsReadOnly();
+        if (predicate(context, normalizedCheck.Value))
+        {
+            return normalizedCheck;
+        }
+
+        return AddBuiltInErrorWithOverrides(
+            normalizedCheck,
+            BuiltInValidationErrorDefinitions.Predicate,
+            overrides,
             shortCircuitOnError
         );
     }

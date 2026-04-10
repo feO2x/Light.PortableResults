@@ -351,6 +351,69 @@ public sealed class ValidationErrorMessageCachingTests
     }
 
     [Fact]
+    public void BuiltInDefinitions_ShouldKeepMessageCaching_WhenOnlyNonMessageOverridesAreSupplied()
+    {
+        var cache = new SpyValidationErrorMessageCache();
+        var template = new StableCountingComparableTemplate(" = ");
+        var templates = new ValidationErrorTemplates
+        {
+            MessageCache = cache,
+            EqualTo = template
+        };
+        var overrides = new ValidationErrorOverrides
+        {
+            Code = "AdultRequired",
+            Category = ErrorCategory.UnprocessableContent
+        };
+        var firstContext = CreateContext(templates);
+        var secondContext = CreateContext(templates);
+
+        firstContext.Check(10, target: "age", displayName: "Age").IsEqualTo(18, overrides);
+        secondContext.Check(10, target: "age", displayName: "Age").IsEqualTo(18, overrides);
+
+        template.InvocationCount.Should().Be(1);
+        cache.TryGetCalls.Should().Be(2);
+        cache.StoreCalls.Should().Be(1);
+        firstContext.Errors[0].Message.Should().Be("Age = 18");
+        secondContext.Errors[0].Message.Should().Be("Age = 18");
+        firstContext.Errors[0].Code.Should().Be("AdultRequired");
+        secondContext.Errors[0].Code.Should().Be("AdultRequired");
+        firstContext.Errors[0].Category.Should().Be(ErrorCategory.UnprocessableContent);
+        secondContext.Errors[0].Category.Should().Be(ErrorCategory.UnprocessableContent);
+    }
+
+    [Fact]
+    public void BuiltInDefinitions_ShouldBypassMessageCaching_WhenMessageOverridesAreSupplied()
+    {
+        var cache = new SpyValidationErrorMessageCache();
+        var template = new StableCountingComparableTemplate(" = ");
+        var templates = new ValidationErrorTemplates
+        {
+            MessageCache = cache,
+            EqualTo = template
+        };
+        var firstContext = CreateContext(templates);
+        var secondContext = CreateContext(templates);
+
+        firstContext.Check(10, target: "age", displayName: "Age").IsEqualTo(
+            18,
+            new ValidationErrorOverrides { Message = "Age must be adult" }
+        );
+        secondContext.Check(10, target: "age", displayName: "Age").IsEqualTo(
+            18,
+            new ValidationErrorOverrides { Message = "Age must be eighteen or older" }
+        );
+
+        template.InvocationCount.Should().Be(0);
+        cache.TryGetCalls.Should().Be(0);
+        cache.StoreCalls.Should().Be(0);
+        firstContext.Errors[0].Message.Should().Be("Age must be adult");
+        secondContext.Errors[0].Message.Should().Be("Age must be eighteen or older");
+        firstContext.Errors[0].Code.Should().Be("EqualTo");
+        secondContext.Errors[0].Code.Should().Be("EqualTo");
+    }
+
+    [Fact]
     public void BuiltInRangeDefinitions_ShouldBypassCaching_WhenActiveRangeTemplateIsUnstable()
     {
         var cache = new SpyValidationErrorMessageCache();

@@ -40,6 +40,46 @@ public static partial class Checks
     }
 
     /// <summary>
+    /// Adds a validation error when the checked decimal exceeds the specified precision or scale,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// context.Check(dto.Amount).HasPrecisionAndScale(12, 2, "Amount format is invalid");
+    /// </code>
+    /// </example>
+    public static Check<decimal> HasPrecisionAndScale(
+        this Check<decimal> check,
+        int precision,
+        int scale,
+        ValidationErrorOverrides overrides,
+        bool ignoreTrailingZeros = false,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsurePrecisionScale(precision, scale);
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited)
+        {
+            return check;
+        }
+
+        var info = GetPrecisionScaleInfo(check.Value, ignoreTrailingZeros);
+        if (info.Digits <= precision && info.Scale <= scale)
+        {
+            return check;
+        }
+
+        var definition = BuiltInValidationErrorDefinitions.PrecisionScale(
+            check.Context.ErrorDefinitionCache,
+            precision,
+            scale,
+            ignoreTrailingZeros
+        );
+        return AddBuiltInErrorWithOverrides(check, definition, overrides, shortCircuitOnError);
+    }
+
+    /// <summary>
     /// Adds a validation error when the checked decimal exceeds the specified precision or scale.
     /// </summary>
     public static Check<decimal?> HasPrecisionAndScale(
@@ -75,5 +115,46 @@ public static partial class Checks
             ignoreTrailingZeros
         );
         return AddBuiltInError(check, definition, shortCircuitOnError);
+    }
+
+    /// <summary>
+    /// Adds a validation error when the checked decimal exceeds the specified precision or scale,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<decimal?> HasPrecisionAndScale(
+        this Check<decimal?> check,
+        int precision,
+        int scale,
+        ValidationErrorOverrides overrides,
+        bool ignoreTrailingZeros = false,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsurePrecisionScale(precision, scale);
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited)
+        {
+            return check;
+        }
+
+        var value = check.Value;
+        if (!value.HasValue)
+        {
+            throw CreateNullValueException(nameof(HasPrecisionAndScale));
+        }
+
+        var info = GetPrecisionScaleInfo(value.Value, ignoreTrailingZeros);
+        if (info.Digits <= precision && info.Scale <= scale)
+        {
+            return check;
+        }
+
+        var definition = BuiltInValidationErrorDefinitions.PrecisionScale(
+            check.Context.ErrorDefinitionCache,
+            precision,
+            scale,
+            ignoreTrailingZeros
+        );
+        return AddBuiltInErrorWithOverrides(check, definition, overrides, shortCircuitOnError);
     }
 }

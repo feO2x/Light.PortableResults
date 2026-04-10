@@ -20,6 +20,27 @@ public static partial class Checks
             AddBuiltInError(check, BuiltInValidationErrorDefinitions.Empty, shortCircuitOnError);
 
     /// <summary>
+    /// Adds a validation error when the checked string is neither <see langword="null" /> nor empty,
+    /// applying the specified inline error overrides. Whitespace-only strings are not considered empty.
+    /// </summary>
+    public static Check<string?> IsEmpty(
+        this Check<string?> check,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsureErrorOverrides(overrides);
+        return string.IsNullOrEmpty(check.Value) ?
+            check :
+            AddBuiltInErrorWithOverrides(
+                check,
+                BuiltInValidationErrorDefinitions.Empty,
+                overrides,
+                shortCircuitOnError
+            );
+    }
+
+    /// <summary>
     /// Adds a validation error when the checked string is <see langword="null" /> or empty.
     /// Whitespace-only strings are not considered empty.
     /// </summary>
@@ -27,6 +48,27 @@ public static partial class Checks
         string.IsNullOrEmpty(check.Value) ?
             AddBuiltInError(check, BuiltInValidationErrorDefinitions.NotEmpty, shortCircuitOnError) :
             check;
+
+    /// <summary>
+    /// Adds a validation error when the checked string is <see langword="null" /> or empty,
+    /// applying the specified inline error overrides. Whitespace-only strings are not considered empty.
+    /// </summary>
+    public static Check<string?> IsNotEmpty(
+        this Check<string?> check,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsureErrorOverrides(overrides);
+        return string.IsNullOrEmpty(check.Value) ?
+            AddBuiltInErrorWithOverrides(
+                check,
+                BuiltInValidationErrorDefinitions.NotEmpty,
+                overrides,
+                shortCircuitOnError
+            ) :
+            check;
+    }
 
     /// <summary>
     /// Adds a validation error when the checked GUID is not <see cref="Guid.Empty" />.
@@ -37,12 +79,54 @@ public static partial class Checks
             AddBuiltInError(check, BuiltInValidationErrorDefinitions.Empty, shortCircuitOnError);
 
     /// <summary>
+    /// Adds a validation error when the checked GUID is not <see cref="Guid.Empty" />,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<Guid> IsEmpty(
+        this Check<Guid> check,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsureErrorOverrides(overrides);
+        return check.IsShortCircuited || check.Value == Guid.Empty ?
+            check :
+            AddBuiltInErrorWithOverrides(
+                check,
+                BuiltInValidationErrorDefinitions.Empty,
+                overrides,
+                shortCircuitOnError
+            );
+    }
+
+    /// <summary>
     /// Adds a validation error when the checked GUID is <see cref="Guid.Empty" />.
     /// </summary>
     public static Check<Guid> IsNotEmpty(this Check<Guid> check, bool shortCircuitOnError = false) =>
         check.IsShortCircuited || check.Value != Guid.Empty ?
             check :
             AddBuiltInError(check, BuiltInValidationErrorDefinitions.NotEmpty, shortCircuitOnError);
+
+    /// <summary>
+    /// Adds a validation error when the checked GUID is <see cref="Guid.Empty" />,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<Guid> IsNotEmpty(
+        this Check<Guid> check,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsureErrorOverrides(overrides);
+        return check.IsShortCircuited || check.Value != Guid.Empty ?
+            check :
+            AddBuiltInErrorWithOverrides(
+                check,
+                BuiltInValidationErrorDefinitions.NotEmpty,
+                overrides,
+                shortCircuitOnError
+            );
+    }
 
     /// <summary>
     /// Adds a validation error when the checked collection is not <see langword="null" /> and has one or more items.
@@ -65,6 +149,37 @@ public static partial class Checks
         }
 
         return AddBuiltInError(check, BuiltInValidationErrorDefinitions.Empty, shortCircuitOnError);
+    }
+
+    /// <summary>
+    /// Adds a validation error when the checked collection is not <see langword="null" /> and has one or more items,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<TCollection> IsEmpty<TCollection>(
+        this Check<TCollection> check,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+        where TCollection : IEnumerable
+    {
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited)
+        {
+            return check;
+        }
+
+        var collection = check.Value;
+        if (collection is null || GetCollectionCount(collection) == 0)
+        {
+            return check;
+        }
+
+        return AddBuiltInErrorWithOverrides(
+            check,
+            BuiltInValidationErrorDefinitions.Empty,
+            overrides,
+            shortCircuitOnError
+        );
     }
 
     /// <summary>
@@ -92,6 +207,38 @@ public static partial class Checks
     }
 
     /// <summary>
+    /// Adds a validation error when the checked collection is <see langword="null" /> or has no items,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<TCollection> IsNotEmpty<TCollection>(
+        this Check<TCollection> check,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+        where TCollection : IEnumerable
+    {
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited)
+        {
+            return check;
+        }
+
+        var collection = check.Value;
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        if (collection is not null && GetCollectionCount(collection) > 0)
+        {
+            return check;
+        }
+
+        return AddBuiltInErrorWithOverrides(
+            check,
+            BuiltInValidationErrorDefinitions.NotEmpty,
+            overrides,
+            shortCircuitOnError
+        );
+    }
+
+    /// <summary>
     /// Adds a validation error when the checked immutable array is not empty.
     /// </summary>
     public static Check<ImmutableArray<TItem>> IsEmpty<TItem>(
@@ -103,6 +250,27 @@ public static partial class Checks
             AddBuiltInError(check, BuiltInValidationErrorDefinitions.Empty, shortCircuitOnError);
 
     /// <summary>
+    /// Adds a validation error when the checked immutable array is not empty,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<ImmutableArray<TItem>> IsEmpty<TItem>(
+        this Check<ImmutableArray<TItem>> check,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsureErrorOverrides(overrides);
+        return check.IsShortCircuited || check.Value.Length == 0 ?
+            check :
+            AddBuiltInErrorWithOverrides(
+                check,
+                BuiltInValidationErrorDefinitions.Empty,
+                overrides,
+                shortCircuitOnError
+            );
+    }
+
+    /// <summary>
     /// Adds a validation error when the checked immutable array is empty.
     /// </summary>
     public static Check<ImmutableArray<TItem>> IsNotEmpty<TItem>(
@@ -112,4 +280,25 @@ public static partial class Checks
         check.IsShortCircuited || check.Value.Length > 0 ?
             check :
             AddBuiltInError(check, BuiltInValidationErrorDefinitions.NotEmpty, shortCircuitOnError);
+
+    /// <summary>
+    /// Adds a validation error when the checked immutable array is empty,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<ImmutableArray<TItem>> IsNotEmpty<TItem>(
+        this Check<ImmutableArray<TItem>> check,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsureErrorOverrides(overrides);
+        return check.IsShortCircuited || check.Value.Length > 0 ?
+            check :
+            AddBuiltInErrorWithOverrides(
+                check,
+                BuiltInValidationErrorDefinitions.NotEmpty,
+                overrides,
+                shortCircuitOnError
+            );
+    }
 }

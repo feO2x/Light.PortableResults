@@ -8,18 +8,18 @@ Adding separate `string message`, `string code`, `ErrorCategory category`, and s
 
 ## Acceptance Criteria
 
-- [ ] A public value type named `ValidationErrorOverrides` is introduced for inline built-in assertion overrides, and assertion overloads use the parameter name `overrides`.
-- [ ] `ValidationErrorOverrides` exposes exactly the properties `Message`, `Code`, `Category`, and `Metadata` so callers can override any subset of the final `Error` details that belongs to the error payload without constructing a custom definition for simple scenarios.
-- [ ] The override type supports terse message-only call sites, for example `check.IsNotNullOrWhiteSpace("Comment must be present")`, without requiring named arguments or object construction at the call site.
-- [ ] Built-in assertion overloads are added consistently across the current assertion families, using one parameter-ordering strategy that avoids ambiguous calls with existing overloads.
-- [ ] The existing overloads without overrides remain available and source-compatible.
-- [ ] `shortCircuitOnError` remains a separate method parameter and is not folded into the override type.
-- [ ] When only non-message override properties such as `Code` or `Category` are supplied, built-in assertions continue to use the `ValidationErrorDefinition` path so message-template rendering and message caching are preserved.
-- [ ] When `Message` is overridden, built-in assertions skip template rendering for that failure and materialize the final error from the supplied message plus the effective built-in defaults and explicit overrides.
-- [ ] Built-in assertion overloads that take `ValidationErrorOverrides` do not introduce additional allocations on the success path compared to the existing overloads, aside from the caller-supplied override value itself.
-- [ ] The plan does not re-expand the public `Check<T>.AddError(...)` surface that was intentionally reduced in `0032-7`; the new inline override model applies to built-in assertion overloads, not to a new family of general-purpose `AddError(...)` overloads.
-- [ ] XML documentation and API guidance are updated with representative examples for message-only overrides, combined message/code/category overrides, and existing calls that continue to work without overrides.
-- [ ] Automated tests cover representative overload resolution, default preservation, unchanged existing target resolution behavior, short-circuit behavior, message-caching behavior, and inline code/category/message override scenarios.
+- [x] A public value type named `ValidationErrorOverrides` is introduced for inline built-in assertion overrides, and assertion overloads use the parameter name `overrides`.
+- [x] `ValidationErrorOverrides` exposes exactly the properties `Message`, `Code`, `Category`, and `Metadata` so callers can override any subset of the final `Error` details that belongs to the error payload without constructing a custom definition for simple scenarios.
+- [x] The override type supports terse message-only call sites, for example `check.IsNotNullOrWhiteSpace("Comment must be present")`, without requiring named arguments or object construction at the call site.
+- [x] Built-in assertion overloads are added consistently across the current assertion families, using one parameter-ordering strategy that avoids ambiguous calls with existing overloads.
+- [x] The existing overloads without overrides remain available and source-compatible.
+- [x] `shortCircuitOnError` remains a separate method parameter and is not folded into the override type.
+- [x] When only non-message override properties such as `Code` or `Category` are supplied, built-in assertions continue to use the `ValidationErrorDefinition` path so message-template rendering and message caching are preserved.
+- [x] When `Message` is overridden, built-in assertions skip template rendering for that failure and materialize the final error from the supplied message plus the effective built-in defaults and explicit overrides.
+- [x] Built-in assertion overloads that take `ValidationErrorOverrides` do not introduce additional allocations on the success path compared to the existing overloads, aside from the caller-supplied override value itself.
+- [x] The plan does not re-expand the public `Check<T>.AddError(...)` surface that was intentionally reduced in `0032-7`; the new inline override model applies to built-in assertion overloads, not to a new family of general-purpose `AddError(...)` overloads.
+- [x] XML documentation and API guidance are updated with representative examples for message-only overrides, combined message/code/category overrides, and existing calls that continue to work without overrides.
+- [x] Automated tests cover representative overload resolution, default preservation, unchanged existing target resolution behavior, short-circuit behavior, message-caching behavior, and inline code/category/message override scenarios.
 
 ## Technical Details
 

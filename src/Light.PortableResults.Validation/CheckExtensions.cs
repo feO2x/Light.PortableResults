@@ -248,6 +248,7 @@ public static class CheckExtensions
     /// <exception cref="InvalidOperationException">
     /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
     /// </exception>
+    // TODO: we should include automatic null checking in this method, too
     public static ValidatedValue<TCollection> ValidateItems<TCollection, TItem>(
         this Check<TCollection> check,
         Action<Check<TItem>> validateItem

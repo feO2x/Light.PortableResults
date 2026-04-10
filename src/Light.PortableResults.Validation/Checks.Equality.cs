@@ -20,6 +20,18 @@ public static partial class Checks
         check.IsEqualTo(comparativeValue, EqualityComparer<T>.Default, shortCircuitOnError);
 
     /// <summary>
+    /// Adds a validation error when the checked value does not equal the specified expected value,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> IsEqualTo<T>(
+        this Check<T> check,
+        T comparativeValue,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    ) =>
+        check.IsEqualTo(comparativeValue, EqualityComparer<T>.Default, overrides, shortCircuitOnError);
+
+    /// <summary>
     /// Adds a validation error when the checked value does not equal the specified expected value.
     /// </summary>
     public static Check<T> IsEqualTo<T>(
@@ -47,6 +59,36 @@ public static partial class Checks
     }
 
     /// <summary>
+    /// Adds a validation error when the checked value does not equal the specified expected value,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> IsEqualTo<T>(
+        this Check<T> check,
+        T comparativeValue,
+        IEqualityComparer<T> equalityComparer,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        if (equalityComparer is null)
+        {
+            throw new ArgumentNullException(nameof(equalityComparer));
+        }
+
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited || equalityComparer.Equals(check.Value, comparativeValue))
+        {
+            return check;
+        }
+
+        var definition = BuiltInValidationErrorDefinitions.EqualTo(
+            check.Context.ErrorDefinitionCache,
+            comparativeValue
+        );
+        return AddBuiltInErrorWithOverrides(check, definition, overrides, shortCircuitOnError);
+    }
+
+    /// <summary>
     /// Adds a validation error when the checked value equals the specified disallowed value.
     /// </summary>
     public static Check<T> IsNotEqualTo<T>(
@@ -55,6 +97,18 @@ public static partial class Checks
         bool shortCircuitOnError = false
     ) =>
         check.IsNotEqualTo(comparativeValue, EqualityComparer<T>.Default, shortCircuitOnError);
+
+    /// <summary>
+    /// Adds a validation error when the checked value equals the specified disallowed value,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> IsNotEqualTo<T>(
+        this Check<T> check,
+        T comparativeValue,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    ) =>
+        check.IsNotEqualTo(comparativeValue, EqualityComparer<T>.Default, overrides, shortCircuitOnError);
 
     /// <summary>
     /// Adds a validation error when the checked value equals the specified disallowed value.
@@ -81,5 +135,35 @@ public static partial class Checks
             comparativeValue
         );
         return AddBuiltInError(check, definition, shortCircuitOnError);
+    }
+
+    /// <summary>
+    /// Adds a validation error when the checked value equals the specified disallowed value,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> IsNotEqualTo<T>(
+        this Check<T> check,
+        T comparativeValue,
+        IEqualityComparer<T> equalityComparer,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        if (equalityComparer is null)
+        {
+            throw new ArgumentNullException(nameof(equalityComparer));
+        }
+
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited || !equalityComparer.Equals(check.Value, comparativeValue))
+        {
+            return check;
+        }
+
+        var definition = BuiltInValidationErrorDefinitions.NotEqualTo(
+            check.Context.ErrorDefinitionCache,
+            comparativeValue
+        );
+        return AddBuiltInErrorWithOverrides(check, definition, overrides, shortCircuitOnError);
     }
 }

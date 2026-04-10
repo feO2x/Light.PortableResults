@@ -328,7 +328,7 @@ public sealed class PortablePurchaseOrderDtoValidator : Validator<PurchaseOrderD
         context.Check(dto.Tags).IsNotNull().ValidateItems(
             static (Check<string> tag) => tag.HasLengthIn(2, 30)
         );
-        context.Check(dto.Items).IsNotNull().ValidateItems(_itemValidator);
+        context.Check(dto.Items).ValidateItems(_itemValidator);
         return checkpoint.ToValidatedValue(dto);
     }
 }

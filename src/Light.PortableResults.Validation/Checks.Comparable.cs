@@ -37,6 +37,37 @@ public static partial class Checks
     }
 
     /// <summary>
+    /// Adds a validation error when the checked value is not greater than the specified boundary,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> IsGreaterThan<T>(
+        this Check<T> check,
+        T comparativeValue,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsureRangeBoundaries(comparativeValue, comparativeValue, nameof(comparativeValue), nameof(comparativeValue));
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited)
+        {
+            return check;
+        }
+
+        var value = GetRequiredValue(check.Value, nameof(IsGreaterThan));
+        if (Comparer<T>.Default.Compare(value, comparativeValue) > 0)
+        {
+            return check;
+        }
+
+        var definition = BuiltInValidationErrorDefinitions.GreaterThan(
+            check.Context.ErrorDefinitionCache,
+            comparativeValue
+        );
+        return AddBuiltInErrorWithOverrides(check, definition, overrides, shortCircuitOnError);
+    }
+
+    /// <summary>
     /// Adds a validation error when the checked value is less than the specified boundary.
     /// </summary>
     public static Check<T> IsGreaterThanOrEqualTo<T>(
@@ -62,6 +93,37 @@ public static partial class Checks
             comparativeValue
         );
         return AddBuiltInError(check, definition, shortCircuitOnError);
+    }
+
+    /// <summary>
+    /// Adds a validation error when the checked value is less than the specified boundary,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> IsGreaterThanOrEqualTo<T>(
+        this Check<T> check,
+        T comparativeValue,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsureRangeBoundaries(comparativeValue, comparativeValue, nameof(comparativeValue), nameof(comparativeValue));
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited)
+        {
+            return check;
+        }
+
+        var value = GetRequiredValue(check.Value, nameof(IsGreaterThanOrEqualTo));
+        if (Comparer<T>.Default.Compare(value, comparativeValue) >= 0)
+        {
+            return check;
+        }
+
+        var definition = BuiltInValidationErrorDefinitions.GreaterThanOrEqualTo(
+            check.Context.ErrorDefinitionCache,
+            comparativeValue
+        );
+        return AddBuiltInErrorWithOverrides(check, definition, overrides, shortCircuitOnError);
     }
 
     /// <summary>
@@ -93,6 +155,37 @@ public static partial class Checks
     }
 
     /// <summary>
+    /// Adds a validation error when the checked value is not less than the specified boundary,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> IsLessThan<T>(
+        this Check<T> check,
+        T comparativeValue,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsureRangeBoundaries(comparativeValue, comparativeValue, nameof(comparativeValue), nameof(comparativeValue));
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited)
+        {
+            return check;
+        }
+
+        var value = GetRequiredValue(check.Value, nameof(IsLessThan));
+        if (Comparer<T>.Default.Compare(value, comparativeValue) < 0)
+        {
+            return check;
+        }
+
+        var definition = BuiltInValidationErrorDefinitions.LessThan(
+            check.Context.ErrorDefinitionCache,
+            comparativeValue
+        );
+        return AddBuiltInErrorWithOverrides(check, definition, overrides, shortCircuitOnError);
+    }
+
+    /// <summary>
     /// Adds a validation error when the checked value is greater than the specified boundary.
     /// </summary>
     public static Check<T> IsLessThanOrEqualTo<T>(
@@ -118,6 +211,37 @@ public static partial class Checks
             comparativeValue
         );
         return AddBuiltInError(check, definition, shortCircuitOnError);
+    }
+
+    /// <summary>
+    /// Adds a validation error when the checked value is greater than the specified boundary,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> IsLessThanOrEqualTo<T>(
+        this Check<T> check,
+        T comparativeValue,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsureRangeBoundaries(comparativeValue, comparativeValue, nameof(comparativeValue), nameof(comparativeValue));
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited)
+        {
+            return check;
+        }
+
+        var value = GetRequiredValue(check.Value, nameof(IsLessThanOrEqualTo));
+        if (Comparer<T>.Default.Compare(value, comparativeValue) <= 0)
+        {
+            return check;
+        }
+
+        var definition = BuiltInValidationErrorDefinitions.LessThanOrEqualTo(
+            check.Context.ErrorDefinitionCache,
+            comparativeValue
+        );
+        return AddBuiltInErrorWithOverrides(check, definition, overrides, shortCircuitOnError);
     }
 
     /// <summary>
@@ -152,6 +276,40 @@ public static partial class Checks
     }
 
     /// <summary>
+    /// Adds a validation error when the checked value lies outside the inclusive range,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> IsIn<T>(
+        this Check<T> check,
+        T lowerBoundary,
+        T upperBoundary,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsureRangeBoundaries(lowerBoundary, upperBoundary, nameof(lowerBoundary), nameof(upperBoundary));
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited)
+        {
+            return check;
+        }
+
+        var value = GetRequiredValue(check.Value, nameof(IsIn));
+        var comparer = Comparer<T>.Default;
+        if (comparer.Compare(value, lowerBoundary) >= 0 && comparer.Compare(value, upperBoundary) <= 0)
+        {
+            return check;
+        }
+
+        var definition = BuiltInValidationErrorDefinitions.IsIn(
+            check.Context.ErrorDefinitionCache,
+            lowerBoundary,
+            upperBoundary
+        );
+        return AddBuiltInErrorWithOverrides(check, definition, overrides, shortCircuitOnError);
+    }
+
+    /// <summary>
     /// Adds a validation error when the checked value lies within the inclusive range.
     /// </summary>
     public static Check<T> IsNotIn<T>(
@@ -183,6 +341,40 @@ public static partial class Checks
     }
 
     /// <summary>
+    /// Adds a validation error when the checked value lies within the inclusive range,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> IsNotIn<T>(
+        this Check<T> check,
+        T lowerBoundary,
+        T upperBoundary,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsureRangeBoundaries(lowerBoundary, upperBoundary, nameof(lowerBoundary), nameof(upperBoundary));
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited)
+        {
+            return check;
+        }
+
+        var value = GetRequiredValue(check.Value, nameof(IsNotIn));
+        var comparer = Comparer<T>.Default;
+        if (comparer.Compare(value, lowerBoundary) < 0 || comparer.Compare(value, upperBoundary) > 0)
+        {
+            return check;
+        }
+
+        var definition = BuiltInValidationErrorDefinitions.IsNotIn(
+            check.Context.ErrorDefinitionCache,
+            lowerBoundary,
+            upperBoundary
+        );
+        return AddBuiltInErrorWithOverrides(check, definition, overrides, shortCircuitOnError);
+    }
+
+    /// <summary>
     /// Adds a validation error when the checked value lies outside the exclusive range.
     /// </summary>
     public static Check<T> IsInExclusiveRange<T>(
@@ -211,5 +403,39 @@ public static partial class Checks
             upperBoundary
         );
         return AddBuiltInError(check, definition, shortCircuitOnError);
+    }
+
+    /// <summary>
+    /// Adds a validation error when the checked value lies outside the exclusive range,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> IsInExclusiveRange<T>(
+        this Check<T> check,
+        T lowerBoundary,
+        T upperBoundary,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = false
+    )
+    {
+        EnsureRangeBoundaries(lowerBoundary, upperBoundary, nameof(lowerBoundary), nameof(upperBoundary));
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited)
+        {
+            return check;
+        }
+
+        var value = GetRequiredValue(check.Value, nameof(IsInExclusiveRange));
+        var comparer = Comparer<T>.Default;
+        if (comparer.Compare(value, lowerBoundary) > 0 && comparer.Compare(value, upperBoundary) < 0)
+        {
+            return check;
+        }
+
+        var definition = BuiltInValidationErrorDefinitions.IsInExclusiveRange(
+            check.Context.ErrorDefinitionCache,
+            lowerBoundary,
+            upperBoundary
+        );
+        return AddBuiltInErrorWithOverrides(check, definition, overrides, shortCircuitOnError);
     }
 }

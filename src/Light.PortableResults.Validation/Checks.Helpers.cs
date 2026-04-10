@@ -21,6 +21,58 @@ public static partial class Checks
         return updatedCheck.ShortCircuitOnErrorIfRequested(shortCircuitOnError);
     }
 
+    private static Check<T> AddBuiltInErrorWithOverrides<T>(
+        Check<T> check,
+        ValidationErrorDefinition definition,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError
+    )
+    {
+        EnsureErrorOverrides(overrides);
+
+        var updatedCheck = overrides.Message is null ?
+            check.AddError(
+                definition,
+                code: overrides.Code,
+                metadata: overrides.Metadata,
+                category: overrides.Category,
+                respectShortCircuit: false
+            ) :
+            check.AddError(
+                overrides.Message,
+                code: overrides.Code ?? definition.Code,
+                metadata: overrides.Metadata ?? definition.Metadata,
+                target: definition.Target,
+                category: overrides.Category ?? definition.Category,
+                respectShortCircuit: false
+            );
+
+        return updatedCheck.ShortCircuitOnErrorIfRequested(shortCircuitOnError);
+    }
+
+    private static void EnsureErrorOverrides(ValidationErrorOverrides overrides)
+    {
+        if (overrides.Message is null &&
+            overrides.Code is null &&
+            overrides.Category is null &&
+            overrides.Metadata is null
+           )
+        {
+            throw new ArgumentException(
+                "At least one override must be specified. Use the overload without overrides when no override is needed.",
+                nameof(overrides)
+            );
+        }
+
+        if (overrides.Message is not null && string.IsNullOrWhiteSpace(overrides.Message))
+        {
+            throw new ArgumentException(
+                "The override message must not be empty or whitespace.",
+                nameof(overrides)
+            );
+        }
+    }
+
     private static InvalidOperationException CreateNullValueException(string assertionName) =>
         new (
             $"{assertionName} requires a non-null value. Enable automatic null checking or guard explicitly " +

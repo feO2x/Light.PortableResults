@@ -16,6 +16,27 @@ public static partial class Checks
             AddBuiltInError(check, BuiltInValidationErrorDefinitions.NotNull, shortCircuitOnError);
 
     /// <summary>
+    /// Adds a validation error when the checked value is <see langword="null" />,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> IsNotNull<T>(
+        this Check<T> check,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = true
+    )
+    {
+        EnsureErrorOverrides(overrides);
+        return check.IsShortCircuited || !check.IsValueNull ?
+            check :
+            AddBuiltInErrorWithOverrides(
+                check,
+                BuiltInValidationErrorDefinitions.NotNull,
+                overrides,
+                shortCircuitOnError
+            );
+    }
+
+    /// <summary>
     /// Adds a validation error when the checked value is not <see langword="null" />.
     /// </summary>
     public static Check<T> IsNull<T>(this Check<T> check, bool shortCircuitOnError = true)
@@ -26,5 +47,29 @@ public static partial class Checks
         }
 
         return AddBuiltInError(check, BuiltInValidationErrorDefinitions.Null, shortCircuitOnError);
+    }
+
+    /// <summary>
+    /// Adds a validation error when the checked value is not <see langword="null" />,
+    /// applying the specified inline error overrides.
+    /// </summary>
+    public static Check<T> IsNull<T>(
+        this Check<T> check,
+        ValidationErrorOverrides overrides,
+        bool shortCircuitOnError = true
+    )
+    {
+        EnsureErrorOverrides(overrides);
+        if (check.IsShortCircuited || check.IsValueNull)
+        {
+            return check;
+        }
+
+        return AddBuiltInErrorWithOverrides(
+            check,
+            BuiltInValidationErrorDefinitions.Null,
+            overrides,
+            shortCircuitOnError
+        );
     }
 }
