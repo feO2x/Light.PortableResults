@@ -45,6 +45,7 @@
     <File Path="ai-plans\0032-6-definition-and-check-restructuring.md" />
     <File Path="ai-plans\0032-7-reduce-check-add-error-overloads.md" />
     <File Path="ai-plans\0032-8-failure-overrides.md" />
+    <File Path="ai-plans\0032-9-enhance-tests.md" />
     <File Path="ai-plans\AGENTS.md" />
   </Folder>
   <Folder Name="/benchmarks/">
