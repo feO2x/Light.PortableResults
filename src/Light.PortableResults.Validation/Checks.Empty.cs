@@ -15,7 +15,7 @@ public static partial class Checks
     /// Whitespace-only strings are not considered empty.
     /// </summary>
     public static Check<string?> IsEmpty(this Check<string?> check, bool shortCircuitOnError = false) =>
-        string.IsNullOrEmpty(check.Value) ?
+        check.IsShortCircuited || string.IsNullOrEmpty(check.Value) ?
             check :
             AddBuiltInError(check, BuiltInValidationErrorDefinitions.Empty, shortCircuitOnError);
 
@@ -30,7 +30,7 @@ public static partial class Checks
     )
     {
         EnsureErrorOverrides(overrides);
-        return string.IsNullOrEmpty(check.Value) ?
+        return check.IsShortCircuited || string.IsNullOrEmpty(check.Value) ?
             check :
             AddBuiltInErrorWithOverrides(
                 check,
@@ -45,9 +45,9 @@ public static partial class Checks
     /// Whitespace-only strings are not considered empty.
     /// </summary>
     public static Check<string?> IsNotEmpty(this Check<string?> check, bool shortCircuitOnError = false) =>
-        string.IsNullOrEmpty(check.Value) ?
-            AddBuiltInError(check, BuiltInValidationErrorDefinitions.NotEmpty, shortCircuitOnError) :
-            check;
+        check.IsShortCircuited || !string.IsNullOrEmpty(check.Value) ?
+            check :
+            AddBuiltInError(check, BuiltInValidationErrorDefinitions.NotEmpty, shortCircuitOnError);
 
     /// <summary>
     /// Adds a validation error when the checked string is <see langword="null" /> or empty,
@@ -60,14 +60,14 @@ public static partial class Checks
     )
     {
         EnsureErrorOverrides(overrides);
-        return string.IsNullOrEmpty(check.Value) ?
+        return check.IsShortCircuited || !string.IsNullOrEmpty(check.Value) ?
+            check :
             AddBuiltInErrorWithOverrides(
                 check,
                 BuiltInValidationErrorDefinitions.NotEmpty,
                 overrides,
                 shortCircuitOnError
-            ) :
-            check;
+            );
     }
 
     /// <summary>
@@ -143,6 +143,7 @@ public static partial class Checks
         }
 
         var collection = check.Value;
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract -- caller might have NRTs disabled
         if (collection is null || GetCollectionCount(collection) == 0)
         {
             return check;
@@ -169,6 +170,7 @@ public static partial class Checks
         }
 
         var collection = check.Value;
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract -- caller might have NRTs disabled
         if (collection is null || GetCollectionCount(collection) == 0)
         {
             return check;

@@ -31,7 +31,7 @@ public abstract class BaseValidator<TSource>
     /// <summary>
     /// Gets the factory used to create validation contexts.
     /// </summary>
-    protected IValidationContextFactory ValidationContextFactory { get; }
+    public IValidationContextFactory ValidationContextFactory { get; }
 
     /// <summary>
     /// Gets a value indicating whether automatic null checking is enabled.

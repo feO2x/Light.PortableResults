@@ -70,16 +70,17 @@ public sealed class ValidationConfigurationTests
         var result = validator.Validate(null, context, target: "request", displayName: "Request");
 
         result.IsValid.Should().BeFalse();
-        var expectedErrors = new Errors(
-            new Error
-            {
-                Message = "checkout: Request is required",
-                Code = "MissingValue",
-                Target = string.Empty,
-                Category = ErrorCategory.Validation
-            }
+        result.Errors.Should().Equal(
+            new Errors(
+                new Error
+                {
+                    Message = "checkout: Request is required",
+                    Code = "MissingValue",
+                    Target = string.Empty,
+                    Category = ErrorCategory.Validation
+                }
+            )
         );
-        result.Errors.Should().Equal(expectedErrors);
     }
 
     [Fact]
@@ -118,6 +119,27 @@ public sealed class ValidationConfigurationTests
         );
 
         message.Text.Should().Be("Amount must be at least 1234,5 EUR");
+    }
+
+    [Fact]
+    public void SpecificBuiltInTemplateHelpers_ShouldBehaveAsExpected()
+    {
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var messageContext = context.Check(12.34m, target: "amount", displayName: "Amount").CreateMessageContext();
+        var constant = new ValidationErrorTemplates.Constant("Always invalid", "validation.constant");
+        var precisionScale = new ValidationErrorTemplates.DisplayNameWithPrecisionScale();
+        var ignored = new ValidationErrorTemplates.IgnoreParameter<int>(constant);
+
+        constant.ProvideMessage(messageContext).Should()
+           .Be(new ValidationErrorMessage("Always invalid", "validation.constant"));
+        precisionScale.ProvideMessage(messageContext, new PrecisionScaleDescriptor(4, 2, true)).Text.Should().Be(
+            "Amount must not be more than 4 digits in total, with allowance for 2 decimals when trailing decimal zeros are ignored"
+        );
+        ignored.ProvideMessage(messageContext, 5).Should()
+           .Be(new ValidationErrorMessage("Always invalid", "validation.constant"));
+        constant.IsMessageStable.Should().BeTrue();
+        precisionScale.IsMessageStable.Should().BeTrue();
+        ignored.IsMessageStable.Should().BeTrue();
     }
 
     [Fact]
@@ -200,6 +222,7 @@ public sealed class ValidationConfigurationTests
         stringValue.Should().Be("checkout");
         context.TryGetItem(intKey, out var intValue).Should().BeTrue();
         intValue.Should().Be(42);
+        stringKey1.ToString().Should().Contain("tenant");
     }
 
     [Fact]
@@ -209,6 +232,68 @@ public sealed class ValidationConfigurationTests
         var intKey = new ValidationContextKey<int>("tenant");
 
         stringKey.Should().NotBe(intKey);
+        Action nullNameAct = () => _ = new ValidationContextKey<string>(null!);
+        Action whitespaceNameAct = () => _ = new ValidationContextKey<string>(" ");
+
+        nullNameAct.Should().Throw<ArgumentNullException>();
+        whitespaceNameAct.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void ValueNormalizersAndNoOpNullProvider_ShouldExposeSingletonBehaviors()
+    {
+        ValueNormalizers.Trim.Should().BeSameAs(TrimStringNormalizer.Instance);
+        ValueNormalizers.NoOp.Should().BeSameAs(NoOpValueNormalizer.Instance);
+
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var messageContext =
+            context.Check<string?>("Alice", target: "name", displayName: "Name").CreateMessageContext();
+
+        NoOpAutomaticNullErrorProvider.Instance.TryCreateError(messageContext, out var error).Should().BeFalse();
+        error.IsDefaultInstance.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ValidationErrorMessageContext_ShouldValidateConstructorArguments_AndExposeValues()
+    {
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var readOnlyContext = context.AsReadOnly();
+
+        var messageContext = new ValidationErrorMessageContext<string>(
+            readOnlyContext,
+            "Name",
+            "name",
+            "Alice"
+        );
+
+        messageContext.ValidationContext.Should().Be(readOnlyContext);
+        messageContext.DisplayName.Should().Be("Name");
+        messageContext.Target.Should().Be("name");
+        messageContext.Value.Should().Be("Alice");
+
+        Action defaultContextAct =
+            () => _ = new ValidationErrorMessageContext<string>(default, "Name", "name", "Alice");
+        Action nullDisplayNameAct = () =>
+            _ = new ValidationErrorMessageContext<string>(readOnlyContext, null!, "name", "Alice");
+        Action nullTargetAct = () =>
+            _ = new ValidationErrorMessageContext<string>(readOnlyContext, "Name", null!, "Alice");
+
+        defaultContextAct.Should().Throw<ArgumentException>().WithParameterName("validationContext");
+        nullDisplayNameAct.Should().Throw<ArgumentNullException>().WithParameterName("displayName");
+        nullTargetAct.Should().Throw<ArgumentNullException>().WithParameterName("target");
+    }
+
+    [Fact]
+    public void DefaultReadOnlyContextAndDefaultCheckpoint_ShouldThrow_WhenAccessed()
+    {
+        ReadOnlyValidationContext readOnlyContext = default;
+        ValidationCheckpoint checkpoint = default;
+
+        Action readOnlyAct = () => _ = readOnlyContext.TargetPrefix;
+        Action checkpointAct = () => _ = checkpoint.HasNewErrors;
+
+        readOnlyAct.Should().Throw<InvalidOperationException>().WithMessage("*must not be the default instance*");
+        checkpointAct.Should().Throw<InvalidOperationException>().WithMessage("*must not be the default instance*");
     }
 
     private sealed class NullToEmptyStringValidator : Validator<string?>

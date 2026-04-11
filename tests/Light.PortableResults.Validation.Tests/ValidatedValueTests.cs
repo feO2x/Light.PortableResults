@@ -46,5 +46,8 @@ public sealed class ValidatedValueTests
         left.Should().Be(right);
         ValidatedValue<int>.NoValue.Should().Be(ValidatedValue<int>.NoValue);
         left.Should().NotBe(ValidatedValue<int>.NoValue);
+        (left == right).Should().BeTrue();
+        (left != ValidatedValue<int>.NoValue).Should().BeTrue();
+        left.GetHashCode().Should().Be(right.GetHashCode());
     }
 }

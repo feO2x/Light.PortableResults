@@ -8,16 +8,16 @@ This plan restructures the validation test suite toward sociable unit tests in t
 
 ## Acceptance Criteria
 
-- [ ] `Light.PortableResults.Validation.Tests` is reorganized around public validation workflows and rule families instead of around implementation fragments, with the new structure favoring sociable unit tests that use real validators, real `ValidationContext` instances, and real built-in checks.
-- [ ] The reworked suite covers the public synchronous validator APIs in `Validator<T>` and `Validator<TSource, TValidated>`, including fresh-context overloads, explicit-`ValidationTarget` overloads, context-based overloads, `TryValidate`, `CheckForErrors`, and the child-validation entry points.
-- [ ] The reworked suite covers the public asynchronous validator APIs in `AsyncValidator<T>` and `AsyncValidator<TSource, TValidated>`, including explicit-`ValidationTarget` overloads, caller-expression overloads, cancellation behavior, and child-validation entry points.
-- [ ] Automated tests cover representative success and failure flows for each built-in assertion family: null, empty, equality, comparable/range, strings, count, enums, decimals, and predicate/custom checks.
-- [ ] Automated tests cover the currently under-tested collection-validation workflows in `CheckExtensions`, including mutable collections, arrays, `ImmutableArray<T>`, delegate-based item validation, validator-based item validation, transforming item validation, and asynchronous item-validation overloads.
-- [ ] The reworked suite verifies target propagation and scope composition through realistic nested-validator and indexed-collection scenarios rather than relying primarily on narrow helper-level assertions.
-- [ ] Tests that are primarily coupled to private fields, reflection-based API-shape assertions, or internal storage layouts are removed or reduced to the minimum necessary set, and any retained low-level tests have a clear public-contract justification.
-- [ ] Message-cache and definition-cache tests remain in the suite only where they protect externally meaningful behavior such as stable-message reuse, culture-sensitive formatting, and correct target/message materialization on cache hits.
-- [ ] The validation test project uses `coverlet.collector` as the standard feedback mechanism for the restructuring work, and the plan explicitly expects implementers to use coverage reports to decide which additional lower-level tests are still necessary after the sociable tests are in place.
-- [ ] The final suite remains fast, deterministic, and free of mocking libraries, continuing to follow the repository guidance for sociable unit tests and manual test doubles only where a double is still actually needed.
+- [x] `Light.PortableResults.Validation.Tests` is reorganized around public validation workflows and rule families instead of around implementation fragments, with the new structure favoring sociable unit tests that use real validators, real `ValidationContext` instances, and real built-in checks.
+- [x] The reworked suite covers the public synchronous validator APIs in `Validator<T>` and `Validator<TSource, TValidated>`, including fresh-context overloads, explicit-`ValidationTarget` overloads, context-based overloads, `TryValidate`, `CheckForErrors`, and the child-validation entry points.
+- [x] The reworked suite covers the public asynchronous validator APIs in `AsyncValidator<T>` and `AsyncValidator<TSource, TValidated>`, including explicit-`ValidationTarget` overloads, caller-expression overloads, cancellation behavior, and child-validation entry points.
+- [x] Automated tests cover representative success and failure flows for each built-in assertion family: null, empty, equality, comparable/range, strings, count, enums, decimals, and predicate/custom checks.
+- [x] Automated tests cover the currently under-tested collection-validation workflows in `CheckExtensions`, including mutable collections, arrays, `ImmutableArray<T>`, delegate-based item validation, validator-based item validation, transforming item validation, and asynchronous item-validation overloads.
+- [x] The reworked suite verifies target propagation and scope composition through realistic nested-validator and indexed-collection scenarios rather than relying primarily on narrow helper-level assertions.
+- [x] Tests that are primarily coupled to private fields, reflection-based API-shape assertions, or internal storage layouts are removed or reduced to the minimum necessary set, and any retained low-level tests have a clear public-contract justification.
+- [x] Message-cache and definition-cache tests remain in the suite only where they protect externally meaningful behavior such as stable-message reuse, culture-sensitive formatting, and correct target/message materialization on cache hits.
+- [x] The validation test project uses `coverlet.collector` as the standard feedback mechanism for the restructuring work, and the plan explicitly expects implementers to use coverage reports to decide which additional lower-level tests are still necessary after the sociable tests are in place.
+- [x] The final suite remains fast, deterministic, and free of mocking libraries, continuing to follow the repository guidance for sociable unit tests and manual test doubles only where a double is still actually needed.
 
 ## Technical Details
 

@@ -50,6 +50,19 @@ public sealed class ValidationCheckpointTests
     }
 
     [Fact]
+    public void TryGetNewErrors_ShouldReturnFalse_WhenNoErrorsWereAddedAfterCheckpoint()
+    {
+        var context = ValidationContextFactory.CreateValidationContext();
+
+        var checkpoint = context.CreateCheckpoint();
+
+        checkpoint.HasNewErrors.Should().BeFalse();
+        checkpoint.NewErrorCount.Should().Be(0);
+        checkpoint.TryGetNewErrors(out var errors).Should().BeFalse();
+        errors.IsEmpty.Should().BeTrue();
+    }
+
+    [Fact]
     public void ValidateChildValue_ShouldReturnSuccessWithoutNewErrors_WhenContextAlreadyContainsEarlierFailures()
     {
         var validator = new TrimmedStringValidator(ValidationContextFactory);
@@ -277,5 +290,6 @@ public sealed class ValidationCheckpointTests
         public string? ZipCode { get; set; }
     }
 
+    // ReSharper disable once NotAccessedPositionalProperty.Local -- required for testing
     private sealed record AddressCommand(string ZipCode);
 }

@@ -1,5 +1,3 @@
-using System.Linq;
-using System.Reflection;
 using FluentAssertions;
 using Light.PortableResults.Metadata;
 using Light.PortableResults.Validation.Definitions;
@@ -11,40 +9,6 @@ namespace Light.PortableResults.Validation.Tests;
 
 public sealed class CheckAddErrorTests
 {
-    [Fact]
-    public void PublicAddErrorSurface_ShouldExposeOnlySupportedOverloads()
-    {
-        var methods = typeof(Check<string>)
-           .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-           .Where(method => method.Name == nameof(Check<>.AddError))
-           .OrderBy(method => method.GetParameters().Length)
-           .ToArray();
-
-        methods.Should().HaveCount(3);
-        methods.Should().OnlyContain(method => !method.IsGenericMethod);
-        var firstParameterTypes = methods.Select(method => method.GetParameters()[0].ParameterType).ToArray();
-        firstParameterTypes.Should().Contain(typeof(Error));
-        firstParameterTypes.Should().Contain(typeof(string));
-        firstParameterTypes.Should().Contain(typeof(ValidationErrorDefinition));
-
-        methods.Should().NotContain(
-            method => method.GetParameters()[0].ParameterType == typeof(ValidationErrorMessage)
-        );
-        methods.Should().NotContain(
-            method => method.GetParameters()[0].ParameterType == typeof(IValidationErrorMessageTemplate)
-        );
-
-        var stringOverload = methods.Single(method => method.GetParameters()[0].ParameterType == typeof(string));
-        stringOverload.GetParameters().Select(parameter => (parameter.Name, parameter.ParameterType)).Should().Equal(
-            ("message", typeof(string)),
-            ("code", typeof(string)),
-            ("metadata", typeof(MetadataObject?)),
-            ("target", typeof(ValidationTarget?)),
-            ("category", typeof(ErrorCategory)),
-            ("respectShortCircuit", typeof(bool))
-        );
-    }
-
     [Fact]
     public void AddErrorError_ShouldPreserveExplicitTarget()
     {
@@ -141,6 +105,29 @@ public sealed class CheckAddErrorTests
                     Code = "InvalidCode",
                     Target = "code",
                     Category = ErrorCategory.UnprocessableContent
+                }
+            )
+        );
+    }
+
+    [Fact]
+    public void AddErrorMessage_ShouldSupportMetadataAndTemplateCodes()
+    {
+        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var metadata = MetadataObject.Create(("source", "manual"));
+        var message = new ValidationErrorMessage("Code is invalid", "validation.code.invalid");
+
+        context.AddError(message, target: ValidationTarget.Relative("code", isNormalized: true), metadata: metadata);
+
+        context.Errors.Should().Equal(
+            new Errors(
+                new Error
+                {
+                    Message = "Code is invalid",
+                    Code = "validation.code.invalid",
+                    Target = "code",
+                    Category = ErrorCategory.Validation,
+                    Metadata = metadata
                 }
             )
         );

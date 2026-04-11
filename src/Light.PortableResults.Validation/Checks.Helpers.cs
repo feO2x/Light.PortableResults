@@ -130,38 +130,6 @@ public static partial class Checks
         return count;
     }
 
-    private static int GetCollectionCount<T>(IEnumerable<T> collection)
-    {
-        if (collection is string text)
-        {
-            return text.Length;
-        }
-
-        if (collection is IReadOnlyCollection<T> readOnlyCollection)
-        {
-            return readOnlyCollection.Count;
-        }
-
-        if (collection is ICollection<T> genericCollection)
-        {
-            return genericCollection.Count;
-        }
-
-        if (collection is ICollection nonGenericCollection)
-        {
-            return nonGenericCollection.Count;
-        }
-
-        var count = 0;
-        using var enumerator = collection.GetEnumerator();
-        while (enumerator.MoveNext())
-        {
-            count++;
-        }
-
-        return count;
-    }
-
     private static bool LooksLikeEmail(string value)
     {
         var atIndex = value.IndexOf('@');

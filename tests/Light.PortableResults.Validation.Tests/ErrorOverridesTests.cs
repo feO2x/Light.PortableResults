@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using Light.PortableResults.Metadata;
@@ -11,27 +9,6 @@ namespace Light.PortableResults.Validation.Tests;
 
 public sealed class ErrorOverridesTests
 {
-    [Fact]
-    public void ValidationErrorOverrides_ShouldExposeExpectedShapeAndImplicitMessageConversion()
-    {
-        var properties = typeof(ErrorOverrides)
-           .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-           .OrderBy(property => property.Name, StringComparer.Ordinal)
-           .Select(property => (property.Name, property.PropertyType))
-           .ToArray();
-
-        typeof(ErrorOverrides).IsValueType.Should().BeTrue();
-        properties.Should().Equal(
-            ("Category", typeof(ErrorCategory?)),
-            ("Code", typeof(string)),
-            ("Message", typeof(string)),
-            ("Metadata", typeof(MetadataObject?))
-        );
-
-        ErrorOverrides overrides = "Comment must be present";
-        overrides.Should().Be(new ErrorOverrides { Message = "Comment must be present" });
-    }
-
     [Fact]
     public void MessageOnlyOverrides_ShouldSupportRepresentativeBuiltInAssertionFamilies()
     {
@@ -132,6 +109,7 @@ public sealed class ErrorOverridesTests
     {
         var customMetadata = MetadataObject.Create(("Source", "Override"));
         var context = new DefaultValidationContextFactory().CreateValidationContext();
+        ErrorOverrides implicitMessage = "Note must be present";
 
         context
            .Check(string.Empty, target: "comment", displayName: "Comment")
@@ -145,9 +123,8 @@ public sealed class ErrorOverridesTests
         context
            .Check(string.Empty, target: "note", displayName: "Note")
            .IsNotNullOrWhiteSpace(
-                new ErrorOverrides
+                implicitMessage with
                 {
-                    Message = "Note must be present",
                     Code = "NoteRequired",
                     Category = ErrorCategory.UnprocessableContent
                 }
@@ -248,7 +225,10 @@ public sealed class ErrorOverridesTests
 
     private enum OrderStatus
     {
+        // ReSharper disable UnusedMember.Local -- required for testing
         Pending,
+
         Approved
+        // ReSharper restore UnusedMember.Local
     }
 }
