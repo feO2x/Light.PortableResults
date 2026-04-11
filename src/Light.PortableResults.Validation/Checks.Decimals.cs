@@ -52,7 +52,7 @@ public static partial class Checks
         this Check<decimal> check,
         int precision,
         int scale,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool ignoreTrailingZeros = false,
         bool shortCircuitOnError = false
     )
@@ -125,7 +125,7 @@ public static partial class Checks
         this Check<decimal?> check,
         int precision,
         int scale,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool ignoreTrailingZeros = false,
         bool shortCircuitOnError = false
     )

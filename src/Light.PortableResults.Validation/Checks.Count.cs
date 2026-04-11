@@ -41,7 +41,7 @@ public static partial class Checks
     public static Check<string?> HasCount(
         this Check<string?> check,
         int expectedCount,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -94,7 +94,7 @@ public static partial class Checks
     public static Check<string?> HasMinCount(
         this Check<string?> check,
         int minCount,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -147,7 +147,7 @@ public static partial class Checks
     public static Check<string?> HasMaxCount(
         this Check<string?> check,
         int maxCount,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -201,7 +201,7 @@ public static partial class Checks
     public static Check<TCollection> HasCount<TCollection>(
         this Check<TCollection> check,
         int expectedCount,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
         where TCollection : IEnumerable
@@ -256,7 +256,7 @@ public static partial class Checks
     public static Check<TCollection> HasMinCount<TCollection>(
         this Check<TCollection> check,
         int minCount,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
         where TCollection : IEnumerable
@@ -311,7 +311,7 @@ public static partial class Checks
     public static Check<TCollection> HasMaxCount<TCollection>(
         this Check<TCollection> check,
         int maxCount,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
         where TCollection : IEnumerable
@@ -359,7 +359,7 @@ public static partial class Checks
     public static Check<ImmutableArray<TItem>> HasCount<TItem>(
         this Check<ImmutableArray<TItem>> check,
         int expectedCount,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -400,7 +400,7 @@ public static partial class Checks
     public static Check<ImmutableArray<TItem>> HasMinCount<TItem>(
         this Check<ImmutableArray<TItem>> check,
         int minCount,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -441,7 +441,7 @@ public static partial class Checks
     public static Check<ImmutableArray<TItem>> HasMaxCount<TItem>(
         this Check<ImmutableArray<TItem>> check,
         int maxCount,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {

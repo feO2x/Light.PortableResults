@@ -360,7 +360,7 @@ public sealed class ValidationErrorMessageCachingTests
             MessageCache = cache,
             EqualTo = template
         };
-        var overrides = new ValidationErrorOverrides
+        var overrides = new ErrorOverrides
         {
             Code = "AdultRequired",
             Category = ErrorCategory.UnprocessableContent
@@ -397,11 +397,11 @@ public sealed class ValidationErrorMessageCachingTests
 
         firstContext.Check(10, target: "age", displayName: "Age").IsEqualTo(
             18,
-            new ValidationErrorOverrides { Message = "Age must be adult" }
+            new ErrorOverrides { Message = "Age must be adult" }
         );
         secondContext.Check(10, target: "age", displayName: "Age").IsEqualTo(
             18,
-            new ValidationErrorOverrides { Message = "Age must be eighteen or older" }
+            new ErrorOverrides { Message = "Age must be eighteen or older" }
         );
 
         template.InvocationCount.Should().Be(0);

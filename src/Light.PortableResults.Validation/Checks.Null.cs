@@ -21,7 +21,7 @@ public static partial class Checks
     /// </summary>
     public static Check<T> IsNotNull<T>(
         this Check<T> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = true
     )
     {
@@ -55,7 +55,7 @@ public static partial class Checks
     /// </summary>
     public static Check<T> IsNull<T>(
         this Check<T> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = true
     )
     {

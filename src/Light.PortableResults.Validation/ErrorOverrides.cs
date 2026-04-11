@@ -17,7 +17,7 @@ namespace Light.PortableResults.Validation;
 /// <example>
 /// <code>
 /// context.Check(dto.Comment).IsNotNullOrWhiteSpace(
-///     new ValidationErrorOverrides
+///     new ErrorOverrides
 ///     {
 ///         Message = "Comment must be present",
 ///         Code = "CommentRequired",
@@ -26,7 +26,7 @@ namespace Light.PortableResults.Validation;
 /// );
 /// </code>
 /// </example>
-public readonly record struct ValidationErrorOverrides
+public readonly record struct ErrorOverrides
 {
     /// <summary>
     /// Gets the override for the final human-readable error message.
@@ -52,5 +52,5 @@ public readonly record struct ValidationErrorOverrides
     /// Creates overrides for the common message-only case.
     /// </summary>
     /// <param name="message">The replacement error message.</param>
-    public static implicit operator ValidationErrorOverrides(string message) => new () { Message = message };
+    public static implicit operator ErrorOverrides(string message) => new () { Message = message };
 }

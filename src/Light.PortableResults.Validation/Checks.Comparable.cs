@@ -43,7 +43,7 @@ public static partial class Checks
     public static Check<T> IsGreaterThan<T>(
         this Check<T> check,
         T comparativeValue,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -102,7 +102,7 @@ public static partial class Checks
     public static Check<T> IsGreaterThanOrEqualTo<T>(
         this Check<T> check,
         T comparativeValue,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -161,7 +161,7 @@ public static partial class Checks
     public static Check<T> IsLessThan<T>(
         this Check<T> check,
         T comparativeValue,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -220,7 +220,7 @@ public static partial class Checks
     public static Check<T> IsLessThanOrEqualTo<T>(
         this Check<T> check,
         T comparativeValue,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -283,7 +283,7 @@ public static partial class Checks
         this Check<T> check,
         T lowerBoundary,
         T upperBoundary,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -348,7 +348,7 @@ public static partial class Checks
         this Check<T> check,
         T lowerBoundary,
         T upperBoundary,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -413,7 +413,7 @@ public static partial class Checks
         this Check<T> check,
         T lowerBoundary,
         T upperBoundary,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {

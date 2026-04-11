@@ -41,7 +41,7 @@ public static partial class Checks
     public static Check<T> Must<T>(
         this Check<T> check,
         Func<T, bool> predicate,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -107,7 +107,7 @@ public static partial class Checks
     public static Check<T> Must<T>(
         this Check<T> check,
         Func<ReadOnlyValidationContext, T, bool> predicate,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {

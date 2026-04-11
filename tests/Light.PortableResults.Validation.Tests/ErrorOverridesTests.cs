@@ -9,18 +9,18 @@ using Xunit;
 
 namespace Light.PortableResults.Validation.Tests;
 
-public sealed class ValidationErrorOverridesTests
+public sealed class ErrorOverridesTests
 {
     [Fact]
     public void ValidationErrorOverrides_ShouldExposeExpectedShapeAndImplicitMessageConversion()
     {
-        var properties = typeof(ValidationErrorOverrides)
+        var properties = typeof(ErrorOverrides)
            .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
            .OrderBy(property => property.Name, StringComparer.Ordinal)
            .Select(property => (property.Name, property.PropertyType))
            .ToArray();
 
-        typeof(ValidationErrorOverrides).IsValueType.Should().BeTrue();
+        typeof(ErrorOverrides).IsValueType.Should().BeTrue();
         properties.Should().Equal(
             ("Category", typeof(ErrorCategory?)),
             ("Code", typeof(string)),
@@ -28,8 +28,8 @@ public sealed class ValidationErrorOverridesTests
             ("Metadata", typeof(MetadataObject?))
         );
 
-        ValidationErrorOverrides overrides = "Comment must be present";
-        overrides.Should().Be(new ValidationErrorOverrides { Message = "Comment must be present" });
+        ErrorOverrides overrides = "Comment must be present";
+        overrides.Should().Be(new ErrorOverrides { Message = "Comment must be present" });
     }
 
     [Fact]
@@ -135,17 +135,17 @@ public sealed class ValidationErrorOverridesTests
 
         context
            .Check(string.Empty, target: "comment", displayName: "Comment")
-           .IsNotNullOrWhiteSpace(new ValidationErrorOverrides { Code = "CommentRequired" });
+           .IsNotNullOrWhiteSpace(new ErrorOverrides { Code = "CommentRequired" });
         context
            .Check("abc", target: "status", displayName: "Status")
-           .IsEqualTo("ABC", new ValidationErrorOverrides { Category = ErrorCategory.UnprocessableContent });
+           .IsEqualTo("ABC", new ErrorOverrides { Category = ErrorCategory.UnprocessableContent });
         context
            .Check<string?>("AB", target: "tags", displayName: "Tags")
-           .HasCount(3, new ValidationErrorOverrides { Metadata = customMetadata });
+           .HasCount(3, new ErrorOverrides { Metadata = customMetadata });
         context
            .Check(string.Empty, target: "note", displayName: "Note")
            .IsNotNullOrWhiteSpace(
-                new ValidationErrorOverrides
+                new ErrorOverrides
                 {
                     Message = "Note must be present",
                     Code = "NoteRequired",
@@ -201,7 +201,7 @@ public sealed class ValidationErrorOverridesTests
 
         context.ForMember("address", isNormalized: true)
            .Check("A!", target: "zipCode", displayName: "Zip code")
-           .ContainsOnlyLettersAndDigits(new ValidationErrorOverrides { Code = "ZipCodeInvalid" });
+           .ContainsOnlyLettersAndDigits(new ErrorOverrides { Code = "ZipCodeInvalid" });
         context.ForMember("contacts", isNormalized: true)
            .ForIndex(1)
            .Check("12A", target: "phone", displayName: "Phone")
@@ -236,9 +236,9 @@ public sealed class ValidationErrorOverridesTests
         var context = new DefaultValidationContextFactory().CreateValidationContext();
         var check = context.Check("abc", target: "code", displayName: "Code").ShortCircuit();
 
-        Action defaultAct = () => check.IsEmail(default(ValidationErrorOverrides));
-        Action emptyAct = () => check.IsEmail(new ValidationErrorOverrides());
-        Action whitespaceAct = () => check.IsEmail(new ValidationErrorOverrides { Message = " " });
+        Action defaultAct = () => check.IsEmail(default(ErrorOverrides));
+        Action emptyAct = () => check.IsEmail(new ErrorOverrides());
+        Action whitespaceAct = () => check.IsEmail(new ErrorOverrides { Message = " " });
 
         defaultAct.Should().Throw<ArgumentException>().WithParameterName("overrides");
         emptyAct.Should().Throw<ArgumentException>().WithParameterName("overrides");

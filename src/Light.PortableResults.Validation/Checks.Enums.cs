@@ -28,7 +28,7 @@ public static partial class Checks
     /// </summary>
     public static Check<TEnum> IsInEnum<TEnum>(
         this Check<TEnum> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
         where TEnum : struct, Enum
@@ -73,7 +73,7 @@ public static partial class Checks
     /// </summary>
     public static Check<TEnum?> IsInEnum<TEnum>(
         this Check<TEnum?> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
         where TEnum : struct, Enum
@@ -135,7 +135,7 @@ public static partial class Checks
     /// </summary>
     public static Check<string?> IsEnumName<TEnum>(
         this Check<string?> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool ignoreCase = false,
         bool shortCircuitOnError = false
     )

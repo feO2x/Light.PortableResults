@@ -25,7 +25,7 @@ public static partial class Checks
     /// </summary>
     public static Check<string?> IsEmpty(
         this Check<string?> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -55,7 +55,7 @@ public static partial class Checks
     /// </summary>
     public static Check<string?> IsNotEmpty(
         this Check<string?> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -84,7 +84,7 @@ public static partial class Checks
     /// </summary>
     public static Check<Guid> IsEmpty(
         this Check<Guid> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -113,7 +113,7 @@ public static partial class Checks
     /// </summary>
     public static Check<Guid> IsNotEmpty(
         this Check<Guid> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -157,7 +157,7 @@ public static partial class Checks
     /// </summary>
     public static Check<TCollection> IsEmpty<TCollection>(
         this Check<TCollection> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
         where TCollection : IEnumerable
@@ -212,7 +212,7 @@ public static partial class Checks
     /// </summary>
     public static Check<TCollection> IsNotEmpty<TCollection>(
         this Check<TCollection> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
         where TCollection : IEnumerable
@@ -255,7 +255,7 @@ public static partial class Checks
     /// </summary>
     public static Check<ImmutableArray<TItem>> IsEmpty<TItem>(
         this Check<ImmutableArray<TItem>> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -287,7 +287,7 @@ public static partial class Checks
     /// </summary>
     public static Check<ImmutableArray<TItem>> IsNotEmpty<TItem>(
         this Check<ImmutableArray<TItem>> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {

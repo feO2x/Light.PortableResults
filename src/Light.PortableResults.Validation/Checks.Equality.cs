@@ -26,7 +26,7 @@ public static partial class Checks
     public static Check<T> IsEqualTo<T>(
         this Check<T> check,
         T comparativeValue,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     ) =>
         check.IsEqualTo(comparativeValue, EqualityComparer<T>.Default, overrides, shortCircuitOnError);
@@ -66,7 +66,7 @@ public static partial class Checks
         this Check<T> check,
         T comparativeValue,
         IEqualityComparer<T> equalityComparer,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -105,7 +105,7 @@ public static partial class Checks
     public static Check<T> IsNotEqualTo<T>(
         this Check<T> check,
         T comparativeValue,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     ) =>
         check.IsNotEqualTo(comparativeValue, EqualityComparer<T>.Default, overrides, shortCircuitOnError);
@@ -145,7 +145,7 @@ public static partial class Checks
         this Check<T> check,
         T comparativeValue,
         IEqualityComparer<T> equalityComparer,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {

@@ -24,7 +24,7 @@ public static partial class Checks
     private static Check<T> AddBuiltInErrorWithOverrides<T>(
         Check<T> check,
         ValidationErrorDefinition definition,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError
     )
     {
@@ -50,7 +50,7 @@ public static partial class Checks
         return updatedCheck.ShortCircuitOnErrorIfRequested(shortCircuitOnError);
     }
 
-    private static void EnsureErrorOverrides(ValidationErrorOverrides overrides)
+    private static void EnsureErrorOverrides(ErrorOverrides overrides)
     {
         if (overrides.Message is null &&
             overrides.Code is null &&

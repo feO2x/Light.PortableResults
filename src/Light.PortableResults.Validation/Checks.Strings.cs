@@ -37,7 +37,7 @@ public static partial class Checks
     /// </summary>
     public static Check<string> IsNotNullOrWhiteSpace(
         this Check<string> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -93,7 +93,7 @@ public static partial class Checks
     public static Check<string> HasMinLength(
         this Check<string> check,
         int minLength,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -146,7 +146,7 @@ public static partial class Checks
     public static Check<string?> HasMaxLength(
         this Check<string?> check,
         int maxLength,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -205,7 +205,7 @@ public static partial class Checks
         this Check<string> check,
         int minLength,
         int maxLength,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -266,7 +266,7 @@ public static partial class Checks
     public static Check<string> Matches(
         this Check<string> check,
         Regex regex,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -333,7 +333,7 @@ public static partial class Checks
     public static Check<string> Matches(
         this Check<string> check,
         string pattern,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         RegexOptions options = RegexOptions.None,
         bool shortCircuitOnError = false
     )
@@ -382,7 +382,7 @@ public static partial class Checks
     /// </summary>
     public static Check<string> IsEmail(
         this Check<string> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -425,7 +425,7 @@ public static partial class Checks
     /// </summary>
     public static Check<string> ContainsOnlyDigits(
         this Check<string> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
@@ -468,7 +468,7 @@ public static partial class Checks
     /// </summary>
     public static Check<string> ContainsOnlyLettersAndDigits(
         this Check<string> check,
-        ValidationErrorOverrides overrides,
+        ErrorOverrides overrides,
         bool shortCircuitOnError = false
     )
     {
