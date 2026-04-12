@@ -294,7 +294,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void ComparableDefinitions_ShouldExposeStableProviders()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var readOnlyContext = context.AsReadOnly();
         var greaterThan = BuiltInValidationErrorDefinitions.GreaterThan(18);
         var greaterThanOrEqualTo = BuiltInValidationErrorDefinitions.GreaterThanOrEqualTo(18);
@@ -326,7 +326,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void GreaterThan_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check(10, target: "age", displayName: "Age").CreateMessageContext();
         var greaterThan = BuiltInValidationErrorDefinitions.GreaterThan(18);
         greaterThan.ProvideMessage(messageContext).Text.Should().Be("Age must be greater than 18");
@@ -335,7 +335,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void GreaterThanOrEqualTo_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check(10, target: "age", displayName: "Age").CreateMessageContext();
         var greaterThanOrEqualTo = BuiltInValidationErrorDefinitions.GreaterThanOrEqualTo(18);
         greaterThanOrEqualTo.ProvideMessage(messageContext).Text.Should().Be("Age must be greater than or equal to 18");
@@ -344,7 +344,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void LessThan_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check(10, target: "age", displayName: "Age").CreateMessageContext();
         var lessThan = BuiltInValidationErrorDefinitions.LessThan(18);
         lessThan.ProvideMessage(messageContext).Text.Should().Be("Age must be less than 18");
@@ -353,7 +353,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void LessThanOrEqualTo_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check(10, target: "age", displayName: "Age").CreateMessageContext();
         var lessThanOrEqualTo = BuiltInValidationErrorDefinitions.LessThanOrEqualTo(18);
         lessThanOrEqualTo.ProvideMessage(messageContext).Text.Should().Be("Age must be less than or equal to 18");
@@ -362,7 +362,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void IsIn_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check(10, target: "age", displayName: "Age").CreateMessageContext();
         var inRange = BuiltInValidationErrorDefinitions.IsIn(1, 10);
         inRange.ProvideMessage(messageContext).Text.Should().Be("Age must be between 1 and 10");
@@ -371,7 +371,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void IsNotIn_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check(10, target: "age", displayName: "Age").CreateMessageContext();
         var notInRange = BuiltInValidationErrorDefinitions.IsNotIn(1, 10);
         notInRange.ProvideMessage(messageContext).Text.Should().Be("Age must not be between 1 and 10");
@@ -380,7 +380,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void IsInExclusiveRange_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check(10, target: "age", displayName: "Age").CreateMessageContext();
         var exclusiveRange = BuiltInValidationErrorDefinitions.IsInExclusiveRange(1, 10);
         exclusiveRange.ProvideMessage(messageContext).Text.Should().Be("Age must be between 1 and 10 (exclusive)");
@@ -496,7 +496,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void ParameterizedTemplateDefinitions_ShouldReportStableProviders()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext().AsReadOnly();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext().AsReadOnly();
         var stableTemplate = new ValidationErrorTemplates.IgnoreParameter<int>(
             new ValidationErrorTemplates.Constant("Always invalid")
         );
@@ -513,7 +513,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void CountEqualityStringEnumAndDecimalDefinitions_ShouldExposeStableProviders()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var readOnlyContext = context.AsReadOnly();
         var count = BuiltInValidationErrorDefinitions.Count(3);
         var minCount = BuiltInValidationErrorDefinitions.MinCount(2);
@@ -568,7 +568,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void Count_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var count = BuiltInValidationErrorDefinitions.Count(3);
         count.ProvideMessage(messageContext).Text.Should().ContainAll("Code", "3");
@@ -577,7 +577,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void MinCount_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var minCount = BuiltInValidationErrorDefinitions.MinCount(2);
         minCount.ProvideMessage(messageContext).Text.Should().ContainAll("Code", "2");
@@ -586,7 +586,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void MaxCount_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var maxCount = BuiltInValidationErrorDefinitions.MaxCount(4);
         maxCount.ProvideMessage(messageContext).Text.Should().ContainAll("Code", "4");
@@ -595,7 +595,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void EqualTo_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var equalTo = BuiltInValidationErrorDefinitions.EqualTo("ABC");
         equalTo.ProvideMessage(messageContext).Text.Should().ContainAll("Code", "equal", "ABC");
@@ -604,7 +604,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void NotEqualTo_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var notEqualTo = BuiltInValidationErrorDefinitions.NotEqualTo("ABC");
         notEqualTo.ProvideMessage(messageContext).Text.Should().ContainAll("Code", "not", "ABC");
@@ -613,7 +613,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void NotNullOrWhiteSpace_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var notNullOrWhiteSpace = BuiltInValidationErrorDefinitions.NotNullOrWhiteSpace;
         notNullOrWhiteSpace.ProvideMessage(messageContext).Text.Should().Contain("Code");
@@ -622,7 +622,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void MinLength_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var minLength = BuiltInValidationErrorDefinitions.MinLength(2);
         minLength.ProvideMessage(messageContext).Text.Should().ContainAll("Code", "2");
@@ -631,7 +631,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void MaxLength_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var maxLength = BuiltInValidationErrorDefinitions.MaxLength(4);
         maxLength.ProvideMessage(messageContext).Text.Should().ContainAll("Code", "4");
@@ -640,7 +640,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void LengthIn_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var lengthIn = BuiltInValidationErrorDefinitions.LengthIn(2, 4);
         lengthIn.ProvideMessage(messageContext).Text.Should().ContainAll("Code", "2", "4");
@@ -649,7 +649,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void Matches_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var pattern = BuiltInValidationErrorDefinitions.Matches("^[A-Z0-9]+$", RegexOptions.IgnoreCase);
         pattern.ProvideMessage(messageContext).Text.Should().Contain("Code");
@@ -658,7 +658,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void Email_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var email = BuiltInValidationErrorDefinitions.Email;
         email.ProvideMessage(messageContext).Text.Should().Contain("email");
@@ -667,7 +667,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void DigitsOnly_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var digitsOnly = BuiltInValidationErrorDefinitions.DigitsOnly;
         digitsOnly.ProvideMessage(messageContext).Text.Should().Contain("digits");
@@ -676,7 +676,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void LettersAndDigitsOnly_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var lettersAndDigitsOnly = BuiltInValidationErrorDefinitions.LettersAndDigitsOnly;
         lettersAndDigitsOnly.ProvideMessage(messageContext).Text.Should().Contain("letters and digits");
@@ -685,7 +685,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void IsInEnum_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var enumValue = BuiltInValidationErrorDefinitions.IsInEnum<TestStatus>();
         enumValue.ProvideMessage(messageContext).Text.Should().Contain("defined enum value");
@@ -694,7 +694,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void PrecisionScale_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var precisionScale = BuiltInValidationErrorDefinitions.PrecisionScale(4, 2, ignoreTrailingZeros: true);
         precisionScale.ProvideMessage(messageContext).Text.Should().ContainAll("4", "2");
@@ -921,7 +921,7 @@ public sealed class ValidationErrorDefinitionTests
     public void ValidationContexts_ShouldExposeSharedErrorDefinitionCache()
     {
         var sharedCache = new ValidationErrorDefinitionCache();
-        var options = ValidationContextOptions.Default with { ErrorDefinitionCache = sharedCache };
+        var options = new ValidationContextOptions() with { ErrorDefinitionCache = sharedCache };
         var context = new DefaultValidationContextFactory(options).CreateValidationContext();
 
         context.ErrorDefinitionCache.Should().BeSameAs(sharedCache);
@@ -1082,7 +1082,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void AddErrorDefinition_ShouldUseDefinitionDefaults_WhenNoOverridesAreProvided()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var definition = new TemplateValidationErrorDefinition(
             new ValidationErrorTemplates.Constant("Name must not be empty"),
             code: "NotEmpty",
@@ -1110,7 +1110,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void AddErrorDefinition_ShouldTreatDefinitionTargetsAsAbsolute()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var childContext = context.ForMember("address", isNormalized: true);
         var definition = new TemplateValidationErrorDefinition(
             new ValidationErrorTemplates.Constant("Zip code is invalid"),
@@ -1135,7 +1135,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void ModuloValidationErrorDefinition_ShouldProvideExpectedMessage()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var definition = new ModuloValidationErrorDefinition(2);
         context.Check(3, target: "quantity", displayName: "Quantity").AddError(definition);
 
@@ -1189,14 +1189,14 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void ValidationErrorMessage_ShouldThrow_WhenTextIsNull()
     {
-        Action act = () => new ValidationErrorMessage(null!);
+        Action act = () => _ = new ValidationErrorMessage(null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("text");
     }
 
     [Fact]
     public void ValidationErrorMessage_ShouldThrow_WhenTextIsWhitespace()
     {
-        Action act = () => new ValidationErrorMessage("   ");
+        Action act = () => _ = new ValidationErrorMessage("   ");
         act.Should().Throw<ArgumentException>().WithParameterName("text");
     }
 
@@ -1204,7 +1204,7 @@ public sealed class ValidationErrorDefinitionTests
     public void ValidationErrorMessage_Equals_ShouldBeFalse_WhenComparedToString()
     {
         var message = new ValidationErrorMessage("Amount is invalid", "validation.amount.invalid");
-        message.Equals("Amount is invalid").Should().BeFalse();
+        message.Equals(new ValidationErrorMessage("Amount is invalid")).Should().BeFalse();
     }
 
     [Fact]
@@ -1229,7 +1229,7 @@ public sealed class ValidationErrorDefinitionTests
         ValidationErrorTemplates errorTemplates
     )
     {
-        var options = ValidationContextOptions.Default with
+        var options = new ValidationContextOptions() with
         {
             ErrorDefinitionCache = errorDefinitionCache,
             ErrorTemplates = errorTemplates

@@ -12,7 +12,7 @@ public sealed class CheckAddErrorTests
     [Fact]
     public void AddErrorError_ShouldPreserveExplicitTarget()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var check = context.Check("ABC", target: "code");
         var error = new Error
         {
@@ -30,7 +30,7 @@ public sealed class CheckAddErrorTests
     [Fact]
     public void AddErrorError_ShouldFillCurrentCheckTarget_WhenErrorHasNoTarget()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var check = context.Check("ABC", target: "code");
         var error = new Error
         {
@@ -54,7 +54,7 @@ public sealed class CheckAddErrorTests
     [Fact]
     public void AddErrorString_ShouldSupportCategoryTargetOverrideAndShortCircuitControl()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var check = context.Check("ABC", target: "code").ShortCircuit();
 
         var skippedCheck = check.AddError(
@@ -88,7 +88,7 @@ public sealed class CheckAddErrorTests
     [Fact]
     public void AddErrorDefinition_ShouldSupportTemplateBackedDefinitionsAsMigrationPath()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var definition = new TemplateValidationErrorDefinition(
             new ValidationErrorTemplates.DisplayName(" is invalid"),
             code: "InvalidCode",
@@ -113,7 +113,7 @@ public sealed class CheckAddErrorTests
     [Fact]
     public void AddErrorMessage_ShouldSupportMetadataAndTemplateCodes()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var metadata = MetadataObject.Create(("source", "manual"));
         var message = new ValidationErrorMessage("Code is invalid", "validation.code.invalid");
 

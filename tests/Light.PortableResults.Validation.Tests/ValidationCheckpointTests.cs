@@ -10,7 +10,7 @@ namespace Light.PortableResults.Validation.Tests;
 
 public sealed class ValidationCheckpointTests
 {
-    private static readonly DefaultValidationContextFactory ValidationContextFactory = new ();
+    private static readonly DefaultValidationContextFactory ValidationContextFactory = DefaultValidationContextFactory.Create();
 
     [Fact]
     public void TryGetNewErrors_ShouldOnlyExposeErrorsAddedAfterCheckpoint()

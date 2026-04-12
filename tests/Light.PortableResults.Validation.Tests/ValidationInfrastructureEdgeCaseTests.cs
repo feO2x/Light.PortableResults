@@ -75,7 +75,7 @@ public sealed class ValidationInfrastructureEdgeCaseTests
     [Fact]
     public void ValidationState_TryGetItem_ShouldReturnFalse_WhenKeyIsMissing()
     {
-        var state = new ValidationState(ValidationContextOptions.Default);
+        var state = new ValidationState(new ValidationContextOptions());
         var missingIntKey = new ValidationContextKey<int>("missing-number");
         state.TryGetItem(missingIntKey, out var missingNumber).Should().BeFalse();
         missingNumber.Should().Be(0);
@@ -84,7 +84,7 @@ public sealed class ValidationInfrastructureEdgeCaseTests
     [Fact]
     public void ValidationState_TryGetItem_ShouldReturnTrue_WhenItemIsPresent()
     {
-        var state = new ValidationState(ValidationContextOptions.Default);
+        var state = new ValidationState(new ValidationContextOptions());
         var stringKey = new ValidationContextKey<string>("tenant");
         state.SetItem(stringKey, "checkout");
         state.TryGetItem(stringKey, out var tenant).Should().BeTrue();
@@ -94,7 +94,7 @@ public sealed class ValidationInfrastructureEdgeCaseTests
     [Fact]
     public void ValidationState_TryGetItem_ShouldHandleNullValues()
     {
-        var state = new ValidationState(ValidationContextOptions.Default);
+        var state = new ValidationState(new ValidationContextOptions());
         var nullValueKey = new ValidationContextKey<string?>("optional");
         state.SetItem(nullValueKey, null);
         state.TryGetItem(nullValueKey, out var optional).Should().BeTrue();
@@ -104,7 +104,7 @@ public sealed class ValidationInfrastructureEdgeCaseTests
     [Fact]
     public void ValidationState_RemoveItem_ShouldReturnTrue_WhenItemExists()
     {
-        var state = new ValidationState(ValidationContextOptions.Default);
+        var state = new ValidationState(new ValidationContextOptions());
         var stringKey = new ValidationContextKey<string>("tenant");
         state.SetItem(stringKey, "checkout");
         state.RemoveItem(stringKey).Should().BeTrue();
@@ -113,7 +113,7 @@ public sealed class ValidationInfrastructureEdgeCaseTests
     [Fact]
     public void ValidationState_RemoveItem_ShouldReturnFalse_WhenItemDoesNotExist()
     {
-        var state = new ValidationState(ValidationContextOptions.Default);
+        var state = new ValidationState(new ValidationContextOptions());
         var stringKey = new ValidationContextKey<string>("tenant");
         state.RemoveItem(stringKey).Should().BeFalse();
     }
@@ -121,7 +121,7 @@ public sealed class ValidationInfrastructureEdgeCaseTests
     [Fact]
     public void ValidationState_Errors_ShouldContainAddedError()
     {
-        var state = new ValidationState(ValidationContextOptions.Default);
+        var state = new ValidationState(new ValidationContextOptions());
         var error = new Error { Message = "invalid", Code = "Invalid", Target = "field" };
         state.AddError(error);
         state.Errors.Should().Equal(new Errors(error));
@@ -130,7 +130,7 @@ public sealed class ValidationInfrastructureEdgeCaseTests
     [Fact]
     public void ValidationState_TryGetErrorsSince_ShouldReturnAllErrors_WhenStartingFromZero()
     {
-        var state = new ValidationState(ValidationContextOptions.Default);
+        var state = new ValidationState(new ValidationContextOptions());
         var error = new Error { Message = "invalid", Code = "Invalid", Target = "field" };
         state.AddError(error);
         state.TryGetErrorsSince(0, out var errorsSinceStart).Should().BeTrue();
@@ -140,7 +140,7 @@ public sealed class ValidationInfrastructureEdgeCaseTests
     [Fact]
     public void ValidationState_TryGetErrorsSince_ShouldThrow_WhenStartingCountIsInvalid()
     {
-        var state = new ValidationState(ValidationContextOptions.Default);
+        var state = new ValidationState(new ValidationContextOptions());
         Action act = () => state.TryGetErrorsSince(2, out _);
         act.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("startingErrorCount");
     }
@@ -148,7 +148,7 @@ public sealed class ValidationInfrastructureEdgeCaseTests
     [Fact]
     public void ValidationState_AddError_ShouldThrow_WhenErrorIsDefault()
     {
-        var state = new ValidationState(ValidationContextOptions.Default);
+        var state = new ValidationState(new ValidationContextOptions());
         var act = () => state.AddError(default);
         act.Should().Throw<ArgumentException>().WithParameterName("error");
     }
@@ -253,7 +253,7 @@ public sealed class ValidationInfrastructureEdgeCaseTests
     [Fact]
     public void ValidationContext_Constructor_ShouldThrow_WhenTargetPrefixIsNull()
     {
-        var state = new ValidationState(ValidationContextOptions.Default);
+        var state = new ValidationState(new ValidationContextOptions());
         Action act = () => _ = new ValidationContext(state, null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("targetPrefix");
     }
@@ -322,12 +322,12 @@ public sealed class ValidationInfrastructureEdgeCaseTests
     }
 
     private static ValidationContext CreateContext() =>
-        new (new ValidationState(ValidationContextOptions.Default), string.Empty);
+        new (new ValidationState(new ValidationContextOptions()), string.Empty);
 
     [Fact]
     public void ValidationState_TryGetItem_ShouldReturnFalse_WhenStoredValueCannotBeCastToKeyType()
     {
-        var state = new ValidationState(ValidationContextOptions.Default);
+        var state = new ValidationState(new ValidationContextOptions());
         var key = new ValidationContextKey<string>("tenant");
 
         state.SetItem(key, "checkout");
@@ -380,7 +380,7 @@ public sealed class ValidationInfrastructureEdgeCaseTests
 
     private static ReadOnlyValidationContext CreateDeDeContext() =>
         new DefaultValidationContextFactory(
-            ValidationContextOptions.Default with
+            new ValidationContextOptions() with
             {
                 CultureInfo = CultureInfo.GetCultureInfo("de-DE")
             }

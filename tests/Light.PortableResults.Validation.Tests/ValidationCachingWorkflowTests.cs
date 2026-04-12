@@ -144,7 +144,7 @@ public sealed class ValidationCachingWorkflowTests
         CultureInfo? cultureInfo = null
     )
     {
-        var options = ValidationContextOptions.Default with
+        var options = new ValidationContextOptions() with
         {
             ErrorTemplates = templates,
             CultureInfo = cultureInfo ?? CultureInfo.InvariantCulture

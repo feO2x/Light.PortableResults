@@ -13,8 +13,8 @@ public class MessageCacheKeyOptimizationBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        _factoryWithCache = new DefaultValidationContextFactory();
-        var options = ValidationContextOptions.Default with
+        _factoryWithCache = DefaultValidationContextFactory.Create();
+        var options = new ValidationContextOptions() with
         {
             ErrorTemplates = new ValidationErrorTemplates { MessageCache = null }
         };

@@ -17,7 +17,7 @@ namespace Benchmarks;
 public class ValidComplexDtoValidationBenchmarks
 {
     private readonly PortablePurchaseOrderDtoValidator _lightPortableResultsValidator =
-        PortablePurchaseOrderDtoValidator.CreateSingleton(new DefaultValidationContextFactory());
+        PortablePurchaseOrderDtoValidator.CreateSingleton(DefaultValidationContextFactory.Create());
 
     private readonly FluentPurchaseOrderDtoValidator _singletonFluentValidationValidator =
         FluentPurchaseOrderDtoValidator.CreateSingleton();
@@ -68,7 +68,7 @@ public class InvalidComplexDtoValidationBenchmarks
     private readonly PurchaseOrderDto _invalidDto = ComplexDtoValidationBenchmarkData.CreateInvalidDto();
 
     private readonly PortablePurchaseOrderDtoValidator _lightPortableResultsValidator =
-        PortablePurchaseOrderDtoValidator.CreateSingleton(new DefaultValidationContextFactory());
+        PortablePurchaseOrderDtoValidator.CreateSingleton(DefaultValidationContextFactory.Create());
 
     private readonly FluentPurchaseOrderDtoValidator _singletonFluentValidationValidator =
         FluentPurchaseOrderDtoValidator.CreateSingleton();
@@ -117,7 +117,7 @@ public class InvalidComplexDtoValidationBenchmarksForMinimalApis
     private readonly PurchaseOrderDto _invalidDto = ComplexDtoValidationBenchmarkData.CreateInvalidDto();
 
     private readonly PortablePurchaseOrderDtoValidator _lightPortableResultsValidator =
-        PortablePurchaseOrderDtoValidator.CreateSingleton(new DefaultValidationContextFactory());
+        PortablePurchaseOrderDtoValidator.CreateSingleton(DefaultValidationContextFactory.Create());
 
     private readonly FluentPurchaseOrderDtoValidator _singletonFluentValidationValidator =
         FluentPurchaseOrderDtoValidator.CreateSingleton();
@@ -166,7 +166,7 @@ public class InvalidComplexDtoValidationBenchmarksForMvc : ControllerBase
     private readonly PurchaseOrderDto _invalidDto = ComplexDtoValidationBenchmarkData.CreateInvalidDto();
 
     private readonly PortablePurchaseOrderDtoValidator _lightPortableResultsValidator =
-        PortablePurchaseOrderDtoValidator.CreateSingleton(new DefaultValidationContextFactory());
+        PortablePurchaseOrderDtoValidator.CreateSingleton(DefaultValidationContextFactory.Create());
 
     private readonly FluentPurchaseOrderDtoValidator _singletonFluentValidationValidator =
         FluentPurchaseOrderDtoValidator.CreateSingleton();

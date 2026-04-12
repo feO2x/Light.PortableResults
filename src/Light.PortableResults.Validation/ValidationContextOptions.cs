@@ -13,11 +13,6 @@ namespace Light.PortableResults.Validation;
 public sealed record ValidationContextOptions
 {
     /// <summary>
-    /// Gets the shared default options instance.
-    /// </summary>
-    public static ValidationContextOptions Default { get; } = new ();
-
-    /// <summary>
     /// Gets the target normalizer that is applied to raw caller argument expressions.
     /// </summary>
     /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>

@@ -15,7 +15,7 @@ namespace Benchmarks;
 public class ValidFlatDtoValidationBenchmarks
 {
     private readonly LightPortableResultsMovieRatingDtoValidator _lightPortableResultsValidator =
-        new (new DefaultValidationContextFactory());
+        new (DefaultValidationContextFactory.Create());
 
     private readonly FluentValidationMovieRatingDtoValidator _singletonFluentValidationValidator = new ();
 
@@ -75,7 +75,7 @@ public class InvalidFlatDtoValidationBenchmarks
     };
 
     private readonly LightPortableResultsMovieRatingDtoValidator _lightPortableResultsValidator =
-        new (new DefaultValidationContextFactory());
+        new (DefaultValidationContextFactory.Create());
 
     private readonly FluentValidationMovieRatingDtoValidator _singletonFluentValidationValidator = new ();
 
@@ -128,7 +128,7 @@ public class InvalidFlatDtoValidationBenchmarksForMinimalApis
     };
 
     private readonly LightPortableResultsMovieRatingDtoValidator _lightPortableResultsValidator =
-        new (new DefaultValidationContextFactory());
+        new (DefaultValidationContextFactory.Create());
 
     private readonly FluentValidationMovieRatingDtoValidator _singletonFluentValidationValidator = new ();
 
@@ -181,7 +181,7 @@ public class InvalidFlatDtoValidationBenchmarksForMvc : ControllerBase
     };
 
     private readonly LightPortableResultsMovieRatingDtoValidator _lightPortableResultsValidator =
-        new (new DefaultValidationContextFactory());
+        new (DefaultValidationContextFactory.Create());
 
     private readonly FluentValidationMovieRatingDtoValidator _singletonFluentValidationValidator = new ();
 

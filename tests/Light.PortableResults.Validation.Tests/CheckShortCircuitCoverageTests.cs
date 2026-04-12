@@ -1850,7 +1850,7 @@ public sealed class CheckShortCircuitCoverageTests
 
     private static ValidationContext CreateContext()
     {
-        var options = ValidationContextOptions.Default with
+        var options = new ValidationContextOptions() with
         {
             ValueNormalizer = NoOpValueNormalizer.Instance,
             AutomaticNullErrorProvider = NoOpAutomaticNullErrorProvider.Instance

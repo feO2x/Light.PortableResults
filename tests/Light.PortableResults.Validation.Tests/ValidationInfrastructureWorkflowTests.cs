@@ -57,7 +57,7 @@ public sealed class ValidationInfrastructureWorkflowTests
     {
         var defaultContext = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
         var noOpContext = new DefaultValidationContextFactory(
-            ValidationContextOptions.Default with { ValueNormalizer = NoOpValueNormalizer.Instance }
+            new ValidationContextOptions() with { ValueNormalizer = NoOpValueNormalizer.Instance }
         ).CreateValidationContext();
         string? nullableName = null;
 

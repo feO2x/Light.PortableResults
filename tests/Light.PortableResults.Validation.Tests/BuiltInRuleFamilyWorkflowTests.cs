@@ -205,7 +205,7 @@ public sealed class BuiltInRuleFamilyWorkflowTests
     private static ValidationContext CreateNullHandlingDisabledContext()
     {
         return new DefaultValidationContextFactory(
-                ValidationContextOptions.Default with
+                new ValidationContextOptions() with
                 {
                     ValueNormalizer = NoOpValueNormalizer.Instance,
                     AutomaticNullErrorProvider = NoOpAutomaticNullErrorProvider.Instance
@@ -596,7 +596,7 @@ public sealed class BuiltInRuleFamilyWorkflowTests
     {
         var tenantKey = new ValidationContextKey<string>("tenant");
         var context = new DefaultValidationContextFactory(
-            ValidationContextOptions.Default with { ValueNormalizer = NoOpValueNormalizer.Instance }
+            new ValidationContextOptions() with { ValueNormalizer = NoOpValueNormalizer.Instance }
         ).CreateValidationContext();
         context.SetItem(tenantKey, "checkout");
         const string tenantCode = "Alice";

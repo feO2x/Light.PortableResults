@@ -7,7 +7,7 @@ namespace Light.PortableResults.Validation.Tests;
 
 public static class ValidationWorkflowTestData
 {
-    public static readonly DefaultValidationContextFactory ValidationContextFactory = new ();
+    public static readonly DefaultValidationContextFactory ValidationContextFactory = DefaultValidationContextFactory.Create();
 
     public static Error CreateValidationError(
         string message,

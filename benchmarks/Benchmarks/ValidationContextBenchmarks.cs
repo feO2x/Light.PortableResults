@@ -96,5 +96,5 @@ public class ValidationErrorMaterializationBenchmarks
 
 internal static class ValidationBenchmarkHelpers
 {
-    public static readonly DefaultValidationContextFactory ValidationContextFactory = new ();
+    public static readonly DefaultValidationContextFactory ValidationContextFactory = DefaultValidationContextFactory.Create();
 }

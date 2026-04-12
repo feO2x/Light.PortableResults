@@ -20,13 +20,13 @@ public sealed class ValidationConfigurationTests
         {
             NotNull = new ValidationErrorTemplates.Constant("Custom null message")
         };
-        var customizedOptions = ValidationContextOptions.Default with
+        var customizedOptions = new ValidationContextOptions() with
         {
             ValueNormalizer = NoOpValueNormalizer.Instance,
             ErrorTemplates = customizedTemplates
         };
 
-        var defaultContext = new DefaultValidationContextFactory().CreateValidationContext();
+        var defaultContext = DefaultValidationContextFactory.Create().CreateValidationContext();
         string? defaultValue = null;
         var defaultCheck = defaultContext.Check(defaultValue);
 
@@ -36,15 +36,15 @@ public sealed class ValidationConfigurationTests
 
         defaultCheck.Value.Should().BeEmpty();
         customizedCheck.Value.Should().BeNull();
-        ValidationContextOptions.Default.ValueNormalizer.Should().BeSameAs(TrimStringNormalizer.Instance);
-        ValidationContextOptions.Default.ErrorTemplates.Should().BeSameAs(ValidationErrorTemplates.Default);
+        new ValidationContextOptions().ValueNormalizer.Should().BeSameAs(TrimStringNormalizer.Instance);
+        new ValidationContextOptions().ErrorTemplates.Should().BeSameAs(ValidationErrorTemplates.Default);
         ValidationErrorTemplates.Default.NotNull.Should().NotBeSameAs(customizedTemplates.NotNull);
     }
 
     [Fact]
     public void AutomaticNullProvider_ShouldAllowDisablingAutomaticNullErrors()
     {
-        var options = ValidationContextOptions.Default with
+        var options = new ValidationContextOptions() with
         {
             AutomaticNullErrorProvider = NoOpAutomaticNullErrorProvider.Instance
         };
@@ -58,7 +58,7 @@ public sealed class ValidationConfigurationTests
     [Fact]
     public void AutomaticNullProvider_ShouldReadSharedItemsThroughReadOnlyContext()
     {
-        var options = ValidationContextOptions.Default with
+        var options = new ValidationContextOptions() with
         {
             AutomaticNullErrorProvider = new ContextAwareAutomaticNullErrorProvider(TenantKey)
         };
@@ -86,7 +86,7 @@ public sealed class ValidationConfigurationTests
     [Fact]
     public void MessageTemplates_ShouldSupportReferenceAndValueTypeContexts()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var template = new EchoValueTemplate();
 
         var stringMessage = template.ProvideMessage(
@@ -103,7 +103,7 @@ public sealed class ValidationConfigurationTests
     [Fact]
     public void BuiltInParameterizedTemplates_ShouldUseConfiguredCultureFromReadOnlyContext()
     {
-        var options = ValidationContextOptions.Default with
+        var options = new ValidationContextOptions() with
         {
             CultureInfo = CultureInfo.GetCultureInfo("de-DE")
         };
@@ -124,7 +124,7 @@ public sealed class ValidationConfigurationTests
     [Fact]
     public void SpecificBuiltInTemplateHelpers_ShouldBehaveAsExpected()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check(12.34m, target: "amount", displayName: "Amount").CreateMessageContext();
         var constant = new ValidationErrorTemplates.Constant("Always invalid", "validation.constant");
         var precisionScale = new ValidationErrorTemplates.DisplayNameWithPrecisionScale();
@@ -145,7 +145,7 @@ public sealed class ValidationConfigurationTests
     [Fact]
     public void TemplateBackedDefinitions_ShouldSupportLocalizationAndTranslationKeys()
     {
-        var options = ValidationContextOptions.Default with
+        var options = new ValidationContextOptions() with
         {
             CultureInfo = CultureInfo.GetCultureInfo("de-DE"),
             ErrorTemplates = ValidationErrorTemplates.Default with
@@ -170,7 +170,7 @@ public sealed class ValidationConfigurationTests
     [Fact]
     public void AddErrorDefinition_ShouldSkipMessageGeneration_WhenCheckIsShortCircuited()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var template = new CountingTemplate();
         var definition = new TemplateValidationErrorDefinition(template);
         var check = context.Check("Alice", target: "firstName", displayName: "First name").ShortCircuit();
@@ -185,7 +185,7 @@ public sealed class ValidationConfigurationTests
     [Fact]
     public void GetRequiredItem_ShouldReturnSharedValue_ForMutableAndReadOnlyContexts()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
         context.SetItem(TenantKey, "checkout");
 
@@ -196,7 +196,7 @@ public sealed class ValidationConfigurationTests
     [Fact]
     public void GetRequiredItem_ShouldThrowKeyNotFoundException_WhenItemIsMissing()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
         Action mutableAccess = () => context.GetRequiredItem(TenantKey);
         Action readOnlyAccess = () => context.AsReadOnly().GetRequiredItem(TenantKey);
@@ -213,7 +213,7 @@ public sealed class ValidationConfigurationTests
         var stringKey1 = new ValidationContextKey<string>("tenant");
         var stringKey2 = new ValidationContextKey<string>("tenant");
         var intKey = new ValidationContextKey<int>("tenant");
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
         context.SetItem(stringKey1, "checkout");
         context.SetItem(intKey, 42);
@@ -245,7 +245,7 @@ public sealed class ValidationConfigurationTests
         ValueNormalizers.Trim.Should().BeSameAs(TrimStringNormalizer.Instance);
         ValueNormalizers.NoOp.Should().BeSameAs(NoOpValueNormalizer.Instance);
 
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext =
             context.Check<string?>("Alice", target: "name", displayName: "Name").CreateMessageContext();
 
@@ -256,7 +256,7 @@ public sealed class ValidationConfigurationTests
     [Fact]
     public void ValidationErrorMessageContext_ShouldValidateConstructorArguments_AndExposeValues()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var readOnlyContext = context.AsReadOnly();
 
         var messageContext = new ValidationErrorMessageContext<string>(

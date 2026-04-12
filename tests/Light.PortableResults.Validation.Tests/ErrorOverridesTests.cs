@@ -12,7 +12,7 @@ public sealed class ErrorOverridesTests
     [Fact]
     public void MessageOnlyOverrides_ShouldSupportRepresentativeBuiltInAssertionFamilies()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
         context
            .Check(string.Empty, target: "comment", displayName: "Comment")
@@ -108,7 +108,7 @@ public sealed class ErrorOverridesTests
     public void NonMessageAndCombinedOverrides_ShouldPreserveDefaultsAndApplyExplicitOverrides()
     {
         var customMetadata = MetadataObject.Create(("Source", "Override"));
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         ErrorOverrides implicitMessage = "Note must be present";
 
         context
@@ -174,7 +174,7 @@ public sealed class ErrorOverridesTests
     [Fact]
     public void Overrides_ShouldNotChangeScopedTargetResolution()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
         context.ForMember("address", isNormalized: true)
            .Check("A!", target: "zipCode", displayName: "Zip code")
@@ -210,7 +210,7 @@ public sealed class ErrorOverridesTests
     [Fact]
     public void OverrideOverloads_ShouldThrowForEmptyOrWhitespaceOverridesBeforeShortCircuit()
     {
-        var context = new DefaultValidationContextFactory().CreateValidationContext();
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var check = context.Check("abc", target: "code", displayName: "Code").ShortCircuit();
 
         Action defaultAct = () => check.IsEmail(default(ErrorOverrides));
