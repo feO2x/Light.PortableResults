@@ -18,7 +18,7 @@ builder.Host.UseSerilog(Log.Logger);
 builder
    .Services
    .AddPortableResultsForMinimalApis()
-   .AddValidationForLightPortableResults()
+   .AddValidationForPortableResults()
    .ConfigureJsonSerialization()
    .AddInMemoryDatabase()
    .AddGetMoviesModule()

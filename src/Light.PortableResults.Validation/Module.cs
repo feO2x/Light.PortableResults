@@ -18,7 +18,7 @@ public static class Module
     /// <param name="services">The service collection that holds all registrations.</param>
     /// <returns>The service collection for method-chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="services" /> is null.</exception>
-    public static IServiceCollection AddValidationForLightPortableResults(this IServiceCollection services)
+    public static IServiceCollection AddValidationForPortableResults(this IServiceCollection services)
     {
         if (services is null)
         {

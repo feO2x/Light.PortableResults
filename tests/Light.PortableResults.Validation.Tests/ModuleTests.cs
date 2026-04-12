@@ -9,27 +9,27 @@ namespace Light.PortableResults.Validation.Tests;
 public sealed class ModuleTests
 {
     [Fact]
-    public void AddValidationForLightPortableResults_ShouldThrowArgumentNullException_WhenServicesIsNull()
+    public void AddValidationForPortableResults_ShouldThrowArgumentNullException_WhenServicesIsNull()
     {
         IServiceCollection services = null!;
 
-        Action act = () => services.AddValidationForLightPortableResults();
+        Action act = () => services.AddValidationForPortableResults();
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("services");
     }
 
     [Fact]
-    public void AddValidationForLightPortableResults_ShouldReturnSameServiceCollection_ForMethodChaining()
+    public void AddValidationForPortableResults_ShouldReturnSameServiceCollection_ForMethodChaining()
     {
         var services = new ServiceCollection();
 
-        var returnedServices = services.AddValidationForLightPortableResults();
+        var returnedServices = services.AddValidationForPortableResults();
 
         returnedServices.Should().BeSameAs(services);
     }
 
     [Fact]
-    public void AddValidationForLightPortableResults_ShouldRegisterIValidationContextFactory_AsSingletonDefaultValidationContextFactory()
+    public void AddValidationForPortableResults_ShouldRegisterIValidationContextFactory_AsSingletonDefaultValidationContextFactory()
     {
         using var provider = CreateDefaultProvider();
 
@@ -41,7 +41,7 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddValidationForLightPortableResults_ShouldRegisterValidationContextOptions_AsSingleton()
+    public void AddValidationForPortableResults_ShouldRegisterValidationContextOptions_AsSingleton()
     {
         using var provider = CreateDefaultProvider();
 
@@ -52,7 +52,7 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddValidationForLightPortableResults_ShouldMakeDirectValidationContextOptions_ConsistentWithIOptions()
+    public void AddValidationForPortableResults_ShouldMakeDirectValidationContextOptions_ConsistentWithIOptions()
     {
         using var provider = CreateDefaultProvider();
 
@@ -63,7 +63,7 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddValidationForLightPortableResults_ShouldRegisterDefaultValidationContextOptions()
+    public void AddValidationForPortableResults_ShouldRegisterDefaultValidationContextOptions()
     {
         using var provider = CreateDefaultProvider();
 
@@ -73,7 +73,7 @@ public sealed class ModuleTests
     }
 
     [Fact]
-    public void AddValidationForLightPortableResults_ShouldAllowCreatingFunctionalValidationContexts()
+    public void AddValidationForPortableResults_ShouldAllowCreatingFunctionalValidationContexts()
     {
         using var provider = CreateDefaultProvider();
         var factory = provider.GetRequiredService<IValidationContextFactory>();
@@ -87,6 +87,6 @@ public sealed class ModuleTests
 
     private static ServiceProvider CreateDefaultProvider() =>
         new ServiceCollection()
-            .AddValidationForLightPortableResults()
+            .AddValidationForPortableResults()
             .BuildServiceProvider();
 }
