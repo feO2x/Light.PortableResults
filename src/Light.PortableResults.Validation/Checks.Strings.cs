@@ -14,6 +14,12 @@ public static partial class Checks
     /// With the default string normalizer, <see langword="null" /> is normalized to <see cref="string.Empty" />
     /// before this assertion sees the value.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
     public static Check<string> IsNotNullOrWhiteSpace(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)
@@ -35,6 +41,21 @@ public static partial class Checks
     /// applying the specified inline error overrides. With the default string normalizer,
     /// <see langword="null" /> is normalized to <see cref="string.Empty" /> before this assertion sees the value.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
     public static Check<string> IsNotNullOrWhiteSpace(
         this Check<string> check,
         ErrorOverrides overrides,
@@ -64,6 +85,21 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string is shorter than the specified minimum length.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="minLength">The minimum number of characters required. Must be zero or greater.</param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="minLength" /> is negative.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> HasMinLength(
         this Check<string> check,
         int minLength,
@@ -90,6 +126,30 @@ public static partial class Checks
     /// Adds a validation error when the checked string is shorter than the specified minimum length,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="minLength">The minimum number of characters required. Must be zero or greater.</param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="minLength" /> is negative.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> HasMinLength(
         this Check<string> check,
         int minLength,
@@ -117,6 +177,21 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string exceeds the specified maximum length.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="maxLength">The maximum number of characters allowed. Must be zero or greater.</param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="maxLength" /> is negative.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string?> HasMaxLength(
         this Check<string?> check,
         int maxLength,
@@ -143,6 +218,30 @@ public static partial class Checks
     /// Adds a validation error when the checked string exceeds the specified maximum length,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="maxLength">The maximum number of characters allowed. Must be zero or greater.</param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="maxLength" /> is negative.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string?> HasMaxLength(
         this Check<string?> check,
         int maxLength,
@@ -170,6 +269,30 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string length lies outside the inclusive range.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="minLength">
+    /// The minimum character count (inclusive). Must be zero or greater.
+    /// </param>
+    /// <param name="maxLength">
+    /// The maximum character count (inclusive). Must be greater than or equal to
+    /// <paramref name="minLength" />.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="minLength" /> or <paramref name="maxLength" /> is negative.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="maxLength" /> is less than <paramref name="minLength" />.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> HasLengthIn(
         this Check<string> check,
         int minLength,
@@ -201,6 +324,37 @@ public static partial class Checks
     /// Adds a validation error when the checked string length lies outside the inclusive range,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="minLength">
+    /// The minimum character count (inclusive). Must be zero or greater.
+    /// </param>
+    /// <param name="maxLength">
+    /// The maximum character count (inclusive). Must be greater than or equal to
+    /// <paramref name="minLength" />.
+    /// </param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="minLength" /> or <paramref name="maxLength" /> is negative.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="maxLength" /> is less than <paramref name="minLength" />, or when
+    /// <paramref name="overrides" /> has no field set, or when <see cref="ErrorOverrides.Message" /> is
+    /// non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> HasLengthIn(
         this Check<string> check,
         int minLength,
@@ -233,6 +387,23 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string does not match the specified regular expression.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="regex">
+    /// The compiled regular expression the string must match. Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="regex" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> Matches(this Check<string> check, Regex regex, bool shortCircuitOnError = false)
     {
         if (regex is null)
@@ -263,6 +434,32 @@ public static partial class Checks
     /// Adds a validation error when the checked string does not match the specified regular expression,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="regex">
+    /// The compiled regular expression the string must match. Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="regex" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> Matches(
         this Check<string> check,
         Regex regex,
@@ -298,6 +495,29 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string does not match the specified regular expression pattern.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="pattern">
+    /// The regular expression pattern the string must match. Must not be <see langword="null" />.
+    /// The compiled <see cref="Regex" /> is cached inside the validation context for the lifetime of the
+    /// validation operation.
+    /// </param>
+    /// <param name="options">
+    /// Options applied when compiling and matching the pattern;
+    /// defaults to <see cref="RegexOptions.None" />.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="pattern" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> Matches(
         this Check<string> check,
         string pattern,
@@ -330,6 +550,38 @@ public static partial class Checks
     /// Adds a validation error when the checked string does not match the specified regular expression pattern,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="pattern">
+    /// The regular expression pattern the string must match. Must not be <see langword="null" />.
+    /// The compiled <see cref="Regex" /> is cached inside the validation context for the lifetime of the
+    /// validation operation.
+    /// </param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="options">
+    /// Options applied when compiling and matching the pattern;
+    /// defaults to <see cref="RegexOptions.None" />.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="pattern" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> Matches(
         this Check<string> check,
         string pattern,
@@ -363,6 +615,22 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string does not look like an email address.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>
+    /// Uses a lightweight heuristic: the string must contain exactly one <c>@</c> sign that is neither
+    /// the first nor the last character. This is intentionally permissive — it rejects obviously invalid
+    /// addresses without performing full RFC-5321 validation.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> IsEmail(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)
@@ -380,6 +648,31 @@ public static partial class Checks
     /// Adds a validation error when the checked string does not look like an email address,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>
+    /// Uses a lightweight heuristic: the string must contain exactly one <c>@</c> sign that is neither
+    /// the first nor the last character. This is intentionally permissive — it rejects obviously invalid
+    /// addresses without performing full RFC-5321 validation.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> IsEmail(
         this Check<string> check,
         ErrorOverrides overrides,
@@ -406,6 +699,20 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string is empty or contains a non-digit character.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>
+    /// Every character is tested with <see cref="char.IsDigit(char)" />. An empty string always fails.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> ContainsOnlyDigits(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)
@@ -423,6 +730,29 @@ public static partial class Checks
     /// Adds a validation error when the checked string is empty or contains a non-digit character,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>
+    /// Every character is tested with <see cref="char.IsDigit(char)" />. An empty string always fails.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> ContainsOnlyDigits(
         this Check<string> check,
         ErrorOverrides overrides,
@@ -449,6 +779,20 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked string is empty or contains characters other than letters or digits.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>
+    /// Every character is tested with <see cref="char.IsLetterOrDigit(char)" />. An empty string always fails.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> ContainsOnlyLettersAndDigits(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)
@@ -466,6 +810,29 @@ public static partial class Checks
     /// Adds a validation error when the checked string is empty or contains characters other than letters or digits,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>
+    /// Every character is tested with <see cref="char.IsLetterOrDigit(char)" />. An empty string always fails.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked string is <see langword="null" />. With the default string normalizer,
+    /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
+    /// so this only occurs when using a no-op normalizer.
+    /// </exception>
     public static Check<string> ContainsOnlyLettersAndDigits(
         this Check<string> check,
         ErrorOverrides overrides,

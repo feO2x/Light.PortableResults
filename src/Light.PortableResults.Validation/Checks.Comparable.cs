@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Light.PortableResults.Validation.Definitions;
 
@@ -11,6 +12,24 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked value is not greater than the specified boundary.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="comparativeValue">
+    /// The exclusive lower boundary; the checked value must be strictly greater than this.
+    /// Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="comparativeValue" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsGreaterThan<T>(
         this Check<T> check,
         T comparativeValue,
@@ -40,6 +59,33 @@ public static partial class Checks
     /// Adds a validation error when the checked value is not greater than the specified boundary,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="comparativeValue">
+    /// The exclusive lower boundary; the checked value must be strictly greater than this.
+    /// Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="comparativeValue" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsGreaterThan<T>(
         this Check<T> check,
         T comparativeValue,
@@ -70,6 +116,24 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked value is less than the specified boundary.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="comparativeValue">
+    /// The inclusive lower boundary; the checked value must be greater than or equal to this.
+    /// Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="comparativeValue" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsGreaterThanOrEqualTo<T>(
         this Check<T> check,
         T comparativeValue,
@@ -99,6 +163,33 @@ public static partial class Checks
     /// Adds a validation error when the checked value is less than the specified boundary,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="comparativeValue">
+    /// The inclusive lower boundary; the checked value must be greater than or equal to this.
+    /// Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="comparativeValue" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsGreaterThanOrEqualTo<T>(
         this Check<T> check,
         T comparativeValue,
@@ -129,6 +220,24 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked value is not less than the specified boundary.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="comparativeValue">
+    /// The exclusive upper boundary; the checked value must be strictly less than this.
+    /// Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="comparativeValue" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsLessThan<T>(
         this Check<T> check,
         T comparativeValue,
@@ -158,6 +267,33 @@ public static partial class Checks
     /// Adds a validation error when the checked value is not less than the specified boundary,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="comparativeValue">
+    /// The exclusive upper boundary; the checked value must be strictly less than this.
+    /// Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="comparativeValue" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsLessThan<T>(
         this Check<T> check,
         T comparativeValue,
@@ -188,6 +324,24 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked value is greater than the specified boundary.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="comparativeValue">
+    /// The inclusive upper boundary; the checked value must be less than or equal to this.
+    /// Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="comparativeValue" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsLessThanOrEqualTo<T>(
         this Check<T> check,
         T comparativeValue,
@@ -217,6 +371,33 @@ public static partial class Checks
     /// Adds a validation error when the checked value is greater than the specified boundary,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="comparativeValue">
+    /// The inclusive upper boundary; the checked value must be less than or equal to this.
+    /// Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="comparativeValue" /> is <see langword="null" />.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsLessThanOrEqualTo<T>(
         this Check<T> check,
         T comparativeValue,
@@ -247,6 +428,27 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked value lies outside the inclusive range.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="lowerBoundary">
+    /// The inclusive lower boundary of the range. Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="upperBoundary">
+    /// The inclusive upper boundary of the range. Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="lowerBoundary" /> or <paramref name="upperBoundary" /> is
+    /// <see langword="null" />.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsIn<T>(
         this Check<T> check,
         T lowerBoundary,
@@ -279,6 +481,36 @@ public static partial class Checks
     /// Adds a validation error when the checked value lies outside the inclusive range,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="lowerBoundary">
+    /// The inclusive lower boundary of the range. Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="upperBoundary">
+    /// The inclusive upper boundary of the range. Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="lowerBoundary" /> or <paramref name="upperBoundary" /> is
+    /// <see langword="null" />.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsIn<T>(
         this Check<T> check,
         T lowerBoundary,
@@ -312,6 +544,27 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked value lies within the inclusive range.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="lowerBoundary">
+    /// The inclusive lower boundary of the forbidden range. Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="upperBoundary">
+    /// The inclusive upper boundary of the forbidden range. Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="lowerBoundary" /> or <paramref name="upperBoundary" /> is
+    /// <see langword="null" />.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsNotIn<T>(
         this Check<T> check,
         T lowerBoundary,
@@ -344,6 +597,36 @@ public static partial class Checks
     /// Adds a validation error when the checked value lies within the inclusive range,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="lowerBoundary">
+    /// The inclusive lower boundary of the forbidden range. Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="upperBoundary">
+    /// The inclusive upper boundary of the forbidden range. Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="lowerBoundary" /> or <paramref name="upperBoundary" /> is
+    /// <see langword="null" />.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsNotIn<T>(
         this Check<T> check,
         T lowerBoundary,
@@ -377,6 +660,29 @@ public static partial class Checks
     /// <summary>
     /// Adds a validation error when the checked value lies outside the exclusive range.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="lowerBoundary">
+    /// The exclusive lower boundary of the range; the checked value must be strictly greater than this.
+    /// Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="upperBoundary">
+    /// The exclusive upper boundary of the range; the checked value must be strictly less than this.
+    /// Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="lowerBoundary" /> or <paramref name="upperBoundary" /> is
+    /// <see langword="null" />.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsInExclusiveRange<T>(
         this Check<T> check,
         T lowerBoundary,
@@ -409,6 +715,38 @@ public static partial class Checks
     /// Adds a validation error when the checked value lies outside the exclusive range,
     /// applying the specified inline error overrides.
     /// </summary>
+    /// <param name="check">The check carrying the value and validation context.</param>
+    /// <param name="lowerBoundary">
+    /// The exclusive lower boundary of the range; the checked value must be strictly greater than this.
+    /// Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="upperBoundary">
+    /// The exclusive upper boundary of the range; the checked value must be strictly less than this.
+    /// Must not be <see langword="null" />.
+    /// </param>
+    /// <param name="overrides">
+    /// Inline overrides for the built-in error details. Pass a plain <see cref="string" /> to replace only
+    /// the message, or supply a full <see cref="ErrorOverrides" /> to also override the code, category, or
+    /// metadata. At least one field must be set.
+    /// </param>
+    /// <param name="shortCircuitOnError">
+    /// When <see langword="true" />, marks the check as short-circuited after a failure so that subsequent
+    /// assertions in the chain are skipped; defaults to <see langword="false" />.
+    /// </param>
+    /// <returns>The current check for fluent chaining.</returns>
+    /// <remarks>Uses <see cref="Comparer{T}.Default" /> for the comparison.</remarks>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="lowerBoundary" /> or <paramref name="upperBoundary" /> is
+    /// <see langword="null" />.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="overrides" /> has no field set, or when
+    /// <see cref="ErrorOverrides.Message" /> is non-<see langword="null" /> but empty or whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
+    /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
+    /// </exception>
     public static Check<T> IsInExclusiveRange<T>(
         this Check<T> check,
         T lowerBoundary,
