@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- Serilog is not yet fully annotated for trimming; suppress the assembly-level IL2104 rollup. -->
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Light.PortableResults.AspNetCore.MinimalApis/Light.PortableResults.AspNetCore.MinimalApis.csproj" />
+    <ProjectReference Include="../../src/Light.PortableResults.Validation/Light.PortableResults.Validation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Light.SharedCore" />
+    <PackageReference Include="Serilog.AspNetCore" />
+  </ItemGroup>
+
+</Project>

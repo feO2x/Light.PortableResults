@@ -51,6 +51,9 @@
   <Folder Name="/benchmarks/">
     <Project Path="benchmarks/Benchmarks/Benchmarks.csproj" />
   </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/NativeAotMovieRating/NativeAotMovieRating.csproj" />
+  </Folder>
   <Folder Name="/solution-items/">
     <File Path=".editorconfig" />
     <File Path=".gitignore" />
