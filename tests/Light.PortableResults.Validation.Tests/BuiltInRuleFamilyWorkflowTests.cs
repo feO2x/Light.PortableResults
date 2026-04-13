@@ -759,7 +759,7 @@ public sealed class BuiltInRuleFamilyWorkflowTests
     {
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
 
-        Action act = () => context.Check("AB", target: "rangeCode").IsIn(null!, "ZZ");
+        Action act = () => context.Check("AB", target: "rangeCode").IsInBetween(null!, "ZZ");
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("lowerBoundary");
     }
@@ -769,7 +769,7 @@ public sealed class BuiltInRuleFamilyWorkflowTests
     {
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
 
-        Action act = () => context.Check("AB", target: "rangeCode").IsNotIn("AA", null!);
+        Action act = () => context.Check("AB", target: "rangeCode").IsNotInBetween("AA", null!);
 
         act.Should().Throw<ArgumentNullException>().WithParameterName("upperBoundary");
     }

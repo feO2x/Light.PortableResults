@@ -164,7 +164,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void IsIn_ShouldExposeExpectedMetadata()
     {
-        var inRange = BuiltInValidationErrorDefinitions.IsIn(6UL, 7UL);
+        var inRange = BuiltInValidationErrorDefinitions.IsInBetween(6UL, 7UL);
         inRange.Metadata.Should().Be(
             MetadataObject.Create(
                 (ValidationErrorMetadataKeys.LowerBoundary, "6"),
@@ -176,7 +176,7 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void IsNotIn_ShouldExposeExpectedMetadata()
     {
-        var notInRange = BuiltInValidationErrorDefinitions.IsNotIn('A', 'Z');
+        var notInRange = BuiltInValidationErrorDefinitions.IsNotInBetween('A', 'Z');
         notInRange.Metadata.Should().Be(
             MetadataObject.Create(
                 (ValidationErrorMetadataKeys.LowerBoundary, "A"),
@@ -300,8 +300,8 @@ public sealed class ValidationErrorDefinitionTests
         var greaterThanOrEqualTo = BuiltInValidationErrorDefinitions.GreaterThanOrEqualTo(18);
         var lessThan = BuiltInValidationErrorDefinitions.LessThan(18);
         var lessThanOrEqualTo = BuiltInValidationErrorDefinitions.LessThanOrEqualTo(18);
-        var inRange = BuiltInValidationErrorDefinitions.IsIn(1, 10);
-        var notInRange = BuiltInValidationErrorDefinitions.IsNotIn(1, 10);
+        var inRange = BuiltInValidationErrorDefinitions.IsInBetween(1, 10);
+        var notInRange = BuiltInValidationErrorDefinitions.IsNotInBetween(1, 10);
         var exclusiveRange = BuiltInValidationErrorDefinitions.IsInExclusiveRange(1, 10);
 
         greaterThan.TryGetStableMessageProvider(readOnlyContext, out var greaterThanProvider).Should().BeTrue();
@@ -318,8 +318,8 @@ public sealed class ValidationErrorDefinitionTests
         greaterThanOrEqualProvider.Should().BeSameAs(context.ErrorTemplates.GreaterThanOrEqualTo);
         lessThanProvider.Should().BeSameAs(context.ErrorTemplates.LessThan);
         lessThanOrEqualProvider.Should().BeSameAs(context.ErrorTemplates.LessThanOrEqualTo);
-        inRangeProvider.Should().BeSameAs(context.ErrorTemplates.IsIn);
-        notInRangeProvider.Should().BeSameAs(context.ErrorTemplates.NotIn);
+        inRangeProvider.Should().BeSameAs(context.ErrorTemplates.IsInBetween);
+        notInRangeProvider.Should().BeSameAs(context.ErrorTemplates.NotInBetween);
         exclusiveRangeProvider.Should().BeSameAs(context.ErrorTemplates.ExclusiveRange);
     }
 
@@ -364,7 +364,7 @@ public sealed class ValidationErrorDefinitionTests
     {
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check(10, target: "age", displayName: "Age").CreateMessageContext();
-        var inRange = BuiltInValidationErrorDefinitions.IsIn(1, 10);
+        var inRange = BuiltInValidationErrorDefinitions.IsInBetween(1, 10);
         inRange.ProvideMessage(messageContext).Text.Should().Be("Age must be between 1 and 10");
     }
 
@@ -373,7 +373,7 @@ public sealed class ValidationErrorDefinitionTests
     {
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var messageContext = context.Check(10, target: "age", displayName: "Age").CreateMessageContext();
-        var notInRange = BuiltInValidationErrorDefinitions.IsNotIn(1, 10);
+        var notInRange = BuiltInValidationErrorDefinitions.IsNotInBetween(1, 10);
         notInRange.ProvideMessage(messageContext).Text.Should().Be("Age must not be between 1 and 10");
     }
 
@@ -403,14 +403,14 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void IsIn_ShouldThrow_WhenCacheIsNull()
     {
-        Action act = () => BuiltInValidationErrorDefinitions.IsIn<string>(null!, "A", "Z");
+        Action act = () => BuiltInValidationErrorDefinitions.IsInBetween<string>(null!, "A", "Z");
         act.Should().Throw<ArgumentNullException>().WithParameterName("cache");
     }
 
     [Fact]
     public void IsNotIn_ShouldThrow_WhenCacheIsNull()
     {
-        Action act = () => BuiltInValidationErrorDefinitions.IsNotIn<string>(null!, "A", "Z");
+        Action act = () => BuiltInValidationErrorDefinitions.IsNotInBetween<string>(null!, "A", "Z");
         act.Should().Throw<ArgumentNullException>().WithParameterName("cache");
     }
 
@@ -457,7 +457,7 @@ public sealed class ValidationErrorDefinitionTests
     public void IsIn_ShouldThrow_WhenLowerBoundaryIsNull()
     {
         var cache = new ValidationErrorDefinitionCache();
-        Action act = () => BuiltInValidationErrorDefinitions.IsIn(cache, null!, "Z");
+        Action act = () => BuiltInValidationErrorDefinitions.IsInBetween(cache, null!, "Z");
         act.Should().Throw<ArgumentNullException>().WithParameterName("lowerBoundary");
     }
 
@@ -465,7 +465,7 @@ public sealed class ValidationErrorDefinitionTests
     public void IsNotIn_ShouldThrow_WhenLowerBoundaryIsNull()
     {
         var cache = new ValidationErrorDefinitionCache();
-        Action act = () => BuiltInValidationErrorDefinitions.IsNotIn(cache, null!, "Z");
+        Action act = () => BuiltInValidationErrorDefinitions.IsNotInBetween(cache, null!, "Z");
         act.Should().Throw<ArgumentNullException>().WithParameterName("lowerBoundary");
     }
 
@@ -481,7 +481,7 @@ public sealed class ValidationErrorDefinitionTests
     public void IsNotIn_ShouldThrow_WhenUpperBoundaryIsNull()
     {
         var cache = new ValidationErrorDefinitionCache();
-        Action act = () => BuiltInValidationErrorDefinitions.IsNotIn(cache, "A", null!);
+        Action act = () => BuiltInValidationErrorDefinitions.IsNotInBetween(cache, "A", null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("upperBoundary");
     }
 
@@ -823,7 +823,7 @@ public sealed class ValidationErrorDefinitionTests
     public void IsIn_ShouldReportUnstableProviders_WhenTemplatesAreNotStable()
     {
         var context = CreateContextWithUnstableTemplates().AsReadOnly();
-        BuiltInValidationErrorDefinitions.IsIn(1, 10)
+        BuiltInValidationErrorDefinitions.IsInBetween(1, 10)
            .TryGetStableMessageProvider(context, out var provider)
            .Should().BeFalse();
         provider.Should().BeNull();
@@ -905,7 +905,7 @@ public sealed class ValidationErrorDefinitionTests
             ValidationErrorTemplates.Default with
             {
                 GreaterThan = new UnstableComparableTemplate(),
-                IsIn = new UnstableRangeTemplate(),
+                IsInBetween = new UnstableRangeTemplate(),
                 Count = new UnstableIntTemplate(),
                 MinCount = new UnstableIntTemplate(),
                 MaxCount = new UnstableIntTemplate(),
@@ -950,8 +950,8 @@ public sealed class ValidationErrorDefinitionTests
     public void IsIn_ShouldBeReused_WhenEquivalent()
     {
         var cache = new ValidationErrorDefinitionCache();
-        BuiltInValidationErrorDefinitions.IsIn(cache, 1, 10).Should().BeSameAs(
-            BuiltInValidationErrorDefinitions.IsIn(cache, 1, 10)
+        BuiltInValidationErrorDefinitions.IsInBetween(cache, 1, 10).Should().BeSameAs(
+            BuiltInValidationErrorDefinitions.IsInBetween(cache, 1, 10)
         );
     }
 
@@ -959,8 +959,8 @@ public sealed class ValidationErrorDefinitionTests
     public void IsNotIn_ShouldBeReused_WhenEquivalent()
     {
         var cache = new ValidationErrorDefinitionCache();
-        BuiltInValidationErrorDefinitions.IsNotIn(cache, 1, 10).Should().BeSameAs(
-            BuiltInValidationErrorDefinitions.IsNotIn(cache, 1, 10)
+        BuiltInValidationErrorDefinitions.IsNotInBetween(cache, 1, 10).Should().BeSameAs(
+            BuiltInValidationErrorDefinitions.IsNotInBetween(cache, 1, 10)
         );
     }
 

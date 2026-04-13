@@ -41,10 +41,10 @@ public sealed partial record ValidationErrorTemplates
     private static readonly IComparableValidationErrorMessageTemplate DefaultLessThanOrEqualToTemplate =
         new DisplayNameWithComparable(" must be less than or equal to ");
 
-    private static readonly IRangeValidationErrorMessageTemplate DefaultIsInTemplate =
+    private static readonly IRangeValidationErrorMessageTemplate DefaultIsInBetweenTemplate =
         new DisplayNameWithRange(" must be between ", " and ");
 
-    private static readonly IRangeValidationErrorMessageTemplate DefaultNotInTemplate =
+    private static readonly IRangeValidationErrorMessageTemplate DefaultNotInBetweenTemplate =
         new DisplayNameWithRange(" must not be between ", " and ");
 
     private static readonly IRangeValidationErrorMessageTemplate DefaultExclusiveRangeTemplate =
@@ -126,8 +126,8 @@ public sealed partial record ValidationErrorTemplates
         GreaterThanOrEqualTo = original.GreaterThanOrEqualTo;
         LessThan = original.LessThan;
         LessThanOrEqualTo = original.LessThanOrEqualTo;
-        IsIn = original.IsIn;
-        NotIn = original.NotIn;
+        IsInBetween = original.IsInBetween;
+        NotInBetween = original.NotInBetween;
         ExclusiveRange = original.ExclusiveRange;
         MinLength = original.MinLength;
         MaxLength = original.MaxLength;
@@ -281,20 +281,20 @@ public sealed partial record ValidationErrorTemplates
     /// <summary>
     /// Gets the template for inclusive-range validation failures.
     /// </summary>
-    public IRangeValidationErrorMessageTemplate IsIn
+    public IRangeValidationErrorMessageTemplate IsInBetween
     {
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));
-    } = DefaultIsInTemplate;
+    } = DefaultIsInBetweenTemplate;
 
     /// <summary>
     /// Gets the template for outside-range validation failures.
     /// </summary>
-    public IRangeValidationErrorMessageTemplate NotIn
+    public IRangeValidationErrorMessageTemplate NotInBetween
     {
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));
-    } = DefaultNotInTemplate;
+    } = DefaultNotInBetweenTemplate;
 
     /// <summary>
     /// Gets the template for exclusive-range validation failures.

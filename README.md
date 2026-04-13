@@ -212,7 +212,7 @@ public sealed class MovieRatingValidator : Validator<MovieRatingDto>
         dto.Comment = context.Check(dto.Comment).HasLengthIn(10, 1000);
         dto.UserName = context.Check(dto.UserName).IsNotNullOrWhiteSpace();
 
-        context.Check(dto.Rating).IsIn(1, 5);
+        context.Check(dto.Rating).IsInBetween(1, 5);
 
         // Use the checkpoint to determine if validation errors were attached to
         // to the ValidationContext during this method call. The checkpoint will
@@ -412,7 +412,7 @@ Content-Type: application/problem+json
     },
     {
       "message": "rating must be between 1 and 5",
-      "code": "IsIn",
+      "code": "IsInBetween",
       "target": "rating",
       "category": "Validation",
       "metadata": {

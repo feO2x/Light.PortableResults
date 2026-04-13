@@ -128,13 +128,13 @@ public static partial class BuiltInValidationErrorDefinitions
     /// <summary>
     /// Gets or creates a reusable definition for inclusive-range validation failures.
     /// </summary>
-    public static InValidationErrorDefinition<T> IsIn<T>(T lowerBoundary, T upperBoundary) =>
-        IsIn(ValidationErrorDefinitionCache.Default, lowerBoundary, upperBoundary);
+    public static InBetweenValidationErrorDefinition<T> IsInBetween<T>(T lowerBoundary, T upperBoundary) =>
+        IsInBetween(ValidationErrorDefinitionCache.Default, lowerBoundary, upperBoundary);
 
     /// <summary>
     /// Gets or creates a reusable definition for inclusive-range validation failures.
     /// </summary>
-    public static InValidationErrorDefinition<T> IsIn<T>(
+    public static InBetweenValidationErrorDefinition<T> IsInBetween<T>(
         IValidationErrorDefinitionCache cache,
         T lowerBoundary,
         T upperBoundary
@@ -157,20 +157,20 @@ public static partial class BuiltInValidationErrorDefinitions
 
         return cache.GetOrAdd(
             new RangeDefinitionCacheKey<T>(new ValidationRange<T>(lowerBoundary, upperBoundary)),
-            static key => new InValidationErrorDefinition<T>(key.Range.LowerBoundary, key.Range.UpperBoundary)
+            static key => new InBetweenValidationErrorDefinition<T>(key.Range.LowerBoundary, key.Range.UpperBoundary)
         );
     }
 
     /// <summary>
     /// Gets or creates a reusable definition for outside-range validation failures.
     /// </summary>
-    public static NotInValidationErrorDefinition<T> IsNotIn<T>(T lowerBoundary, T upperBoundary) =>
-        IsNotIn(ValidationErrorDefinitionCache.Default, lowerBoundary, upperBoundary);
+    public static NotInBetweenValidationErrorDefinition<T> IsNotInBetween<T>(T lowerBoundary, T upperBoundary) =>
+        IsNotInBetween(ValidationErrorDefinitionCache.Default, lowerBoundary, upperBoundary);
 
     /// <summary>
     /// Gets or creates a reusable definition for outside-range validation failures.
     /// </summary>
-    public static NotInValidationErrorDefinition<T> IsNotIn<T>(
+    public static NotInBetweenValidationErrorDefinition<T> IsNotInBetween<T>(
         IValidationErrorDefinitionCache cache,
         T lowerBoundary,
         T upperBoundary
@@ -193,7 +193,7 @@ public static partial class BuiltInValidationErrorDefinitions
 
         return cache.GetOrAdd(
             new RangeDefinitionCacheKey<T>(new ValidationRange<T>(lowerBoundary, upperBoundary)),
-            static key => new NotInValidationErrorDefinition<T>(key.Range.LowerBoundary, key.Range.UpperBoundary)
+            static key => new NotInBetweenValidationErrorDefinition<T>(key.Range.LowerBoundary, key.Range.UpperBoundary)
         );
     }
 
@@ -389,15 +389,15 @@ public static partial class BuiltInValidationErrorDefinitions
     /// <summary>
     /// Reusable built-in validation error definition for inclusive-range validation failures.
     /// </summary>
-    public sealed class InValidationErrorDefinition<T> : ValidationErrorDefinition<ValidationRange<T>>
+    public sealed class InBetweenValidationErrorDefinition<T> : ValidationErrorDefinition<ValidationRange<T>>
     {
         /// <summary>
-        /// Initializes a new instance of <see cref="InValidationErrorDefinition{T}" />.
+        /// Initializes a new instance of <see cref="InBetweenValidationErrorDefinition{T}" />.
         /// </summary>
-        public InValidationErrorDefinition(T lowerBoundary, T upperBoundary)
+        public InBetweenValidationErrorDefinition(T lowerBoundary, T upperBoundary)
             : base(
                 new ValidationRange<T>(lowerBoundary, upperBoundary),
-                code: "IsIn",
+                code: "IsInBetween",
                 metadata: CreateRangeMetadata(lowerBoundary, upperBoundary)
             )
         {
@@ -419,27 +419,27 @@ public static partial class BuiltInValidationErrorDefinitions
         public override bool TryGetStableMessageProvider(
             ReadOnlyValidationContext context,
             out object provider
-        ) => TryGetStableProvider(context.ErrorTemplates.IsIn, out provider);
+        ) => TryGetStableProvider(context.ErrorTemplates.IsInBetween, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
             in ValidationErrorMessageContext<TValue> context
         ) =>
-            context.ValidationContext.ErrorTemplates.IsIn.ProvideMessage(in context, LowerBoundary, UpperBoundary);
+            context.ValidationContext.ErrorTemplates.IsInBetween.ProvideMessage(in context, LowerBoundary, UpperBoundary);
     }
 
     /// <summary>
     /// Reusable built-in validation error definition for outside-range validation failures.
     /// </summary>
-    public sealed class NotInValidationErrorDefinition<T> : ValidationErrorDefinition<ValidationRange<T>>
+    public sealed class NotInBetweenValidationErrorDefinition<T> : ValidationErrorDefinition<ValidationRange<T>>
     {
         /// <summary>
-        /// Initializes a new instance of <see cref="NotInValidationErrorDefinition{T}" />.
+        /// Initializes a new instance of <see cref="NotInBetweenValidationErrorDefinition{T}" />.
         /// </summary>
-        public NotInValidationErrorDefinition(T lowerBoundary, T upperBoundary)
+        public NotInBetweenValidationErrorDefinition(T lowerBoundary, T upperBoundary)
             : base(
                 new ValidationRange<T>(lowerBoundary, upperBoundary),
-                code: "NotIn",
+                code: "NotInBetween",
                 metadata: CreateRangeMetadata(lowerBoundary, upperBoundary)
             )
         {
@@ -461,13 +461,13 @@ public static partial class BuiltInValidationErrorDefinitions
         public override bool TryGetStableMessageProvider(
             ReadOnlyValidationContext context,
             out object provider
-        ) => TryGetStableProvider(context.ErrorTemplates.NotIn, out provider);
+        ) => TryGetStableProvider(context.ErrorTemplates.NotInBetween, out provider);
 
         /// <inheritdoc />
         public override ValidationErrorMessage ProvideMessage<TValue>(
             in ValidationErrorMessageContext<TValue> context
         ) =>
-            context.ValidationContext.ErrorTemplates.NotIn.ProvideMessage(in context, LowerBoundary, UpperBoundary);
+            context.ValidationContext.ErrorTemplates.NotInBetween.ProvideMessage(in context, LowerBoundary, UpperBoundary);
     }
 
     /// <summary>

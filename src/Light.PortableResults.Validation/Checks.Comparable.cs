@@ -449,7 +449,7 @@ public static partial class Checks
     /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
-    public static Check<T> IsIn<T>(
+    public static Check<T> IsInBetween<T>(
         this Check<T> check,
         T lowerBoundary,
         T upperBoundary,
@@ -462,14 +462,14 @@ public static partial class Checks
             return check;
         }
 
-        var value = GetRequiredValue(check.Value, nameof(IsIn));
+        var value = GetRequiredValue(check.Value, nameof(IsInBetween));
         var comparer = Comparer<T>.Default;
         if (comparer.Compare(value, lowerBoundary) >= 0 && comparer.Compare(value, upperBoundary) <= 0)
         {
             return check;
         }
 
-        var definition = BuiltInValidationErrorDefinitions.IsIn(
+        var definition = BuiltInValidationErrorDefinitions.IsInBetween(
             check.Context.ErrorDefinitionCache,
             lowerBoundary,
             upperBoundary
@@ -511,7 +511,7 @@ public static partial class Checks
     /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
-    public static Check<T> IsIn<T>(
+    public static Check<T> IsInBetween<T>(
         this Check<T> check,
         T lowerBoundary,
         T upperBoundary,
@@ -526,14 +526,14 @@ public static partial class Checks
             return check;
         }
 
-        var value = GetRequiredValue(check.Value, nameof(IsIn));
+        var value = GetRequiredValue(check.Value, nameof(IsInBetween));
         var comparer = Comparer<T>.Default;
         if (comparer.Compare(value, lowerBoundary) >= 0 && comparer.Compare(value, upperBoundary) <= 0)
         {
             return check;
         }
 
-        var definition = BuiltInValidationErrorDefinitions.IsIn(
+        var definition = BuiltInValidationErrorDefinitions.IsInBetween(
             check.Context.ErrorDefinitionCache,
             lowerBoundary,
             upperBoundary
@@ -565,7 +565,7 @@ public static partial class Checks
     /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
-    public static Check<T> IsNotIn<T>(
+    public static Check<T> IsNotInBetween<T>(
         this Check<T> check,
         T lowerBoundary,
         T upperBoundary,
@@ -578,14 +578,14 @@ public static partial class Checks
             return check;
         }
 
-        var value = GetRequiredValue(check.Value, nameof(IsNotIn));
+        var value = GetRequiredValue(check.Value, nameof(IsNotInBetween));
         var comparer = Comparer<T>.Default;
         if (comparer.Compare(value, lowerBoundary) < 0 || comparer.Compare(value, upperBoundary) > 0)
         {
             return check;
         }
 
-        var definition = BuiltInValidationErrorDefinitions.IsNotIn(
+        var definition = BuiltInValidationErrorDefinitions.IsNotInBetween(
             check.Context.ErrorDefinitionCache,
             lowerBoundary,
             upperBoundary
@@ -627,7 +627,7 @@ public static partial class Checks
     /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
-    public static Check<T> IsNotIn<T>(
+    public static Check<T> IsNotInBetween<T>(
         this Check<T> check,
         T lowerBoundary,
         T upperBoundary,
@@ -642,14 +642,14 @@ public static partial class Checks
             return check;
         }
 
-        var value = GetRequiredValue(check.Value, nameof(IsNotIn));
+        var value = GetRequiredValue(check.Value, nameof(IsNotInBetween));
         var comparer = Comparer<T>.Default;
         if (comparer.Compare(value, lowerBoundary) < 0 || comparer.Compare(value, upperBoundary) > 0)
         {
             return check;
         }
 
-        var definition = BuiltInValidationErrorDefinitions.IsNotIn(
+        var definition = BuiltInValidationErrorDefinitions.IsNotInBetween(
             check.Context.ErrorDefinitionCache,
             lowerBoundary,
             upperBoundary

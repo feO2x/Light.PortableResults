@@ -17,7 +17,7 @@ public sealed class MovieRatingValidator : Validator<MovieRatingDto>
         context.Check(dto.MovieId).IsNotEmpty();
         dto.Comment = context.Check(dto.Comment).HasLengthIn(10, 1000);
         dto.UserName = context.Check(dto.UserName).IsNotNullOrWhiteSpace();
-        context.Check(dto.Rating).IsIn(1, 5);
+        context.Check(dto.Rating).IsInBetween(1, 5);
         return checkpoint.ToValidatedValue(dto);
     }
 }
