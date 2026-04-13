@@ -62,7 +62,7 @@ public sealed class AddMovieRatingService
         movie.Ratings.Add(newRating);
         await _session.SaveChangesAsync(cancellationToken);
         _logger.Information(
-            "Added movie rating {MovieRatingId} for movie {MovieId} by user {UserName}",
+            "Added movie rating {MovieRatingId} for movie {MovieTitle} by user {UserName}",
             dto.Id,
             movie.Title,
             newRating.UserName
