@@ -1,438 +1,366 @@
 # Light.PortableResults
 
-*A lightweight .NET library implementing the Result Pattern where each result is serializable and deserializable. Comes
-with integrations for ASP.NET Core Minimal APIs and MVC, `HttpResponseMessage`, and CloudEvents JSON format.*
+*A high-performant, enterprise-grade .NET library implementing the Result Pattern where each result is serializable and deserializable. Comes with integrations for ASP.NET Core Minimal APIs and MVC, `HttpResponseMessage`, and CloudEvents JSON format, as well as a validation framework.*
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/blob/main/LICENSE)
-[![NuGet](https://img.shields.io/badge/NuGet-0.1.0-blue.svg?style=for-the-badge)](https://www.nuget.org/packages/Light.PortableResults/0.1.0/)
+[![NuGet](https://img.shields.io/badge/NuGet-0.2.0-blue.svg?style=for-the-badge)](https://www.nuget.org/packages?q=Light.PortableResults)
 [![Documentation](https://img.shields.io/badge/Docs-Changelog-yellowgreen.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/releases)
 
 ## ✨ Key Features
 
-- 🧱 **Zero-boilerplate result model** — `Result` / `Result<T>` is either a success value or one or more structured errors. No exceptions for expected failures.
+- 🧱 **Clear Result Pattern** — `Result` / `Result<T>` is either a success value or one or more structured errors. No exceptions for expected failures.
 - 📝 **Rich, machine-readable errors** — every `Error` carries a human-readable `Message`, stable `Code`, input `Target`, and `Category` — ready for API contracts and frontend mapping.
-- 🗂️ **Serialization-safe metadata** — metadata uses a dedicated JSON-like type system instead of
-  `Dictionary<string, object>`, so results serialize reliably across any protocol.
+- 🗂️ **Serialization-safe metadata** — metadata uses a dedicated JSON-like type system instead of `Dictionary<string, object>`, so results serialize reliably across any protocol.
 - 🔁 **Full functional operator suite** — `Map`, `Bind`, `Match`, `Ensure`, `Tap`, `Switch`, and their `Async` variants let you build clean, chainable pipelines.
-- 🌐 **HTTP-native** — serialize results as HTTP response, including automatic support for RFC-9457 Problem Details, and
-  deserialize `HttpResponseMessage` back into typed `Result` / `Result<T>`. Full round-trip support included.
-- 🧩 **ASP.NET Core ready** — Minimal APIs and MVC packages translate `Result` and `Result<T>` directly to `IResult` /
-  `IActionResult` with automatic HTTP status mapping and RFC-9457 Problem Details support.
-- ☁️ **CloudEvents JSON support** — publish and consume results as CloudEvents Spec 1.0 payloads for reliable async
-  messaging. Full round-trip support included.
-- ⚡ **Allocation-minimal by design** — pooled buffers, struct-friendly internals, and fast paths keep GC pressure near zero even at high throughput.
+- ☁️ **Cloud-Native** — Light.PortableResults contains System.Text.Json serialization support for HTTP responses, including RFC-9457 Problem Details compatibility, and CloudEvents Spec 1.0 JSON payloads for asynchronous messaging. Full round-trip included.
+- 🧩 **ASP.NET Core ready** — Minimal APIs and MVC packages translate `Result` and `Result<T>` directly to `IResult` / `IActionResult` with automatic HTTP status mapping and RFC-9457 Problem Details support.
+- 🛡️ **Validation framework** — Light.PortableResults.Validation allows you to easily validate DTOs and any values. At least 5x faster than FluentValidation 12.1.1 while having less than 9% of FluentValidation's memory footprint.
+- ⚡ **Allocation-minimal by design** — pooled buffers, struct-friendly internals, smart caching, and fast paths keep GC pressure near zero even at high throughput.
 
 ## 📦 Installation
 
-Install only the packages you need for your scenario.
+Install the packages you need for your scenario.
 
-- Core Result Pattern, Metadata, Functional Operators, and serialization support for HTTP and CloudEvents:
+Core Result Pattern, Metadata, Functional Operators, and serialization support for HTTP and CloudEvents:
 
 ```bash
 dotnet add package Light.PortableResults
 ```
 
-- Validation contexts, checks, synchronous/asynchronous validators, and flat hierarchical validation errors:
+Validation context, checks, and synchronous/asynchronous validators:
 
 ```bash
 dotnet add package Light.PortableResults.Validation
 ```
 
-- ASP.NET Core Minimal APIs integration with support for Dependency Injection and `IResult`:
+ASP.NET Core Minimal APIs integration with support for Dependency Injection and `IResult`:
 
 ```bash
 dotnet add package Light.PortableResults.AspNetCore.MinimalApis
 ```
 
-- ASP.NET Core MVC integration with support for Dependency Injection and `IActionResult`:
+ASP.NET Core MVC integration with support for Dependency Injection and `IActionResult`:
 
 ```bash
 dotnet add package Light.PortableResults.AspNetCore.Mvc
 ```
 
-If you only need the Result Pattern itself, install `Light.PortableResults` only.
+If you only need the Result Pattern itself, `Light.PortableResults` is the most leightweight dependency.
 
-## Validation Quick Start
+## 🤓 Basic Usage
 
-`Light.PortableResults.Validation` keeps validation targets flat across nested objects and collections, so child
-validation produces paths such as
-`address.zipCode` and
-`lines[0].sku`. Nullable collections must be guarded
-explicitly before item validation, typically with
-`IsNotNull()`.
+If you are new to the Result Pattern, think of it like this:
 
-```csharp
-using System.Collections.Generic;
-using Light.PortableResults.Validation;
+- A method can either succeed or fail.
+- Instead of throwing exceptions for expected failures (validation, not found, conflicts), the method returns a value that explicitly describes the outcome.
+- Callers must handle both paths on purpose, which makes Control Flow easier to read and test.
 
-public sealed class CreateOrderValidator : Validator<CreateOrderRequest, CreateOrderCommand>
-{
-	private readonly AddressValidator _addressValidator;
-	private readonly OrderLineValidator _lineValidator;
+This is covered by the following types in Light.PortableResults:
 
-	public CreateOrderValidator(IValidationContextFactory validationContextFactory)
-		: base(validationContextFactory)
-	{
-		_addressValidator = new AddressValidator(validationContextFactory);
-		_lineValidator = new OrderLineValidator(validationContextFactory);
-	}
+- `Result<T>` means: either a success value of type `T`, or one or more errors.
+- `Result` (non-generic) means: success/failure without a return value (corresponds to `void`).
+- Each `Error` can carry machine-readable details such as `Code`, `Target`, `Category`, and `Metadata`.
 
-	protected override ValidatedValue<CreateOrderCommand> PerformValidation(
-		ValidationContext context,
-		ValidationCheckpoint checkpoint,
-		CreateOrderRequest value
-	)
-	{
-		var address = context.Check(value.Address).IsNotNull().ValidateChild(_addressValidator);
-
-		var tags = context.Check(value.Tags).IsNotNull().ValidateItems(static tag =>
-		{
-			if (string.IsNullOrWhiteSpace(tag.Value))
-			{
-				tag.AddError("tag must not be empty", "NotEmpty");
-			}
-		});
-
-		var lines = context.Check(value.Lines).IsNotNull().ValidateItems(_lineValidator);
-
-		return checkpoint.HasNewErrors ?
-			ValidatedValue<CreateOrderCommand>.NoValue :
-			ValidatedValue.Success(new CreateOrderCommand(address.Value, tags.Value, lines.Value));
-	}
-}
-```
-
-Delegate-based item validation works well for primitive collections, while validator-based item transformation is
-intentionally limited to
-`T[]`,
-`List<T>`, and
-`ImmutableArray<T>`. For custom collection shapes, validate the
-collection through a dedicated child validator instead of expecting the built-in item helpers to preserve that shape.
-
-The built-in check catalog covers common guard, comparison, string, collection, enum, decimal, and predicate-based
-scenarios:
-`IsNull`,
-`IsNotNull`,
-`IsEqualTo`,
-`IsNotEqualTo`,
-`IsEmpty`,
-`IsNotEmpty`,
-`IsGreaterThan`,
-`IsGreaterThanOrEqualTo`,
-`IsLessThan`,
-`IsLessThanOrEqualTo`,
-`IsIn`,
-`IsNotIn`,
-`IsInExclusiveRange`,
-`IsNotNullOrWhiteSpace`,
-`HasMinLength`,
-`HasMaxLength`,
-`HasLengthIn`,
-`Matches`,
-`IsEmail`,
-`ContainsOnlyDigits`,
-`ContainsOnlyLettersAndDigits`,
-`HasCount`,
-`HasMinCount`,
-`HasMaxCount`,
-`IsInEnum`,
-`IsEnumName`,
-`HasPrecisionAndScale`,
-and
-`Must`.
-Use
-`Custom`
-for imperative logic that may add zero, one, or many errors directly.
-
-When you need to add errors manually inside a check, use
-`AddError(string, ...)`
-for one-off imperative failures,
-`AddError(ValidationErrorDefinition, ...)`
-for reusable rules and custom templates, and
-`AddError(Error, ...)`
-only when you already have the fully materialized final error.
-If you previously passed a message template directly to
-`AddError(...)`,
-wrap it in
-`TemplateValidationErrorDefinition`
-or
-`TemplateValidationErrorDefinition<TParameter>`
-instead:
+You can then build business logic around these types:
 
 ```csharp
 using Light.PortableResults;
-using Light.PortableResults.Validation;
-using Light.PortableResults.Validation.Definitions;
-using Light.PortableResults.Validation.Messaging;
 
-var invalidCode = new TemplateValidationErrorDefinition(
-	new ValidationErrorTemplates.DisplayName(" is invalid"),
-	code: "InvalidCode",
-	category: ErrorCategory.UnprocessableContent
-);
-
-context.Check(request.Code, target: "code", displayName: "Code")
-	.AddError(invalidCode);
-```
-
-Guard-style assertions such as
-`IsNotNull`,
-`IsNull`,
-`IsEmpty`,
-and
-`IsNotEmpty`
-own the null/default failure semantics.
-Follow-up assertions such as comparisons, length checks, pattern checks, enum-name checks, collection-count checks, and
-precision/scale checks throw
-`InvalidOperationException`
-when they encounter
-`null`
-on a non-short-circuited check. The intended flow is either automatic null checking, the default string normalization
-behavior, or an explicit
-`IsNotNull()`
-guard first. For strings, remember that the default string normalizer trims input and turns
-`null`
-into
-`string.Empty`,
-so
-`Check<string?>`
-usually reaches string assertions with an already-normalized value.
-
-Async child and collection validation follows the same model and uses
-`ValueTask` plus
-`CancellationToken` throughout:
-
-```csharp
-using System.Threading;
-using System.Threading.Tasks;
-using Light.PortableResults.Validation;
-
-public sealed class ImportValidator : AsyncValidator<ImportRequest, ImportCommand>
+// Use Result<T> or Result as response types in your methods
+static Result<int> ParsePositiveInteger(string input)
 {
-	private readonly AsyncCustomerValidator _customerValidator;
+    if (int.TryParse(input, out var value) && value > 0)
+    {
+        // If everything is fine, then use Result<T>.Ok() to return a success value
+        return Result<int>.Ok(value);
+    }
 
-	public ImportValidator(IValidationContextFactory validationContextFactory)
-		: base(validationContextFactory) =>
-		_customerValidator = new AsyncCustomerValidator(validationContextFactory);
-
-	protected override async ValueTask<ValidatedValue<ImportCommand>> PerformValidationAsync(
-		ValidationContext context,
-		ValidationCheckpoint checkpoint,
-		ImportRequest value,
-		CancellationToken cancellationToken
-	)
-	{
-		var customer = await context.Check(value.Customer)
-			.IsNotNull()
-			.ValidateChildAsync(_customerValidator, cancellationToken);
-
-		var amounts = await context.Check(value.Amounts)
-			.IsNotNull()
-			.ValidateItemsAsync(
-				async (amount, ct) =>
-				{
-					await Task.Yield();
-					ct.ThrowIfCancellationRequested();
-
-					if (amount.Value < 0)
-					{
-						amount.AddError("amount must be zero or greater", "NonNegative");
-					}
-				},
-				cancellationToken
-			);
-
-		return checkpoint.HasNewErrors ?
-			ValidatedValue<ImportCommand>.NoValue :
-			ValidatedValue.Success(new ImportCommand(customer.Value, amounts.Value));
-	}
+    // If an error occurred, use Result<T>.Fail() to indicate an issue.
+    // Here we create a single error, but you can also return multiple errors.
+    return Result<int>.Fail(new Error
+    {
+        Message = "Value must be a positive integer",
+        Code = "parse.invalid_positive_int",
+        Target = "input",
+        Category = ErrorCategory.Validation
+    });
 }
 ```
 
-For advanced manual target control, use
-`ValidationTarget`
-instead of overloading the string-based `target:` parameter on
-`Check(...)`.
-The common overload still interprets that string like a caller expression, even when you pass it explicitly.
-Use
-`ValidationTarget.Relative(...)`
-for paths below the current validation scope and
-`ValidationTarget.Absolute(...)`
-for already-rooted paths:
+You can then examine results in two ways: with implicit if-else Control Flow...
 
 ```csharp
-using Light.PortableResults.Validation;
+var input = Console.ReadLine();
+Result<int> result = ParsePositiveInteger();
 
-var context = validationContextFactory.CreateValidationContext();
-var customerContext = context.ForMember("customer", isNormalized: true);
-
-var relativeCheck = customerContext.Check(
-	request.FirstName,
-	ValidationTarget.Relative("firstName", isNormalized: true),
-	displayName: "First name"
-);
-
-var absoluteCheck = customerContext.Check(
-	request.OwnerName,
-	ValidationTarget.Absolute("account.ownerName", isNormalized: true),
-	displayName: "Owner name"
-);
+if (result.IsValid)
+{
+    Console.WriteLine($"Success: {result.Value}");
+}
+else
+{
+    var error = result.Errors.First;
+    Console.WriteLine($"Error {error.Code}: {error.Message}");
+}
 ```
 
+...or in a functional style:
+
+```csharp
+using Light.PortableResults.FunctionalExtensions;
+
+var input = Console.ReadLine();
+string message = ParsePositiveInteger(input).Match(
+    onSuccess: value => $"Success: {value}",
+    onError: errors => $"Error {errors.First.Code}: {errors.First.Message}"
+);
+Console.WriteLine(message);
+```
+
+See [Functional Operators](#functional-operators) for more details on the available operators.
+
+> The core idea is that you avoid throwing exceptions as part of the contract between a method and its caller. Instead, you return a `Result<T>` or `Result` instance that explicitly indicates success or failure.
+
+## ℹ️ Metadata
+
+In Light.PortableResults, metadata is not just a `Dictionary<string, object>` as with many other Result Pattern implementations. Instead, it uses a type system pretty similar to JSON which allows each result instance to be serialized and deserialized.
+
+Metadata can be attached to `Result<T>/Result` instances as well as to `Error` instances.
+
+```csharp
+using Light.PortableResults;
+using Light.PortableResults.Metadata;
+
+// Create metadata using primitive types (bool, long, double, string, decimal)
+// or nested objects and arrays. MetadataObject uses implicit conversions
+// from these types for easy construction.
+var metadata = MetadataObject.Create(
+    ("requestId", "550e8400-e29b-41d4-a716-446655440000"),
+    ("timestamp", DateTimeOffset.UtcNow.ToUnixTimeSeconds()),
+    ("cacheHit", false),
+    ("attemptCount", 3)
+);
+
+// Attach metadata to a successful result
+Result<Order> result = Result<Order>.Ok(
+    new Order { Id = Guid.NewGuid(), Total = 99.99m },
+    metadata
+);
+
+// Or attach metadata to an error for additional context
+var error = new Error
+{
+    Message = "Order exceeds account limit",
+    Code = "order.limit_exceeded",
+    Target = "total",
+    Category = ErrorCategory.Validation,
+    Metadata = MetadataObject.Create(
+        ("accountLimit", 500.00m),
+        ("requestedAmount", 599.99m),
+        ("currency", "USD")
+    )
+};
+
+// Access metadata from a result or error
+if (result.Metadata?.TryGetString("requestId", out var requestId) == true)
+{
+    Console.WriteLine($"Request: {requestId}");
+}
+```
+
+## 🛫️ Validation Quick Start
+
+Instead of creating `Error` instances manually, you can reference the `Light.PortableResults.Validation` package and use its rich assertions and support for validators, similar to FluentValidation. Here is an example:
+
+```csharp
+public sealed record MovieRatingDto
+{
+    public required Guid Id { get; init; }
+    public required Guid MovieId { get; init; }
+    public required string UserName { get; set; } = string.Empty;
+    public required string Comment { get; set; } = string.Empty;
+    public required int Rating { get; init; }
+}
+
+public sealed class MovieRatingValidator : Validator<MovieRatingDto>
+{
+    // Inject any service you need for validation into the constructor.
+    // The IValidationContextFactory is used to obtain a ValidationContext instance
+    // and must always be injected.
+    public MovieRatingValidator(IValidationContextFactory validationContextFactory)
+        : base(validationContextFactory) { }
+
+    protected override ValidatedValue<MovieRatingDto> PerformValidation(
+        ValidationContext context, // Collects errors during validation
+        ValidationCheckpoint checkpoint, // Used to determine if errors occurred in this method
+        MovieRatingDto dto // The value to validate
+    )
+    {
+        // Use the ValidationContext.Check method to create Check<T> instances.
+        // These offer various extension methods which attach errors to the context
+        // if validation fails. The Check call will also smartly obtain a value for
+        // Error.Target depending on your argument (CallerArgumentExpression).
+        context.Check(dto.Id).IsNotEmpty();
+        context.Check(dto.MovieId).IsNotEmpty();
+
+        // Instead of only examining values, ValidationContext.Check normalizes values.
+        // By default, strings are processed in the following way:
+        // - Null -> Empty string (avoids NullReferenceException)
+        // - Not-Null -> Trimmed string
+        // You can write these normalized string values back to ensure safe processing
+        // after validation finished. See ValidationContextOptions.ValueNormalizer.
+        dto.Comment = context.Check(dto.Comment).HasLengthIn(10, 1000);
+        dto.UserName = context.Check(dto.UserName).IsNotNullOrWhiteSpace();
+
+        context.Check(dto.Rating).IsIn(1, 5);
+
+        // Use the checkpoint to determine if validation errors were attached to
+        // to the ValidationContext during this method call. The checkpoint will
+        // automatically return a corresponding ValidatedValue<T> instance for you.
+        return checkpoint.ToValidatedValue(dto);
+    }
+}
+
+public sealed class AddMovieRatingService
+{
+    private readonly MovieRatingValidator _validator;
+
+    public AddMovieRatingService(MovieRatingValidator validator) => _validator = validator;
+
+    public async Task<Result<MovieRating>> AddMovieRatingAsync(
+        MovieRatingDto dto,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (_validator.CheckForErrors(dto, out var errorResult))
+        {
+            return Result<MovieRating>.Fail(errorResult.Errors);
+        }
+
+        // Do something useful with the validated DTO. In the end
+        // a MovieRating domain object is created and returned.
+        var movieRating = new MovieRating(...);
+        return Result<MovieRating>.Ok(movieRating);
+    }
+}
+```
+
+The Validation package offers more features:
+
+- `Validator<TSource, TValidated>`: transform your DTO into another (imutable) type. This lets you write effective Anti-Corruption Layers.
+- Asynchronous Validators: `AsyncValidator<T>` and `AsyncValidator<TSource, TValidated>`.
+- `IValidationContextFactory`: you do not need to write validators. Simply call `IValidationContextFactory.CreateValidationContext` and use the `ValidationContext` in any way you like.
+- `ValidationContextOptions`: change how values and targets for errors are normalized, which culture info is used, whether null values are automatically handled in validators, which error message templates are used, and more.
+- Share values between validators: use `ValidationContext.SetItem<T>`, `ValidationContext.GetRequiredItem<T>` and `ValidationContext.TryGetItem<T>` to store and retrieve values between parent and child validators.
+- Build your custom `ValidationErrorDefinition`-derived classes to extend the built-in assertions in a high-performant, yet customizable way. A definition can consist of parameters and a custom error message template.
+
+In comparison to FluentValidation, Light.PortableResults is more optimized for performance and memory usage. Take a look at these benchmark results for Flat DTO validation and Complex DTO Validation (see the benchmarks/Benchmarks project for details):
+
+### Valid Flat DTO
+
+| Method                            | Mean        | Error    | StdDev   | Ratio | Gen0   | Gen1   | Allocated | Alloc Ratio |
+|---------------------------------- |------------:|---------:|---------:|------:|-------:|-------:|----------:|------------:|
+| FluentValidationScopedOrTransient | 1,324.57 ns | 8.570 ns | 7.156 ns |  1.00 | 0.8316 | 0.0076 |    6984 B |        1.00 |
+| FluentValidationSingleton         |   105.84 ns | 0.246 ns | 0.205 ns |  0.08 | 0.0755 | 0.0001 |     632 B |        0.09 |
+| LightPortableResults              |    50.49 ns | 0.091 ns | 0.076 ns |  0.04 | 0.0124 |      - |     104 B |        0.01 |
+
+### Invalid Flat DTO
+
+| Method                            | Mean       | Error    | StdDev  | Ratio | Gen0   | Gen1   | Allocated | Alloc Ratio |
+|---------------------------------- |-----------:|---------:|--------:|------:|-------:|-------:|----------:|------------:|
+| FluentValidationScopedOrTransient | 3,145.2 ns | 10.38 ns | 9.71 ns |  1.00 | 1.7509 | 0.0267 |   14672 B |        1.00 |
+| FluentValidationSingleton         | 1,793.6 ns |  3.93 ns | 3.48 ns |  0.57 | 0.9937 | 0.0095 |    8320 B |        0.57 |
+| LightPortableResults              |   289.6 ns |  0.57 ns | 0.51 ns |  0.09 | 0.0820 |      - |     688 B |        0.05 |
+
+### Valid Complex DTO
+
+| Method                            | Mean       | Error    | StdDev   | Ratio | Gen0   | Gen1   | Allocated | Alloc Ratio |
+|---------------------------------- |-----------:|---------:|---------:|------:|-------:|-------:|----------:|------------:|
+| FluentValidationScopedOrTransient | 8,318.7 ns | 78.34 ns | 69.45 ns |  1.00 | 4.1504 | 0.1221 |  33.94 KB |        1.00 |
+| FluentValidationSingleton         | 1,685.9 ns |  5.01 ns |  4.69 ns |  0.20 | 0.7057 | 0.0019 |   5.77 KB |        0.17 |
+| LightPortableResults              |   742.2 ns |  7.40 ns |  6.93 ns |  0.09 | 0.1554 |      - |   1.27 KB |        0.04 |
+
+### Invalid Complex DTO
+
+| Method                            |      Mean |     Error |    StdDev | Ratio |   Gen0 |   Gen1 | Allocated | Alloc Ratio |
+|-----------------------------------|----------:|----------:|----------:|------:|-------:|-------:|----------:|------------:|
+| FluentValidationScopedOrTransient | 13.985 μs | 0.0705 μs | 0.0625 μs |  1.00 | 6.5308 | 0.3052 |  53.45 KB |        1.00 |
+| FluentValidationSingleton         |  6.755 μs | 0.0410 μs | 0.0343 μs |  0.48 | 3.1128 | 0.0763 |  25.47 KB |        0.48 |
+| LightPortableResults              |  1.507 μs | 0.0019 μs | 0.0018 μs |  0.11 | 0.2422 |      - |   1.99 KB |        0.04 |
+
 ## 🚀 HTTP Quick Start
+
+Given the classes in the previous Validation Quick Start section, you can easily integrate Light.PortableResults into ASP.NET Core.
 
 ### Minimal APIs
 
 ```csharp
-using System;
-using System.Collections.Generic;
 using Light.PortableResults;
 using Light.PortableResults.AspNetCore.MinimalApis;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddPortableResultsForMinimalApis();
+builder
+   .Services
+   .AddPortableResultsForMinimalApis()
+   .AddValidationForPortableResults()
+   .Configure<PortableResultsHttpWriteOptions>(
+       // We highly recommend using the Rich serialization format for HTTP responses.
+       // If you do not adjust this value, the default value of
+       // ValidationProblemSerializationFormat.AspNetCoreCompatible is used which
+       // writes the Problem Details errors in the same way as ASP.NET Core does.
+       x => x.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich
+    )
+   .AddSingleton<MovieRatingValidator>() // Register validators as singletons by default
+   .AddScoped<AddMovieRatingService>();
 
 var app = builder.Build();
 
-app.MapPut("/users/{id:guid}", (Guid id, UpdateUserDto dto) =>
+app.MapPut("/api/movieRatings", async (MovieRatingDto dto, AddMovieRatingService service) =>
 {
-	var result = UpdateUser(id, dto);
-	return result.ToMinimalApiResult(); // LightResult<T> implements IResult
+	var result = await service.AddMovieRatingAsync(dto);
+    // Any Result<T>/Result instance can be easily converted to
+    // Minimal API's IResult. Under the covers, we use an
+    // optimized LightResult<T>/LightResult type.
+	return result.ToMinimalApiResult();
 });
 
 app.Run();
-
-static Result<UserDto> UpdateUser(Guid id, UpdateUserDto dto)
-{
-	List<Error> errors = [];
-
-	if (id == Guid.Empty)
-	{
-		errors.Add(new Error
-		{
-			Message = "User id must not be empty",
-			Code = "user.invalid_id",
-			Target = "id",
-			Category = ErrorCategory.Validation
-		});
-	}
-
-	if (string.IsNullOrWhiteSpace(dto.Email))
-	{
-		errors.Add(new Error
-		{
-			Message = "Email is required",
-			Code = "user.email_required",
-			Target = "email",
-			Category = ErrorCategory.Validation
-		});
-	}
-
-	if (errors.Count > 0)
-	{
-		return Result<UserDto>.Fail(errors.ToArray());
-	}
-
-	var response = new UserDto
-	{
-		Id = id,
-		Email = dto.Email
-	};
-
-	return Result<UserDto>.Ok(response);
-}
-
-public sealed record UpdateUserDto
-{
-	public string? Email { get; init; }
-}
-
-public sealed record UserDto
-{
-	public Guid Id { get; set; }
-	public string Email { get; init; } = string.Empty;
-}
 ```
 
 ### MVC
 
 ```csharp
-using System;
-using System.Collections.Generic;
 using Light.PortableResults;
 using Light.PortableResults.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc;
 
-[ApiController]
-[Route("users")]
-public sealed class UsersController : ControllerBase
-{
-	[HttpPut("{id:guid}")]
-	public LightActionResult<UserDto> UpdateUser(Guid id, [FromBody] UpdateUserDto dto)
-	{
-		var result = ValidateAndUpdate(id, dto);
-		return result.ToMvcActionResult();
-	}
-
-	private static Result<UserDto> ValidateAndUpdate(Guid id, UpdateUserDto dto)
-	{
-		List<Error> errors = [];
-
-		if (id == Guid.Empty)
-		{
-			errors.Add(new Error
-			{
-				Message = "User id must not be empty",
-				Code = "user.invalid_id",
-				Target = "id",
-				Category = ErrorCategory.Validation
-			});
-		}
-
-		if (string.IsNullOrWhiteSpace(dto.Email))
-		{
-			errors.Add(new Error
-			{
-				Message = "Email is required",
-				Code = "user.email_required",
-				Target = "email",
-				Category = ErrorCategory.Validation
-			});
-		}
-
-		if (errors.Count > 0)
-		{
-			return Result<UserDto>.Fail(errors.ToArray());
-		}
-
-		return Result<UserDto>.Ok(new UserDto
-		{
-			Id = id,
-			Email = dto.Email!
-		});
-	}
-}
-
-public sealed record UpdateUserDto
-{
-	public string? Email { get; set; }
-}
-
-public sealed record UserDto
-{
-	public Guid Id { get; init; }
-	public string Email { get; init; } = string.Empty;
-}
-```
-
-MVC setup in `Program.cs`:
-
-```csharp
 builder.Services.AddControllers();
-builder.Services.AddPortableResultsForMvc();
+builder
+    .Services
+    .AddPortableResultsForMvc()
+    .AddValidationForPortableResults()
+    .AddSingleton<MovieRatingValidator>()
+    .AddScoped<AddMovieRatingService>();
 
 var app = builder.Build();
 app.MapControllers();
+app.Run();
+
+[ApiController]
+[Route("moveRatings")]
+public sealed class AddMovieRatingsController : ControllerBase
+{
+    public AddMovieRatingsController(AddMovieRatingsService service)
+    {
+        _service = service;
+    }
+
+    [HttpPut]
+    public async Task<LightActionResult<MovieRating>> AddMovieRating(AddMovieRatingDto dto)
+    {
+        var result = await _service.AddMovieRatingAsync(dto);
+        return result.ToMvcActionResult();
+    }
+}
 ```
 
 ### HTTP Response On the Wire
@@ -442,62 +370,57 @@ For both examples above (Minimal APIs and MVC), the HTTP response shape is the s
 Successful update (`200 OK`):
 
 ```http
-PUT /users/6b8a4dca-779d-4f36-8274-487fe3e86b5a
-Content-Type: application/json
-
-{
-	"email": "ada@example.com"
-}
-```
-
-```http
 HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
-	"id": "6b8a4dca-779d-4f36-8274-487fe3e86b5a",
-	"email": "ada@example.com"
+  "comment": "The Answer Is Out There, Neo. It's Looking for You.",
+  "movieId": "5c200e1d-4a16-4572-b884-e3a3957771fc",
+  "userName": "Trinity",
+  "rating": 5,
+  "id": "b507182e-f9ff-48d7-8a78-bcdc15cb4d0a"
 }
 ```
 
 Validation failure (`400 Bad Request`):
 
 ```http
-PUT /users/00000000-0000-0000-0000-000000000000
-Content-Type: application/json
-
-{}
-```
-
-```http
 HTTP/1.1 400 Bad Request
 Content-Type: application/problem+json
 
 {
-	"type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-	"title": "Bad Request",
-	"status": 400,
-	"detail": "One or more validation errors occurred.",
-    // By default, we use ASP.NET Core compatible errors format here for backwards-compatibility.
-    // We encourage you to use ValidationProblemSerializationFormat.Rich instead!
-    "errors": {
-		"id": ["User id must not be empty"],
-		"email": ["Email is required"]
-	},
-	"errorDetails": [
-		{
-			"target": "id",
-			"index": 0,
-			"code": "user.invalid_id",
-			"category": "Validation"
-		},
-		{
-			"target": "email",
-			"index": 0,
-			"code": "user.email_required",
-			"category": "Validation"
-		}
-	]
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "One or more validation errors occurred.",
+  "errors": [
+    {
+      "message": "comment must be between 10 and 1000 characters long",
+      "code": "LengthIn",
+      "target": "comment",
+      "category": "Validation",
+      "metadata": {
+        "minLength": 10,
+        "maxLength": 1000
+      }
+    },
+    {
+      "message": "userName must not be empty or whitespace",
+      "code": "NotNullOrWhiteSpace",
+      "target": "userName",
+      "category": "Validation"
+    },
+    {
+      "message": "rating must be between 1 and 5",
+      "code": "IsIn",
+      "target": "rating",
+      "category": "Validation",
+      "metadata": {
+        "lowerBoundary": 1,
+        "upperBoundary": 5
+      }
+    }
+  ]
 }
 ```
 
@@ -512,28 +435,35 @@ using Light.PortableResults.Http.Reading;
 
 using var httpClient = new HttpClient
 {
-	BaseAddress = new Uri("https://localhost:5001")
+	BaseAddress = new Uri("https://localhost:5000")
 };
 
-var request = new UpdateUserDto { Email = "ada@example.com" };
+var requestDto = new MovieRatingDto
+{
+    Id = Guid.CreateVersion7(),
+    MovieId = matrixMovie.Id,
+    UserName = "Trinity",
+    Comment = "The Answer Is Out There, Neo. It's Looking for You.",
+    Rating = 5
+};
 
 using var response = await httpClient.PutAsJsonAsync(
-	"/users/6b8a4dca-779d-4f36-8274-487fe3e86b5a",
-	request
+	"/api/movieRatings",
+	requestDto
 );
 
-Result<UserDto> result = await response.ReadResultAsync<UserDto>();
+Result<MovieRatingDto> result = await response.ReadResultAsync<MovieRatingDto>();
 
 if (result.IsValid)
 {
-	Console.WriteLine($"Updated user: {result.Value.Email}");
+    Console.WriteLine($"Added movie rating");
 }
 else
 {
-	foreach (var error in result.Errors)
-	{
-		Console.WriteLine($"{error.Target}: {error.Message}");
-	}
+    foreach (var error in result.Errors)
+    {
+        Console.WriteLine($"{error.Target}: {error.Message}");
+    }
 }
 ```
 
@@ -618,21 +548,7 @@ consumer.ReceivedAsync += async (_, eventArgs) =>
 await channel.BasicConsumeAsync(queue: "users.updated", autoAck: false, consumer: consumer);
 ```
 
-## 🧠 Basic Usage
-
-If you are new to the Result Pattern, think of it like this:
-
-- A method can either succeed or fail.
-- Instead of throwing exceptions for expected failures (validation, not found, conflicts), the method returns a value that explicitly describes the outcome.
-- Callers must handle both paths on purpose, which makes control flow easier to read and test.
-
-With Light.PortableResults:
-
-- `Result<T>` means: either a success value of type `T`, or one or more errors.
-- `Result` (non-generic) means: success/failure without a return value (corresponds to `void`).
-- Each `Error` can carry machine-readable details such as `Code`, `Target`, `Category`, and `Metadata`.
-
-### When to use Result vs exceptions
+## When to Use Result vs. Exceptions
 
 Use `Result` / `Result<T>` for expected business outcomes:
 
@@ -647,27 +563,9 @@ Use exceptions for truly unexpected failures:
 - misconfiguration
 - programming bugs and invariant violations (detected via Guard Clauses)
 
-This keeps exceptions exceptional, and keeps business outcomes explicit.
+This keeps exceptions exceptional and business outcomes explicit.
 
-### Create success and failure results
-
-```csharp
-using Light.PortableResults;
-
-Result<int> success = Result<int>.Ok(42);
-
-var error = new Error
-{
-	Message = "The provided id is invalid",
-	Code = "user.invalid_id",
-	Target = "id",
-	Category = ErrorCategory.Validation
-};
-
-Result<int> failure = Result<int>.Fail(error);
-```
-
-### Use non-generic `Result` for command-style operations
+## Use non-generic `Result` for command-style operations
 
 ```csharp
 using Light.PortableResults;
@@ -689,96 +587,17 @@ static Result DeleteUser(Guid id)
 }
 ```
 
-### Return multiple validation errors
-
-```csharp
-using System.Collections.Generic;
-using Light.PortableResults;
-
-static Result<string> ValidateUser(string? name, string? email)
-{
-	List<Error> errors = [];
-
-	if (string.IsNullOrWhiteSpace(name))
-	{
-		errors.Add(new Error
-		{
-			Message = "Name is required",
-			Code = "user.name_required",
-			Target = "name",
-			Category = ErrorCategory.Validation
-		});
-	}
-
-	if (string.IsNullOrWhiteSpace(email))
-	{
-		errors.Add(new Error
-		{
-			Message = "Email is required",
-			Code = "user.email_required",
-			Target = "email",
-			Category = ErrorCategory.Validation
-		});
-	}
-
-	if (errors.Count > 0)
-	{
-		return Result<string>.Fail(errors.ToArray());
-	}
-
-	return Result<string>.Ok("ok");
-}
-```
-
-### Consume a result safely
-
-`Result<T>.Value` is only valid when `IsValid` is `true`, otherwise an exception is thrown. Light.PortableResults
-supports both imperative and functional styles.
-
-Imperative / structured programming (`if/else`):
-
-```csharp
-using System;
-using Light.PortableResults;
-
-Result<int> result = GetCount();
-
-if (result.IsValid)
-{
-	Console.WriteLine($"Count: {result.Value}");
-}
-else
-{
-	foreach (var error in result.Errors)
-	{
-		Console.WriteLine($"{error.Target}: {error.Message}");
-	}
-}
-```
-
-Functional style (`Match`):
-
-```csharp
-using Light.PortableResults;
-using Light.PortableResults.FunctionalExtensions;
-
-Result<int> result = GetCount();
-
-string text = result.Match(
-	onSuccess: count => $"Count: {count}",
-	onError: errors => $"Request failed: {errors.First.Message}"
-);
-```
+### Functional Operators
 
 Supported functional operators:
 
-| Category | Operators | What they are used for |
-| --- | --- | --- |
-| Transform success value | `Map`, `Bind` | Convert successful values or chain operations that already return `Result<T>`. |
-| Transform errors | `MapError` | Normalize or translate errors (for example domain -> transport layer). |
-| Add validation rules | `Ensure`, `FailIf` | Keep fluent pipelines while adding business or guard conditions. |
-| Handle outcomes | `Match`, `MatchFirst`, `Else` | Turn a result into a value/fallback without manually branching every time. |
-| Side effects | `Tap`, `TapError`, `Switch`, `SwitchFirst` | Perform logging/metrics/notifications on success or failure paths. |
+| Category                | Operators                                  | What they are used for                                                         |
+|-------------------------|--------------------------------------------|--------------------------------------------------------------------------------|
+| Transform success value | `Map`, `Bind`                              | Convert successful values or chain operations that already return `Result<T>`. |
+| Transform errors        | `MapError`                                 | Normalize or translate errors (for example domain -> transport layer).         |
+| Add validation rules    | `Ensure`, `FailIf`                         | Keep fluent pipelines while adding business or guard conditions.               |
+| Handle outcomes         | `Match`, `MatchFirst`, `Else`              | Turn a result into a value/fallback without manually branching every time.     |
+| Side effects            | `Tap`, `TapError`, `Switch`, `SwitchFirst` | Perform logging/metrics/notifications on success or failure paths.             |
 
 All operators also provide async variants with the `Async` suffix (for example `BindAsync`, `MatchAsync`, `TapErrorAsync`).
 
@@ -809,11 +628,14 @@ As a rule of thumb:
 - `Message`: human-readable explanation
 - `Code`: stable machine-readable identifier (great for frontend/API contracts)
 - `Target`: which input field/header/value failed
-- `Category`: determines transport mapping (for example HTTP status)
+- `Category`: determines transport mapping (for example, HTTP status)
+- `Metadata`: additional information (for example, header values or comparative values)
 
 Using a consistent error shape early will make your APIs and message consumers easier to evolve.
 
-## ⚙️ Configuration
+There is an `Error.Exception` property which you can also set, but it is never serialized and thus never exposed to calling processes.
+
+## ⚙️ Configuration for HTTP and CloudEvents
 
 ### HTTP write options (`PortableResultsHttpWriteOptions`)
 
