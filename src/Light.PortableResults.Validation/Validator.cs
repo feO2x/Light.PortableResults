@@ -318,7 +318,10 @@ public abstract class Validator<T> : BaseValidator<T>
     /// Performs the actual validation logic.
     /// </summary>
     /// <param name="context">The active validation context.</param>
-    /// <param name="checkpoint">The object that tracks the errors that were taken before this call to PerformValidation.</param>
+    /// <param name="checkpoint">
+    /// This object can track whether errors were added to the validation context during this PerformValidation call.
+    /// Use it to create <see cref="ValidatedValue{T}" /> instances more easily.
+    /// </param>
     /// <param name="value">The value being validated.</param>
     /// <returns>
     /// A successful <see cref="ValidatedValue{T}" /> when validation produced a non-null value; otherwise,
@@ -654,7 +657,10 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
     /// Performs the actual validation and transformation logic.
     /// </summary>
     /// <param name="context">The active validation context.</param>
-    /// <param name="checkpoint">The object that tracks the errors that were taken before this call to PerformValidation.</param>
+    /// <param name="checkpoint">
+    /// This object can track whether errors were added to the validation context during this PerformValidation call.
+    /// Use it to create <see cref="ValidatedValue{T}" /> instances more easily.
+    /// </param>
     /// <param name="value">The source value being validated.</param>
     /// <returns>
     /// A successful <see cref="ValidatedValue{TValidated}" /> when validation produced a non-null output; otherwise,

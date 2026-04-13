@@ -174,7 +174,10 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
     /// Performs the actual asynchronous validation logic.
     /// </summary>
     /// <param name="context">The active validation context.</param>
-    /// <param name="checkpoint">The object that tracks the errors that were taken before this call to PerformValidationAsync.</param>
+    /// <param name="checkpoint">
+    /// This object can track whether errors were added to the validation context during this PerformValidationAsync call.
+    /// Use it to create <see cref="ValidatedValue{T}" /> instances more easily.
+    /// </param>
     /// <param name="value">The value being validated.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
@@ -360,7 +363,10 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
     /// Performs the actual asynchronous validation and transformation logic.
     /// </summary>
     /// <param name="context">The active validation context.</param>
-    /// <param name="checkpoint">The object that tracks the errors that were taken before this call to PerformValidationAsync.</param>
+    /// <param name="checkpoint">
+    /// This object can track whether errors were added to the validation context during this PerformValidationAsync call.
+    /// Use it to create <see cref="ValidatedValue{T}" /> instances more easily.
+    /// </param>
     /// <param name="value">The source value being validated.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
