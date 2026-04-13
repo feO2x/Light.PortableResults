@@ -46,7 +46,7 @@ ASP.NET Core MVC integration with support for Dependency Injection and `IActionR
 dotnet add package Light.PortableResults.AspNetCore.Mvc
 ```
 
-If you only need the Result Pattern itself, `Light.PortableResults` is the most leightweight dependency.
+If you only need the Result Pattern itself, `Light.PortableResults` is the most lightweight dependency.
 
 ## 🤓 Basic Usage
 
@@ -248,7 +248,7 @@ public sealed class AddMovieRatingService
 
 The Validation package offers more features:
 
-- `Validator<TSource, TValidated>`: transform your DTO into another (imutable) type. This lets you write effective Anti-Corruption Layers.
+- `Validator<TSource, TValidated>`: transform your DTO into another (immutable) type. This lets you write effective Anti-Corruption Layers.
 - Asynchronous Validators: `AsyncValidator<T>` and `AsyncValidator<TSource, TValidated>`.
 - `IValidationContextFactory`: you do not need to write validators. Simply call `IValidationContextFactory.CreateValidationContext` and use the `ValidationContext` in any way you like.
 - `ValidationContextOptions`: change how values and targets for errors are normalized, which culture info is used, whether null values are automatically handled in validators, which error message templates are used, and more.
