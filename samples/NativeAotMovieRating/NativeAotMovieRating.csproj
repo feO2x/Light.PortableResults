@@ -3,6 +3,7 @@
   <PropertyGroup>
     <PublishAot>true</PublishAot>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <IsPackable>false</IsPackable>
     <!-- Serilog is not yet fully annotated for trimming; suppress the assembly-level IL2104 rollup. -->
     <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
   </PropertyGroup>
