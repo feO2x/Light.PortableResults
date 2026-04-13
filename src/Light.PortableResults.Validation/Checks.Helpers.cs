@@ -112,11 +112,6 @@ public static partial class Checks
             return nonGenericCollection.Count;
         }
 
-        if (collection is IReadOnlyCollection<object> objectReadOnlyCollection)
-        {
-            return objectReadOnlyCollection.Count;
-        }
-
         var count = 0;
         var enumerator = collection.GetEnumerator();
         using (enumerator as IDisposable)
