@@ -8,3 +8,4 @@ obj/
 *.cobertura.xml
 *.received.*
 .DS_Store
+*.lscache
