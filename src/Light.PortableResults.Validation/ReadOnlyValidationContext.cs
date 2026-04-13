@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Light.PortableResults.Validation.Definitions;
+using Light.PortableResults.Validation.Messaging;
 
 namespace Light.PortableResults.Validation;
 
@@ -56,8 +58,14 @@ public readonly struct ReadOnlyValidationContext
     /// </summary>
     public IValidationErrorDefinitionCache ErrorDefinitionCache => State.ErrorDefinitionCache;
 
-    private ValidationState State =>
-        _state ?? throw new InvalidOperationException("The validation context must not be the default instance");
+    private ValidationState State
+    {
+        get
+        {
+            EnsureInitialized();
+            return _state;
+        }
+    }
 
     /// <summary>
     /// Tries to read a shared validation item.
@@ -66,11 +74,7 @@ public readonly struct ReadOnlyValidationContext
     /// <param name="key">The typed key.</param>
     /// <param name="value">The stored value when present.</param>
     /// <returns><see langword="true" /> when the item exists; otherwise, <see langword="false" />.</returns>
-    public bool TryGetItem<T>(ValidationContextKey<T> key, out T value)
-    {
-        EnsureInitialized();
-        return State.TryGetItem(key, out value);
-    }
+    public bool TryGetItem<T>(ValidationContextKey<T> key, out T value) => State.TryGetItem(key, out value);
 
     /// <summary>
     /// Gets a shared validation item or throws when it is missing.
@@ -80,11 +84,7 @@ public readonly struct ReadOnlyValidationContext
     /// <returns>The stored value.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="key" /> is <see langword="null" />.</exception>
     /// <exception cref="KeyNotFoundException">Thrown when the item does not exist.</exception>
-    public T GetRequiredItem<T>(ValidationContextKey<T> key)
-    {
-        EnsureInitialized();
-        return State.GetRequiredItem(key);
-    }
+    public T GetRequiredItem<T>(ValidationContextKey<T> key) => State.GetRequiredItem(key);
 
     [MemberNotNull(nameof(_state), nameof(_targetPrefix))]
     private void EnsureInitialized()
@@ -94,7 +94,7 @@ public readonly struct ReadOnlyValidationContext
             throw new InvalidOperationException("The validation context must not be the default instance");
         }
 
-#pragma warning disable CS8774
+#pragma warning disable CS8774 // When _state is not null, _target prefix cannot be null, see constructor
     }
 #pragma warning restore CS8774
 }

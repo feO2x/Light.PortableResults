@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Light.PortableResults.Validation.Targeting;
 using Xunit;
 
 namespace Light.PortableResults.Validation.Tests;
@@ -99,16 +100,10 @@ public sealed class ValidationTargetNormalizationTests
         var second = normalizer.Normalize("dto.Address.ZipCode", ValidationTargetSemantics.CallerExpression);
 
         ReferenceEquals(first, second).Should().BeTrue();
-    }
-
-    [Fact]
-    public void ValidationTargets_ShouldComposeNestedTargets()
-    {
-        var addressTarget = ValidationTargets.Compose("address", "zipCode");
-        var itemTarget = ValidationTargets.Compose("addresses", "[0]");
-        var nestedItemTarget = ValidationTargets.Compose(itemTarget, "zipCode");
-
-        addressTarget.Should().Be("address.zipCode");
-        nestedItemTarget.Should().Be("addresses[0].zipCode");
+        ValidationTargets.DefaultNormalizer.Should().NotBeNull();
+        ValidationTargets.Compose("address", "zipCode").Should().Be("address.zipCode");
+        ValidationTargets.AppendIndex("addresses", 0).Should().Be("addresses[0]");
+        ValidationTargets.IsSimpleIdentifier("zipCode").Should().BeTrue();
+        ValidationTargets.IsSimpleIdentifier("address.zipCode").Should().BeFalse();
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Light.PortableResults.Validation.Targeting;
 
 namespace Light.PortableResults.Validation;
 
@@ -165,21 +166,28 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
             return ValidatedValue<T>.NoValue;
         }
 
-        return await PerformValidationAsync(context, value, cancellationToken).ConfigureAwait(false);
+        var checkpoint = context.CreateCheckpoint();
+        return await PerformValidationAsync(context, checkpoint, value, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Performs the actual asynchronous validation logic.
     /// </summary>
     /// <param name="context">The active validation context.</param>
+    /// <param name="checkpoint">
+    /// This object can track whether errors were added to the validation context during this PerformValidationAsync call.
+    /// Use it to create <see cref="ValidatedValue{T}" /> instances more easily.
+    /// </param>
     /// <param name="value">The value being validated.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// A successful <see cref="ValidatedValue{T}" /> when validation produced a non-null value; otherwise,
-    /// <see cref="ValidatedValue{T}.NoValue" /> when the shared <see cref="ValidationContext" /> already contains errors.
+    /// <see cref="ValidatedValue{T}.NoValue" /> when new errors were added since <paramref name="checkpoint" /> was
+    /// created.
     /// </returns>
     protected abstract ValueTask<ValidatedValue<T>> PerformValidationAsync(
         ValidationContext context,
+        ValidationCheckpoint checkpoint,
         T value,
         CancellationToken cancellationToken
     );
@@ -347,21 +355,28 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
             return ValidatedValue<TValidated>.NoValue;
         }
 
-        return await PerformValidationAsync(context, value, cancellationToken).ConfigureAwait(false);
+        var checkpoint = context.CreateCheckpoint();
+        return await PerformValidationAsync(context, checkpoint, value, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Performs the actual asynchronous validation and transformation logic.
     /// </summary>
     /// <param name="context">The active validation context.</param>
+    /// <param name="checkpoint">
+    /// This object can track whether errors were added to the validation context during this PerformValidationAsync call.
+    /// Use it to create <see cref="ValidatedValue{T}" /> instances more easily.
+    /// </param>
     /// <param name="value">The source value being validated.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>
     /// A successful <see cref="ValidatedValue{TValidated}" /> when validation produced a non-null output; otherwise,
-    /// <see cref="ValidatedValue{TValidated}.NoValue" /> when the shared <see cref="ValidationContext" /> already contains errors.
+    /// <see cref="ValidatedValue{TValidated}.NoValue" /> when new errors were added since
+    /// <paramref name="checkpoint" /> was created.
     /// </returns>
     protected abstract ValueTask<ValidatedValue<TValidated>> PerformValidationAsync(
         ValidationContext context,
+        ValidationCheckpoint checkpoint,
         TSource value,
         CancellationToken cancellationToken
     );

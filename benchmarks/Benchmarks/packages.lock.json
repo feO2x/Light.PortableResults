@@ -139,6 +139,12 @@
           "Light.PortableResults.AspNetCore.Shared": "[0.1.0, )"
         }
       },
+      "light.portableresults.aspnetcore.mvc": {
+        "type": "Project",
+        "dependencies": {
+          "Light.PortableResults.AspNetCore.Shared": "[0.1.0, )"
+        }
+      },
       "light.portableresults.aspnetcore.shared": {
         "type": "Project",
         "dependencies": {

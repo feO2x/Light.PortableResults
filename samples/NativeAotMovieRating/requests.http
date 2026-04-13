@@ -1,0 +1,54 @@
+### Health
+http://localhost:5000
+
+### Get Movies (first page)
+http://localhost:5000/api/movies
+
+### Get Movies (second page)
+http://localhost:5000/api/movies?lastKnownMovieId=a3e54564-85c1-4d6f-9721-50798c5d30f4
+
+### Get Movies (third page)
+http://localhost:5000/api/movies?lastKnownMovieId=30d849a8-9b6c-7f6f-1f6d-439a849d64c1
+
+### Get Movies (invalid parameters)
+http://localhost:5000/api/movies?lastKnownMovieId=00000000-0000-0000-0000-000000000000&take=-1
+
+### Get Movies (unknown movie)
+http://localhost:5000/api/movies?lastKnownMovieID=78847C1F-E9BB-4D1A-8434-529BC8C68134
+
+### PUT Matrix Comment
+PUT http://localhost:5000/api/moviesRatings
+Content-Type: application/json
+
+{
+    "id": "B507182E-F9FF-48D7-8A78-BCDC15CB4D0A",
+    "movieId": "5C200E1D-4A16-4572-B884-E3A3957771FC",
+    "userName": "Trinity",
+    "comment": "The Answer Is Out There, Neo. It's Looking for You.",
+    "rating": 5
+}
+
+### Put Comment for Non-Existing Movie
+PUT http://localhost:5000/api/moviesRatings
+Content-Type: application/json
+
+{
+    "id": "365B0BCC-37B0-4B91-83B4-638DF7AC9DCF",
+    "movieId": "92B2AEA9-495C-4ECC-91C6-46D27C0FA5A3",
+    "userName": "Mr. FatFinger",
+    "comment": "I think I fat-fingered again",
+    "rating": 2
+}
+
+
+### Invalid Put Comment
+PUT http://localhost:5000/api/moviesRatings
+Content-Type: application/json
+
+{
+    "id": "817D7225-80EE-4C88-A9EC-682CCBDA75F2",
+    "movieId": "42A94A99-92F6-B603-D675-87E211E0C665",
+    "userName": " ",
+    "comment": null,
+    "rating": -23
+}

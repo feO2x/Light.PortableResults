@@ -1,5 +1,9 @@
 using System;
 using System.Globalization;
+using Light.PortableResults.Validation.Definitions;
+using Light.PortableResults.Validation.Messaging;
+using Light.PortableResults.Validation.Normalization;
+using Light.PortableResults.Validation.Targeting;
 
 namespace Light.PortableResults.Validation;
 
@@ -8,11 +12,6 @@ namespace Light.PortableResults.Validation;
 /// </summary>
 public sealed record ValidationContextOptions
 {
-    /// <summary>
-    /// Gets the shared default options instance.
-    /// </summary>
-    public static ValidationContextOptions Default { get; } = new ();
-
     /// <summary>
     /// Gets the target normalizer that is applied to raw caller argument expressions.
     /// </summary>
@@ -24,14 +23,14 @@ public sealed record ValidationContextOptions
     } = ValidationTargets.DefaultNormalizer;
 
     /// <summary>
-    /// Gets the string normalizer applied to string checks.
+    /// Gets the value normalizer applied to checks.
     /// </summary>
     /// <exception cref="ArgumentNullException">Thrown when the value is <see langword="null" />.</exception>
-    public IStringValueNormalizer StringValueNormalizer
+    public IValueNormalizer ValueNormalizer
     {
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));
-    } = TrimStringValueNormalizer.Instance;
+    } = TrimStringNormalizer.Instance;
 
     /// <summary>
     /// Gets the culture used for formatting validation message parameters and localization-aware templates.

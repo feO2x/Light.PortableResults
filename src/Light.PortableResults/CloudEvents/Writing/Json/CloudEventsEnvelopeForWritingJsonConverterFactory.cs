@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -27,6 +28,12 @@ public sealed class CloudEventsEnvelopeForWritingJsonConverterFactory : JsonConv
     /// <param name="typeToConvert">An instance of <see cref="CloudEventsEnvelopeForWriting{T}" /> with a resolved generic.</param>
     /// <param name="options">The options to use for the converter.</param>
     /// <returns>The created JSON converter.</returns>
+    [UnconditionalSuppressMessage(
+        "AOT",
+        "IL3050:RequiresDynamicCode",
+        Justification =
+            "Reflection is possible in Native AOT scenarios. Resoled CloudEventsEnvelopeForWriting<T> types must simply be registered with the JsonSerializerContext."
+    )]
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var valueType = typeToConvert.GetGenericArguments()[0];

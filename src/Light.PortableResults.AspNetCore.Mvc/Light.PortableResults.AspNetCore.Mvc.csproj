@@ -6,7 +6,6 @@
       Light.PortableResults.AspNetCore.MVC 0.1.0
       ---------------------------------
 
-      - Initial release 🚀
       - LightActionResult and LightActionResult&lt;T> and corresponding extension methods to turn result instances into HTTP success responses or RFC 9457 (and RFC 7807) compatible Problem Details responses.
       - Easy integration into ASP.NET Core's composition root via IServiceCollection.AddPortableResultsForMvc.
     </PackageReleaseNotes>

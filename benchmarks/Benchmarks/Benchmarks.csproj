@@ -10,9 +10,8 @@
     <PackageReference Include="FluentValidation" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Light.PortableResults\Light.PortableResults.csproj" />
     <ProjectReference Include="..\..\src\Light.PortableResults.Validation\Light.PortableResults.Validation.csproj" />
     <ProjectReference Include="..\..\src\Light.PortableResults.AspNetCore.MinimalApis\Light.PortableResults.AspNetCore.MinimalApis.csproj" />
-    <ProjectReference Include="..\..\src\Light.PortableResults.AspNetCore.Shared\Light.PortableResults.AspNetCore.Shared.csproj" />
+    <ProjectReference Include="..\..\src\Light.PortableResults.AspNetCore.Mvc\Light.PortableResults.AspNetCore.Mvc.csproj" />
   </ItemGroup>
 </Project>

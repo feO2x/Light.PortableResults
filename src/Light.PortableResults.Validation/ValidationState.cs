@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Light.PortableResults.Validation.Definitions;
+using Light.PortableResults.Validation.Messaging;
 
 namespace Light.PortableResults.Validation;
 
@@ -47,6 +49,24 @@ public sealed class ValidationState
     /// Gets a value indicating whether any validation errors have been added.
     /// </summary>
     public bool HasErrors => ErrorCount > 0;
+
+    /// <summary>
+    /// Gets the accumulated validation errors. If there are no errors, an empty
+    /// <see cref="Light.PortableResults.Errors" /> instance is returned.
+    /// </summary>
+    public Errors Errors =>
+        ErrorCount switch
+        {
+            0 => default,
+            1 => new Errors(_firstError),
+            _ => new Errors(_errors!.AsMemory(0, ErrorCount))
+        };
+
+    /// <summary>
+    /// Gets the object that tracks how many errors are currently present in the validation state.
+    /// </summary>
+    /// <returns>The object that tracks how many errors are currently present in the validation state.</returns>
+    public ValidationCheckpoint CreateCheckpoint() => new (this, ErrorCount);
 
     /// <summary>
     /// Adds or replaces a shared validation item for the current run.
@@ -166,25 +186,60 @@ public sealed class ValidationState
     }
 
     /// <summary>
-    /// Attempts to build an <see cref="Errors" /> collection from the accumulated validation errors.
+    /// Attempts to retrieve errors that were added since a specified starting error count.
     /// </summary>
-    /// <param name="errors">When this method returns, contains the errors collection if any errors exist; otherwise, the default value.</param>
-    /// <returns><c>true</c> if one or more errors exist; otherwise, <c>false</c>.</returns>
-    public bool TryBuildErrors(out Errors errors)
+    /// <param name="startingErrorCount">
+    /// The starting error count to calculate the range of new errors from. Must be between zero and the current error
+    /// count.
+    /// </param>
+    /// <param name="errors">
+    /// When successful, contains the errors added since <paramref name="startingErrorCount" />. Contains the default value if no new
+    /// errors were found.
+    /// </param>
+    /// <returns>
+    /// <c>true</c> if there are new errors since <paramref name="startingErrorCount" />; otherwise, <c>false</c>.
+    /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="startingErrorCount" /> is less than zero or greater than the current error
+    /// count.
+    /// </exception>
+    public bool TryGetErrorsSince(int startingErrorCount, out Errors errors)
     {
-        switch (ErrorCount)
+        if (startingErrorCount < 0 || startingErrorCount > ErrorCount)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(startingErrorCount),
+                "The starting error count must be between zero and the current error count."
+            );
+        }
+
+        var newErrorCount = ErrorCount - startingErrorCount;
+        switch (newErrorCount)
         {
             case 0:
                 errors = default;
                 return false;
             case 1:
-                errors = new Errors(_firstError);
+                errors = new Errors(GetErrorAt(startingErrorCount));
                 return true;
             default:
-                errors = new Errors(_errors!.AsMemory(0, ErrorCount));
+                // Once a second error exists, the inline first error is copied to _errors[0], so the append-only
+                // logical error count and the zero-based backing-array index stay aligned. A checkpoint created after
+                // N existing errors therefore starts its slice at index N; startingErrorCount == 0 correctly means
+                // that all currently stored array entries are new.
+                errors = startingErrorCount == 0 ?
+                    new Errors(_errors!.AsMemory(0, ErrorCount)) :
+                    new Errors(_errors!.AsMemory(startingErrorCount, newErrorCount));
                 return true;
         }
     }
+
+    private Error GetErrorAt(int index) =>
+        index switch
+        {
+            0 when ErrorCount == 1 => _firstError,
+            _ => _errors![index]
+        };
 
     private void EnsureCapacity(int requiredCount)
     {

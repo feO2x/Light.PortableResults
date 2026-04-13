@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -24,6 +25,12 @@ public sealed class HttpReadSuccessResultPayloadJsonConverterFactory : JsonConve
     }
 
     /// <inheritdoc />
+    [UnconditionalSuppressMessage(
+        "AOT",
+        "IL3050:RequiresDynamicCode",
+        Justification =
+            "Reflection is possible in Native AOT scenarios. Resoled HttpReadAutoSuccessResultPayload<T> types must simply be registered with the JsonSerializerContext."
+    )]
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var valueType = typeToConvert.GetGenericArguments()[0];

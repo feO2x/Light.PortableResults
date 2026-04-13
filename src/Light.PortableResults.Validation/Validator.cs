@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using Light.PortableResults.Validation.Targeting;
 
 namespace Light.PortableResults.Validation;
 
@@ -309,19 +310,29 @@ public abstract class Validator<T> : BaseValidator<T>
             return ValidatedValue<T>.NoValue;
         }
 
-        return PerformValidation(context, value);
+        var checkpoint = context.CreateCheckpoint();
+        return PerformValidation(context, checkpoint, value);
     }
 
     /// <summary>
     /// Performs the actual validation logic.
     /// </summary>
     /// <param name="context">The active validation context.</param>
+    /// <param name="checkpoint">
+    /// This object can track whether errors were added to the validation context during this PerformValidation call.
+    /// Use it to create <see cref="ValidatedValue{T}" /> instances more easily.
+    /// </param>
     /// <param name="value">The value being validated.</param>
     /// <returns>
     /// A successful <see cref="ValidatedValue{T}" /> when validation produced a non-null value; otherwise,
-    /// <see cref="ValidatedValue{T}.NoValue" /> when the shared <see cref="ValidationContext" /> already contains errors.
+    /// <see cref="ValidatedValue{T}.NoValue" /> when new errors were added since <paramref name="checkpoint" /> was
+    /// created.
     /// </returns>
-    protected abstract ValidatedValue<T> PerformValidation(ValidationContext context, T value);
+    protected abstract ValidatedValue<T> PerformValidation(
+        ValidationContext context,
+        ValidationCheckpoint checkpoint,
+        T value
+    );
 }
 
 /// <summary>
@@ -638,17 +649,27 @@ public abstract class Validator<TSource, TValidated> : BaseValidator<TSource>
             return ValidatedValue<TValidated>.NoValue;
         }
 
-        return PerformValidation(context, value);
+        var checkpoint = context.CreateCheckpoint();
+        return PerformValidation(context, checkpoint, value);
     }
 
     /// <summary>
     /// Performs the actual validation and transformation logic.
     /// </summary>
     /// <param name="context">The active validation context.</param>
+    /// <param name="checkpoint">
+    /// This object can track whether errors were added to the validation context during this PerformValidation call.
+    /// Use it to create <see cref="ValidatedValue{T}" /> instances more easily.
+    /// </param>
     /// <param name="value">The source value being validated.</param>
     /// <returns>
     /// A successful <see cref="ValidatedValue{TValidated}" /> when validation produced a non-null output; otherwise,
-    /// <see cref="ValidatedValue{TValidated}.NoValue" /> when the shared <see cref="ValidationContext" /> already contains errors.
+    /// <see cref="ValidatedValue{TValidated}.NoValue" /> when new errors were added since
+    /// <paramref name="checkpoint" /> was created.
     /// </returns>
-    protected abstract ValidatedValue<TValidated> PerformValidation(ValidationContext context, TSource value);
+    protected abstract ValidatedValue<TValidated> PerformValidation(
+        ValidationContext context,
+        ValidationCheckpoint checkpoint,
+        TSource value
+    );
 }

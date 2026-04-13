@@ -1,5 +1,9 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Light.PortableResults.Metadata;
+using Light.PortableResults.Validation.Definitions;
+using Light.PortableResults.Validation.Messaging;
+using Light.PortableResults.Validation.Targeting;
 
 namespace Light.PortableResults.Validation;
 
@@ -16,7 +20,10 @@ public readonly struct Check<T>
     /// </summary>
     /// <param name="context">The validation context.</param>
     /// <param name="target">The target descriptor.</param>
-    /// <param name="displayName">The human-readable display name.</param>
+    /// <param name="displayName">
+    /// The human-readable display name, or <see langword="null" /> to derive it from the resolved target at
+    /// message-formatting time.
+    /// </param>
     /// <param name="value">The value being validated.</param>
     /// <param name="resolvedAbsoluteTarget">
     /// The already-resolved absolute target, or <see langword="null" /> when it has not been materialized yet.
@@ -24,11 +31,10 @@ public readonly struct Check<T>
     /// <param name="isShortCircuited">Indicates whether further checks should be skipped.</param>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="context" /> is the default instance.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="target" /> is the default instance.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="displayName" /> is <see langword="null" />.</exception>
     public Check(
         ValidationContext context,
         ValidationTarget target,
-        string displayName,
+        string? displayName,
         T value,
         string? resolvedAbsoluteTarget,
         bool isShortCircuited
@@ -42,7 +48,7 @@ public readonly struct Check<T>
 
         Context = context;
         TargetDescriptor = target;
-        DisplayName = displayName ?? throw new ArgumentNullException(nameof(displayName));
+        DisplayName = displayName;
         Value = value;
         _resolvedAbsoluteTarget = resolvedAbsoluteTarget;
         IsShortCircuited = isShortCircuited;
@@ -64,9 +70,10 @@ public readonly struct Check<T>
     public string Target => _resolvedAbsoluteTarget ?? TargetDescriptor.Input;
 
     /// <summary>
-    /// Gets the display name for the current value.
+    /// Gets the display name for the current value, or <see langword="null" /> when the display name should be
+    /// derived from the resolved target at message-formatting time.
     /// </summary>
-    public string DisplayName { get; }
+    public string? DisplayName { get; }
 
     /// <summary>
     /// Gets the current value.
@@ -81,6 +88,7 @@ public readonly struct Check<T>
     /// <summary>
     /// Gets a value indicating whether the current value is <see langword="null" />.
     /// </summary>
+    [MemberNotNullWhen(false, nameof(Value))]
     public bool IsValueNull => Value is null;
 
     /// <summary>
@@ -88,7 +96,7 @@ public readonly struct Check<T>
     /// </summary>
     /// <param name="value">The new value.</param>
     /// <returns>The updated check.</returns>
-    public Check<T> WithValue(T value) =>
+    public Check<TValue> WithValue<TValue>(TValue value) =>
         new (Context, TargetDescriptor, DisplayName, value, _resolvedAbsoluteTarget, IsShortCircuited);
 
     /// <summary>
@@ -133,10 +141,7 @@ public readonly struct Check<T>
         }
 
         var resolvedTarget = Context.ResolveTarget(TargetDescriptor);
-        var displayName = string.Equals(DisplayName, TargetDescriptor.Input, StringComparison.Ordinal) ?
-            resolvedTarget :
-            DisplayName;
-        return new Check<T>(Context, TargetDescriptor, displayName, Value, resolvedTarget, IsShortCircuited);
+        return new Check<T>(Context, TargetDescriptor, DisplayName, Value, resolvedTarget, IsShortCircuited);
     }
 
     /// <summary>
@@ -173,11 +178,7 @@ public readonly struct Check<T>
     public ValidationErrorMessageContext<T> CreateMessageContext()
     {
         var normalizedCheck = NormalizeTargetIfNecessary();
-        return normalizedCheck.Context.CreateAbsoluteMessageContext(
-            normalizedCheck.Value,
-            normalizedCheck.GetResolvedAbsoluteTarget(),
-            normalizedCheck.DisplayName
-        );
+        return normalizedCheck.CreateMessageContextCore();
     }
 
     /// <summary>
@@ -202,45 +203,6 @@ public readonly struct Check<T>
         }
 
         normalizedCheck.Context.AddError(error);
-        return normalizedCheck;
-    }
-
-    /// <summary>
-    /// Adds a validation error with the specified generated message and optional details.
-    /// </summary>
-    /// <param name="message">The generated message.</param>
-    /// <param name="code">The optional error code.</param>
-    /// <param name="metadata">The optional metadata.</param>
-    /// <param name="target">
-    /// The optional explicit target. Relative targets are composed with the current validation scope, absolute targets
-    /// are used unchanged, and caller-expression targets are normalized before composition.
-    /// </param>
-    /// <param name="category">The error category.</param>
-    /// <param name="respectShortCircuit">
-    /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
-    /// </param>
-    /// <returns>The current check.</returns>
-    public Check<T> AddError(
-        ValidationErrorMessage message,
-        string? code = null,
-        MetadataObject? metadata = null,
-        ValidationTarget? target = null,
-        ErrorCategory category = ErrorCategory.Validation,
-        bool respectShortCircuit = true
-    )
-    {
-        if (respectShortCircuit && IsShortCircuited)
-        {
-            return this;
-        }
-
-        var normalizedCheck = NormalizeTargetIfNecessary();
-        var resolvedTarget = target is null ?
-            normalizedCheck.GetResolvedAbsoluteTarget() :
-            normalizedCheck.Context.ResolveTarget(target.Value);
-        normalizedCheck.Context.AddError(
-            message.ToError(code, resolvedTarget, category, metadata)
-        );
         return normalizedCheck;
     }
 
@@ -278,8 +240,22 @@ public readonly struct Check<T>
             return this;
         }
 
+        var cache = Context.ErrorTemplates.MessageCache;
+        return cache is not null && definition.TryGetStableMessageProvider(Context.AsReadOnly(), out var provider) ?
+            AddErrorWithMessageCaching(definition, code, metadata, target, category, provider, cache) :
+            AddErrorWithoutMessageCaching(definition, code, metadata, target, category);
+    }
+
+    private Check<T> AddErrorWithoutMessageCaching(
+        ValidationErrorDefinition definition,
+        string? code,
+        MetadataObject? metadata,
+        ValidationTarget? target,
+        ErrorCategory? category
+    )
+    {
         var normalizedCheck = NormalizeTargetIfNecessary();
-        var messageContext = normalizedCheck.CreateMessageContext();
+        var messageContext = normalizedCheck.CreateMessageContextCore();
         var message = definition.ProvideMessage(in messageContext);
         var resolvedTarget = ResolveDefinitionTarget(normalizedCheck, definition.Target, target);
         normalizedCheck.Context.AddError(
@@ -293,95 +269,63 @@ public readonly struct Check<T>
         return normalizedCheck;
     }
 
-    /// <summary>
-    /// Adds a validation error with the specified message template and optional details.
-    /// </summary>
-    /// <param name="template">The message template.</param>
-    /// <param name="code">The optional error code.</param>
-    /// <param name="metadata">The optional metadata.</param>
-    /// <param name="target">
-    /// The optional explicit target. Relative targets are composed with the current validation scope, absolute targets
-    /// are used unchanged, and caller-expression targets are normalized before composition.
-    /// </param>
-    /// <param name="respectShortCircuit">
-    /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
-    /// </param>
-    /// <returns>The current check.</returns>
-    public Check<T> AddError(
-        IValidationErrorMessageTemplate template,
-        string? code = null,
-        MetadataObject? metadata = null,
-        ValidationTarget? target = null,
-        bool respectShortCircuit = true
+    private Check<T> AddErrorWithMessageCaching(
+        ValidationErrorDefinition definition,
+        string? code,
+        MetadataObject? metadata,
+        ValidationTarget? target,
+        ErrorCategory? category,
+        object provider,
+        IValidationErrorMessageCache cache
     )
     {
-        if (template is null)
+        var key = new ValidationErrorMessageCacheKey(
+            provider,
+            TargetDescriptor,
+            Context.TargetPrefix,
+            DisplayName,
+            Context.Options.CultureInfo
+        );
+        if (cache.TryGet(key, out var entry))
         {
-            throw new ArgumentNullException(nameof(template));
-        }
-
-        if (respectShortCircuit && IsShortCircuited)
-        {
-            return this;
+            var resolvedTarget = target is null && definition.Target is null ?
+                entry.ResolvedTarget :
+                ResolveOverrideOrDefinitionTarget(entry.ResolvedTarget, definition.Target, target);
+            Context.AddError(
+                entry.Message.ToError(
+                    code ?? definition.Code,
+                    resolvedTarget,
+                    category ?? definition.Category,
+                    metadata ?? definition.Metadata
+                )
+            );
+            return new Check<T>(
+                Context,
+                TargetDescriptor,
+                DisplayName,
+                Value,
+                entry.ResolvedTarget,
+                IsShortCircuited
+            );
         }
 
         var normalizedCheck = NormalizeTargetIfNecessary();
-        var messageContext = normalizedCheck.CreateMessageContext();
-        var message = template.ProvideMessage(in messageContext);
-        return normalizedCheck.AddError(
-            message,
-            code,
-            metadata,
-            target,
-            respectShortCircuit: false
+        var messageContext = normalizedCheck.CreateMessageContextCore();
+        var message = definition.ProvideMessage(in messageContext);
+        cache.Store(
+            key,
+            new CachedValidationErrorMessage(message, normalizedCheck.GetResolvedAbsoluteTarget())
         );
-    }
-
-    /// <summary>
-    /// Adds a validation error with the specified message template, typed parameter, and optional details.
-    /// </summary>
-    /// <typeparam name="TParameter">The parameter type.</typeparam>
-    /// <param name="template">The message template.</param>
-    /// <param name="parameter">The additional typed parameter.</param>
-    /// <param name="code">The optional error code.</param>
-    /// <param name="metadata">The optional metadata.</param>
-    /// <param name="target">
-    /// The optional explicit target. Relative targets are composed with the current validation scope, absolute targets
-    /// are used unchanged, and caller-expression targets are normalized before composition.
-    /// </param>
-    /// <param name="respectShortCircuit">
-    /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
-    /// </param>
-    /// <returns>The current check.</returns>
-    public Check<T> AddError<TParameter>(
-        IValidationErrorMessageTemplate<TParameter> template,
-        TParameter parameter,
-        string? code = null,
-        MetadataObject? metadata = null,
-        ValidationTarget? target = null,
-        bool respectShortCircuit = true
-    )
-    {
-        if (template is null)
-        {
-            throw new ArgumentNullException(nameof(template));
-        }
-
-        if (respectShortCircuit && IsShortCircuited)
-        {
-            return this;
-        }
-
-        var normalizedCheck = NormalizeTargetIfNecessary();
-        var messageContext = normalizedCheck.CreateMessageContext();
-        var message = template.ProvideMessage(in messageContext, parameter);
-        return normalizedCheck.AddError(
-            message,
-            code,
-            metadata,
-            target,
-            respectShortCircuit: false
+        var defTarget = ResolveDefinitionTarget(normalizedCheck, definition.Target, target);
+        normalizedCheck.Context.AddError(
+            message.ToError(
+                code ?? definition.Code,
+                defTarget,
+                category ?? definition.Category,
+                metadata ?? definition.Metadata
+            )
         );
+        return normalizedCheck;
     }
 
     /// <summary>
@@ -394,6 +338,7 @@ public readonly struct Check<T>
     /// The optional explicit target. Relative targets are composed with the current validation scope, absolute targets
     /// are used unchanged, and caller-expression targets are normalized before composition.
     /// </param>
+    /// <param name="category">The error category.</param>
     /// <param name="respectShortCircuit">
     /// When <see langword="true" />, the error is skipped for short-circuited checks. The default is <see langword="true" />.
     /// </param>
@@ -403,16 +348,24 @@ public readonly struct Check<T>
         string? code = null,
         MetadataObject? metadata = null,
         ValidationTarget? target = null,
+        ErrorCategory category = ErrorCategory.Validation,
         bool respectShortCircuit = true
-    ) =>
-        AddError(
-            new ValidationErrorMessage(message),
-            code,
-            metadata,
-            target,
-            ErrorCategory.Validation,
-            respectShortCircuit
+    )
+    {
+        if (respectShortCircuit && IsShortCircuited)
+        {
+            return this;
+        }
+
+        var normalizedCheck = NormalizeTargetIfNecessary();
+        var resolvedTarget = target is null ?
+            normalizedCheck.GetResolvedAbsoluteTarget() :
+            normalizedCheck.Context.ResolveTarget(target.Value);
+        normalizedCheck.Context.AddError(
+            new ValidationErrorMessage(message).ToError(code, resolvedTarget, category, metadata)
         );
+        return normalizedCheck;
+    }
 
     /// <summary>
     /// Implicitly converts the check to its value.
@@ -422,6 +375,13 @@ public readonly struct Check<T>
 
     internal ValidationTarget GetResolvedAbsoluteTargetDescriptor() =>
         ValidationTarget.Absolute(GetResolvedAbsoluteTarget(), isNormalized: true);
+
+    private ValidationErrorMessageContext<T> CreateMessageContextCore() =>
+        Context.CreateAbsoluteMessageContext(
+            Value,
+            _resolvedAbsoluteTarget!,
+            DisplayName ?? _resolvedAbsoluteTarget ?? TargetDescriptor.Input
+        );
 
     private static string ResolveDefinitionTarget(
         Check<T> normalizedCheck,
@@ -437,6 +397,22 @@ public readonly struct Check<T>
         return definitionTarget is not null ?
             normalizedCheck.Context.ResolveTarget(definitionTarget.Value) :
             normalizedCheck.GetResolvedAbsoluteTarget();
+    }
+
+    private string ResolveOverrideOrDefinitionTarget(
+        string cachedResolvedTarget,
+        ValidationTarget? definitionTarget,
+        ValidationTarget? overrideTarget
+    )
+    {
+        if (overrideTarget is not null)
+        {
+            return Context.ResolveTarget(overrideTarget.Value);
+        }
+
+        return definitionTarget is not null ?
+            Context.ResolveTarget(definitionTarget.Value) :
+            cachedResolvedTarget;
     }
 
     private string GetResolvedAbsoluteTarget() => _resolvedAbsoluteTarget ?? Context.ResolveTarget(TargetDescriptor);
