@@ -14,8 +14,9 @@
 - 🔁 **Full functional operator suite** — `Map`, `Bind`, `Match`, `Ensure`, `Tap`, `Switch`, and their `Async` variants let you build clean, chainable pipelines.
 - ☁️ **Cloud-Native** — Light.PortableResults contains System.Text.Json serialization support for HTTP responses, including RFC-9457 Problem Details compatibility, and CloudEvents Spec 1.0 JSON payloads for asynchronous messaging. Full round-trip included.
 - 🧩 **ASP.NET Core ready** — Minimal APIs and MVC packages translate `Result` and `Result<T>` directly to `IResult` / `IActionResult` with automatic HTTP status mapping and RFC-9457 Problem Details support.
-- 🛡️ **Validation framework** — Light.PortableResults.Validation allows you to easily validate DTOs and any values. At least 5x faster than FluentValidation 12.1.1 while having less than 9% of FluentValidation's memory footprint.
+- 🛡️ **Validation framework** — Light.PortableResults.Validation allows you to easily validate DTOs and any values. Use transforming validators to write efficient Anti-Corruption Layers. At least 5x faster than FluentValidation 12.1.1 while having less than 9% of FluentValidation's memory footprint.
 - ⚡ **Allocation-minimal by design** — pooled buffers, struct-friendly internals, smart caching, and fast paths keep GC pressure near zero even at high throughput.
+- 🧊 **.NET Native AOT** — The base, validation, and Minimal APIs packages are designed to work seamlessly with .NET Native AOT, ensuring minimal runtime overhead and efficient memory usage.
 
 ## 📦 Installation
 
