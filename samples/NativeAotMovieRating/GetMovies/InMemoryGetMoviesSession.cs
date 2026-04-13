@@ -30,6 +30,11 @@ public sealed class InMemoryGetMoviesSession : IGetMoviesSession
     private List<Movie>? GetRangeAfterMovieId(Guid lastKnownMovieId, int take)
     {
         var index = _database.Movies.FindIndex(x => x.Id == lastKnownMovieId);
-        return index == -1 || index == _database.Movies.Count - 1 ? null : _database.Movies.GetRange(index + 1, take);
+        if (index == -1 || index == _database.Movies.Count - 1)
+            return null;
+
+        var remaining = _database.Movies.Count - (index + 1);
+        var count = Math.Min(take, remaining);
+        return _database.Movies.GetRange(index + 1, count);
     }
 }
