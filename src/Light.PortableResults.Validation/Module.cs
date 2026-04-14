@@ -1,5 +1,7 @@
 using System;
+using Light.PortableResults.Validation.ConfigurationIntegration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Light.PortableResults.Validation;
@@ -25,11 +27,43 @@ public static class Module
             throw new ArgumentNullException(nameof(services));
         }
 
-        services.AddSingleton<IValidationContextFactory, DefaultValidationContextFactory>();
+        services.TryAddSingleton<IValidationContextFactory, DefaultValidationContextFactory>();
         services.AddOptions<ValidationContextOptions>();
-        services.AddSingleton<ValidationContextOptions>(
+        services.TryAddSingleton<ValidationContextOptions>(
             sp => sp.GetRequiredService<IOptions<ValidationContextOptions>>().Value
         );
         return services;
+    }
+
+    /// <summary>
+    /// Registers a <see cref="Validator{T}" /> to validate options using the <see cref="IValidateOptions{TOptions}" />
+    /// pipeline from Microsoft.Extensions.Options.
+    /// </summary>
+    /// <typeparam name="TOptions">The options type to validate.</typeparam>
+    /// <typeparam name="TValidator">The validator type that implements <see cref="Validator{TOptions}" />.</typeparam>
+    /// <param name="builder">The options builder to configure.</param>
+    /// <returns>The <see cref="OptionsBuilder{TOptions}" /> for further chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="builder" /> is null.</exception>
+    public static OptionsBuilder<TOptions> ValidateWithPortableResults<TOptions, TValidator>(
+        this OptionsBuilder<TOptions> builder
+    )
+        where TOptions : class
+        where TValidator : Validator<TOptions>
+    {
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        builder.Services.AddValidationForPortableResults();
+        builder.Services.TryAddSingleton<TValidator>();
+        builder.Services.TryAddSingleton<IValidateOptions<TOptions>>(
+            sp => new PortableResultsValidateOptions<TOptions>(
+                sp.GetRequiredService<TValidator>(),
+                builder.Name
+            )
+        );
+
+        return builder;
     }
 }

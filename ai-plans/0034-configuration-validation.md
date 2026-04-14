@@ -8,13 +8,13 @@ This plan adds a generic bridge adapter and a fluent registration extension so t
 
 ## Acceptance Criteria
 
-- [ ] A public `PortableResultsValidateOptions<TOptions>` class implements `IValidateOptions<TOptions>` by delegating to a `Validator<TOptions>` instance. On success, it returns `ValidateOptionsResult.Success`; on failure it maps each `Error.Message` to the `ValidateOptionsResult.Fail(IEnumerable<string>)` overload.
-- [ ] The adapter supports named options filtering. When constructed with an options name, it returns `ValidateOptionsResult.Skip` for non-matching names, consistent with Microsoft's `DataAnnotationValidateOptions<T>` behavior.
-- [ ] The options name received by `IValidateOptions<TOptions>.Validate` is forwarded into the `ValidationContext` via a well-known `ValidationContextKey<string?>` so that validators can read it if needed but are not forced to.
-- [ ] A public extension method on `OptionsBuilder<TOptions>` allows fluent registration: `builder.ValidateWithPortableResults<TOptions, TValidator>()`. The method captures `OptionsBuilder<TOptions>.Name` and passes it to the adapter for named options filtering. It registers the validator and the adapter into the DI container and returns the `OptionsBuilder<TOptions>` for further chaining.
-- [ ] Only synchronous `Validator<T>` (and `Validator<TSource, TValidated>` where `TSource` equals `TOptions`) is supported. `AsyncValidator<T>` is intentionally excluded because `IValidateOptions<T>` is synchronous.
-- [ ] The adapter uses `ValidationTarget.Absolute("")` as the root target so that error targets reflect clean property paths (e.g. `ConnectionString`) instead of caller-expression artifacts.
-- [ ] Automated tests cover the adapter, the extension method, named-options filtering and forwarding, `ValidateOptionsResult.Skip` behavior, and failure mapping.
+- [x] A public `PortableResultsValidateOptions<TOptions>` class implements `IValidateOptions<TOptions>` by delegating to a `Validator<TOptions>` instance. On success, it returns `ValidateOptionsResult.Success`; on failure it maps each `Error.Message` to the `ValidateOptionsResult.Fail(IEnumerable<string>)` overload.
+- [x] The adapter supports named options filtering. When constructed with an options name, it returns `ValidateOptionsResult.Skip` for non-matching names, consistent with Microsoft's `DataAnnotationValidateOptions<T>` behavior.
+- [x] The options name received by `IValidateOptions<TOptions>.Validate` is forwarded into the `ValidationContext` via a well-known `ValidationContextKey<string?>` so that validators can read it if needed but are not forced to.
+- [x] A public extension method on `OptionsBuilder<TOptions>` allows fluent registration: `builder.ValidateWithPortableResults<TOptions, TValidator>()`. The method captures `OptionsBuilder<TOptions>.Name` and passes it to the adapter for named options filtering. It registers the validator and the adapter into the DI container and returns the `OptionsBuilder<TOptions>` for further chaining.
+- [x] Only synchronous `Validator<T>` (and `Validator<TSource, TValidated>` where `TSource` equals `TOptions`) is supported. `AsyncValidator<T>` is intentionally excluded because `IValidateOptions<T>` is synchronous.
+- [x] The adapter uses `ValidationTarget.Absolute("")` as the root target so that error targets reflect clean property paths (e.g. `ConnectionString`) instead of caller-expression artifacts.
+- [x] Automated tests cover the adapter, the extension method, named-options filtering and forwarding, `ValidateOptionsResult.Skip` behavior, and failure mapping.
 
 ## Technical Details
 
