@@ -60,7 +60,7 @@ public sealed class PortableResultsValidateOptions<TOptions> : IValidateOptions<
             context.SetItem(ConfigurationConstants.OptionsNameKey, name);
         }
 
-        // Validate using absolute root target for clean property paths
+        // Validate
         if (_validator.CheckForErrors(options, context, out var failure))
         {
             var messages = new List<string>(failure.Errors.Count);
