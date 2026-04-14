@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Light.PortableResults.Validation.Targeting;
@@ -29,20 +28,18 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
     /// </summary>
     /// <param name="value">The value to validate.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The validation result.</returns>
     public ValueTask<Result<T>> ValidateAsync(
         T? value,
         CancellationToken cancellationToken = default,
-        [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
     ) =>
         ValidateAsync(
             value,
             ValidationContextFactory.CreateValidationContext(),
             cancellationToken,
-            ValidationTarget.CallerExpression(target),
+            ValidationTarget.Relative(string.Empty, isNormalized: true),
             displayName
         );
 
@@ -74,14 +71,12 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
     /// <param name="value">The value to be validated.</param>
     /// <param name="context">The validation context.</param>
     /// <param name="cancellationToken">The optional token to cancel the asynchronous operation.</param>
-    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name which is used in formatted error messages.</param>
     /// <returns>The validation result.</returns>
     public async ValueTask<Result<T>> ValidateAsync(
         T? value,
         ValidationContext context,
         CancellationToken cancellationToken = default,
-        [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
     ) =>
         FinalizeValidation(
@@ -90,7 +85,7 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
                     value,
                     context,
                     cancellationToken,
-                    ValidationTarget.CallerExpression(target),
+                    ValidationTarget.Relative(string.Empty, isNormalized: true),
                     displayName
                 )
                .ConfigureAwait(false)
@@ -125,20 +120,18 @@ public abstract class AsyncValidator<T> : BaseValidator<T>
     /// <param name="value">The value to be validated.</param>
     /// <param name="context">The validation context.</param>
     /// <param name="cancellationToken">The optional token to cancel the asynchronous operation.</param>
-    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name which is used in formatted error messages.</param>
     /// <returns>A value task containing the validated and potentially normalized value.</returns>
     public ValueTask<ValidatedValue<T>> ValidateChildValueAsync(
         T? value,
         ValidationContext context,
         CancellationToken cancellationToken = default,
-        [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
     ) => ValidateChildValueAsync(
         value,
         context,
         cancellationToken,
-        ValidationTarget.CallerExpression(target),
+        ValidationTarget.Relative(string.Empty, isNormalized: true),
         displayName
     );
 
@@ -218,20 +211,18 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
     /// </summary>
     /// <param name="value">The source value.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The validation result.</returns>
     public ValueTask<Result<TValidated>> ValidateAsync(
         TSource? value,
         CancellationToken cancellationToken = default,
-        [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
     ) =>
         ValidateAsync(
             value,
             ValidationContextFactory.CreateValidationContext(),
             cancellationToken,
-            ValidationTarget.CallerExpression(target),
+            ValidationTarget.Relative(string.Empty, isNormalized: true),
             displayName
         );
 
@@ -263,14 +254,12 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
     /// <param name="value">The source value.</param>
     /// <param name="context">The validation context.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns>The validation result.</returns>
     public async ValueTask<Result<TValidated>> ValidateAsync(
         TSource? value,
         ValidationContext context,
         CancellationToken cancellationToken = default,
-        [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
     ) =>
         FinalizeValidation(
@@ -279,7 +268,7 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
                     value,
                     context,
                     cancellationToken,
-                    ValidationTarget.CallerExpression(target),
+                    ValidationTarget.Relative(string.Empty, isNormalized: true),
                     displayName
                 )
                .ConfigureAwait(false)
@@ -314,20 +303,18 @@ public abstract class AsyncValidator<TSource, TValidated> : BaseValidator<TSourc
     /// <param name="value">The value to be validated.</param>
     /// <param name="context">The validation context.</param>
     /// <param name="cancellationToken">The optional token to cancel the asynchronous operation.</param>
-    /// <param name="target">The caller-expression target for the value.</param>
     /// <param name="displayName">The optional display name which is used in formatted error messages.</param>
     /// <returns>A value task containing the validated and potentially normalized value.</returns>
     public ValueTask<ValidatedValue<TValidated>> ValidateChildValueAsync(
         TSource? value,
         ValidationContext context,
         CancellationToken cancellationToken = default,
-        [CallerArgumentExpression("value")] string target = "",
         string? displayName = null
     ) => ValidateChildValueAsync(
         value,
         context,
         cancellationToken,
-        ValidationTarget.CallerExpression(target),
+        ValidationTarget.Relative(string.Empty, isNormalized: true),
         displayName
     );
 

@@ -142,7 +142,7 @@ public sealed class AsyncValidatorWorkflowTests
     }
 
     [Fact]
-    public async Task ValidateChildValueAsync_ShouldSupportCallerExpressionOverload_ForSameTypeValidator()
+    public async Task ValidateChildValueAsync_ShouldSupportDefaultTargetOverload_ForSameTypeValidator()
     {
         var validator = new AsyncTrimmedRequiredTextValidator(ValidationWorkflowTestData.ValidationContextFactory);
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
@@ -195,8 +195,7 @@ public sealed class AsyncValidatorWorkflowTests
                 Address = new AddressDto { ZipCode = "12345" }
             },
             context,
-            TestContext.Current.CancellationToken,
-            target: "request"
+            TestContext.Current.CancellationToken
         );
 
         result.IsValid.Should().BeFalse();
@@ -224,7 +223,7 @@ public sealed class AsyncValidatorWorkflowTests
     }
 
     [Fact]
-    public async Task ValidateChildValueAsync_ShouldSupportCallerExpressionOverload_ForTransformingValidator()
+    public async Task ValidateChildValueAsync_ShouldSupportDefaultTargetOverload_ForTransformingValidator()
     {
         var validator = new AsyncAddressCommandValidator(ValidationWorkflowTestData.ValidationContextFactory);
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();

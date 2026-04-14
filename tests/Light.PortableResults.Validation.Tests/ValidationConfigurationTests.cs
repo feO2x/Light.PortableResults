@@ -58,7 +58,7 @@ public sealed class ValidationConfigurationTests
     [Fact]
     public void AutomaticNullProvider_ShouldReadSharedItemsThroughReadOnlyContext()
     {
-        var options = new ValidationContextOptions() with
+        var options = new ValidationContextOptions
         {
             AutomaticNullErrorProvider = new ContextAwareAutomaticNullErrorProvider(TenantKey)
         };
@@ -67,7 +67,7 @@ public sealed class ValidationConfigurationTests
         context.SetItem(TenantKey, "checkout");
         var validator = new NullToEmptyStringValidator(factory);
 
-        var result = validator.Validate(null, context, target: "request", displayName: "Request");
+        var result = validator.Validate(null, context, displayName: "Request");
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Equal(
