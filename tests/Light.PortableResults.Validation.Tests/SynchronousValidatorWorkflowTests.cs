@@ -115,8 +115,7 @@ public sealed class SynchronousValidatorWorkflowTests
                 PrimaryAddress = new AddressDto { ZipCode = " 12345 " },
                 Addresses = [new AddressDto { ZipCode = " 54321 " }]
             },
-            context,
-            target: "request"
+            context
         );
 
         result.IsValid.Should().BeFalse();
@@ -126,7 +125,7 @@ public sealed class SynchronousValidatorWorkflowTests
     }
 
     [Fact]
-    public void TryValidate_ShouldReturnValidatedValue_ForSameTypeValidator()
+    public void Validate_ShouldReturnValidatedValue_ForSameTypeValidator()
     {
         var validator = new PersonValidator(ValidationWorkflowTestData.ValidationContextFactory);
         var request = new PersonRequest
@@ -137,12 +136,11 @@ public sealed class SynchronousValidatorWorkflowTests
             Addresses = []
         };
 
-        var isValid = validator.TryValidate(request, out var validatedRequest, out var failure);
+        var result = validator.Validate(request);
 
-        isValid.Should().BeTrue();
-        validatedRequest.Should().BeSameAs(request);
-        validatedRequest.FirstName.Should().Be("Alice");
-        failure.IsValid.Should().BeTrue();
+        result.IsValid.Should().BeTrue();
+        result.Value.Should().BeSameAs(request);
+        result.Value.FirstName.Should().Be("Alice");
     }
 
     [Fact]
@@ -195,7 +193,7 @@ public sealed class SynchronousValidatorWorkflowTests
     }
 
     [Fact]
-    public void ValidateChildValue_ShouldSupportCallerExpressionOverload_ForSameTypeValidator()
+    public void ValidateChildValue_ShouldSupportDefaultTargetOverload_ForSameTypeValidator()
     {
         var validator = new TrimmedRequiredTextValidator(ValidationWorkflowTestData.ValidationContextFactory);
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
@@ -251,35 +249,31 @@ public sealed class SynchronousValidatorWorkflowTests
     }
 
     [Fact]
-    public void TryValidate_And_CheckForErrors_ShouldCoverTransformingPublicWrappers()
+    public void Validate_ShouldCoverTransformingPublicWrappers()
     {
         var validator = new RegistrationValidator(ValidationWorkflowTestData.ValidationContextFactory);
 
-        var isValid = validator.TryValidate(
+        var successResult = validator.Validate(
             new RegistrationRequest
             {
                 FirstName = "  Alice  ",
                 Email = " alice@example.com ",
                 Address = new AddressDto { ZipCode = " 12345 " }
-            },
-            out var command,
-            out var successFailure
+            }
         );
-        var hasErrors = validator.CheckForErrors(
+        var failureResult = validator.Validate(
             new RegistrationRequest
             {
                 FirstName = " ",
                 Email = "not-an-email",
                 Address = new AddressDto { ZipCode = " " }
-            },
-            out var failure
+            }
         );
 
-        isValid.Should().BeTrue();
-        command.Should().Be(new RegistrationCommand("Alice", "alice@example.com", new AddressCommand("12345")));
-        successFailure.IsValid.Should().BeTrue();
-        hasErrors.Should().BeTrue();
-        failure.Errors.Should().Equal(
+        successResult.IsValid.Should().BeTrue();
+        successResult.Value.Should().Be(new RegistrationCommand("Alice", "alice@example.com", new AddressCommand("12345")));
+        failureResult.IsValid.Should().BeFalse();
+        failureResult.Errors.Should().Equal(
             new Errors(
                 new[]
                 {
@@ -321,7 +315,7 @@ public sealed class SynchronousValidatorWorkflowTests
     }
 
     [Fact]
-    public void ValidateChildValue_ShouldSupportCallerExpressionOverload_ForTransformingValidator()
+    public void ValidateChildValue_ShouldSupportDefaultTargetOverload_ForTransformingValidator()
     {
         var validator = new AddressCommandValidator(ValidationWorkflowTestData.ValidationContextFactory);
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();

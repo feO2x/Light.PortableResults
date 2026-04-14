@@ -3,7 +3,7 @@
 *A high-performant, enterprise-grade .NET library implementing the Result Pattern where each result is serializable and deserializable. Comes with integrations for ASP.NET Core Minimal APIs and MVC, `HttpResponseMessage`, and CloudEvents JSON format, as well as a validation framework.*
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/blob/main/LICENSE)
-[![NuGet](https://img.shields.io/badge/NuGet-0.2.0-blue.svg?style=for-the-badge)](https://www.nuget.org/packages?q=Light.PortableResults)
+[![NuGet](https://img.shields.io/badge/NuGet-0.3.0-blue.svg?style=for-the-badge)](https://www.nuget.org/packages?q=Light.PortableResults)
 [![Documentation](https://img.shields.io/badge/Docs-Changelog-yellowgreen.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/releases)
 
 ## ✨ Key Features
@@ -15,6 +15,7 @@
 - ☁️ **Cloud-Native** — Light.PortableResults contains System.Text.Json serialization support for HTTP responses, including RFC-9457 Problem Details compatibility, and CloudEvents Spec 1.0 JSON payloads for asynchronous messaging. Full round-trip included.
 - 🧩 **ASP.NET Core ready** — Minimal APIs and MVC packages translate `Result` and `Result<T>` directly to `IResult` / `IActionResult` with automatic HTTP status mapping and RFC-9457 Problem Details support.
 - 🛡️ **Validation framework** — Light.PortableResults.Validation allows you to easily validate DTOs and any values. Use transforming validators to write efficient Anti-Corruption Layers. At least 5x faster than FluentValidation 12.1.1 while having less than 9% of FluentValidation's memory footprint.
+- 🛠️ **Microsoft.Extensions.Configuration**: validate options with your custom `Validator<T>` implementations.
 - ⚡ **Allocation-minimal by design** — pooled buffers, struct-friendly internals, smart caching, and fast paths keep GC pressure near zero even at high throughput.
 - 🧊 **.NET Native AOT** — The base, validation, and Minimal APIs packages are designed to work seamlessly with .NET Native AOT, ensuring minimal runtime overhead and efficient memory usage.
 
@@ -565,6 +566,47 @@ Use exceptions for truly unexpected failures:
 - programming bugs and invariant violations (detected via Guard Clauses)
 
 This keeps exceptions exceptional and business outcomes explicit.
+
+## Validate `Microsoft.Extensions.Configuration` Options
+
+You can write your custom `Validator<T>` implementations to validate options bound from configuration through `IValidateOptions<T>`. Use the `ValidateWithPortableResults<TOptions, TValidator>()` extension method to integrate with the standard options validation pipeline.
+
+```csharp
+public sealed class EmailSenderOptions
+{
+    public string Host { get; set; } = string.Empty;
+    public int Port { get; set; }
+    public string ApiKey { get; set; } = string.Empty;
+}
+
+public sealed class EmailSenderOptionsValidator : Validator<EmailSenderOptions>
+{
+    public EmailSenderOptionsValidator(IValidationContextFactory validationContextFactory)
+        : base(validationContextFactory) { }
+
+    protected override ValidatedValue<EmailSenderOptions> PerformValidation(
+        ValidationContext context,
+        ValidationCheckpoint checkpoint,
+        EmailSenderOptions options
+    )
+    {
+        context.Check(options.Host).IsNotNullOrWhiteSpace();
+        context.Check(options.Port).IsInBetween(1, 65535);
+        context.Check(options.ApiKey).IsNotNullOrWhiteSpace();
+        return checkpoint.ToValidatedValue(options);
+    }
+}
+
+IServiceCollection services = new ServiceCollection();
+
+services
+    .AddOptions<EmailSenderOptions>()
+    .BindConfiguration("EmailSender")
+    .ValidateWithPortableResults<EmailSenderOptions, EmailSenderOptionsValidator>()
+    .ValidateOnStart(); // Not required, but usually what you want
+```
+
+`ValidateWithPortableResults` integrates with the standard options validation pipeline, supports named options, and forwards the current options name to the `ValidationContext`. Use `ValidationContext.TryGetItem(ConfigurationConstants.OptionsNameKey, out var optionsName);` to access the options name in your validator.
 
 ## Use non-generic `Result` for command-style operations
 

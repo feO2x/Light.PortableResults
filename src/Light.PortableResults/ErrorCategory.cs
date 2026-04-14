@@ -71,8 +71,19 @@ public enum ErrorCategory
     Conflict = 409,
 
     /// <summary>
-    /// The requested resource is no longer available (HTTP 410). Indicates that the requested resource is no longer
-    /// available.
+    /// <para>
+    /// The requested resource is no longer available (HTTP 410). This condition is likely to be permanent. If the
+    /// origin server does not know, or has no facility to determine, whether or not the condition is permanent, the
+    /// status code 404 (Not Found) ought to be used instead.
+    /// </para>
+    /// <para>
+    /// The 410 response is primarily intended to assist the task of web maintenance by notifying the recipient that the
+    /// resource is intentionally unavailable and that the server owners desire that remote links to that resource be
+    /// removed. Such an event is common for limited-time, promotional services and for resources belonging to
+    /// individuals no longer associated with the origin server's site. It is not necessary to mark all permanently
+    /// unavailable resources as "gone" or to keep the mark for any length of time -- that is left to the discretion
+    /// of the server owner.
+    /// </para>
     /// </summary>
     /// <remarks>https://tools.ietf.org/html/rfc9110#section-15.5.11</remarks>
     Gone = 410,
@@ -125,6 +136,24 @@ public enum ErrorCategory
     /// </summary>
     /// <remarks>https://tools.ietf.org/html/rfc9110#section-15.5.18</remarks>
     ExpectationFailed = 417,
+
+    /// <summary>
+    /// <para>
+    /// I'm a teapot (HTTP 418). Indicates that the server refuses to brew coffee because it is, permanently, a teapot.
+    /// A combined coffee/tea pot that is temporarily out of coffee should instead return 503.
+    /// This error is a reference to Hyper Text Coffee Pot Control Protocol defined in April Fools' jokes in 1998 and
+    /// 2014.
+    /// </para>
+    /// <para>
+    /// While originally defined in RFC 2324 as an April Fools' joke, this status code was formally reserved in RFC 9110
+    /// due to its wide deployment as a joke, so it cannot be assigned any non-joke semantics for the foreseeable future.
+    /// </para>
+    /// <para>
+    /// Some websites use this response for requests they do not wish to handle, such as automated queries.
+    /// </para>
+    /// </summary>
+    /// <remarks>https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/418</remarks>
+    ImATeapot = 418,
 
     /// <summary>
     /// Misdirected request (HTTP 421). Indicates that the request was directed at a server that is not able to produce

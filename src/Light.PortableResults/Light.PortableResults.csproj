@@ -3,11 +3,11 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Description>The Light.PortableResults package implements the core functionality: Results, Errors, Metadata, Functional Extensions, and serialization support for various formats like HTTP and CloudEvents. Compatible with Native AOT. Check out the integration packages Light.PortableResults.AspNetCore.MinimalApis or Light.PortableResults.AspNetCore.Mvc.</Description>
     <PackageReleaseNotes>
-      Light.PortableResults 0.2.0
+      Light.PortableResults 0.3.0
       ---------------------------------
 
       - Contains core functionality: Results, Errors, Metadata, Functional Extensions, and JSON serialization support for HTTP and CloudEvents.
-      - Compatible with Native AOT.
+      - Compatible with .NET Native AOT.
     </PackageReleaseNotes>
   </PropertyGroup>
 
