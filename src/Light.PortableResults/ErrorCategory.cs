@@ -152,7 +152,7 @@ public enum ErrorCategory
     /// Some websites use this response for requests they do not wish to handle, such as automated queries.
     /// </para>
     /// </summary>
-    /// <remarks>>https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/418</remarks>
+    /// <remarks>https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/418</remarks>
     ImATeapot = 418,
 
     /// <summary>
