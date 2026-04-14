@@ -50,7 +50,7 @@ public sealed class ValidateWithPortableResultsTests
     }
 
     [Fact]
-    public void ValidateWithPortableResults_ShouldBeIdempotent_WhenCalledMultipleTimesForSameOptions()
+    public void ValidateWithPortableResults_ShouldAllowMultipleRegistrations_WhenCalledMultipleTimesForSameOptions()
     {
         CustomTestOptionsValidator.InstanceCount = 0;
         var services = new ServiceCollection();
@@ -66,7 +66,7 @@ public sealed class ValidateWithPortableResultsTests
         var provider = services.BuildServiceProvider();
         var validateOptions = provider.GetServices<IValidateOptions<TestOptions>>().ToList();
 
-        validateOptions.Should().HaveCount(1);
+        validateOptions.Should().HaveCount(2);
         CustomTestOptionsValidator.InstanceCount.Should().Be(1);
     }
 

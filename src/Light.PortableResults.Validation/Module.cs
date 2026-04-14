@@ -57,7 +57,10 @@ public static class Module
 
         builder.Services.AddValidationForPortableResults();
         builder.Services.TryAddSingleton<TValidator>();
-        builder.Services.TryAddSingleton<IValidateOptions<TOptions>>(
+
+        // This must be an AddSingleton call, not TryAddSingleton. Several registrations
+        // for the same TOptions must be possible, with or without different names.
+        builder.Services.AddSingleton<IValidateOptions<TOptions>>(
             sp => new PortableResultsValidateOptions<TOptions>(
                 sp.GetRequiredService<TValidator>(),
                 builder.Name
