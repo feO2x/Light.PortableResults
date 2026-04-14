@@ -24,6 +24,7 @@ public static class ErrorCategoryTests
     [InlineData(ErrorCategory.UnsupportedMediaType, 415)]
     [InlineData(ErrorCategory.RequestedRangeNotSatisfiable, 416)]
     [InlineData(ErrorCategory.ExpectationFailed, 417)]
+    [InlineData(ErrorCategory.ImATeapot, 418)]
     [InlineData(ErrorCategory.MisdirectedRequest, 421)]
     [InlineData(ErrorCategory.UnprocessableContent, 422)]
     [InlineData(ErrorCategory.Locked, 423)]
