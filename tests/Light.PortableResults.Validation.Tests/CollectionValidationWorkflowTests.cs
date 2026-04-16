@@ -412,7 +412,7 @@ public sealed class CollectionValidationWorkflowTests
     }
 
     [Fact]
-    public void ValidateItems_ShouldSkipNormalizationDelegate_WhenCollectionIsNull()
+    public void ValidateItems_ShouldSkipItemValidationDelegate_WhenCollectionIsNull()
     {
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
         List<string> nullableTags = null!;
