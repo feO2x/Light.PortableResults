@@ -8,14 +8,14 @@ This plan aligns collection item-validation with the existing validator semantic
 
 ## Acceptance Criteria
 
-- [ ] Every `ValidateItems(...)` and `ValidateItemsAsync(...)` overload in `CheckExtensions.cs` that currently depends on `GetRequiredCollectionValue(check)` performs automatic null handling before attempting to enumerate, mutate, or transform the collection.
-- [ ] When such an overload receives a `null` collection on a non-short-circuited check and the active `ValidationContextOptions.AutomaticNullErrorProvider` produces an error, the method adds that automatic null error for the collection target and returns `ValidatedValue<...>.NoValue` instead of throwing.
-- [ ] The automatic null error produced by `ValidateItems*` uses the same target-resolution and display-name semantics as validators do today, including caller-expression handling and target-prefix composition.
-- [ ] Short-circuited `ValidateItems*` calls still return `ValidatedValue<...>.NoValue` immediately and do not invoke item validators, delegates, cancellation checks, or automatic null handling.
-- [ ] When a non-short-circuited `ValidateItems*` call encounters a `null` collection, it does not invoke item validators, delegate callbacks, normalization logic, enumeration, mutation, or cancellation checks before either returning `ValidatedValue<...>.NoValue` or throwing the documented fallback exception.
-- [ ] When the active `AutomaticNullErrorProvider` declines to create an error for a `null` collection, `ValidateItems*` has a clearly documented fallback so callers are told to guard explicitly with `IsNotNull()` before validating items.
-- [ ] XML documentation in `CheckExtensions.cs` is updated to remove the blanket instruction that nullable collections must always be guarded explicitly, and instead explains the automatic-null behavior and the remaining explicit-guard scenario.
-- [ ] Automated tests cover synchronous and asynchronous validator-based overloads, synchronous and asynchronous delegate-based overloads, short-circuit behavior, the provider-declined fallback path, and the emitted error target/message shape for `null` collections.
+- [x] Every `ValidateItems(...)` and `ValidateItemsAsync(...)` overload in `CheckExtensions.cs` that currently depends on `GetRequiredCollectionValue(check)` performs automatic null handling before attempting to enumerate, mutate, or transform the collection.
+- [x] When such an overload receives a `null` collection on a non-short-circuited check and the active `ValidationContextOptions.AutomaticNullErrorProvider` produces an error, the method adds that automatic null error for the collection target and returns `ValidatedValue<...>.NoValue` instead of throwing.
+- [x] The automatic null error produced by `ValidateItems*` uses the same target-resolution and display-name semantics as validators do today, including caller-expression handling and target-prefix composition.
+- [x] Short-circuited `ValidateItems*` calls still return `ValidatedValue<...>.NoValue` immediately and do not invoke item validators, delegates, cancellation checks, or automatic null handling.
+- [x] When a non-short-circuited `ValidateItems*` call encounters a `null` collection, it does not invoke item validators, delegate callbacks, normalization logic, enumeration, mutation, or cancellation checks before either returning `ValidatedValue<...>.NoValue` or throwing the documented fallback exception.
+- [x] When the active `AutomaticNullErrorProvider` declines to create an error for a `null` collection, `ValidateItems*` has a clearly documented fallback so callers are told to guard explicitly with `IsNotNull()` before validating items.
+- [x] XML documentation in `CheckExtensions.cs` is updated to remove the blanket instruction that nullable collections must always be guarded explicitly, and instead explains the automatic-null behavior and the remaining explicit-guard scenario.
+- [x] Automated tests cover synchronous and asynchronous validator-based overloads, synchronous and asynchronous delegate-based overloads, short-circuit behavior, the provider-declined fallback path, and the emitted error target/message shape for `null` collections.
 
 ## Technical Details
 
