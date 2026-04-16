@@ -1006,6 +1006,12 @@ public static class CheckExtensions
         }
 
         var displayName = check.DisplayName ?? check.Target;
+
+        // Pass the raw TargetDescriptor (not the resolved absolute target) so that
+        // GetAutomaticNullTarget can apply the caller-expression special case,
+        // which collapses a simple identifier to the context prefix (e.g. "request"
+        // rather than "request.nullableListTags"). Using GetResolvedAbsoluteTargetDescriptor()
+        // instead would bypass that branch and produce a fully-qualified target.
         if (check.Context.TryCreateAutomaticNullError(collection, check.TargetDescriptor, displayName, out var error))
         {
             check.Context.AddError(error);
