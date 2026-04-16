@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Light.PortableResults.Validation.Targeting;
@@ -147,17 +148,23 @@ public static class CheckExtensions
 
     /// <summary>
     /// Validates and potentially normalizes each item of a mutable indexed collection in place.
-    /// Nullable collections must be guarded explicitly, for example with <c>IsNotNull()</c>, before calling this
-    /// method.
     /// </summary>
     /// <typeparam name="TCollection">The mutable collection type.</typeparam>
     /// <typeparam name="TItem">The item type.</typeparam>
     /// <param name="check">The check that provides the collection value and validation context.</param>
     /// <param name="itemValidator">The validator applied to each item in the collection.</param>
     /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <remarks>
+    /// When the collection is <see langword="null" />, this method first asks the active automatic-null provider to
+    /// create the standard null error for the collection target. Guard nullable collections explicitly, for example
+    /// with <c>IsNotNull()</c>, when the active provider may decline to create an error and deterministic
+    /// non-exceptional behavior is required.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// Thrown when the collection value is <see langword="null" /> and the active automatic-null provider declines to
+    /// create an error. Guard nullable collections explicitly, for example with <c>IsNotNull()</c>, when
+    /// deterministic non-exceptional behavior is required.
     /// </exception>
     public static ValidatedValue<TCollection> ValidateItems<TCollection, TItem>(
         this Check<TCollection> check,
@@ -175,8 +182,12 @@ public static class CheckExtensions
             return ValidatedValue<TCollection>.NoValue;
         }
 
+        if (!TryGetCollectionForItemValidation(check, out var collection))
+        {
+            return ValidatedValue<TCollection>.NoValue;
+        }
+
         var checkpoint = check.Context.CreateCheckpoint();
-        var collection = GetRequiredCollectionValue(check);
         for (var i = 0; i < collection.Count; i++)
         {
             var itemCheckpoint = check.Context.CreateCheckpoint();
@@ -244,11 +255,18 @@ public static class CheckExtensions
     /// <param name="check">The check that provides the collection value and validation context.</param>
     /// <param name="validateItem">The item-validation delegate.</param>
     /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <remarks>
+    /// When the collection is <see langword="null" />, this method first asks the active automatic-null provider to
+    /// create the standard null error for the collection target. Guard nullable collections explicitly, for example
+    /// with <c>IsNotNull()</c>, when the active provider may decline to create an error and deterministic
+    /// non-exceptional behavior is required.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="validateItem" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// Thrown when the collection value is <see langword="null" /> and the active automatic-null provider declines to
+    /// create an error. Guard nullable collections explicitly, for example with <c>IsNotNull()</c>, when
+    /// deterministic non-exceptional behavior is required.
     /// </exception>
-    // TODO: we should include automatic null checking in this method, too
     public static ValidatedValue<TCollection> ValidateItems<TCollection, TItem>(
         this Check<TCollection> check,
         Action<Check<TItem>> validateItem
@@ -265,8 +283,12 @@ public static class CheckExtensions
             return ValidatedValue<TCollection>.NoValue;
         }
 
+        if (!TryGetCollectionForItemValidation(check, out var collection))
+        {
+            return ValidatedValue<TCollection>.NoValue;
+        }
+
         var checkpoint = check.Context.CreateCheckpoint();
-        var collection = GetRequiredCollectionValue(check);
         for (var i = 0; i < collection.Count; i++)
         {
             validateItem(CreateItemCheck(check, collection[i], i));
@@ -284,9 +306,17 @@ public static class CheckExtensions
     /// <param name="check">The check that provides the collection value and validation context.</param>
     /// <param name="validateItem">The item-validation delegate that can return a replacement item value.</param>
     /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <remarks>
+    /// When the collection is <see langword="null" />, this method first asks the active automatic-null provider to
+    /// create the standard null error for the collection target. Guard nullable collections explicitly, for example
+    /// with <c>IsNotNull()</c>, when the active provider may decline to create an error and deterministic
+    /// non-exceptional behavior is required.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="validateItem" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// Thrown when the collection value is <see langword="null" /> and the active automatic-null provider declines to
+    /// create an error. Guard nullable collections explicitly, for example with <c>IsNotNull()</c>, when
+    /// deterministic non-exceptional behavior is required.
     /// </exception>
     public static ValidatedValue<TCollection> ValidateItems<TCollection, TItem>(
         this Check<TCollection> check,
@@ -304,8 +334,12 @@ public static class CheckExtensions
             return ValidatedValue<TCollection>.NoValue;
         }
 
+        if (!TryGetCollectionForItemValidation(check, out var collection))
+        {
+            return ValidatedValue<TCollection>.NoValue;
+        }
+
         var checkpoint = check.Context.CreateCheckpoint();
-        var collection = GetRequiredCollectionValue(check);
         for (var i = 0; i < collection.Count; i++)
         {
             var itemCheckpoint = check.Context.CreateCheckpoint();
@@ -328,9 +362,17 @@ public static class CheckExtensions
     /// <param name="check">The check that provides the collection value and validation context.</param>
     /// <param name="itemValidator">The validator applied to each item in the collection.</param>
     /// <returns>The transformed array or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <remarks>
+    /// When the array is <see langword="null" />, this method first asks the active automatic-null provider to create
+    /// the standard null error for the collection target. Guard nullable collections explicitly, for example with
+    /// <c>IsNotNull()</c>, when the active provider may decline to create an error and deterministic non-exceptional
+    /// behavior is required.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// Thrown when the collection value is <see langword="null" /> and the active automatic-null provider declines to
+    /// create an error. Guard nullable collections explicitly, for example with <c>IsNotNull()</c>, when
+    /// deterministic non-exceptional behavior is required.
     /// </exception>
     public static ValidatedValue<TValidated[]> ValidateItems<TItem, TValidated>(
         this Check<TItem[]> check,
@@ -347,8 +389,12 @@ public static class CheckExtensions
             return ValidatedValue<TValidated[]>.NoValue;
         }
 
+        if (!TryGetCollectionForItemValidation(check, out var collection))
+        {
+            return ValidatedValue<TValidated[]>.NoValue;
+        }
+
         var checkpoint = check.Context.CreateCheckpoint();
-        var collection = GetRequiredCollectionValue(check);
         var validatedItems = new TValidated[collection.Length];
         for (var i = 0; i < collection.Length; i++)
         {
@@ -377,9 +423,17 @@ public static class CheckExtensions
     /// <param name="check">The check that provides the collection value and validation context.</param>
     /// <param name="itemValidator">The validator applied to each item in the collection.</param>
     /// <returns>The transformed list or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <remarks>
+    /// When the list is <see langword="null" />, this method first asks the active automatic-null provider to create
+    /// the standard null error for the collection target. Guard nullable collections explicitly, for example with
+    /// <c>IsNotNull()</c>, when the active provider may decline to create an error and deterministic non-exceptional
+    /// behavior is required.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// Thrown when the collection value is <see langword="null" /> and the active automatic-null provider declines to
+    /// create an error. Guard nullable collections explicitly, for example with <c>IsNotNull()</c>, when
+    /// deterministic non-exceptional behavior is required.
     /// </exception>
     public static ValidatedValue<List<TValidated>> ValidateItems<TItem, TValidated>(
         this Check<List<TItem>> check,
@@ -396,8 +450,12 @@ public static class CheckExtensions
             return ValidatedValue<List<TValidated>>.NoValue;
         }
 
+        if (!TryGetCollectionForItemValidation(check, out var collection))
+        {
+            return ValidatedValue<List<TValidated>>.NoValue;
+        }
+
         var checkpoint = check.Context.CreateCheckpoint();
-        var collection = GetRequiredCollectionValue(check);
         var validatedItems = new List<TValidated>(collection.Count);
         for (var i = 0; i < collection.Count; i++)
         {
@@ -467,8 +525,6 @@ public static class CheckExtensions
     /// <summary>
     /// Validates and potentially normalizes each item of a mutable indexed collection in place with an asynchronous
     /// validator.
-    /// Nullable collections must be guarded explicitly, for example with <c>IsNotNull()</c>, before calling this
-    /// method.
     /// </summary>
     /// <typeparam name="TCollection">The mutable collection type.</typeparam>
     /// <typeparam name="TItem">The item type.</typeparam>
@@ -476,9 +532,17 @@ public static class CheckExtensions
     /// <param name="itemValidator">The asynchronous validator applied to each item in the collection.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <remarks>
+    /// When the collection is <see langword="null" />, this method first asks the active automatic-null provider to
+    /// create the standard null error for the collection target. Guard nullable collections explicitly, for example
+    /// with <c>IsNotNull()</c>, when the active provider may decline to create an error and deterministic
+    /// non-exceptional behavior is required.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// Thrown when the collection value is <see langword="null" /> and the active automatic-null provider declines to
+    /// create an error. Guard nullable collections explicitly, for example with <c>IsNotNull()</c>, when
+    /// deterministic non-exceptional behavior is required.
     /// </exception>
     public static async ValueTask<ValidatedValue<TCollection>> ValidateItemsAsync<TCollection, TItem>(
         this Check<TCollection> check,
@@ -497,8 +561,12 @@ public static class CheckExtensions
             return ValidatedValue<TCollection>.NoValue;
         }
 
+        if (!TryGetCollectionForItemValidation(check, out var collection))
+        {
+            return ValidatedValue<TCollection>.NoValue;
+        }
+
         var checkpoint = check.Context.CreateCheckpoint();
-        var collection = GetRequiredCollectionValue(check);
         for (var i = 0; i < collection.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -530,9 +598,17 @@ public static class CheckExtensions
     /// <param name="itemValidator">The asynchronous validator applied to each item in the collection.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <remarks>
+    /// When the collection is <see langword="null" />, this method first asks the active automatic-null provider to
+    /// create the standard null error for the collection target. Guard nullable collections explicitly, for example
+    /// with <c>IsNotNull()</c>, when the active provider may decline to create an error and deterministic
+    /// non-exceptional behavior is required.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// Thrown when the collection value is <see langword="null" /> and the active automatic-null provider declines to
+    /// create an error. Guard nullable collections explicitly, for example with <c>IsNotNull()</c>, when
+    /// deterministic non-exceptional behavior is required.
     /// </exception>
     public static async ValueTask<ValidatedValue<IReadOnlyList<TItem>>> ValidateItemsAsync<TItem>(
         this Check<IReadOnlyList<TItem>> check,
@@ -550,8 +626,12 @@ public static class CheckExtensions
             return ValidatedValue<IReadOnlyList<TItem>>.NoValue;
         }
 
+        if (!TryGetCollectionForItemValidation(check, out var collection))
+        {
+            return ValidatedValue<IReadOnlyList<TItem>>.NoValue;
+        }
+
         var checkpoint = check.Context.CreateCheckpoint();
-        var collection = GetRequiredCollectionValue(check);
         for (var i = 0; i < collection.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -621,9 +701,17 @@ public static class CheckExtensions
     /// <param name="validateItem">The asynchronous item-validation delegate.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <remarks>
+    /// When the collection is <see langword="null" />, this method first asks the active automatic-null provider to
+    /// create the standard null error for the collection target. Guard nullable collections explicitly, for example
+    /// with <c>IsNotNull()</c>, when the active provider may decline to create an error and deterministic
+    /// non-exceptional behavior is required.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="validateItem" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// Thrown when the collection value is <see langword="null" /> and the active automatic-null provider declines to
+    /// create an error. Guard nullable collections explicitly, for example with <c>IsNotNull()</c>, when
+    /// deterministic non-exceptional behavior is required.
     /// </exception>
     public static async ValueTask<ValidatedValue<TCollection>> ValidateItemsAsync<TCollection, TItem>(
         this Check<TCollection> check,
@@ -642,8 +730,12 @@ public static class CheckExtensions
             return ValidatedValue<TCollection>.NoValue;
         }
 
+        if (!TryGetCollectionForItemValidation(check, out var collection))
+        {
+            return ValidatedValue<TCollection>.NoValue;
+        }
+
         var checkpoint = check.Context.CreateCheckpoint();
-        var collection = GetRequiredCollectionValue(check);
         for (var i = 0; i < collection.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -663,9 +755,17 @@ public static class CheckExtensions
     /// <param name="validateItem">The asynchronous item-validation delegate that can return a replacement item value.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The validated collection or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <remarks>
+    /// When the collection is <see langword="null" />, this method first asks the active automatic-null provider to
+    /// create the standard null error for the collection target. Guard nullable collections explicitly, for example
+    /// with <c>IsNotNull()</c>, when the active provider may decline to create an error and deterministic
+    /// non-exceptional behavior is required.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="validateItem" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// Thrown when the collection value is <see langword="null" /> and the active automatic-null provider declines to
+    /// create an error. Guard nullable collections explicitly, for example with <c>IsNotNull()</c>, when
+    /// deterministic non-exceptional behavior is required.
     /// </exception>
     public static async ValueTask<ValidatedValue<TCollection>> ValidateItemsAsync<TCollection, TItem>(
         this Check<TCollection> check,
@@ -684,8 +784,12 @@ public static class CheckExtensions
             return ValidatedValue<TCollection>.NoValue;
         }
 
+        if (!TryGetCollectionForItemValidation(check, out var collection))
+        {
+            return ValidatedValue<TCollection>.NoValue;
+        }
+
         var checkpoint = check.Context.CreateCheckpoint();
-        var collection = GetRequiredCollectionValue(check);
         for (var i = 0; i < collection.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -712,9 +816,17 @@ public static class CheckExtensions
     /// <param name="itemValidator">The asynchronous validator applied to each item in the collection.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The transformed array or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <remarks>
+    /// When the array is <see langword="null" />, this method first asks the active automatic-null provider to create
+    /// the standard null error for the collection target. Guard nullable collections explicitly, for example with
+    /// <c>IsNotNull()</c>, when the active provider may decline to create an error and deterministic non-exceptional
+    /// behavior is required.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// Thrown when the collection value is <see langword="null" /> and the active automatic-null provider declines to
+    /// create an error. Guard nullable collections explicitly, for example with <c>IsNotNull()</c>, when
+    /// deterministic non-exceptional behavior is required.
     /// </exception>
     public static async ValueTask<ValidatedValue<TValidated[]>> ValidateItemsAsync<TItem, TValidated>(
         this Check<TItem[]> check,
@@ -732,8 +844,12 @@ public static class CheckExtensions
             return ValidatedValue<TValidated[]>.NoValue;
         }
 
+        if (!TryGetCollectionForItemValidation(check, out var collection))
+        {
+            return ValidatedValue<TValidated[]>.NoValue;
+        }
+
         var checkpoint = check.Context.CreateCheckpoint();
-        var collection = GetRequiredCollectionValue(check);
         var validatedItems = new TValidated[collection.Length];
         for (var i = 0; i < collection.Length; i++)
         {
@@ -767,9 +883,17 @@ public static class CheckExtensions
     /// <param name="itemValidator">The asynchronous validator applied to each item in the collection.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The transformed list or <see cref="ValidatedValue{T}.NoValue" /> when validation failed.</returns>
+    /// <remarks>
+    /// When the list is <see langword="null" />, this method first asks the active automatic-null provider to create
+    /// the standard null error for the collection target. Guard nullable collections explicitly, for example with
+    /// <c>IsNotNull()</c>, when the active provider may decline to create an error and deterministic non-exceptional
+    /// behavior is required.
+    /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemValidator" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the collection value is <see langword="null" /> and the check was not short-circuited first.
+    /// Thrown when the collection value is <see langword="null" /> and the active automatic-null provider declines to
+    /// create an error. Guard nullable collections explicitly, for example with <c>IsNotNull()</c>, when
+    /// deterministic non-exceptional behavior is required.
     /// </exception>
     public static async ValueTask<ValidatedValue<List<TValidated>>> ValidateItemsAsync<TItem, TValidated>(
         this Check<List<TItem>> check,
@@ -787,8 +911,12 @@ public static class CheckExtensions
             return ValidatedValue<List<TValidated>>.NoValue;
         }
 
+        if (!TryGetCollectionForItemValidation(check, out var collection))
+        {
+            return ValidatedValue<List<TValidated>>.NoValue;
+        }
+
         var checkpoint = check.Context.CreateCheckpoint();
-        var collection = GetRequiredCollectionValue(check);
         var validatedItems = new List<TValidated>(collection.Count);
         for (var i = 0; i < collection.Count; i++)
         {
@@ -866,17 +994,33 @@ public static class CheckExtensions
         return checkpoint.ToValidatedValue(validatedItems.DrainToImmutable());
     }
 
-    private static TCollection GetRequiredCollectionValue<TCollection>(Check<TCollection> check)
+    private static bool TryGetCollectionForItemValidation<TCollection>(
+        Check<TCollection> check,
+        [NotNullWhen(true)] out TCollection? collection
+    )
     {
-        if (check.Value is null)
+        collection = check.Value;
+        if (collection is not null)
         {
-            throw new InvalidOperationException(
-                "ValidateItems requires a non-null collection. Guard nullable collections explicitly, for example " +
-                "with IsNotNull(), before validating items."
-            );
+            return true;
         }
 
-        return check.Value;
+        var displayName = check.DisplayName ?? check.Target;
+
+        // Pass the raw TargetDescriptor (not the resolved absolute target) so that
+        // GetAutomaticNullTarget can apply the caller-expression special case,
+        // which collapses a simple identifier to the context prefix (e.g. "request"
+        // rather than "request.nullableListTags"). Using GetResolvedAbsoluteTargetDescriptor()
+        // instead would bypass that branch and produce a fully-qualified target.
+        if (check.Context.TryCreateAutomaticNullError(collection, check.TargetDescriptor, displayName, out var error))
+        {
+            check.Context.AddError(error);
+            return false;
+        }
+
+        throw new InvalidOperationException(
+            "ValidateItems and ValidateItemsAsync require a non-null collection when the active automatic-null provider does not create an error. Guard nullable collections explicitly, for example with IsNotNull(), before validating items."
+        );
     }
 
     private static Check<TItem> CreateItemCheck<TCollection, TItem>(Check<TCollection> check, TItem item, int index) =>

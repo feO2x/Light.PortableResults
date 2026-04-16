@@ -327,12 +327,12 @@ public sealed class CollectionValidationWorkflowTests
     }
 
     [Fact]
-    public void ValidateItems_ShouldThrow_WhenArrayIsNull()
+    public void ValidateItems_ShouldReturnAutomaticNullError_WhenArrayIsNull()
     {
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
         string[] nullableArrayTags = null!;
 
-        Action act = () => context
+        var result = context
            .Check(
                 nullableArrayTags,
                 NoOpValueNormalizer.Instance,
@@ -341,25 +341,29 @@ public sealed class CollectionValidationWorkflowTests
             )
            .ValidateItems(new StringLengthValidator(ValidationWorkflowTestData.ValidationContextFactory));
 
-        act.Should().Throw<InvalidOperationException>();
+        result.Should().Be(ValidatedValue<int[]>.NoValue);
+        context.Errors.Should().Equal(new Errors(CreateAutomaticNullError("Nullable array tags", string.Empty)));
     }
 
     [Fact]
-    public void ValidateItems_ShouldThrow_WhenListIsNull()
+    public void ValidateItems_ShouldReturnAutomaticNullError_WhenListIsNull()
     {
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
         List<string> nullableListTags = null!;
 
-        Action act = () => context
+        var validator = new TrackingStringValidator(ValidationWorkflowTestData.ValidationContextFactory);
+        var prefixedContext = context.ForMember("request", isNormalized: true);
+        var result = prefixedContext
            .Check(
                 nullableListTags,
-                NoOpValueNormalizer.Instance,
-                target: "request.NullableListTags",
-                displayName: "Nullable list tags"
+                ValidationTarget.CallerExpression(nameof(nullableListTags)),
+                NoOpValueNormalizer.Instance
             )
-           .ValidateItems(new StringLengthValidator(ValidationWorkflowTestData.ValidationContextFactory));
+           .ValidateItems(validator);
 
-        act.Should().Throw<InvalidOperationException>();
+        result.Should().Be(ValidatedValue<List<string>>.NoValue);
+        validator.InvocationCount.Should().Be(0);
+        context.Errors.Should().Equal(new Errors(CreateAutomaticNullError(nameof(nullableListTags), "request")));
     }
 
     [Fact]
@@ -367,26 +371,86 @@ public sealed class CollectionValidationWorkflowTests
     {
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
         IReadOnlyList<string> nullableTags = null!;
+        var wasInvoked = false;
 
         var result = context
            .Check(nullableTags, NoOpValueNormalizer.Instance, target: "request.Tags", displayName: "Tags")
            .ShortCircuit()
-           .ValidateItems((Action<Check<string>>) (static itemCheck => itemCheck.AddError("not reached", "Never")));
+           .ValidateItems(
+                (Action<Check<string>>) (itemCheck =>
+                {
+                    wasInvoked = true;
+                    itemCheck.AddError("not reached", "Never");
+                })
+            );
 
         result.Should().Be(ValidatedValue<IReadOnlyList<string>>.NoValue);
+        wasInvoked.Should().BeFalse();
+        context.Errors.Should().BeEmpty();
     }
 
     [Fact]
-    public void ValidateItems_ShouldThrow_WhenCollectionIsNull()
+    public void ValidateItems_ShouldReturnAutomaticNullError_WhenCollectionIsNull()
     {
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
         IReadOnlyList<string> nullableTags = null!;
+        var wasInvoked = false;
+
+        var result = context
+           .Check(nullableTags, NoOpValueNormalizer.Instance, target: "request.Tags", displayName: "Tags")
+           .ValidateItems(
+                (Action<Check<string>>) (itemCheck =>
+                {
+                    wasInvoked = true;
+                    itemCheck.AddError("not reached", "Never");
+                })
+            );
+
+        result.Should().Be(ValidatedValue<IReadOnlyList<string>>.NoValue);
+        wasInvoked.Should().BeFalse();
+        context.Errors.Should().Equal(new Errors(CreateAutomaticNullError("Tags", string.Empty)));
+    }
+
+    [Fact]
+    public void ValidateItems_ShouldSkipItemValidationDelegate_WhenCollectionIsNull()
+    {
+        var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
+        List<string> nullableTags = null!;
+        var invocationCount = 0;
+
+        var result = context
+           .Check(nullableTags, NoOpValueNormalizer.Instance, target: "request.Tags", displayName: "Tags")
+           .ValidateItems(
+                (Func<Check<string>, ValidatedValue<string>>) (
+                    itemCheck =>
+                    {
+                        invocationCount++;
+                        return ValidatedValue.Success(itemCheck.Value.Trim());
+                    }
+                )
+            );
+
+        result.Should().Be(ValidatedValue<List<string>>.NoValue);
+        invocationCount.Should().Be(0);
+        context.Errors.Should().Equal(new Errors(CreateAutomaticNullError("Tags", string.Empty)));
+    }
+
+    [Fact]
+    public void ValidateItems_ShouldThrow_WhenAutomaticNullProviderDeclinesCollectionError()
+    {
+        var context = CreateContextWithoutAutomaticNullErrors();
+        List<string> nullableTags = null!;
+        var validator = new TrackingStringValidator(ValidationWorkflowTestData.ValidationContextFactory);
 
         Action act = () => context
            .Check(nullableTags, NoOpValueNormalizer.Instance, target: "request.Tags", displayName: "Tags")
-           .ValidateItems((Action<Check<string>>) (static itemCheck => itemCheck.AddError("not reached", "Never")));
+           .ValidateItems(validator);
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should()
+           .Throw<InvalidOperationException>()
+           .WithMessage("*active automatic-null provider*IsNotNull()*");
+        validator.InvocationCount.Should().Be(0);
+        context.Errors.Should().BeEmpty();
     }
 
     [Fact]
@@ -402,7 +466,7 @@ public sealed class CollectionValidationWorkflowTests
 
         result.TryGetValue(out var validatedAddresses).Should().BeTrue();
         validatedAddresses.Should().NotBeNull();
-        validatedAddresses![0].ZipCode.Should().Be("12345");
+        validatedAddresses[0].ZipCode.Should().Be("12345");
     }
 
     [Fact]
@@ -509,7 +573,7 @@ public sealed class CollectionValidationWorkflowTests
 
         result.TryGetValue(out var validatedReadOnly).Should().BeTrue();
         validatedReadOnly.Should().NotBeNull();
-        validatedReadOnly!.Count.Should().Be(1);
+        validatedReadOnly.Count.Should().Be(1);
     }
 
     [Fact]
@@ -737,24 +801,24 @@ public sealed class CollectionValidationWorkflowTests
     }
 
     [Fact]
-    public async Task ValidateItemsAsync_ShouldThrow_WhenReadOnlyListIsNull()
+    public async Task ValidateItemsAsync_ShouldReturnAutomaticNullError_WhenReadOnlyListIsNull()
     {
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
         IReadOnlyList<string> nullableReadOnlyTags = null!;
 
-        Func<Task> act = async () => await context
+        var validator = new TrackingAsyncStringValidator(ValidationWorkflowTestData.ValidationContextFactory);
+        var result = await context
            .Check(
                 nullableReadOnlyTags,
                 NoOpValueNormalizer.Instance,
                 target: "request.NullableTags",
                 displayName: "Nullable tags"
             )
-           .ValidateItemsAsync(
-                new AsyncTrimmedRequiredTextValidator(ValidationWorkflowTestData.ValidationContextFactory),
-                TestContext.Current.CancellationToken
-            );
+           .ValidateItemsAsync(validator, TestContext.Current.CancellationToken);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        result.Should().Be(ValidatedValue<IReadOnlyList<string>>.NoValue);
+        validator.InvocationCount.Should().Be(0);
+        context.Errors.Should().Equal(new Errors(CreateAutomaticNullError("Nullable tags", string.Empty)));
     }
 
     [Fact]
@@ -904,12 +968,12 @@ public sealed class CollectionValidationWorkflowTests
     }
 
     [Fact]
-    public async Task ValidateItemsAsync_ShouldThrow_WhenArrayIsNull()
+    public async Task ValidateItemsAsync_ShouldReturnAutomaticNullError_WhenArrayIsNull()
     {
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
         string[] nullableArrayTags = null!;
 
-        Func<Task> act = async () => await context
+        var result = await context
            .Check(
                 nullableArrayTags,
                 NoOpValueNormalizer.Instance,
@@ -921,27 +985,187 @@ public sealed class CollectionValidationWorkflowTests
                 TestContext.Current.CancellationToken
             );
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        result.Should().Be(ValidatedValue<int[]>.NoValue);
+        context.Errors.Should().Equal(new Errors(CreateAutomaticNullError("Nullable array tags", string.Empty)));
     }
 
     [Fact]
-    public async Task ValidateItemsAsync_ShouldThrow_WhenListIsNull()
+    public async Task ValidateItemsAsync_ShouldReturnAutomaticNullError_WhenListIsNull()
     {
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
         List<string> nullableListTags = null!;
 
-        Func<Task> act = async () => await context
+        using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken
+        );
+        await cancellationTokenSource.CancelAsync();
+
+        var validator = new TrackingAsyncStringValidator(ValidationWorkflowTestData.ValidationContextFactory);
+        var result = await context
            .Check(
                 nullableListTags,
                 NoOpValueNormalizer.Instance,
                 target: "request.NullableListTags",
                 displayName: "Nullable list tags"
             )
-           .ValidateItemsAsync(
-                new AsyncStringLengthValidator(ValidationWorkflowTestData.ValidationContextFactory),
-                TestContext.Current.CancellationToken
+           .ValidateItemsAsync(validator, cancellationTokenSource.Token);
+
+        result.Should().Be(ValidatedValue<List<string>>.NoValue);
+        validator.InvocationCount.Should().Be(0);
+        context.Errors.Should().Equal(new Errors(CreateAutomaticNullError("Nullable list tags", string.Empty)));
+    }
+
+    [Fact]
+    public async Task ValidateItemsAsync_ShouldSkipDelegateAndCancellationChecks_WhenCollectionIsNull()
+    {
+        var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
+        List<int> nullableQuantities = null!;
+        var invocationCount = 0;
+        using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken
+        );
+        await cancellationTokenSource.CancelAsync();
+
+        var result = await context
+           .Check(
+                nullableQuantities,
+                NoOpValueNormalizer.Instance,
+                target: "request.Quantities",
+                displayName: "Quantities"
+            )
+           .ValidateItemsAsync<List<int>, int>(
+                (itemCheck, cancellationToken) =>
+                {
+                    invocationCount++;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return ValueTask.FromResult(ValidatedValue.Success(itemCheck.Value * 2));
+                },
+                cancellationTokenSource.Token
             );
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        result.Should().Be(ValidatedValue<List<int>>.NoValue);
+        invocationCount.Should().Be(0);
+        context.Errors.Should().Equal(new Errors(CreateAutomaticNullError("Quantities", string.Empty)));
+    }
+
+    [Fact]
+    public async Task ValidateItemsAsync_ShouldRespectShortCircuit_WhenCollectionIsNull()
+    {
+        var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
+        IReadOnlyList<int> nullableQuantities = null!;
+        var wasInvoked = false;
+        using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken
+        );
+        await cancellationTokenSource.CancelAsync();
+
+        var result = await context
+           .Check(
+                nullableQuantities,
+                NoOpValueNormalizer.Instance,
+                target: "request.Quantities",
+                displayName: "Quantities"
+            )
+           .ShortCircuit()
+           .ValidateItemsAsync<IReadOnlyList<int>, int>(
+                (_, cancellationToken) =>
+                {
+                    wasInvoked = true;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return ValueTask.CompletedTask;
+                },
+                cancellationTokenSource.Token
+            );
+
+        result.Should().Be(ValidatedValue<IReadOnlyList<int>>.NoValue);
+        wasInvoked.Should().BeFalse();
+        context.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ValidateItemsAsync_ShouldThrow_WhenAutomaticNullProviderDeclinesCollectionError()
+    {
+        var context = CreateContextWithoutAutomaticNullErrors();
+        IReadOnlyList<int> nullableQuantities = null!;
+        var invocationCount = 0;
+        using var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken
+        );
+        await cancellationTokenSource.CancelAsync();
+
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
+        Func<Task> act = async () => await context
+           .Check(
+                nullableQuantities,
+                NoOpValueNormalizer.Instance,
+                target: "request.Quantities",
+                displayName: "Quantities"
+            )
+           .ValidateItemsAsync<IReadOnlyList<int>, int>(
+                (_, cancellationToken) =>
+                {
+                    invocationCount++;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return ValueTask.CompletedTask;
+                },
+                cancellationTokenSource.Token
+            );
+
+        await act.Should()
+           .ThrowAsync<InvalidOperationException>()
+           .WithMessage("*active automatic-null provider*IsNotNull()*");
+        invocationCount.Should().Be(0);
+        context.Errors.Should().BeEmpty();
+    }
+
+    private static Error CreateAutomaticNullError(string displayName, string target) =>
+        ValidationWorkflowTestData.CreateValidationError($"{displayName} must not be null", "NotNull", target);
+
+    private static ValidationContext CreateContextWithoutAutomaticNullErrors()
+    {
+        var options = new ValidationContextOptions
+        {
+            ValueNormalizer = NoOpValueNormalizer.Instance,
+            AutomaticNullErrorProvider = NoOpAutomaticNullErrorProvider.Instance
+        };
+
+        return DefaultValidationContextFactory.Create(options).CreateValidationContext();
+    }
+
+    private sealed class TrackingStringValidator : Validator<string>
+    {
+        public TrackingStringValidator(IValidationContextFactory validationContextFactory)
+            : base(validationContextFactory) { }
+
+        public int InvocationCount { get; private set; }
+
+        protected override ValidatedValue<string> PerformValidation(
+            ValidationContext context,
+            ValidationCheckpoint checkpoint,
+            string value
+        )
+        {
+            InvocationCount++;
+            return ValidatedValue.Success(value);
+        }
+    }
+
+    private sealed class TrackingAsyncStringValidator : AsyncValidator<string>
+    {
+        public TrackingAsyncStringValidator(IValidationContextFactory validationContextFactory)
+            : base(validationContextFactory) { }
+
+        public int InvocationCount { get; private set; }
+
+        protected override ValueTask<ValidatedValue<string>> PerformValidationAsync(
+            ValidationContext context,
+            ValidationCheckpoint checkpoint,
+            string value,
+            CancellationToken cancellationToken
+        )
+        {
+            InvocationCount++;
+            return ValueTask.FromResult(ValidatedValue.Success(value));
+        }
     }
 }
