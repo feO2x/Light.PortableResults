@@ -658,17 +658,19 @@ public sealed class PurchaseOrderValidator : Validator<PurchaseOrderDto>
         // automatically — no explicit IsNotNull() call needed here.
         context.Check(dto.ShippingAddress).ValidateChild(_addressValidator);
 
-        // All ValidateItems overloads require a non-null collection. Guard with IsNotNull()
-        // when the collection itself can be null (which short-circuits ValidateItems on failure).
+        // ValidateItems automatically handles a null collection by emitting the standard
+        // NotNull error via the active AutomaticNullErrorProvider — no explicit IsNotNull()
+        // is needed under default configuration. Guard explicitly only when the provider is
+        // configured to skip automatic null errors (e.g. NoOpAutomaticNullErrorProvider).
         // The default string normalization already trims whitespace for individual string items,
         // so no IsNotNullOrWhiteSpace() is needed inside the lambda.
-        context.Check(dto.Tags).IsNotNull().ValidateItems(
+        context.Check(dto.Tags).ValidateItems(
             static (Check<string> tag) => tag.HasLengthIn(2, 30)
         );
 
         // ValidateItems with a Validator<TItem> delegates null-item handling to the item
         // validator's automatic null check, just like ValidateChild does for single objects.
-        context.Check(dto.Items).IsNotNull().ValidateItems(_itemValidator);
+        context.Check(dto.Items).ValidateItems(_itemValidator);
 
         return checkpoint.ToValidatedValue(dto);
     }
@@ -726,7 +728,31 @@ services
     .AddSingleton<PurchaseOrderValidator>();
 ```
 
-#### Validation Benchmarks
+### Automatic Null Checking
+
+The validation framework handles `null` values automatically so you rarely need an explicit `IsNotNull()` guard. The active `AutomaticNullErrorProvider` (configurable via `ValidationContextOptions`) decides what error to produce; under the default configuration it emits a `NotNull` validation error.
+
+- **Validators (`Validator<T>`, `Validator<TSource, TValidated>`, `AsyncValidator<T>`, `AsyncValidator<TSource, TValidated>`)** — when the source value passed to `Validate` / `ValidateAsync` is `null`, the validator adds the automatic null error and returns a failed `Result` without calling `PerformValidation(Async)`. The `isAutomaticNullCheckingEnabled` constructor parameter (default `true`) controls this per validator class.
+
+- **Child validation (`ValidateChild`, `ValidateChildAsync`)** — when a nested collection value is `null`, the child validator's own automatic null check fires, adds the error for the child target, and returns `ValidatedValue<T>.NoValue`. The parent continues collecting other errors in the same pass. `Check<T>` instances that are short-circuited are ignored (no automatic null error will be added to the context, `PerformValidation(Async)` will not be called).
+
+- **Collection item validation (`ValidateItems`, `ValidateItemsAsync`)** — when a `null` collection is passed on a non-short-circuited check, the same automatic null-error pipeline runs for the collection target and the method returns `ValidatedValue<...>.NoValue` without invoking any item validators or delegates. Regarding the items in the collection: item validators as well as delegates have automatic null checking of items, too.
+
+Guard explicitly with `IsNotNull()` when `NoOpAutomaticNullErrorProvider` was set on `ValidationContextOptions.AutomaticNullErrorProvider` (which means that automatic null errors are disabled).
+
+```csharp
+// Default configuration — automatic null handling, no explicit guard needed
+context.Check(dto.ShippingAddress).ValidateChild(_addressValidator);
+context.Check(dto.Tags).ValidateItems(static (Check<string> tag) => tag.HasLengthIn(2, 30));
+
+// Explicit guard — required when the active provider does not emit automatic null errors,
+// or when you want to short-circuit further checks on null
+context.Check(dto.Tags).IsNotNull().ValidateItems(static (Check<string> tag) => tag.HasLengthIn(2, 30));
+```
+
+Short-circuited checks are always a no-op: validation methods return `ValidatedValue<...>.NoValue` immediately without adding any error or invoking validators or delegates.
+
+### Validation Benchmarks
 
 Below are benchmark results comparing Light.PortableResults to FluentValidation using flat and composite DTOs (see the `benchmarks/Benchmarks` project for details). The `PurchaseOrderDto` example above corresponds to the Complex DTO scenario.
 
@@ -740,7 +766,7 @@ Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
   DefaultJob : .NET 10.0.5 (10.0.5, 10.0.526.15411), Arm64 RyuJIT armv8.0-a
 ```
 
-##### Flat DTO Becnhmark Setup
+#### Flat DTO Becnhmark Setup
 
 ```csharp
 public sealed record MovieRatingDto
@@ -783,7 +809,7 @@ public sealed class LightPortableResultsMovieRatingDtoValidator : Validator<Movi
 
 The details can be found [here](https://github.com/feO2x/Light.PortableResults/blob/main/benchmarks/Benchmarks/FlatDtoValidationBenchmarks.cs).
 
-##### Valid Flat DTO Benchmarks
+#### Valid Flat DTO Benchmarks
 
 No errors on all three properties.
 
@@ -793,7 +819,7 @@ No errors on all three properties.
 | FluentValidationSingleton         |   105.84 ns | 0.246 ns | 0.205 ns |  0.08 | 0.0755 | 0.0001 |     632 B |        0.09 |
 | LightPortableResults              |    50.49 ns | 0.091 ns | 0.076 ns |  0.04 | 0.0124 |      - |     104 B |        0.01 |
 
-##### Invalid Flat DTO Benchmarks
+#### Invalid Flat DTO Benchmarks
 
 All three properties are invalid.
 
@@ -803,7 +829,7 @@ All three properties are invalid.
 | FluentValidationSingleton         | 1,793.6 ns |  3.93 ns | 3.48 ns |  0.57 | 0.9937 | 0.0095 |    8320 B |        0.57 |
 | LightPortableResults              |   289.6 ns |  0.57 ns | 0.51 ns |  0.09 | 0.0820 |      - |     688 B |        0.05 |
 
-##### Complex DTO Benchmark Setup
+#### Complex DTO Benchmark Setup
 
 This is the DTO with one nested object, one nested collection with primitive items (strings), and one nested collection with complex items.
 
@@ -835,7 +861,7 @@ public sealed record OrderItemDto
 
 The details can be found [here](https://github.com/feO2x/Light.PortableResults/blob/main/benchmarks/Benchmarks/ComplexDtoValidationBenchmarks.cs).
 
-##### Valid Complex DTO Benchmarks
+#### Valid Complex DTO Benchmarks
 
 No errors in the DTO object graph.
 
@@ -845,7 +871,7 @@ No errors in the DTO object graph.
 | FluentValidationSingleton         | 1,685.9 ns |  5.01 ns |  4.69 ns |  0.20 | 0.7057 | 0.0019 |   5.77 KB |        0.17 |
 | LightPortableResults              |   742.2 ns |  7.40 ns |  6.93 ns |  0.09 | 0.1554 |      - |   1.27 KB |        0.04 |
 
-##### Invalid Complex DTO Benchmarks
+#### Invalid Complex DTO Benchmarks
 
 Nine errors overall in the object graph.
 
