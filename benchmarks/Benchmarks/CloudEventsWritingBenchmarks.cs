@@ -28,7 +28,7 @@ public class CloudEventsWritingBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        var serializerOptions = Module.CreateDefaultSerializerOptions();
+        var serializerOptions = PortableResultsCloudEventsWritingModule.CreateDefaultSerializerOptions();
         serializerOptions.TypeInfoResolverChain.Add(CloudEventsWritingBenchmarksJsonContext.Default);
 
         _options = new PortableResultsCloudEventsWriteOptions

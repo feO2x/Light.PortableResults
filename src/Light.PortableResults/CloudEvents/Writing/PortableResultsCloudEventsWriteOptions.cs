@@ -29,7 +29,8 @@ public sealed record PortableResultsCloudEventsWriteOptions
     /// <summary>
     /// Gets or sets serializer options used for result value serialization.
     /// </summary>
-    public JsonSerializerOptions SerializerOptions { get; set; } = Module.DefaultSerializerOptions;
+    public JsonSerializerOptions SerializerOptions { get; set; } =
+        PortableResultsCloudEventsWritingModule.DefaultSerializerOptions;
 
     /// <summary>
     /// Gets or sets the conversion service used to map metadata entries to CloudEvents attributes.

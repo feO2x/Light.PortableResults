@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Light.PortableResults.Tests.CloudEvents.Writing;
 
-public sealed class ModuleTests
+public sealed class PortableResultsCloudEventsWritingModuleTests
 {
     [Fact]
     public void AddPortableResultsCloudEventsWriteOptions_ShouldRegisterOptions()
@@ -28,7 +28,7 @@ public sealed class ModuleTests
         options.Source.Should().BeNull();
         options.MetadataSerializationMode.Should().Be(MetadataSerializationMode.Always);
         options.ConversionService.Should().BeSameAs(DefaultCloudEventsAttributeConversionService.Instance);
-        options.SerializerOptions.Should().BeSameAs(Module.DefaultSerializerOptions);
+        options.SerializerOptions.Should().BeSameAs(PortableResultsCloudEventsWritingModule.DefaultSerializerOptions);
     }
 
     [Fact]
