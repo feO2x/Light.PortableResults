@@ -7,7 +7,7 @@ namespace Light.PortableResults.AspNetCore.MinimalApis;
 /// <summary>
 /// Service registration helpers for Light.PortableResults Minimal APIs.
 /// </summary>
-public static class Module
+public static class PortableResultsMinimalApisModule
 {
     /// <summary>
     /// Registers all services required for Light.PortableResults Minimal APIs.
