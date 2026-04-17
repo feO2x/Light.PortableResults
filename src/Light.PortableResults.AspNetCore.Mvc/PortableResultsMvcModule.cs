@@ -7,7 +7,7 @@ namespace Light.PortableResults.AspNetCore.Mvc;
 /// <summary>
 /// Service registration helpers for Light.PortableResults MVC.
 /// </summary>
-public static class Module
+public static class PortableResultsMvcModule
 {
     /// <summary>
     /// Registers all services required for Light.PortableResults MVC.
