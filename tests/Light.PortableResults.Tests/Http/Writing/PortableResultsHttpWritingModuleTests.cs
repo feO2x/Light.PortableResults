@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Light.PortableResults.Tests.Http.Writing;
 
-public sealed class ModuleTests
+public sealed class PortableResultsHttpWritingModuleTests
 {
     [Fact]
     public void AddPortableResultsHttpHeaderConversionService_ShouldUseComparerForKeys()
@@ -44,7 +44,7 @@ public sealed class ModuleTests
     [Fact]
     public void AddDefaultPortableResultsJsonConverters_ShouldThrow_WhenSerializerOptionsIsNull()
     {
-        var act = () => Module.AddDefaultPortableResultsHttpWriteJsonConverters(null!);
+        var act = () => PortableResultsHttpWritingModule.AddDefaultPortableResultsHttpWriteJsonConverters(null!);
 
         act.Should().Throw<ArgumentNullException>().Where(x => x.ParamName == "serializerOptions");
     }

@@ -13,7 +13,7 @@ namespace Light.PortableResults.Http.Writing;
 /// <summary>
 /// Provides methods to register services required for Light.PortableResults HTTP writing.
 /// </summary>
-public static class Module
+public static class PortableResultsHttpWritingModule
 {
     /// <summary>
     /// Registers <see cref="PortableResultsHttpWriteOptions" /> in the service container.
