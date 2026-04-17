@@ -290,6 +290,11 @@ public static class CheckExtensions
         var collectionCheckpoint = check.Context.CreateCheckpoint();
         for (var i = 0; i < collection.Count; i++)
         {
+            if (TryHandleItemAutomaticNull(check, collection[i], i))
+            {
+                continue;
+            }
+
             validateItem(CreateItemCheck(check, collection[i], i));
         }
 
@@ -341,6 +346,11 @@ public static class CheckExtensions
         var collectionCheckpoint = check.Context.CreateCheckpoint();
         for (var i = 0; i < collection.Count; i++)
         {
+            if (TryHandleItemAutomaticNull(check, collection[i], i))
+            {
+                continue;
+            }
+
             var validatedValue = validateItem(CreateItemCheck(check, collection[i], i));
             if (validatedValue.HasValue)
             {
@@ -736,6 +746,12 @@ public static class CheckExtensions
         for (var i = 0; i < collection.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (TryHandleItemAutomaticNull(check, collection[i], i))
+            {
+                continue;
+            }
+
             await validateItem(CreateItemCheck(check, collection[i], i), cancellationToken).ConfigureAwait(false);
         }
 
@@ -790,6 +806,11 @@ public static class CheckExtensions
         for (var i = 0; i < collection.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (TryHandleItemAutomaticNull(check, collection[i], i))
+            {
+                continue;
+            }
 
             var validatedValue =
                 await validateItem(CreateItemCheck(check, collection[i], i), cancellationToken).ConfigureAwait(false);
@@ -1017,6 +1038,34 @@ public static class CheckExtensions
         throw new InvalidOperationException(
             "ValidateItems and ValidateItemsAsync require a non-null collection when the active automatic-null provider does not create an error. Guard nullable collections explicitly, for example with IsNotNull(), before validating items."
         );
+    }
+
+    private static bool TryHandleItemAutomaticNull<TCollection, TItem>(
+        Check<TCollection> check,
+        TItem item,
+        int index
+    )
+    {
+        if (item is not null)
+        {
+            return false;
+        }
+
+        var itemContext = check.CreateChildContextForIndex(index);
+        var displayName = CreateIndexedDisplayName(check, index);
+
+        if (!itemContext.TryCreateAutomaticNullError(
+                item,
+                ValidationTarget.Relative(string.Empty, isNormalized: true),
+                displayName,
+                out var error
+            ))
+        {
+            return false;
+        }
+
+        itemContext.AddError(error);
+        return true;
     }
 
     private static Check<TItem> CreateItemCheck<TCollection, TItem>(Check<TCollection> check, TItem item, int index) =>

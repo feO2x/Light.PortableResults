@@ -1118,6 +1118,187 @@ public sealed class CollectionValidationWorkflowTests
         context.Errors.Should().BeEmpty();
     }
 
+    [Fact]
+    public void ValidateItems_ShouldAddAutomaticNullError_WhenItemIsNullAndUsingActionDelegate()
+    {
+        var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
+        var items = new List<string?> { "valid", null };
+        var invocationCount = 0;
+
+        var result = context
+           .Check(items, target: "request.Items", displayName: "Items")
+           .ValidateItems(
+                (Action<Check<string?>>) (_ => invocationCount++)
+            );
+
+        result.Should().Be(ValidatedValue<List<string?>>.NoValue);
+        invocationCount.Should().Be(1);
+        context.Errors.Should().Equal(new Errors(CreateAutomaticNullError("Items[1]", "items[1]")));
+    }
+
+    [Fact]
+    public void ValidateItems_ShouldPassNullItemToDelegate_WhenProviderDeclinesItemNullErrorAndUsingActionDelegate()
+    {
+        var context = CreateContextWithoutAutomaticNullErrors();
+        var items = new List<string?> { null };
+        var capturedValue = "sentinel";
+
+        var result = context
+           .Check(items, target: "request.Items", displayName: "Items")
+           .ValidateItems(
+                (Action<Check<string?>>) (itemCheck => capturedValue = itemCheck.Value)
+            );
+
+        result.TryGetValue(out _).Should().BeTrue();
+        capturedValue.Should().BeNull();
+        context.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ValidateItems_ShouldAddAutomaticNullError_WhenItemIsNullAndUsingNormalizingDelegate()
+    {
+        var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
+        var items = new List<string?> { "valid", null };
+        var invocationCount = 0;
+
+        var result = context
+           .Check(items, target: "request.Items", displayName: "Items")
+           .ValidateItems(
+                (Func<Check<string?>, ValidatedValue<string?>>) (itemCheck =>
+                {
+                    invocationCount++;
+                    return ValidatedValue.Success(itemCheck.Value);
+                })
+            );
+
+        result.Should().Be(ValidatedValue<List<string?>>.NoValue);
+        invocationCount.Should().Be(1);
+        context.Errors.Should().Equal(new Errors(CreateAutomaticNullError("Items[1]", "items[1]")));
+    }
+
+    [Fact]
+    public void
+        ValidateItems_ShouldPassNullItemToDelegate_WhenProviderDeclinesItemNullErrorAndUsingNormalizingDelegate()
+    {
+        var context = CreateContextWithoutAutomaticNullErrors();
+        var items = new List<string?> { null };
+        var capturedValue = "sentinel";
+
+        var result = context
+           .Check(items, target: "request.Items", displayName: "Items")
+           .ValidateItems(
+                (Func<Check<string?>, ValidatedValue<string?>>) (itemCheck =>
+                {
+                    capturedValue = itemCheck.Value;
+                    return ValidatedValue<string?>.NoValue;
+                })
+            );
+
+        result.TryGetValue(out _).Should().BeTrue();
+        capturedValue.Should().BeNull();
+        context.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ValidateItemsAsync_ShouldAddAutomaticNullError_WhenItemIsNullAndUsingActionDelegate()
+    {
+        var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
+        var items = new List<string?> { "valid", null };
+        var invocationCount = 0;
+
+        var result = await context
+           .Check(items, target: "request.Items", displayName: "Items")
+           .ValidateItemsAsync<List<string?>, string?>(
+                async (_, cancellationToken) =>
+                {
+                    await Task.Yield();
+                    cancellationToken.ThrowIfCancellationRequested();
+                    invocationCount++;
+                },
+                TestContext.Current.CancellationToken
+            );
+
+        result.Should().Be(ValidatedValue<List<string?>>.NoValue);
+        invocationCount.Should().Be(1);
+        context.Errors.Should().Equal(new Errors(CreateAutomaticNullError("Items[1]", "items[1]")));
+    }
+
+    [Fact]
+    public async Task
+        ValidateItemsAsync_ShouldPassNullItemToDelegate_WhenProviderDeclinesItemNullErrorAndUsingActionDelegate()
+    {
+        var context = CreateContextWithoutAutomaticNullErrors();
+        var items = new List<string?> { null };
+        var capturedValue = "sentinel";
+
+        var result = await context
+           .Check(items, target: "request.Items", displayName: "Items")
+           .ValidateItemsAsync<List<string?>, string?>(
+                async (itemCheck, cancellationToken) =>
+                {
+                    await Task.Yield();
+                    cancellationToken.ThrowIfCancellationRequested();
+                    capturedValue = itemCheck.Value;
+                },
+                TestContext.Current.CancellationToken
+            );
+
+        result.TryGetValue(out _).Should().BeTrue();
+        capturedValue.Should().BeNull();
+        context.Errors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ValidateItemsAsync_ShouldAddAutomaticNullError_WhenItemIsNullAndUsingNormalizingDelegate()
+    {
+        var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
+        var items = new List<string?> { "valid", null };
+        var invocationCount = 0;
+
+        var result = await context
+           .Check(items, target: "request.Items", displayName: "Items")
+           .ValidateItemsAsync<List<string?>, string?>(
+                async (itemCheck, cancellationToken) =>
+                {
+                    await Task.Yield();
+                    cancellationToken.ThrowIfCancellationRequested();
+                    invocationCount++;
+                    return ValidatedValue.Success(itemCheck.Value);
+                },
+                TestContext.Current.CancellationToken
+            );
+
+        result.Should().Be(ValidatedValue<List<string?>>.NoValue);
+        invocationCount.Should().Be(1);
+        context.Errors.Should().Equal(new Errors(CreateAutomaticNullError("Items[1]", "items[1]")));
+    }
+
+    [Fact]
+    public async Task
+        ValidateItemsAsync_ShouldPassNullItemToDelegate_WhenProviderDeclinesItemNullErrorAndUsingNormalizingDelegate()
+    {
+        var context = CreateContextWithoutAutomaticNullErrors();
+        var items = new List<string?> { null };
+        var capturedValue = "sentinel";
+
+        var result = await context
+           .Check(items, target: "request.Items", displayName: "Items")
+           .ValidateItemsAsync<List<string?>, string?>(
+                async (itemCheck, cancellationToken) =>
+                {
+                    await Task.Yield();
+                    cancellationToken.ThrowIfCancellationRequested();
+                    capturedValue = itemCheck.Value;
+                    return ValidatedValue<string?>.NoValue;
+                },
+                TestContext.Current.CancellationToken
+            );
+
+        result.TryGetValue(out _).Should().BeTrue();
+        capturedValue.Should().BeNull();
+        context.Errors.Should().BeEmpty();
+    }
+
     private static Error CreateAutomaticNullError(string displayName, string target) =>
         ValidationWorkflowTestData.CreateValidationError($"{displayName} must not be null", "NotNull", target);
 
