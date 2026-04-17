@@ -9,18 +9,24 @@ namespace Light.PortableResults.Validation;
 /// <summary>
 /// Provides integration into Microsoft.Extensions.DependencyInjection for Light.PortableResults.Validation.
 /// </summary>
-public static class Module
+public static class PortableResultsValidationModule
 {
     /// <summary>
-    /// Adds Light.PortableResults.Validation services to the specified <see cref="IServiceCollection" />.
-    /// Specifically, <see cref="IValidationContextFactory" /> is registered with <see cref="DefaultValidationContextFactory" />
-    /// as the implementation type and a singleton lifetime. <see cref="ValidationContextOptions" /> are added as options,
-    /// they are also made available as a singleton directly so that you don't need to resolve `IOptions&lt;ValidationContextOptions>`.
+    /// Registers the <see cref="IValidationContextFactory" /> and <see cref="ValidationContextOptions" /> as singletons
+    /// to the DI container when they have not been registered already.
     /// </summary>
     /// <param name="services">The service collection that holds all registrations.</param>
+    /// <param name="createOptions">
+    /// The optional delegate that creates the default <see cref="ValidationContextOptions"/> instance. The created
+    /// options are registered as a singleton (as the <see cref="IValidationContextFactory" /> itself is registered
+    /// as a singleton).
+    /// </param>
     /// <returns>The service collection for method-chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="services" /> is null.</exception>
-    public static IServiceCollection AddValidationForPortableResults(this IServiceCollection services)
+    public static IServiceCollection AddValidationForPortableResults(
+        this IServiceCollection services,
+        Func<IServiceProvider, ValidationContextOptions>? createOptions = null
+    )
     {
         if (services is null)
         {
@@ -28,10 +34,15 @@ public static class Module
         }
 
         services.TryAddSingleton<IValidationContextFactory, DefaultValidationContextFactory>();
-        services.AddOptions<ValidationContextOptions>();
-        services.TryAddSingleton<ValidationContextOptions>(
-            sp => sp.GetRequiredService<IOptions<ValidationContextOptions>>().Value
-        );
+        if (createOptions is null)
+        {
+            services.TryAddSingleton<ValidationContextOptions>();
+        }
+        else
+        {
+            services.TryAddSingleton(createOptions);
+        }
+
         return services;
     }
 

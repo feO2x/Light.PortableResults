@@ -12,7 +12,7 @@ namespace Light.PortableResults.CloudEvents.Writing;
 /// <summary>
 /// Provides methods to register services required for CloudEvents writing.
 /// </summary>
-public static class Module
+public static class PortableResultsCloudEventsWritingModule
 {
     /// <summary>
     /// Gets the default serializer options used by Light.PortableResults CloudEvents writing.

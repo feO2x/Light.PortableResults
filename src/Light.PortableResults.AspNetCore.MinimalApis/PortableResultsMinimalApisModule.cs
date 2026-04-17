@@ -1,38 +1,38 @@
 using Light.PortableResults.Http.Writing;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Light.PortableResults.AspNetCore.Mvc;
+namespace Light.PortableResults.AspNetCore.MinimalApis;
 
 /// <summary>
-/// Service registration helpers for Light.PortableResults MVC.
+/// Service registration helpers for Light.PortableResults Minimal APIs.
 /// </summary>
-public static class Module
+public static class PortableResultsMinimalApisModule
 {
     /// <summary>
-    /// Registers all services required for Light.PortableResults MVC.
+    /// Registers all services required for Light.PortableResults Minimal APIs.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddPortableResultsForMvc(this IServiceCollection services) =>
+    public static IServiceCollection AddPortableResultsForMinimalApis(this IServiceCollection services) =>
         services
            .AddPortableResultHttpWriteOptions()
            .AddPortableResultsHttpHeaderConversionService()
-           .ConfigureMvcJsonOptionsForPortableResults();
+           .ConfigureMinimalApiJsonOptionsForPortableResults();
 
     /// <summary>
-    /// Configures JSON options for Light.PortableResults MVC responses.
+    /// Configures JSON options for Light.PortableResults Minimal API responses.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection ConfigureMvcJsonOptionsForPortableResults(this IServiceCollection services)
+    public static IServiceCollection ConfigureMinimalApiJsonOptionsForPortableResults(this IServiceCollection services)
     {
         services
            .AddOptions<JsonOptions>()
            .Configure(
                 jsonOptions =>
                 {
-                    jsonOptions.JsonSerializerOptions.AddDefaultPortableResultsHttpWriteJsonConverters();
+                    jsonOptions.SerializerOptions.AddDefaultPortableResultsHttpWriteJsonConverters();
                 }
             );
         return services;

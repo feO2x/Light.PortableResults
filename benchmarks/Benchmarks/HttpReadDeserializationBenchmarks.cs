@@ -22,7 +22,7 @@ public class HttpReadDeserializationBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        _optimizedOptions = Module.CreateDefaultSerializerOptions();
+        _optimizedOptions = PortableResultsHttpReadingModule.CreateDefaultSerializerOptions();
 
         _legacyOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         _legacyOptions.AddDefaultPortableResultsHttpReadJsonConverters();

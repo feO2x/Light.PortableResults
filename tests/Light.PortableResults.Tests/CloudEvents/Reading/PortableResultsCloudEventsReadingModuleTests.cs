@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Light.PortableResults.Tests.CloudEvents.Reading;
 
-public sealed class ModuleTests
+public sealed class PortableResultsCloudEventsReadingModuleTests
 {
     [Fact]
     public void AddPortableResultsCloudEventsReadOptions_ShouldRegisterOptions()

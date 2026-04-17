@@ -187,10 +187,9 @@ public static class CheckExtensions
             return ValidatedValue<TCollection>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         for (var i = 0; i < collection.Count; i++)
         {
-            var itemCheckpoint = check.Context.CreateCheckpoint();
             var validatedValue = itemValidator.ValidateChildValue(
                 collection[i],
                 check.CreateChildContextForIndex(i),
@@ -198,13 +197,13 @@ public static class CheckExtensions
                 displayName: CreateIndexedDisplayName(check, i)
             );
 
-            if (!itemCheckpoint.HasNewErrors)
+            if (validatedValue.HasValue)
             {
                 collection[i] = validatedValue.Value;
             }
         }
 
-        return checkpoint.ToValidatedValue(collection);
+        return collectionCheckpoint.ToValidatedValue(collection);
     }
 
     /// <summary>
@@ -231,7 +230,7 @@ public static class CheckExtensions
             return ValidatedValue<ImmutableArray<TItem>>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         var collection = check.Value;
         for (var i = 0; i < collection.Length; i++)
         {
@@ -243,7 +242,7 @@ public static class CheckExtensions
             );
         }
 
-        return checkpoint.ToValidatedValue(collection);
+        return collectionCheckpoint.ToValidatedValue(collection);
     }
 
     /// <summary>
@@ -288,13 +287,18 @@ public static class CheckExtensions
             return ValidatedValue<TCollection>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         for (var i = 0; i < collection.Count; i++)
         {
+            if (TryHandleItemAutomaticNull(check, collection[i], i))
+            {
+                continue;
+            }
+
             validateItem(CreateItemCheck(check, collection[i], i));
         }
 
-        return checkpoint.ToValidatedValue(collection);
+        return collectionCheckpoint.ToValidatedValue(collection);
     }
 
     /// <summary>
@@ -339,18 +343,22 @@ public static class CheckExtensions
             return ValidatedValue<TCollection>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         for (var i = 0; i < collection.Count; i++)
         {
-            var itemCheckpoint = check.Context.CreateCheckpoint();
+            if (TryHandleItemAutomaticNull(check, collection[i], i))
+            {
+                continue;
+            }
+
             var validatedValue = validateItem(CreateItemCheck(check, collection[i], i));
-            if (!itemCheckpoint.HasNewErrors)
+            if (validatedValue.HasValue)
             {
                 collection[i] = validatedValue.Value;
             }
         }
 
-        return checkpoint.ToValidatedValue(collection);
+        return collectionCheckpoint.ToValidatedValue(collection);
     }
 
     /// <summary>
@@ -394,11 +402,10 @@ public static class CheckExtensions
             return ValidatedValue<TValidated[]>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         var validatedItems = new TValidated[collection.Length];
         for (var i = 0; i < collection.Length; i++)
         {
-            var itemCheckpoint = check.Context.CreateCheckpoint();
             var validatedValue = itemValidator.ValidateChildValue(
                 collection[i],
                 check.CreateChildContextForIndex(i),
@@ -406,13 +413,13 @@ public static class CheckExtensions
                 displayName: CreateIndexedDisplayName(check, i)
             );
 
-            if (!itemCheckpoint.HasNewErrors)
+            if (validatedValue.HasValue)
             {
                 validatedItems[i] = validatedValue.Value;
             }
         }
 
-        return checkpoint.ToValidatedValue(validatedItems);
+        return collectionCheckpoint.ToValidatedValue(validatedItems);
     }
 
     /// <summary>
@@ -455,11 +462,10 @@ public static class CheckExtensions
             return ValidatedValue<List<TValidated>>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         var validatedItems = new List<TValidated>(collection.Count);
         for (var i = 0; i < collection.Count; i++)
         {
-            var itemCheckpoint = check.Context.CreateCheckpoint();
             var validatedValue = itemValidator.ValidateChildValue(
                 collection[i],
                 check.CreateChildContextForIndex(i),
@@ -467,13 +473,13 @@ public static class CheckExtensions
                 displayName: CreateIndexedDisplayName(check, i)
             );
 
-            if (!itemCheckpoint.HasNewErrors)
+            if (validatedValue.HasValue)
             {
                 validatedItems.Add(validatedValue.Value);
             }
         }
 
-        return checkpoint.ToValidatedValue(validatedItems);
+        return collectionCheckpoint.ToValidatedValue(validatedItems);
     }
 
     /// <summary>
@@ -500,12 +506,11 @@ public static class CheckExtensions
             return ValidatedValue<ImmutableArray<TValidated>>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         var collection = check.Value;
         var validatedItems = ImmutableArray.CreateBuilder<TValidated>(collection.Length);
         for (var i = 0; i < collection.Length; i++)
         {
-            var itemCheckpoint = check.Context.CreateCheckpoint();
             var validatedValue = itemValidator.ValidateChildValue(
                 collection[i],
                 check.CreateChildContextForIndex(i),
@@ -513,13 +518,13 @@ public static class CheckExtensions
                 displayName: CreateIndexedDisplayName(check, i)
             );
 
-            if (!itemCheckpoint.HasNewErrors)
+            if (validatedValue.HasValue)
             {
                 validatedItems.Add(validatedValue.Value);
             }
         }
 
-        return checkpoint.ToValidatedValue(validatedItems.DrainToImmutable());
+        return collectionCheckpoint.ToValidatedValue(validatedItems.DrainToImmutable());
     }
 
     /// <summary>
@@ -566,13 +571,13 @@ public static class CheckExtensions
             return ValidatedValue<TCollection>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         for (var i = 0; i < collection.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var itemCheckpoint = check.Context.CreateCheckpoint();
-            var validatedValue = await itemValidator.ValidateChildValueAsync(
+            var validatedValue = await itemValidator
+               .ValidateChildValueAsync(
                     collection[i],
                     check.CreateChildContextForIndex(i),
                     cancellationToken,
@@ -581,13 +586,13 @@ public static class CheckExtensions
                 )
                .ConfigureAwait(false);
 
-            if (!itemCheckpoint.HasNewErrors)
+            if (validatedValue.HasValue)
             {
                 collection[i] = validatedValue.Value;
             }
         }
 
-        return checkpoint.ToValidatedValue(collection);
+        return collectionCheckpoint.ToValidatedValue(collection);
     }
 
     /// <summary>
@@ -631,12 +636,13 @@ public static class CheckExtensions
             return ValidatedValue<IReadOnlyList<TItem>>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         for (var i = 0; i < collection.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            await itemValidator.ValidateChildValueAsync(
+            await itemValidator
+               .ValidateChildValueAsync(
                     collection[i],
                     check.CreateChildContextForIndex(i),
                     cancellationToken,
@@ -646,7 +652,7 @@ public static class CheckExtensions
                .ConfigureAwait(false);
         }
 
-        return checkpoint.ToValidatedValue(collection);
+        return collectionCheckpoint.ToValidatedValue(collection);
     }
 
     /// <summary>
@@ -674,12 +680,13 @@ public static class CheckExtensions
             return ValidatedValue<ImmutableArray<TItem>>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         var collection = check.Value;
         for (var i = 0; i < collection.Length; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await itemValidator.ValidateChildValueAsync(
+            await itemValidator
+               .ValidateChildValueAsync(
                     collection[i],
                     check.CreateChildContextForIndex(i),
                     cancellationToken,
@@ -689,7 +696,7 @@ public static class CheckExtensions
                .ConfigureAwait(false);
         }
 
-        return checkpoint.ToValidatedValue(collection);
+        return collectionCheckpoint.ToValidatedValue(collection);
     }
 
     /// <summary>
@@ -735,14 +742,20 @@ public static class CheckExtensions
             return ValidatedValue<TCollection>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         for (var i = 0; i < collection.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (TryHandleItemAutomaticNull(check, collection[i], i))
+            {
+                continue;
+            }
+
             await validateItem(CreateItemCheck(check, collection[i], i), cancellationToken).ConfigureAwait(false);
         }
 
-        return checkpoint.ToValidatedValue(collection);
+        return collectionCheckpoint.ToValidatedValue(collection);
     }
 
     /// <summary>
@@ -789,21 +802,25 @@ public static class CheckExtensions
             return ValidatedValue<TCollection>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         for (var i = 0; i < collection.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var itemCheckpoint = check.Context.CreateCheckpoint();
+            if (TryHandleItemAutomaticNull(check, collection[i], i))
+            {
+                continue;
+            }
+
             var validatedValue =
                 await validateItem(CreateItemCheck(check, collection[i], i), cancellationToken).ConfigureAwait(false);
-            if (!itemCheckpoint.HasNewErrors)
+            if (validatedValue.HasValue)
             {
                 collection[i] = validatedValue.Value;
             }
         }
 
-        return checkpoint.ToValidatedValue(collection);
+        return collectionCheckpoint.ToValidatedValue(collection);
     }
 
     /// <summary>
@@ -849,14 +866,14 @@ public static class CheckExtensions
             return ValidatedValue<TValidated[]>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         var validatedItems = new TValidated[collection.Length];
         for (var i = 0; i < collection.Length; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var itemCheckpoint = check.Context.CreateCheckpoint();
-            var validatedValue = await itemValidator.ValidateChildValueAsync(
+            var validatedValue = await itemValidator
+               .ValidateChildValueAsync(
                     collection[i],
                     check.CreateChildContextForIndex(i),
                     cancellationToken,
@@ -865,13 +882,13 @@ public static class CheckExtensions
                 )
                .ConfigureAwait(false);
 
-            if (!itemCheckpoint.HasNewErrors)
+            if (validatedValue.HasValue)
             {
                 validatedItems[i] = validatedValue.Value;
             }
         }
 
-        return checkpoint.ToValidatedValue(validatedItems);
+        return collectionCheckpoint.ToValidatedValue(validatedItems);
     }
 
     /// <summary>
@@ -916,14 +933,14 @@ public static class CheckExtensions
             return ValidatedValue<List<TValidated>>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         var validatedItems = new List<TValidated>(collection.Count);
         for (var i = 0; i < collection.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var itemCheckpoint = check.Context.CreateCheckpoint();
-            var validatedValue = await itemValidator.ValidateChildValueAsync(
+            var validatedValue = await itemValidator
+               .ValidateChildValueAsync(
                     collection[i],
                     check.CreateChildContextForIndex(i),
                     cancellationToken,
@@ -932,13 +949,13 @@ public static class CheckExtensions
                 )
                .ConfigureAwait(false);
 
-            if (!itemCheckpoint.HasNewErrors)
+            if (validatedValue.HasValue)
             {
                 validatedItems.Add(validatedValue.Value);
             }
         }
 
-        return checkpoint.ToValidatedValue(validatedItems);
+        return collectionCheckpoint.ToValidatedValue(validatedItems);
     }
 
     /// <summary>
@@ -968,15 +985,15 @@ public static class CheckExtensions
             return ValidatedValue<ImmutableArray<TValidated>>.NoValue;
         }
 
-        var checkpoint = check.Context.CreateCheckpoint();
+        var collectionCheckpoint = check.Context.CreateCheckpoint();
         var collection = check.Value;
         var validatedItems = ImmutableArray.CreateBuilder<TValidated>(collection.Length);
         for (var i = 0; i < collection.Length; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var itemCheckpoint = check.Context.CreateCheckpoint();
-            var validatedValue = await itemValidator.ValidateChildValueAsync(
+            var validatedValue = await itemValidator
+               .ValidateChildValueAsync(
                     collection[i],
                     check.CreateChildContextForIndex(i),
                     cancellationToken,
@@ -985,13 +1002,13 @@ public static class CheckExtensions
                 )
                .ConfigureAwait(false);
 
-            if (!itemCheckpoint.HasNewErrors)
+            if (validatedValue.HasValue)
             {
                 validatedItems.Add(validatedValue.Value);
             }
         }
 
-        return checkpoint.ToValidatedValue(validatedItems.DrainToImmutable());
+        return collectionCheckpoint.ToValidatedValue(validatedItems.DrainToImmutable());
     }
 
     private static bool TryGetCollectionForItemValidation<TCollection>(
@@ -1021,6 +1038,34 @@ public static class CheckExtensions
         throw new InvalidOperationException(
             "ValidateItems and ValidateItemsAsync require a non-null collection when the active automatic-null provider does not create an error. Guard nullable collections explicitly, for example with IsNotNull(), before validating items."
         );
+    }
+
+    private static bool TryHandleItemAutomaticNull<TCollection, TItem>(
+        Check<TCollection> check,
+        TItem item,
+        int index
+    )
+    {
+        if (item is not null)
+        {
+            return false;
+        }
+
+        var itemContext = check.CreateChildContextForIndex(index);
+        var displayName = CreateIndexedDisplayName(check, index);
+
+        if (!itemContext.TryCreateAutomaticNullError(
+                item,
+                ValidationTarget.Relative(string.Empty, isNormalized: true),
+                displayName,
+                out var error
+            ))
+        {
+            return false;
+        }
+
+        itemContext.AddError(error);
+        return true;
     }
 
     private static Check<TItem> CreateItemCheck<TCollection, TItem>(Check<TCollection> check, TItem item, int index) =>
