@@ -12,7 +12,7 @@ namespace Light.PortableResults.CloudEvents.Reading;
 /// <summary>
 /// Provides methods to register services required for CloudEvents reading.
 /// </summary>
-public static class Module
+public static class PortableResultsCloudEventsReadingModule
 {
     /// <summary>
     /// Gets the default serializer options used by Light.PortableResults CloudEvents reading.

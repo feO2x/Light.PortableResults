@@ -24,7 +24,7 @@ public class CloudEventsReadingBenchmarks
     {
         _options = new PortableResultsCloudEventsReadOptions
         {
-            SerializerOptions = Module.CreateDefaultSerializerOptions()
+            SerializerOptions = PortableResultsCloudEventsReadingModule.CreateDefaultSerializerOptions()
         };
 
         // Small payload (~100 bytes data)

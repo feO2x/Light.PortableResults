@@ -19,7 +19,7 @@ public sealed record PortableResultsCloudEventsReadOptions
     /// Gets or sets serializer options used to deserialize CloudEvents envelopes and data payloads.
     /// </summary>
     public JsonSerializerOptions SerializerOptions { get; init; } =
-        Module.DefaultSerializerOptions;
+        PortableResultsCloudEventsReadingModule.DefaultSerializerOptions;
 
     /// <summary>
     /// Gets or sets how successful generic payloads are interpreted.
