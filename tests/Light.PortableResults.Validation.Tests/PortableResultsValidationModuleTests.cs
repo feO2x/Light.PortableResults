@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Light.PortableResults.Validation.Tests;
 
-public sealed class ModuleTests
+public sealed class PortableResultsValidationModuleTests
 {
     [Fact]
     public void AddValidationForPortableResults_ShouldThrowArgumentNullException_WhenServicesIsNull()

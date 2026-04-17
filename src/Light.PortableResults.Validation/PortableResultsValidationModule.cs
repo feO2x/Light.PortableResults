@@ -9,7 +9,7 @@ namespace Light.PortableResults.Validation;
 /// <summary>
 /// Provides integration into Microsoft.Extensions.DependencyInjection for Light.PortableResults.Validation.
 /// </summary>
-public static class Module
+public static class PortableResultsValidationModule
 {
     /// <summary>
     /// Adds Light.PortableResults.Validation services to the specified <see cref="IServiceCollection" />.
