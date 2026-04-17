@@ -766,7 +766,7 @@ Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
   DefaultJob : .NET 10.0.5 (10.0.5, 10.0.526.15411), Arm64 RyuJIT armv8.0-a
 ```
 
-#### Flat DTO Becnhmark Setup
+#### Flat DTO Benchmark Setup
 
 ```csharp
 public sealed record MovieRatingDto
