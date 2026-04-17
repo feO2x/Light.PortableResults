@@ -136,7 +136,7 @@ public sealed class HttpResponseMessageExtensionsTests
     public async Task ReadResultAsyncOfT_ShouldThrow_WhenBarePayloadConverterProducesNullValue()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var serializerOptions = Module.CreateDefaultSerializerOptions();
+        var serializerOptions = PortableResultsHttpReadingModule.CreateDefaultSerializerOptions();
         serializerOptions.Converters.Insert(0, new NullBareStringPayloadConverter());
 
         var options = new PortableResultsHttpReadOptions
@@ -157,7 +157,7 @@ public sealed class HttpResponseMessageExtensionsTests
     public async Task ReadResultAsync_ShouldThrow_WhenFailurePayloadConverterProducesNoErrors()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var serializerOptions = Module.CreateDefaultSerializerOptions();
+        var serializerOptions = PortableResultsHttpReadingModule.CreateDefaultSerializerOptions();
         serializerOptions.Converters.Insert(0, new EmptyFailurePayloadConverter());
 
         var options = new PortableResultsHttpReadOptions

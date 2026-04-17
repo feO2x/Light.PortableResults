@@ -2,12 +2,12 @@ using System;
 using System.IO;
 using System.Text.Json;
 using FluentAssertions;
+using Light.PortableResults.Http.Reading;
 using Light.PortableResults.Http.Reading.Json;
 using Light.PortableResults.Http.Writing;
 using Light.PortableResults.Http.Writing.Json;
 using Light.PortableResults.Metadata;
 using Xunit;
-using Module = Light.PortableResults.Http.Reading.Module;
 
 namespace Light.PortableResults.Tests.Http;
 
@@ -104,7 +104,7 @@ public sealed class JsonConverterDirectionTests
     public void HttpReadAutoSuccessPayloadConverter_ShouldReadPayload()
     {
         var converter = new HttpReadAutoSuccessResultPayloadJsonConverter<int>();
-        var options = Module.CreateDefaultSerializerOptions();
+        var options = PortableResultsHttpReadingModule.CreateDefaultSerializerOptions();
         var reader = new Utf8JsonReader("""{"value":42,"metadata":{"source":"auto"}}"""u8);
 
         var payload = converter.Read(ref reader, typeof(HttpReadAutoSuccessResultPayload<int>), options);
@@ -131,7 +131,7 @@ public sealed class JsonConverterDirectionTests
     public void HttpReadBareSuccessPayloadConverter_ShouldReadPayload()
     {
         var converter = new HttpReadBareSuccessResultPayloadJsonConverter<int>();
-        var options = Module.CreateDefaultSerializerOptions();
+        var options = PortableResultsHttpReadingModule.CreateDefaultSerializerOptions();
         var reader = new Utf8JsonReader("42"u8);
 
         var payload = converter.Read(ref reader, typeof(HttpReadBareSuccessResultPayload<int>), options);
@@ -157,7 +157,7 @@ public sealed class JsonConverterDirectionTests
     public void HttpReadWrappedSuccessPayloadConverter_ShouldReadPayload()
     {
         var converter = new HttpReadWrappedSuccessResultPayloadJsonConverter<int>();
-        var options = Module.CreateDefaultSerializerOptions();
+        var options = PortableResultsHttpReadingModule.CreateDefaultSerializerOptions();
         var reader = new Utf8JsonReader("""{"value":42,"metadata":{"source":"wrapped"}}"""u8);
 
         var payload = converter.Read(ref reader, typeof(HttpReadWrappedSuccessResultPayload<int>), options);
@@ -249,11 +249,14 @@ public sealed class JsonConverterDirectionTests
         factory.CanConvert(typeof(HttpReadBareSuccessResultPayload<int>)).Should().BeTrue();
         factory.CanConvert(typeof(HttpReadWrappedSuccessResultPayload<int>)).Should().BeTrue();
         factory.CanConvert(typeof(HttpReadSuccessResultPayload)).Should().BeFalse();
-        factory.CreateConverter(typeof(HttpReadAutoSuccessResultPayload<int>), new JsonSerializerOptions())
+        factory
+           .CreateConverter(typeof(HttpReadAutoSuccessResultPayload<int>), new JsonSerializerOptions())
            .Should().BeOfType<HttpReadAutoSuccessResultPayloadJsonConverter<int>>();
-        factory.CreateConverter(typeof(HttpReadBareSuccessResultPayload<int>), new JsonSerializerOptions())
+        factory
+           .CreateConverter(typeof(HttpReadBareSuccessResultPayload<int>), new JsonSerializerOptions())
            .Should().BeOfType<HttpReadBareSuccessResultPayloadJsonConverter<int>>();
-        factory.CreateConverter(typeof(HttpReadWrappedSuccessResultPayload<int>), new JsonSerializerOptions())
+        factory
+           .CreateConverter(typeof(HttpReadWrappedSuccessResultPayload<int>), new JsonSerializerOptions())
            .Should().BeOfType<HttpReadWrappedSuccessResultPayloadJsonConverter<int>>();
     }
 
@@ -264,7 +267,8 @@ public sealed class JsonConverterDirectionTests
 
         factory.CanConvert(typeof(HttpResultForWriting<int>)).Should().BeTrue();
         factory.CanConvert(typeof(HttpResultForWriting)).Should().BeFalse();
-        factory.CreateConverter(typeof(HttpResultForWriting<int>), new JsonSerializerOptions())
+        factory
+           .CreateConverter(typeof(HttpResultForWriting<int>), new JsonSerializerOptions())
            .Should().BeOfType<HttpResultForWritingJsonConverter<int>>();
     }
 }

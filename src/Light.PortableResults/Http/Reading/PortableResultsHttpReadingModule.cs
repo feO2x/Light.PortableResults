@@ -9,7 +9,7 @@ namespace Light.PortableResults.Http.Reading;
 /// <summary>
 /// Provides methods to register services and JSON configuration for Light.PortableResults HTTP reading.
 /// </summary>
-public static class Module
+public static class PortableResultsHttpReadingModule
 {
     /// <summary>
     /// Gets the default serializer options used by Light.PortableResults HTTP response reading.

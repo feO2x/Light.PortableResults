@@ -10,12 +10,12 @@ using Xunit;
 
 namespace Light.PortableResults.Tests.Http.Reading;
 
-public sealed class ModuleTests
+public sealed class PortableResultsHttpReadingModuleTests
 {
     [Fact]
     public void AddDefaultPortableResultsHttpReadJsonConverters_ShouldThrow_WhenSerializerOptionsAreNull()
     {
-        var act = () => Module.AddDefaultPortableResultsHttpReadJsonConverters(null!);
+        var act = () => PortableResultsHttpReadingModule.AddDefaultPortableResultsHttpReadJsonConverters(null!);
 
         act.Should().Throw<ArgumentNullException>();
     }
@@ -44,7 +44,7 @@ public sealed class ModuleTests
     [Fact]
     public void CreateDefaultPortableResultsHttpReadJsonSerializerOptions_ShouldDeserializeGenericAutoPayload()
     {
-        var serializerOptions = Module.CreateDefaultSerializerOptions();
+        var serializerOptions = PortableResultsHttpReadingModule.CreateDefaultSerializerOptions();
 
         var payload =
             JsonSerializer.Deserialize<HttpReadAutoSuccessResultPayload<int>>("{\"value\":42}", serializerOptions);
@@ -56,7 +56,7 @@ public sealed class ModuleTests
     [Fact]
     public void CreateDefaultPortableResultsHttpReadJsonSerializerOptions_ShouldDeserializeNonGenericSuccessPayload()
     {
-        var serializerOptions = Module.CreateDefaultSerializerOptions();
+        var serializerOptions = PortableResultsHttpReadingModule.CreateDefaultSerializerOptions();
 
         var payload = JsonSerializer.Deserialize<HttpReadSuccessResultPayload>(
             "{\"metadata\":{\"source\":\"module\"}}",
@@ -69,7 +69,7 @@ public sealed class ModuleTests
     [Fact]
     public void CreateDefaultPortableResultsHttpReadJsonSerializerOptions_ShouldDeserializeFailurePayload()
     {
-        var serializerOptions = Module.CreateDefaultSerializerOptions();
+        var serializerOptions = PortableResultsHttpReadingModule.CreateDefaultSerializerOptions();
 
         var payload = JsonSerializer.Deserialize<HttpReadFailureResultPayload>(
             """
@@ -104,6 +104,6 @@ public sealed class ModuleTests
         var options = provider.GetRequiredService<PortableResultsHttpReadOptions>();
 
         options.Should().NotBeNull();
-        options.SerializerOptions.Should().BeSameAs(Module.DefaultSerializerOptions);
+        options.SerializerOptions.Should().BeSameAs(PortableResultsHttpReadingModule.DefaultSerializerOptions);
     }
 }

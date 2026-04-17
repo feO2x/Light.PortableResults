@@ -41,5 +41,6 @@ public sealed record PortableResultsHttpReadOptions
     /// <summary>
     /// Gets or sets serializer options used to deserialize Result payloads with <see cref="JsonSerializer" />.
     /// </summary>
-    public JsonSerializerOptions SerializerOptions { get; init; } = Module.DefaultSerializerOptions;
+    public JsonSerializerOptions SerializerOptions { get; init; } =
+        PortableResultsHttpReadingModule.DefaultSerializerOptions;
 }
