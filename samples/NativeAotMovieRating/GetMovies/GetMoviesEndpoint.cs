@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Light.PortableResults;
@@ -7,13 +8,25 @@ using Light.PortableResults.Metadata;
 using Light.PortableResults.Validation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using NativeAotMovieRating.InMemoryDatabaseAccess;
 
 namespace NativeAotMovieRating.GetMovies;
 
 public static class GetMoviesEndpoint
 {
     public static void MapGetMoviesEndpoint(this WebApplication app) =>
-        app.MapGet("/api/movies", GetMovies);
+        app
+           .MapGet("/api/movies", GetMovies)
+           .WithName("GetMovies")
+           .WithTags("Movies")
+           .WithSummary("Returns a paginated list of movies.")
+           .WithDescription(
+                "Supports keyset pagination via the optional lastKnownMovieId parameter and a configurable " +
+                "page size via the take parameter (1-40). Returns a rich Light.PortableResults problem " +
+                "details response when input validation fails or when the lastKnownMovieId does not exist."
+            )
+           .Produces<List<Movie>>()
+           .ProducesPortableRichValidationProblem();
 
     private static async Task<IResult> GetMovies(
         IGetMoviesSession session,

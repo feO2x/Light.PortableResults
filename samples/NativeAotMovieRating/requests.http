@@ -1,6 +1,12 @@
 ### Health
 http://localhost:5000
 
+### OpenAPI document (JSON)
+http://localhost:5000/openapi/v1.json
+
+### Scalar API reference (open in browser)
+http://localhost:5000/scalar/v1
+
 ### Get Movies (first page)
 http://localhost:5000/api/movies
 

@@ -3,13 +3,24 @@ using System.Threading.Tasks;
 using Light.PortableResults.AspNetCore.MinimalApis;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using NativeAotMovieRating.InMemoryDatabaseAccess;
 
 namespace NativeAotMovieRating.AddMovieRating;
 
 public static class AddMovieRatingEndpoint
 {
     public static void MapAddMovieRatingEndpoint(this WebApplication app) =>
-        app.MapPut("/api/moviesRatings", AddMovieRating);
+        app
+           .MapPut("/api/moviesRatings", AddMovieRating)
+           .WithName("AddMovieRating")
+           .WithTags("Movie Ratings")
+           .WithSummary("Adds or updates a movie rating.")
+           .WithDescription(
+                "Validates the request and stores the movie rating. Returns the stored rating on success, or a rich Light.PortableResults problem details response on validation or lookup failures."
+            )
+           .Produces<MovieRating>()
+           .ProducesPortableRichValidationProblem()
+           .ProducesPortableProblem();
 
     private static async Task<IResult> AddMovieRating(
         MovieRatingDto dto,
