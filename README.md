@@ -1322,6 +1322,94 @@ services
 
 `ValidateWithPortableResults` integrates with the standard options validation pipeline, supports named options, and forwards the current options name to the `ValidationContext`. Use `ValidationContext.TryGetItem(ConfigurationConstants.OptionsNameKey, out var optionsName);` to access the options name in your validator.
 
+## OpenAPI Support
+
+Light.PortableResults ships schema-only CLR types and endpoint metadata helpers so OpenAPI generators can emit accurate response schemas for both success and failure responses. These helpers are documentation-only: the runtime HTTP serialization still happens through `LightResult<T>` / `LightActionResult<T>` and the JSON writers in `Light.PortableResults`.
+
+### Success responses: when to use which helper
+
+A successful `Result<T>` serializes to one of two body shapes:
+
+- If the body is just `TValue`, document it with the standard ASP.NET Core OpenAPI helpers such as `Produces<TValue>(...)` on Minimal APIs or `ProducesResponseType<TValue>` on MVC controllers. Do **not** use Light.PortableResults-specific success helpers for this case.
+- If the body is `{ value, metadata }` (see `MetadataSerializationMode.Always`), document it with `ProducesPortableSuccessResponse<TValue, TMetadata>(...)` or `[ProducesPortableSuccessResponse<TValue, TMetadata>]`. The metadata type is now an explicit part of the contract.
+
+### Failure responses
+
+Failure responses are documented with dedicated helpers per problem-details shape:
+
+- `ProducesPortableProblem` / `ProducesPortableProblemAttribute` for non-validation failures (401, 403, 404, 409, 500, ...). Pass the relevant status code; there are no dedicated per-status-code helpers.
+- `ProducesPortableRichValidationProblem` / `ProducesPortableRichValidationProblemAttribute` when `ValidationProblemSerializationFormat` is set to `Rich`. Here the `errors` property is documented as an array of Light.PortableResults-style error objects.
+- `ProducesPortableAspNetCoreValidationProblem` / `ProducesPortableAspNetCoreValidationProblemAttribute` when `ValidationProblemSerializationFormat` is set to `AspNetCoreCompatible` (the default). Here the inherited `errors` property is documented as `Dictionary<string, string[]>`, and an optional `errorDetails` array carries Light.PortableResults-specific information such as codes, categories, and metadata.
+
+You must choose the OpenAPI helper that matches the actual configured `ValidationProblemSerializationFormat`; the library does not infer the validation shape for you.
+
+The `Index` property on `PortableValidationErrorDetail` is the zero-based position of the corresponding error message within the `errors[target]` array for the same target, so `errorDetails` entries can be correlated back to the matching message.
+
+Each helper family has a non-generic overload and a two-generic overload. The two-generic overloads let you strongly type per-error metadata and top-level problem metadata. There are no one-generic middle-tier overloads; callers who want only typed problem metadata use the two-generic overload with `object` as the first type argument.
+
+The typed metadata CLR types are schema-only helpers for OpenAPI. The runtime always serializes `MetadataObject`, so you are responsible for keeping the documented schema aligned with the metadata you actually produce.
+
+### Minimal APIs example (rich validation)
+
+```csharp
+using Light.PortableResults;
+using Light.PortableResults.AspNetCore.MinimalApis;
+using Light.PortableResults.Metadata;
+
+app.MapPut("/api/movieRatings", async (MovieRatingDto dto, AddMovieRatingService service) =>
+    {
+        var result = await service.AddMovieRatingAsync(dto);
+        return result.ToMinimalApiResult();
+    })
+   .ProducesPortableSuccessResponse<MovieRating, MetadataObject>()
+   .ProducesPortableRichValidationProblem()
+   .ProducesPortableProblem(statusCode: StatusCodes.Status404NotFound)
+   .ProducesPortableProblem();
+```
+
+### Minimal APIs example (ASP.NET Core-compatible validation)
+
+```csharp
+using Light.PortableResults;
+using Light.PortableResults.AspNetCore.MinimalApis;
+using Light.PortableResults.Metadata;
+
+app.MapPut("/api/movieRatings", async (MovieRatingDto dto, AddMovieRatingService service) =>
+    {
+        var result = await service.AddMovieRatingAsync(dto);
+        return result.ToMinimalApiResult();
+    })
+   .ProducesPortableSuccessResponse<MovieRating, MetadataObject>()
+   .ProducesPortableAspNetCoreValidationProblem()
+   .ProducesPortableProblem(statusCode: StatusCodes.Status404NotFound)
+   .ProducesPortableProblem();
+```
+
+### MVC example
+
+```csharp
+using Light.PortableResults;
+using Light.PortableResults.AspNetCore.Mvc;
+using Light.PortableResults.Metadata;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/movieRatings")]
+public sealed class AddMovieRatingsController(AddMovieRatingService service) : ControllerBase
+{
+    [HttpPut]
+    [ProducesPortableSuccessResponse<MovieRating, MetadataObject>]
+    [ProducesPortableRichValidationProblem]
+    [ProducesPortableProblem(statusCode: StatusCodes.Status404NotFound)]
+    [ProducesPortableProblem]
+    public async Task<LightActionResult<MovieRating>> AddMovieRating(AddMovieRatingDto dto)
+    {
+        var result = await service.AddMovieRatingAsync(dto);
+        return result.ToMvcActionResult();
+    }
+}
+```
+
 ## ⚙️ Configuration for HTTP and CloudEvents
 
 ### HTTP write options (`PortableResultsHttpWriteOptions`)
