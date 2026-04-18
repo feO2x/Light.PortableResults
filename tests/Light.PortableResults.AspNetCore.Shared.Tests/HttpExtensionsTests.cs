@@ -242,7 +242,7 @@ public sealed class HttpExtensionsTests
         response.SetMetadataValuesAsHeadersIfNecessary(result, conversionService);
 
         conversionService.PreparedHeaders.Should().ContainSingle();
-        response.Headers["X-TraceId"].Should().BeEquivalentTo();
+        response.Headers["X-TraceId"].Should().Equal("trace-42");
     }
 
     [Fact]
