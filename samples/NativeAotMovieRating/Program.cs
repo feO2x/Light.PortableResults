@@ -6,7 +6,7 @@ using NativeAotMovieRating.AddMovieRating;
 using NativeAotMovieRating.GetMovies;
 using NativeAotMovieRating.InMemoryDatabaseAccess;
 using NativeAotMovieRating.JsonSerialization;
-using Scalar.AspNetCore;
+using NativeAotMovieRating.OpenApi;
 using Serilog;
 using Serilog.Events;
 
@@ -31,11 +31,11 @@ builder
 var app = builder.Build();
 app.UseSerilogRequestLogging();
 app.UseRouting();
-app.UseHealthChecks("/");
-app.MapOpenApi();
-app.MapScalarApiReference(options => options.WithTitle("Native AOT Movie Rating API"));
+app.UseHealthChecks("/health");
+app.MapOpenApiAndScalar();
 app.MapGetMoviesEndpoint();
 app.MapAddMovieRatingEndpoint();
+app.RedirectHomeToDocs();
 
 try
 {
