@@ -50,6 +50,8 @@
     <File Path="ai-plans\0034-plan-deviations.md" />
     <File Path="ai-plans\0037-validate-items-null-checks.md" />
     <File Path="ai-plans\0040-0-openapi-support.md" />
+    <File Path="ai-plans\0040-1-openapi-redesign.md" />
+    <File Path="ai-plans\0040-2-validation-error-contracts.md" />
     <File Path="ai-plans\AGENTS.md" />
   </Folder>
   <Folder Name="/benchmarks/">
