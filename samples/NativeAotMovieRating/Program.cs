@@ -1,6 +1,8 @@
 using Light.PortableResults.AspNetCore.MinimalApis;
+using Light.PortableResults.AspNetCore.Shared;
 using Light.PortableResults.Validation;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.DependencyInjection;
 using NativeAotMovieRating.AddMovieRating;
 using NativeAotMovieRating.GetMovies;
@@ -26,7 +28,11 @@ builder
    .AddAddMovieRatingModule()
    .AddHealthChecks()
    .Services
-   .AddOpenApi();
+   .AddOpenApi(
+        options => options.CreateSchemaReferenceId = type =>
+            PortableResultsOpenApiNamingConventions.TryCreateSchemaReferenceId(type) ??
+            OpenApiOptions.CreateDefaultSchemaReferenceId(type)
+    );
 
 var app = builder.Build();
 app.UseSerilogRequestLogging();

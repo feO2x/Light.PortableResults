@@ -1,24 +1,30 @@
 namespace Light.PortableResults.AspNetCore.Shared;
 
 /// <summary>
-/// Schema-only type for OpenAPI documentation. Not used at runtime.
-/// Represents a successful response body that contains both a value and metadata.
-/// Use this helper only for wrapped success responses that serialize metadata in the body.
-/// For plain <typeparamref name="TValue" /> success bodies, use the standard ASP.NET Core
-/// OpenAPI metadata APIs such as <c>Produces&lt;TValue&gt;</c> or
-/// <c>ProducesResponseTypeAttribute&lt;TValue&gt;</c> instead.
+/// Successful response body that wraps a primary <typeparamref name="TValue" /> together with
+/// a bag of <typeparamref name="TMetadata" />, for endpoints that opt into returning metadata
+/// alongside the value.
 /// </summary>
-/// <typeparam name="TValue">The type of the success value.</typeparam>
-/// <typeparam name="TMetadata">The type of the success metadata.</typeparam>
+/// <typeparam name="TValue">The shape of the main payload.</typeparam>
+/// <typeparam name="TMetadata">The shape of the metadata accompanying the payload.</typeparam>
+/// <remarks>
+/// Use this schema only when the runtime is configured to emit the <c>{ value, metadata }</c>
+/// envelope (see <c>MetadataSerializationMode.Always</c>). For plain payload responses, use the
+/// standard ASP.NET Core OpenAPI helpers such as <c>Produces&lt;TValue&gt;</c> or
+/// <c>ProducesResponseTypeAttribute&lt;TValue&gt;</c> instead. This is a schema-only type used
+/// by Light.PortableResults for OpenAPI documentation; the wire format is produced directly by
+/// the runtime HTTP writers.
+/// </remarks>
 public class PortableSuccessResponse<TValue, TMetadata>
 {
     /// <summary>
-    /// Gets or sets the result value.
+    /// The primary payload returned by the operation.
     /// </summary>
     public TValue Value { get; init; } = default!;
 
     /// <summary>
-    /// Gets or sets the metadata associated with the value.
+    /// Additional structured information associated with the payload, for example paging
+    /// details or aggregate counts.
     /// </summary>
     public TMetadata Metadata { get; init; } = default!;
 }
