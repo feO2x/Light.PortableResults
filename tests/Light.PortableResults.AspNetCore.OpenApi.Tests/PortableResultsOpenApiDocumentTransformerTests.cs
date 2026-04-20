@@ -1,0 +1,425 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Light.PortableResults.AspNetCore.MinimalApis;
+using Light.PortableResults.AspNetCore.Mvc;
+using Light.PortableResults.AspNetCore.OpenApi;
+using Light.PortableResults.Http.Writing;
+using Light.PortableResults.SharedJsonSerialization;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi;
+using Xunit;
+
+namespace Light.PortableResults.AspNetCore.OpenApi.Tests;
+
+public sealed class PortableResultsOpenApiDocumentTransformerTests
+{
+    [Fact]
+    public async Task MinimalApiDocument_ShouldEmitConfiguredSchemas()
+    {
+        await using var app = CreateMinimalApiApp();
+
+        var document = await GetOpenApiDocumentAsync(app);
+
+        var defaultSuccessSchema = GetResponseSchema(
+            document,
+            "/minimal/success/default",
+            HttpMethod.Get,
+            StatusCodes.Status200OK,
+            "application/json"
+        );
+        defaultSuccessSchema.Should().BeOfType<OpenApiSchema>();
+        ((OpenApiSchema) defaultSuccessSchema).Properties.Should().ContainKey("title");
+
+        var wrappedSuccessSchema = GetResponseSchema(
+            document,
+            "/minimal/success/wrapped",
+            HttpMethod.Get,
+            StatusCodes.Status200OK,
+            "application/json"
+        ).Should().BeOfType<OpenApiSchemaReference>().Subject;
+        var wrappedSuccessComponent = GetSchemaComponent(document, GetSchemaReferenceId(wrappedSuccessSchema));
+        wrappedSuccessComponent.Properties.Should().ContainKeys("value", "metadata");
+        wrappedSuccessComponent.Required.Should().Contain("value");
+        wrappedSuccessComponent.Properties["metadata"].Should().BeOfType<OpenApiSchemaReference>();
+        var successMetadataReference = (OpenApiSchemaReference) wrappedSuccessComponent.Properties["metadata"];
+        GetSchemaComponent(document, GetSchemaReferenceId(successMetadataReference))
+           .Properties.Should().ContainKey("traceId");
+
+        var globalProblemSchema = GetResponseSchema(
+            document,
+            "/minimal/problems/global",
+            HttpMethod.Get,
+            StatusCodes.Status409Conflict,
+            "application/problem+json"
+        ).Should().BeOfType<OpenApiSchemaReference>().Subject;
+        var globalProblemComponent = GetSchemaComponent(document, GetSchemaReferenceId(globalProblemSchema));
+        var globalProblemExtension = (OpenApiSchema) globalProblemComponent.AllOf![1];
+        var globalProblemErrors = (OpenApiSchema) globalProblemExtension.Properties!["errors"]!;
+        var globalProblemItems = (OpenApiSchema) globalProblemErrors.Items!;
+        globalProblemItems.AnyOf.Should().HaveCount(3);
+        GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.AnyOf![0]).Should().Be("PortableError__VersionMismatch");
+        GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.AnyOf[1]).Should().Be("PortableError__Insufficient_Funds");
+        GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.AnyOf[2]).Should().Be("PortableError");
+        globalProblemItems.Discriminator.Should().NotBeNull();
+        globalProblemItems.Discriminator!.PropertyName.Should().Be("code");
+        globalProblemItems.Discriminator.Mapping.Should().NotBeNull();
+        globalProblemItems.Discriminator.Mapping!.Keys.Should().BeEquivalentTo("VersionMismatch", "Insufficient/Funds");
+        GetSchemaReferenceId(globalProblemItems.Discriminator.Mapping["Insufficient/Funds"])
+           .Should().Be("PortableError__Insufficient_Funds");
+
+        var inlineProblemSchema = GetResponseSchema(
+            document,
+            "/minimal/problems/inline",
+            HttpMethod.Get,
+            StatusCodes.Status404NotFound,
+            "application/problem+json"
+        ).Should().BeOfType<OpenApiSchemaReference>().Subject;
+        var inlineProblemComponent = GetSchemaComponent(document, GetSchemaReferenceId(inlineProblemSchema));
+        var inlineProblemExtension = (OpenApiSchema) inlineProblemComponent.AllOf![1];
+        var inlineProblemItems = (OpenApiSchema) ((OpenApiSchema) inlineProblemExtension.Properties!["errors"]!).Items!;
+        GetSchemaReferenceId((OpenApiSchemaReference) inlineProblemItems.AnyOf![0]).Should().Contain("PortableError__");
+        GetSchemaReferenceId((OpenApiSchemaReference) inlineProblemItems.AnyOf[0]).Should().Contain("Movie_Gone");
+        GetSchemaReferenceId((OpenApiSchemaReference) inlineProblemItems.AnyOf[1]).Should().Be("PortableError");
+
+        var defaultValidationSchema = GetResponseSchema(
+            document,
+            "/minimal/validation/default",
+            HttpMethod.Get,
+            StatusCodes.Status400BadRequest,
+            "application/problem+json"
+        ).Should().BeOfType<OpenApiSchemaReference>().Subject;
+        GetSchemaReferenceId(defaultValidationSchema).Should().Be("PortableAspNetCoreValidationProblemDetails");
+
+        var richValidationSchema = GetResponseSchema(
+            document,
+            "/minimal/validation/rich",
+            HttpMethod.Get,
+            StatusCodes.Status400BadRequest,
+            "application/problem+json"
+        ).Should().BeOfType<OpenApiSchemaReference>().Subject;
+        GetSchemaReferenceId(richValidationSchema).Should().StartWith("PortableRichValidationProblemDetails__");
+
+        var unionSchema = GetResponseSchema(
+            document,
+            "/minimal/problems/union",
+            HttpMethod.Get,
+            StatusCodes.Status400BadRequest,
+            "application/problem+json"
+        ).Should().BeOfType<OpenApiSchema>().Subject;
+        unionSchema.AnyOf.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task MvcDocument_ShouldHonorPortableOpenApiAttributes()
+    {
+        await using var app = CreateMvcApp();
+
+        var document = await GetOpenApiDocumentAsync(app);
+
+        var successSchema = GetResponseSchema(
+            document,
+            "/mvc/openapi/success",
+            HttpMethod.Get,
+            StatusCodes.Status200OK,
+            "application/json"
+        ).Should().BeOfType<OpenApiSchemaReference>().Subject;
+        GetSchemaComponent(document, GetSchemaReferenceId(successSchema)).Properties.Should().ContainKeys("value", "metadata");
+
+        var problemSchema = GetResponseSchema(
+            document,
+            "/mvc/openapi/problem",
+            HttpMethod.Get,
+            StatusCodes.Status404NotFound,
+            "application/problem+json"
+        ).Should().BeOfType<OpenApiSchemaReference>().Subject;
+        var problemComponent = GetSchemaComponent(document, GetSchemaReferenceId(problemSchema));
+        ((OpenApiSchema) problemComponent.AllOf![1]).Properties.Should().ContainKey("errors");
+
+        var validationSchema = GetResponseSchema(
+            document,
+            "/mvc/openapi/validation",
+            HttpMethod.Get,
+            StatusCodes.Status400BadRequest,
+            "application/problem+json"
+        ).Should().BeOfType<OpenApiSchemaReference>().Subject;
+        GetSchemaReferenceId(validationSchema).Should().StartWith("PortableRichValidationProblemDetails__");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldUseEnumNarrowingForOpenApi30AndConstForOpenApi31()
+    {
+        await using var openApi30App = CreateMinimalApiApp(options => options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0);
+        var openApi30Document = await GetOpenApiDocumentAsync(openApi30App);
+
+        var openApi30Variant = GetSchemaComponent(openApi30Document, "PortableError__VersionMismatch");
+        var openApi30CodeSchema = (OpenApiSchema) ((OpenApiSchema) openApi30Variant.AllOf![1]).Properties!["code"]!;
+        openApi30CodeSchema.Const.Should().BeNull();
+        openApi30CodeSchema.Enum.Should().ContainSingle();
+        openApi30CodeSchema.Enum![0]!.ToJsonString().Should().Be("\"VersionMismatch\"");
+
+        await using var openApi31App = CreateMinimalApiApp(options => options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_1);
+        var openApi31Document = await GetOpenApiDocumentAsync(openApi31App);
+
+        var openApi31Variant = GetSchemaComponent(openApi31Document, "PortableError__VersionMismatch");
+        var openApi31CodeSchema = (OpenApiSchema) ((OpenApiSchema) openApi31Variant.AllOf![1]).Properties!["code"]!;
+        openApi31CodeSchema.Const.Should().Be("VersionMismatch");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldThrowWhenAnEndpointUsesAnUnknownGlobalErrorCode()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/unknown", static () => TypedResults.Problem())
+                   .ProducesPortableProblem(configure: x => x.WithErrorCodes("UnknownCode"));
+            }
+        );
+
+        var act = async () => await GetOpenApiDocumentAsync(app);
+
+        await act.Should()
+                 .ThrowAsync<InvalidOperationException>()
+                 .WithMessage("*UnknownCode*ConfigureErrorMetadataContracts*WithErrorMetadata*");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldThrowWhenSuccessMetadataIsDocumentedForErrorsOnlyMode()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/success/invalid", static () => TypedResults.Ok(new MovieDto()))
+                   .ProducesPortableSuccessResponse<MovieDto>(configure: x => x.WithMetadata<SuccessMetadata>());
+            }
+        );
+
+        var act = async () => await GetOpenApiDocumentAsync(app);
+
+        await act.Should()
+                 .ThrowAsync<InvalidOperationException>()
+                 .WithMessage("*MetadataSerializationMode is ErrorsOnly*");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldThrowWhenDuplicateKindsShareTheSameResponseKey()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/ambiguous", static () => TypedResults.Problem())
+                   .ProducesPortableProblem(StatusCodes.Status400BadRequest)
+                   .ProducesPortableProblem(StatusCodes.Status400BadRequest);
+            }
+        );
+
+        var act = async () => await GetOpenApiDocumentAsync(app);
+
+        await act.Should()
+                 .ThrowAsync<InvalidOperationException>()
+                 .WithMessage("*status code 400*kind 'Problem'*");
+    }
+
+    [Fact]
+    public void ErrorMetadataContractsBuilder_ShouldRejectSanitizedCodeCollisions()
+    {
+        var builder = new PortableErrorMetadataContractsBuilder();
+
+        builder.ForCode<VersionMismatchMetadata>("Code/One");
+        var act = () => builder.ForCode<FundsMetadata>("Code_One");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Code/One*Code_One*");
+    }
+
+    private static async Task<OpenApiDocument> GetOpenApiDocumentAsync(WebApplication app)
+    {
+        await app.StartAsync(TestContext.Current.CancellationToken);
+        var provider = app.Services.GetRequiredKeyedService<IOpenApiDocumentProvider>("v1");
+        return await provider.GetOpenApiDocumentAsync(TestContext.Current.CancellationToken);
+    }
+
+    private static WebApplication CreateMinimalApiApp(
+        Action<OpenApiOptions>? configureOpenApi = null,
+        Action<WebApplication>? configureEndpoints = null
+    )
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+        builder.Services.AddPortableResultsForMinimalApis();
+        builder.Services.AddPortableResultsOpenApi();
+        builder.Services.Configure<PortableResultsHttpWriteOptions>(
+            options =>
+            {
+                options.MetadataSerializationMode = MetadataSerializationMode.ErrorsOnly;
+                options.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.AspNetCoreCompatible;
+            }
+        );
+        builder.Services.ConfigureErrorMetadataContracts(
+            contracts =>
+            {
+                contracts.ForCode<VersionMismatchMetadata>("VersionMismatch");
+                contracts.ForCode<FundsMetadata>("Insufficient/Funds");
+            }
+        );
+        builder.Services.AddOpenApi(options => configureOpenApi?.Invoke(options));
+
+        var app = builder.Build();
+        app.MapGet("/minimal/success/default", static () => TypedResults.Ok(new MovieDto()))
+           .ProducesPortableSuccessResponse<MovieDto>();
+        app.MapGet("/minimal/success/wrapped", static () => TypedResults.Ok(new MovieDto()))
+           .ProducesPortableSuccessResponse<MovieDto>(
+                configure: x =>
+                    x.WithMetadata<SuccessMetadata>()
+                     .UseMetadataSerializationMode(MetadataSerializationMode.Always)
+            );
+        app.MapGet("/minimal/problems/global", static () => TypedResults.Problem())
+           .ProducesPortableProblem(
+                StatusCodes.Status409Conflict,
+                configure: x =>
+                    x.WithMetadata<ProblemMetadata>()
+                     .WithErrorCodes("VersionMismatch", "Insufficient/Funds")
+            );
+        app.MapGet("/minimal/problems/inline", static () => TypedResults.Problem())
+           .ProducesPortableProblem(
+                StatusCodes.Status404NotFound,
+                configure: x =>
+                    x.WithMetadata<ProblemMetadata>()
+                     .WithErrorMetadata<InlineProblemMetadata>("Movie/Gone")
+            );
+        app.MapGet("/minimal/validation/default", static () => TypedResults.Problem())
+           .ProducesPortableValidationProblem();
+        app.MapGet("/minimal/validation/rich", static () => TypedResults.Problem())
+           .ProducesPortableValidationProblem(
+                configure: x =>
+                    x.UseFormat(ValidationProblemSerializationFormat.Rich)
+                     .WithErrorCodes("VersionMismatch")
+            );
+        app.MapGet("/minimal/problems/union", static () => TypedResults.Problem())
+           .ProducesPortableProblem(StatusCodes.Status400BadRequest)
+           .ProducesPortableValidationProblem(StatusCodes.Status400BadRequest);
+
+        configureEndpoints?.Invoke(app);
+        return app;
+    }
+
+    private static WebApplication CreateMvcApp()
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+        builder.Services.AddPortableResultsForMvc();
+        builder.Services.AddPortableResultsOpenApi();
+        builder.Services.Configure<PortableResultsHttpWriteOptions>(
+            options =>
+            {
+                options.MetadataSerializationMode = MetadataSerializationMode.ErrorsOnly;
+                options.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.AspNetCoreCompatible;
+            }
+        );
+        builder.Services.ConfigureErrorMetadataContracts(
+            contracts => contracts.ForCode<VersionMismatchMetadata>("VersionMismatch")
+        );
+        builder.Services.AddControllers().AddApplicationPart(typeof(OpenApiMvcController).Assembly);
+        builder.Services.AddOpenApi();
+
+        var app = builder.Build();
+        app.MapControllers();
+        return app;
+    }
+
+    private static IOpenApiSchema GetResponseSchema(
+        OpenApiDocument document,
+        string path,
+        HttpMethod httpMethod,
+        int statusCode,
+        string contentType
+    )
+    {
+        var pathItem = document.Paths![path];
+        var operation = pathItem.Operations![httpMethod];
+        var response = (OpenApiResponse) operation.Responses![statusCode.ToString(CultureInfo.InvariantCulture)];
+        return response.Content![contentType].Schema!;
+    }
+
+    private static OpenApiSchema GetSchemaComponent(OpenApiDocument document, string schemaId)
+    {
+        return (OpenApiSchema) document.Components!.Schemas![schemaId];
+    }
+
+    private static string GetSchemaReferenceId(OpenApiSchemaReference schemaReference)
+    {
+        var referenceId = schemaReference.Reference?.Id ?? schemaReference.Id;
+        referenceId.Should().NotBeNull();
+        return referenceId!;
+    }
+
+}
+
+[ApiController]
+[Route("mvc/openapi")]
+public sealed class OpenApiMvcController : ControllerBase
+{
+    [HttpGet("success")]
+    [ProducesPortableSuccessResponse<MovieDto>(
+        TopLevelMetadataType = typeof(SuccessMetadata),
+        MetadataSerializationMode = MetadataSerializationMode.Always
+    )]
+    public ActionResult<MovieDto> GetSuccess() => Ok(new MovieDto());
+
+    [HttpGet("problem")]
+    [ProducesPortableProblem(
+        StatusCodes.Status404NotFound,
+        TopLevelMetadataType = typeof(ProblemMetadata),
+        ErrorCodes = new[] { "VersionMismatch" }
+    )]
+    public IActionResult GetProblem() => Problem();
+
+    [HttpGet("validation")]
+    [ProducesPortableValidationProblem(
+        Format = ValidationProblemSerializationFormat.Rich,
+        ErrorCodes = new[] { "VersionMismatch" }
+    )]
+    public IActionResult GetValidation() => Problem();
+}
+
+public sealed class MovieDto
+{
+    public string Title { get; init; } = string.Empty;
+}
+
+public sealed class SuccessMetadata
+{
+    public string TraceId { get; init; } = string.Empty;
+}
+
+public sealed class ProblemMetadata
+{
+    public string CorrelationId { get; init; } = string.Empty;
+}
+
+public sealed class InlineProblemMetadata
+{
+    public string MovieId { get; init; } = string.Empty;
+}
+
+public sealed class VersionMismatchMetadata
+{
+    public string CurrentVersion { get; init; } = string.Empty;
+}
+
+public sealed class FundsMetadata
+{
+    public decimal MissingAmount { get; init; }
+}

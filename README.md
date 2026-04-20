@@ -1324,73 +1324,100 @@ services
 
 ## OpenAPI Support
 
-Light.PortableResults ships schema-only CLR types and endpoint metadata helpers so OpenAPI generators can emit accurate response schemas for both success and failure responses. These helpers are documentation-only: the runtime HTTP serialization still happens through `LightResult<T>` / `LightActionResult<T>` and the JSON writers in `Light.PortableResults`.
+OpenAPI support lives in the dedicated `Light.PortableResults.AspNetCore.OpenApi` package. It is opt-in and does not change runtime serialization. `LightResult<T>` / `LightActionResult<T>` still serialize through the JSON writers in `Light.PortableResults`; the OpenAPI package only contributes endpoint metadata plus a document transformer.
 
-### Success responses: when to use which helper
+### Registration
 
-A successful `Result<T>` serializes to one of two body shapes:
+```csharp
+using Light.PortableResults.AspNetCore.MinimalApis;
+using Light.PortableResults.AspNetCore.OpenApi;
 
-- If the body is just `TValue`, document it with the standard ASP.NET Core OpenAPI helpers such as `Produces<TValue>(...)` on Minimal APIs or `ProducesResponseType<TValue>` on MVC controllers. Do **not** use Light.PortableResults-specific success helpers for this case.
-- If the body is `{ value, metadata }` (see `MetadataSerializationMode.Always`), document it with `ProducesPortableSuccessResponse<TValue, TMetadata>(...)` or `[ProducesPortableSuccessResponse<TValue, TMetadata>]`. The metadata type is now an explicit part of the contract.
+builder.Services
+       .AddPortableResultsForMinimalApis()
+       .AddPortableResultsOpenApi()
+       .AddOpenApi();
+```
 
-### Failure responses
+Use `AddPortableResultsForMvc()` instead of `AddPortableResultsForMinimalApis()` for MVC applications. OpenAPI support is intentionally separate so applications that never generate OpenAPI documents do not take on the extra dependency.
 
-Failure responses are documented with dedicated helpers per problem-details shape:
+### Public surface
 
-- `ProducesPortableProblem` / `ProducesPortableProblemAttribute` for non-validation failures (401, 403, 404, 409, 500, ...). Pass the relevant status code; there are no dedicated per-status-code helpers.
-- `ProducesPortableRichValidationProblem` / `ProducesPortableRichValidationProblemAttribute` when `ValidationProblemSerializationFormat` is set to `Rich`. Here the `errors` property is documented as an array of Light.PortableResults-style error objects.
-- `ProducesPortableAspNetCoreValidationProblem` / `ProducesPortableAspNetCoreValidationProblemAttribute` when `ValidationProblemSerializationFormat` is set to `AspNetCoreCompatible` (the default). Here the inherited `errors` property is documented as `Dictionary<string, string[]>`, and an optional `errorDetails` array carries Light.PortableResults-specific information such as codes, categories, and metadata.
+Minimal APIs expose three helpers in `Light.PortableResults.AspNetCore.OpenApi`:
 
-You must choose the OpenAPI helper that matches the actual configured `ValidationProblemSerializationFormat`; the library does not infer the validation shape for you.
+- `ProducesPortableSuccessResponse<TValue>(...)`
+- `ProducesPortableProblem(...)`
+- `ProducesPortableValidationProblem(...)`
 
-The `Index` property on `PortableValidationErrorDetail` is the zero-based position of the corresponding error message within the `errors[target]` array for the same target, so `errorDetails` entries can be correlated back to the matching message.
+MVC exposes three matching attributes:
 
-Each helper family has a non-generic overload and a two-generic overload. The two-generic overloads let you strongly type per-error metadata and top-level problem metadata. There are no one-generic middle-tier overloads; callers who want only typed problem metadata use the two-generic overload with `object` as the first type argument.
+- `[ProducesPortableSuccessResponse<TValue>]`
+- `[ProducesPortableProblem]`
+- `[ProducesPortableValidationProblem]`
 
-The typed metadata CLR types are schema-only helpers for OpenAPI. The runtime always serializes `MetadataObject`, so you are responsible for keeping the documented schema aligned with the metadata you actually produce.
+`ProducesPortableSuccessResponse<TValue>` documents both runtime success shapes:
 
-### Minimal APIs example (rich validation)
+- Under `MetadataSerializationMode.ErrorsOnly`, the documented body is the bare `TValue`.
+- Under `MetadataSerializationMode.Always`, the documented body is `{ value, metadata }`.
+
+Use `UseMetadataSerializationMode(...)` on Minimal APIs or the `MetadataSerializationMode = ...` named argument on the MVC attribute when the endpoint’s documented shape differs from the DI default.
+
+`ProducesPortableValidationProblem(...)` automatically selects the rich or ASP.NET Core-compatible validation envelope from `PortableResultsHttpWriteOptions.ValidationProblemSerializationFormat`. Use `UseFormat(...)` on Minimal APIs or `Format = ...` on the MVC attribute for a per-endpoint override.
+
+### Documenting metadata
+
+Top-level metadata and per-error-code metadata are caller-owned contracts. The OpenAPI package documents them explicitly; the runtime still writes `MetadataObject`.
+
+Register reusable per-error-code metadata contracts once in DI:
+
+```csharp
+using Light.PortableResults.AspNetCore.OpenApi;
+
+builder.Services.ConfigureErrorMetadataContracts(contracts =>
+{
+    contracts.ForCode<VersionMismatchMetadata>("VersionMismatch");
+    contracts.ForCode<InsufficientFundsMetadata>("InsufficientFunds");
+});
+```
+
+Then opt the relevant codes into each endpoint:
 
 ```csharp
 using Light.PortableResults;
 using Light.PortableResults.AspNetCore.MinimalApis;
-using Light.PortableResults.Metadata;
+using Light.PortableResults.AspNetCore.OpenApi;
+using Light.PortableResults.Http.Writing;
 
 app.MapPut("/api/movieRatings", async (MovieRatingDto dto, AddMovieRatingService service) =>
     {
         var result = await service.AddMovieRatingAsync(dto);
         return result.ToMinimalApiResult();
     })
-   .ProducesPortableSuccessResponse<MovieRating, MetadataObject>()
-   .ProducesPortableRichValidationProblem()
-   .ProducesPortableProblem(statusCode: StatusCodes.Status404NotFound)
+   .ProducesPortableSuccessResponse<MovieRating>(
+        configure: x =>
+            x.WithMetadata<MovieRatingResponseMetadata>()
+             .UseMetadataSerializationMode(MetadataSerializationMode.Always)
+    )
+   .ProducesPortableValidationProblem(
+        configure: x =>
+            x.UseFormat(ValidationProblemSerializationFormat.Rich)
+             .WithErrorCodes("VersionMismatch")
+    )
+   .ProducesPortableProblem(
+        statusCode: StatusCodes.Status404NotFound,
+        configure: x =>
+            x.WithMetadata<MovieProblemMetadata>()
+             .WithErrorMetadata<MovieNotFoundMetadata>("MovieNotFound")
+    )
    .ProducesPortableProblem();
 ```
 
-### Minimal APIs example (ASP.NET Core-compatible validation)
-
-```csharp
-using Light.PortableResults;
-using Light.PortableResults.AspNetCore.MinimalApis;
-using Light.PortableResults.Metadata;
-
-app.MapPut("/api/movieRatings", async (MovieRatingDto dto, AddMovieRatingService service) =>
-    {
-        var result = await service.AddMovieRatingAsync(dto);
-        return result.ToMinimalApiResult();
-    })
-   .ProducesPortableSuccessResponse<MovieRating, MetadataObject>()
-   .ProducesPortableAspNetCoreValidationProblem()
-   .ProducesPortableProblem(statusCode: StatusCodes.Status404NotFound)
-   .ProducesPortableProblem();
-```
-
-### MVC example
+The MVC equivalent uses named attribute arguments:
 
 ```csharp
 using Light.PortableResults;
 using Light.PortableResults.AspNetCore.Mvc;
-using Light.PortableResults.Metadata;
+using Light.PortableResults.AspNetCore.OpenApi;
+using Light.PortableResults.Http.Writing;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -1398,9 +1425,20 @@ using Microsoft.AspNetCore.Mvc;
 public sealed class AddMovieRatingsController(AddMovieRatingService service) : ControllerBase
 {
     [HttpPut]
-    [ProducesPortableSuccessResponse<MovieRating, MetadataObject>]
-    [ProducesPortableRichValidationProblem]
-    [ProducesPortableProblem(statusCode: StatusCodes.Status404NotFound)]
+    [ProducesPortableSuccessResponse<MovieRating>(
+        TopLevelMetadataType = typeof(MovieRatingResponseMetadata),
+        MetadataSerializationMode = MetadataSerializationMode.Always
+    )]
+    [ProducesPortableValidationProblem(
+        Format = ValidationProblemSerializationFormat.Rich,
+        ErrorCodes = new[] { "VersionMismatch" }
+    )]
+    [ProducesPortableProblem(
+        statusCode: StatusCodes.Status404NotFound,
+        TopLevelMetadataType = typeof(MovieProblemMetadata),
+        InlineErrorMetadataCodes = new[] { "MovieNotFound" },
+        InlineErrorMetadataTypes = new[] { typeof(MovieNotFoundMetadata) }
+    )]
     [ProducesPortableProblem]
     public async Task<LightActionResult<MovieRating>> AddMovieRating(AddMovieRatingDto dto)
     {

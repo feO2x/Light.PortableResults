@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsAotCompatible>true</IsAotCompatible>
+    <Description>Opt-in OpenAPI integration package for Light.PortableResults ASP.NET Core applications. Provides a library-authored schema catalog, endpoint metadata attributes, Minimal API helpers, and a document transformer.</Description>
+    <PackageReleaseNotes>
+      Light.PortableResults.AspNetCore.OpenApi 0.4.0
+      -------------------------------------
+
+      - Opt-in OpenAPI integration via IServiceCollection.AddPortableResultsOpenApi.
+      - Library-authored canonical schema catalog and a document transformer for Minimal APIs and MVC.
+      - Three public OpenAPI helpers, three public attributes, and a global error-metadata registry.
+      - Native AOT compatible OpenAPI support without schema-only CLR surrogate types.
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <ProjectReference Include="..\Light.PortableResults.AspNetCore.Shared\Light.PortableResults.AspNetCore.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

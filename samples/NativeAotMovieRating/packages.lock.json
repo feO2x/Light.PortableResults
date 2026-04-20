@@ -144,6 +144,13 @@
           "Light.PortableResults.AspNetCore.Shared": "[0.4.0, )"
         }
       },
+      "light.portableresults.aspnetcore.openapi": {
+        "type": "Project",
+        "dependencies": {
+          "Light.PortableResults.AspNetCore.Shared": "[0.4.0, )",
+          "Microsoft.AspNetCore.OpenApi": "[10.0.5, )"
+        }
+      },
       "light.portableresults.aspnetcore.shared": {
         "type": "Project",
         "dependencies": {

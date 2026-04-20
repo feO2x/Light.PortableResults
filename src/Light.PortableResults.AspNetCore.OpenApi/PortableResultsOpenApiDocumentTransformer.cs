@@ -1,0 +1,738 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Light.PortableResults.Http.Writing;
+using Light.PortableResults.SharedJsonSerialization;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.OpenApi;
+
+namespace Light.PortableResults.AspNetCore.OpenApi;
+
+/// <summary>
+/// OpenAPI document transformer for Light.PortableResults.
+/// </summary>
+public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocumentTransformer
+{
+    private readonly IOptions<PortableResultsHttpWriteOptions> _writeOptions;
+    private readonly IPortableErrorMetadataContractRegistry _errorMetadataContractRegistry;
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="PortableResultsOpenApiDocumentTransformer" />.
+    /// </summary>
+    public PortableResultsOpenApiDocumentTransformer(
+        IOptions<PortableResultsHttpWriteOptions> writeOptions,
+        IPortableErrorMetadataContractRegistry errorMetadataContractRegistry
+    )
+    {
+        _writeOptions = writeOptions;
+        _errorMetadataContractRegistry = errorMetadataContractRegistry;
+    }
+
+    /// <inheritdoc />
+    public async Task TransformAsync(
+        OpenApiDocument document,
+        OpenApiDocumentTransformerContext context,
+        CancellationToken cancellationToken
+    )
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(context);
+
+        PortableResultsOpenApiSchemas.InstallInto(document);
+        var openApiOptionsMonitor = context.ApplicationServices.GetRequiredService<IOptionsMonitor<OpenApiOptions>>();
+        var openApiVersion = openApiOptionsMonitor.Get(context.DocumentName).OpenApiVersion;
+        await EnsureGlobalErrorContractSchemasAsync(document, context, openApiVersion, cancellationToken);
+
+        if (document.Paths is null)
+        {
+            return;
+        }
+
+        foreach (var apiDescription in context.DescriptionGroups.SelectMany(static group => group.Items))
+        {
+            var attributes = apiDescription.ActionDescriptor.EndpointMetadata?
+                                   .OfType<PortableOpenApiResponseAttributeBase>()
+                                   .ToArray() ??
+                             [];
+            if (attributes.Length == 0)
+            {
+                continue;
+            }
+
+            if (!TryGetOperation(document, apiDescription, out var operation))
+            {
+                continue;
+            }
+
+            await ApplyResponseMetadataAsync(
+                document,
+                context,
+                openApiVersion,
+                apiDescription,
+                operation,
+                attributes,
+                cancellationToken
+            );
+        }
+    }
+
+    private async Task EnsureGlobalErrorContractSchemasAsync(
+        OpenApiDocument document,
+        OpenApiDocumentTransformerContext context,
+        OpenApiSpecVersion openApiVersion,
+        CancellationToken cancellationToken
+    )
+    {
+        foreach (var (errorCode, metadataType) in _errorMetadataContractRegistry.Contracts)
+        {
+            var portableErrorSchemaId = PortableResultsOpenApiSchemaNaming.CreateGlobalErrorSchemaId(
+                PortableResultsOpenApiSchemas.PortableErrorSchemaId,
+                errorCode
+            );
+            await EnsureCodeSpecificSchemaAsync(
+                document,
+                context,
+                PortableResultsOpenApiSchemas.PortableErrorSchemaId,
+                portableErrorSchemaId,
+                errorCode,
+                metadataType,
+                openApiVersion,
+                cancellationToken
+            );
+
+            var validationErrorSchemaId = PortableResultsOpenApiSchemaNaming.CreateGlobalErrorSchemaId(
+                PortableResultsOpenApiSchemas.PortableValidationErrorDetailSchemaId,
+                errorCode
+            );
+            await EnsureCodeSpecificSchemaAsync(
+                document,
+                context,
+                PortableResultsOpenApiSchemas.PortableValidationErrorDetailSchemaId,
+                validationErrorSchemaId,
+                errorCode,
+                metadataType,
+                openApiVersion,
+                cancellationToken
+            );
+        }
+    }
+
+    private async Task ApplyResponseMetadataAsync(
+        OpenApiDocument document,
+        OpenApiDocumentTransformerContext context,
+        OpenApiSpecVersion openApiVersion,
+        ApiDescription apiDescription,
+        OpenApiOperation operation,
+        IReadOnlyList<PortableOpenApiResponseAttributeBase> attributes,
+        CancellationToken cancellationToken
+    )
+    {
+        var responseGroups = attributes.GroupBy(static attribute => new ResponseGroupKey(attribute.StatusCode, attribute.ContentType));
+        foreach (var responseGroup in responseGroups)
+        {
+            foreach (var duplicateGroup in responseGroup.GroupBy(static attribute => attribute.Kind))
+            {
+                if (duplicateGroup.Count() <= 1)
+                {
+                    continue;
+                }
+
+                throw new InvalidOperationException(
+                    $"The OpenAPI response metadata for status code {responseGroup.Key.StatusCode} and content type '{responseGroup.Key.ContentType}' contains multiple markers of kind '{duplicateGroup.Key}'."
+                );
+            }
+
+            var contributingSchemas = new List<IOpenApiSchema>(responseGroup.Count());
+            foreach (var attribute in responseGroup)
+            {
+                var schema = await CreateContributingSchemaAsync(
+                    document,
+                    context,
+                    openApiVersion,
+                    apiDescription,
+                    operation,
+                    attribute,
+                    cancellationToken
+                );
+                contributingSchemas.Add(schema);
+            }
+
+            var response = GetOrCreateResponse(operation, responseGroup.Key.StatusCode);
+            response.Content ??= new Dictionary<string, OpenApiMediaType>(StringComparer.Ordinal);
+            response.Content[responseGroup.Key.ContentType] = new OpenApiMediaType
+            {
+                Schema = contributingSchemas.Count == 1
+                    ? contributingSchemas[0]
+                    : new OpenApiSchema { AnyOf = contributingSchemas }
+            };
+        }
+    }
+
+    private async Task<IOpenApiSchema> CreateContributingSchemaAsync(
+        OpenApiDocument document,
+        OpenApiDocumentTransformerContext context,
+        OpenApiSpecVersion openApiVersion,
+        ApiDescription apiDescription,
+        OpenApiOperation operation,
+        PortableOpenApiResponseAttributeBase attribute,
+        CancellationToken cancellationToken
+    )
+    {
+        return attribute.Kind switch
+        {
+            PortableOpenApiResponseKind.SuccessResponse =>
+                await CreateSuccessResponseSchemaAsync(
+                    document,
+                    context,
+                    apiDescription,
+                    operation,
+                    attribute,
+                    cancellationToken
+                ),
+            PortableOpenApiResponseKind.Problem or PortableOpenApiResponseKind.ValidationProblem =>
+                await CreateErrorResponseSchemaAsync(
+                    document,
+                    context,
+                    openApiVersion,
+                    apiDescription,
+                    operation,
+                    attribute,
+                    cancellationToken
+                ),
+            _ => throw new InvalidOperationException($"The response kind '{attribute.Kind}' is not supported.")
+        };
+    }
+
+    private async Task<IOpenApiSchema> CreateSuccessResponseSchemaAsync(
+        OpenApiDocument document,
+        OpenApiDocumentTransformerContext context,
+        ApiDescription apiDescription,
+        OpenApiOperation operation,
+        PortableOpenApiResponseAttributeBase attribute,
+        CancellationToken cancellationToken
+    )
+    {
+        if (attribute is not IPortableSuccessResponseOpenApiAttribute successAttribute)
+        {
+            throw new InvalidOperationException(
+                $"The response attribute '{attribute.GetType().FullName}' does not expose success-response metadata."
+            );
+        }
+
+        var metadataSerializationMode = successAttribute.HasMetadataSerializationModeOverride
+            ? successAttribute.MetadataSerializationMode
+            : _writeOptions.Value.MetadataSerializationMode;
+        if (attribute.TopLevelMetadataType is not null &&
+            metadataSerializationMode == MetadataSerializationMode.ErrorsOnly)
+        {
+            throw new InvalidOperationException(
+                "Top-level success metadata cannot be documented when MetadataSerializationMode is ErrorsOnly because metadata is not part of the wire format."
+            );
+        }
+
+        var valueSchema = await context.GetOrCreateSchemaAsync(
+            successAttribute.ValueType,
+            parameterDescription: null,
+            cancellationToken
+        );
+
+        if (metadataSerializationMode == MetadataSerializationMode.ErrorsOnly &&
+            attribute.TopLevelMetadataType is null)
+        {
+            return valueSchema;
+        }
+
+        var envelopeSchemaId = PortableResultsOpenApiSchemaNaming.CreateDerivedEnvelopeSchemaId(
+            "PortableSuccessResponse",
+            operation,
+            apiDescription,
+            attribute.StatusCode,
+            attribute.ContentType
+        );
+        IOpenApiSchema metadataSchema = attribute.TopLevelMetadataType is null
+            ? PortableResultsOpenApiSchemas.CreateOpenMetadataSchema()
+            : await GetStableSchemaReferenceAsync(
+                document,
+                context,
+                attribute.TopLevelMetadataType,
+                PortableResultsOpenApiSchemaNaming.CreateMetadataSchemaId(envelopeSchemaId),
+                cancellationToken
+            );
+
+        var envelopeSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
+            {
+                ["value"] = valueSchema,
+                ["metadata"] = metadataSchema
+            },
+            Required = new HashSet<string>(StringComparer.Ordinal) { "value" }
+        };
+        return AddComponentAndCreateReference(document, envelopeSchemaId, envelopeSchema);
+    }
+
+    private async Task<IOpenApiSchema> CreateErrorResponseSchemaAsync(
+        OpenApiDocument document,
+        OpenApiDocumentTransformerContext context,
+        OpenApiSpecVersion openApiVersion,
+        ApiDescription apiDescription,
+        OpenApiOperation operation,
+        PortableOpenApiResponseAttributeBase attribute,
+        CancellationToken cancellationToken
+    )
+    {
+        var errorAttribute = (PortableOpenApiErrorResponseAttributeBase) attribute;
+        ValidateInlineMetadataArrays(errorAttribute);
+
+        var canonicalSchemaId = ResolveCanonicalErrorEnvelopeSchemaId(attribute);
+        var itemBaseSchemaId = ResolveErrorItemSchemaId(canonicalSchemaId);
+        var documentedErrorSchema = await CreateDocumentedErrorItemSchemaAsync(
+            document,
+            context,
+            openApiVersion,
+            apiDescription,
+            operation,
+            errorAttribute,
+            itemBaseSchemaId,
+            cancellationToken
+        );
+
+        if (attribute.TopLevelMetadataType is null && documentedErrorSchema is null)
+        {
+            return PortableResultsOpenApiSchemas.CreateSchemaReference(document, canonicalSchemaId);
+        }
+
+        var derivedEnvelopeSchemaId = PortableResultsOpenApiSchemaNaming.CreateDerivedEnvelopeSchemaId(
+            canonicalSchemaId,
+            operation,
+            apiDescription,
+            attribute.StatusCode,
+            attribute.ContentType
+        );
+
+        var extensionSchema = new OpenApiSchema
+        {
+            Type = JsonSchemaType.Object,
+            Properties = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
+        };
+
+        if (attribute.TopLevelMetadataType is not null)
+        {
+            extensionSchema.Properties["metadata"] = await GetStableSchemaReferenceAsync(
+                document,
+                context,
+                attribute.TopLevelMetadataType,
+                PortableResultsOpenApiSchemaNaming.CreateMetadataSchemaId(derivedEnvelopeSchemaId),
+                cancellationToken
+            );
+        }
+
+        if (documentedErrorSchema is not null)
+        {
+            var propertyName = canonicalSchemaId == PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId
+                ? "errorDetails"
+                : "errors";
+            extensionSchema.Properties[propertyName] = new OpenApiSchema
+            {
+                Type = JsonSchemaType.Array,
+                Items = documentedErrorSchema
+            };
+        }
+
+        var derivedSchema = new OpenApiSchema
+        {
+            AllOf =
+            [
+                PortableResultsOpenApiSchemas.CreateSchemaReference(document, canonicalSchemaId),
+                extensionSchema
+            ]
+        };
+        return AddComponentAndCreateReference(document, derivedEnvelopeSchemaId, derivedSchema);
+    }
+
+    private async Task<IOpenApiSchema?> CreateDocumentedErrorItemSchemaAsync(
+        OpenApiDocument document,
+        OpenApiDocumentTransformerContext context,
+        OpenApiSpecVersion openApiVersion,
+        ApiDescription apiDescription,
+        OpenApiOperation operation,
+        PortableOpenApiErrorResponseAttributeBase attribute,
+        string itemBaseSchemaId,
+        CancellationToken cancellationToken
+    )
+    {
+        var documentedVariants = new List<DocumentedErrorVariant>();
+        var rawCodeTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
+        var inlineSanitizedCodes = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var code in attribute.ErrorCodes ?? [])
+        {
+            if (!_errorMetadataContractRegistry.Contracts.TryGetValue(code, out var metadataType))
+            {
+                throw new InvalidOperationException(PortableResultsOpenApiMessages.CreateUnknownErrorCodeMessage(code));
+            }
+
+            AddDocumentedCode(rawCodeTypes, code, metadataType);
+            var schemaId = PortableResultsOpenApiSchemaNaming.CreateGlobalErrorSchemaId(itemBaseSchemaId, code);
+            documentedVariants.Add(
+                new DocumentedErrorVariant(
+                    code,
+                    PortableResultsOpenApiSchemas.CreateSchemaReference(document, schemaId)
+                )
+            );
+        }
+
+        var inlineCodes = attribute.InlineErrorMetadataCodes;
+        var inlineTypes = attribute.InlineErrorMetadataTypes;
+        if (inlineCodes is not null && inlineTypes is not null)
+        {
+            for (var i = 0; i < inlineCodes.Length; i++)
+            {
+                var code = inlineCodes[i];
+                var metadataType = inlineTypes[i];
+                var sanitizedCode = PortableResultsOpenApiSchemaNaming.SanitizeErrorCode(code);
+                if (inlineSanitizedCodes.TryGetValue(sanitizedCode, out var existingCode) &&
+                    !string.Equals(existingCode, code, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        PortableResultsOpenApiMessages.CreateSanitizedErrorCodeCollisionMessage(
+                            existingCode,
+                            code,
+                            sanitizedCode
+                        )
+                    );
+                }
+
+                if (rawCodeTypes.TryGetValue(code, out var existingType))
+                {
+                    if (existingType != metadataType)
+                    {
+                        throw new InvalidOperationException(
+                            PortableResultsOpenApiMessages.CreateDuplicateErrorMetadataContractMessage(
+                                code,
+                                existingType,
+                                metadataType
+                            )
+                        );
+                    }
+
+                    continue;
+                }
+
+                rawCodeTypes.Add(code, metadataType);
+                inlineSanitizedCodes.TryAdd(sanitizedCode, code);
+                var schemaId = PortableResultsOpenApiSchemaNaming.CreateInlineErrorSchemaId(
+                    itemBaseSchemaId,
+                    operation,
+                    apiDescription,
+                    attribute.StatusCode,
+                    attribute.ContentType,
+                    code
+                );
+                var schemaReference = await EnsureCodeSpecificSchemaAsync(
+                    document,
+                    context,
+                    itemBaseSchemaId,
+                    schemaId,
+                    code,
+                    metadataType,
+                    openApiVersion,
+                    cancellationToken
+                );
+                documentedVariants.Add(new DocumentedErrorVariant(code, schemaReference));
+            }
+        }
+
+        if (documentedVariants.Count == 0)
+        {
+            return null;
+        }
+
+        var fallbackSchema = PortableResultsOpenApiSchemas.CreateSchemaReference(document, itemBaseSchemaId);
+        var anyOfSchemas = new List<IOpenApiSchema>(documentedVariants.Count + 1);
+        anyOfSchemas.AddRange(documentedVariants.Select(static variant => (IOpenApiSchema) variant.SchemaReference));
+        anyOfSchemas.Add(fallbackSchema);
+
+        var discriminatorMapping = documentedVariants.ToDictionary(
+            static variant => variant.RawCode,
+            static variant => variant.SchemaReference,
+            StringComparer.Ordinal
+        );
+        return new OpenApiSchema
+        {
+            AnyOf = anyOfSchemas,
+            Discriminator = new OpenApiDiscriminator
+            {
+                PropertyName = "code",
+                Mapping = discriminatorMapping
+            }
+        };
+    }
+
+    private async Task<OpenApiSchemaReference> EnsureCodeSpecificSchemaAsync(
+        OpenApiDocument document,
+        OpenApiDocumentTransformerContext context,
+        string baseSchemaId,
+        string schemaId,
+        string errorCode,
+        Type metadataType,
+        OpenApiSpecVersion openApiVersion,
+        CancellationToken cancellationToken
+    )
+    {
+        var schemas = EnsureSchemaStore(document);
+        if (!schemas.ContainsKey(schemaId))
+        {
+            var metadataSchema = await GetStableSchemaReferenceAsync(
+                document,
+                context,
+                metadataType,
+                PortableResultsOpenApiSchemaNaming.CreateMetadataSchemaId(schemaId),
+                cancellationToken
+            );
+            var schema = CreateCodeSpecificSchema(
+                document,
+                baseSchemaId,
+                errorCode,
+                metadataSchema,
+                openApiVersion
+            );
+            schemas.Add(schemaId, schema);
+        }
+
+        return PortableResultsOpenApiSchemas.CreateSchemaReference(document, schemaId);
+    }
+
+    private static OpenApiSchema CreateCodeSpecificSchema(
+        OpenApiDocument document,
+        string baseSchemaId,
+        string errorCode,
+        IOpenApiSchema metadataSchema,
+        OpenApiSpecVersion openApiVersion
+    )
+    {
+        var codeSchema = openApiVersion >= OpenApiSpecVersion.OpenApi3_1
+            ? new OpenApiSchema
+            {
+                Type = JsonSchemaType.String,
+                Const = errorCode
+            }
+            : new OpenApiSchema
+            {
+                Type = JsonSchemaType.String,
+                Enum = [System.Text.Json.Nodes.JsonValue.Create(errorCode)!]
+            };
+
+        return new OpenApiSchema
+        {
+            AllOf =
+            [
+                PortableResultsOpenApiSchemas.CreateSchemaReference(document, baseSchemaId),
+                new OpenApiSchema
+                {
+                    Type = JsonSchemaType.Object,
+                    Properties = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
+                    {
+                        ["code"] = codeSchema,
+                        ["metadata"] = metadataSchema
+                    },
+                    Required = new HashSet<string>(StringComparer.Ordinal) { "code" }
+                }
+            ]
+        };
+    }
+
+    private async Task<OpenApiSchemaReference> GetStableSchemaReferenceAsync(
+        OpenApiDocument document,
+        OpenApiDocumentTransformerContext context,
+        Type metadataType,
+        string schemaId,
+        CancellationToken cancellationToken
+    )
+    {
+        var schema = await context.GetOrCreateSchemaAsync(metadataType, parameterDescription: null, cancellationToken);
+        return AddComponentAndCreateReference(document, schemaId, schema);
+    }
+
+    private static OpenApiSchemaReference AddComponentAndCreateReference(
+        OpenApiDocument document,
+        string schemaId,
+        OpenApiSchema schema
+    )
+    {
+        var schemas = EnsureSchemaStore(document);
+        if (!schemas.ContainsKey(schemaId))
+        {
+            schemas.Add(schemaId, schema);
+        }
+
+        return PortableResultsOpenApiSchemas.CreateSchemaReference(document, schemaId);
+    }
+
+    private static IDictionary<string, IOpenApiSchema> EnsureSchemaStore(OpenApiDocument document)
+    {
+        document.Components ??= new OpenApiComponents();
+        document.Components.Schemas ??= new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal);
+        return document.Components.Schemas;
+    }
+
+    private static bool TryGetOperation(
+        OpenApiDocument document,
+        ApiDescription apiDescription,
+        out OpenApiOperation operation
+    )
+    {
+        operation = default!;
+        if (document.Paths is null)
+        {
+            return false;
+        }
+
+        var path = NormalizePath(apiDescription.RelativePath);
+        if (path is null || !document.Paths.TryGetValue(path, out var pathItem))
+        {
+            return false;
+        }
+
+        var httpMethod = string.IsNullOrWhiteSpace(apiDescription.HttpMethod)
+            ? null
+            : new HttpMethod(apiDescription.HttpMethod);
+        if (httpMethod is null || pathItem.Operations is null ||
+            !pathItem.Operations.TryGetValue(httpMethod, out var resolvedOperation) ||
+            resolvedOperation is null)
+        {
+            return false;
+        }
+
+        operation = resolvedOperation;
+        return true;
+    }
+
+    private static OpenApiResponse GetOrCreateResponse(OpenApiOperation operation, int statusCode)
+    {
+        operation.Responses ??= new OpenApiResponses();
+        var responseKey = statusCode.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (!operation.Responses.TryGetValue(responseKey, out var response))
+        {
+            response = new OpenApiResponse
+            {
+                Description = $"HTTP {statusCode}"
+            };
+            operation.Responses.Add(responseKey, response);
+        }
+
+        return (OpenApiResponse) response;
+    }
+
+    private string ResolveCanonicalErrorEnvelopeSchemaId(PortableOpenApiResponseAttributeBase attribute)
+    {
+        if (attribute.Kind == PortableOpenApiResponseKind.Problem)
+        {
+            return PortableResultsOpenApiSchemas.PortableProblemDetailsSchemaId;
+        }
+
+        var validationAttribute = (ProducesPortableValidationProblemAttribute) attribute;
+        var format = validationAttribute.HasFormatOverride
+            ? validationAttribute.Format
+            : _writeOptions.Value.ValidationProblemSerializationFormat;
+        return format == ValidationProblemSerializationFormat.AspNetCoreCompatible
+            ? PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId
+            : PortableResultsOpenApiSchemas.PortableRichValidationProblemDetailsSchemaId;
+    }
+
+    private static string ResolveErrorItemSchemaId(string canonicalEnvelopeSchemaId)
+    {
+        return canonicalEnvelopeSchemaId == PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId
+            ? PortableResultsOpenApiSchemas.PortableValidationErrorDetailSchemaId
+            : PortableResultsOpenApiSchemas.PortableErrorSchemaId;
+    }
+
+    private static void ValidateInlineMetadataArrays(PortableOpenApiErrorResponseAttributeBase attribute)
+    {
+        if (attribute.InlineErrorMetadataCodes is null || attribute.InlineErrorMetadataTypes is null)
+        {
+            return;
+        }
+
+        if (attribute.InlineErrorMetadataCodes.Length == attribute.InlineErrorMetadataTypes.Length)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"Inline error metadata arrays must have the same length, but codes has length {attribute.InlineErrorMetadataCodes.Length} and types has length {attribute.InlineErrorMetadataTypes.Length}."
+        );
+    }
+
+    private static void AddDocumentedCode(
+        IDictionary<string, Type> rawCodeTypes,
+        string code,
+        Type metadataType
+    )
+    {
+        if (rawCodeTypes.TryGetValue(code, out var existingType))
+        {
+            if (existingType == metadataType)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                PortableResultsOpenApiMessages.CreateDuplicateErrorMetadataContractMessage(
+                    code,
+                    existingType,
+                    metadataType
+                )
+            );
+        }
+
+        rawCodeTypes.Add(code, metadataType);
+    }
+
+    private readonly record struct ResponseGroupKey(int StatusCode, string ContentType);
+
+    private readonly record struct DocumentedErrorVariant(
+        string RawCode,
+        OpenApiSchemaReference SchemaReference
+    );
+
+    private static string? NormalizePath(string? relativePath)
+    {
+        if (string.IsNullOrWhiteSpace(relativePath))
+        {
+            return null;
+        }
+
+        var segments = relativePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        for (var i = 0; i < segments.Length; i++)
+        {
+            segments[i] = NormalizeRouteSegment(segments[i]);
+        }
+
+        return "/" + string.Join("/", segments);
+    }
+
+    private static string NormalizeRouteSegment(string segment)
+    {
+        if (segment.Length < 2 || segment[0] != '{' || segment[^1] != '}')
+        {
+            return segment;
+        }
+
+        var content = segment[1..^1];
+        var constraintSeparatorIndex = content.IndexOf(':');
+        if (constraintSeparatorIndex < 0)
+        {
+            return segment;
+        }
+
+        return "{" + content[..constraintSeparatorIndex] + "}";
+    }
+}

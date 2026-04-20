@@ -78,12 +78,14 @@
     <Project Path="src\Light.PortableResults.AspNetCore.Mvc\Light.PortableResults.AspNetCore.Mvc.csproj" />
     <Project Path="src/Light.PortableResults.Validation/Light.PortableResults.Validation.csproj" />
     <Project Path="src\Light.PortableResults.AspNetCore.MinimalApis\Light.PortableResults.AspNetCore.MinimalApis.csproj" />
+    <Project Path="src\Light.PortableResults.AspNetCore.OpenApi\Light.PortableResults.AspNetCore.OpenApi.csproj" />
     <Project Path="src\Light.PortableResults.AspNetCore.Shared\Light.PortableResults.AspNetCore.Shared.csproj" />
     <Project Path="src\Light.PortableResults\Light.PortableResults.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <File Path="tests\AGENTS.md" />
     <Project Path="tests\Light.PortableResults.AspNetCore.Mvc.Tests\Light.PortableResults.AspNetCore.Mvc.Tests.csproj" />
+    <Project Path="tests\Light.PortableResults.AspNetCore.OpenApi.Tests\Light.PortableResults.AspNetCore.OpenApi.Tests.csproj" />
     <Project Path="tests/Light.PortableResults.Validation.Tests/Light.PortableResults.Validation.Tests.csproj" />
     <Project Path="tests\Light.PortableResults.AspNetCore.MinimalApis.Tests\Light.PortableResults.AspNetCore.MinimalApis.Tests.csproj" />
     <Project Path="tests\Light.PortableResults.AspNetCore.Shared.Tests\Light.PortableResults.AspNetCore.Shared.Tests.csproj" />

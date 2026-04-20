@@ -1,5 +1,5 @@
 using Light.PortableResults.AspNetCore.MinimalApis;
-using Light.PortableResults.AspNetCore.Shared;
+using Light.PortableResults.AspNetCore.OpenApi;
 using Light.PortableResults.Validation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.OpenApi;
@@ -21,6 +21,7 @@ builder.Host.UseSerilog(Log.Logger);
 builder
    .Services
    .AddPortableResultsForMinimalApis()
+   .AddPortableResultsOpenApi()
    .AddValidationForPortableResults()
    .ConfigureJsonSerialization()
    .AddInMemoryDatabase()
@@ -28,11 +29,7 @@ builder
    .AddAddMovieRatingModule()
    .AddHealthChecks()
    .Services
-   .AddOpenApi(
-        options => options.CreateSchemaReferenceId = type =>
-            PortableResultsOpenApiNamingConventions.TryCreateSchemaReferenceId(type) ??
-            OpenApiOptions.CreateDefaultSchemaReferenceId(type)
-    );
+   .AddOpenApi();
 
 var app = builder.Build();
 app.UseSerilogRequestLogging();

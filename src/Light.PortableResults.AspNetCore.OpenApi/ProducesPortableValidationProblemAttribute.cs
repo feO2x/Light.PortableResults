@@ -1,0 +1,39 @@
+using System;
+using Light.PortableResults.Http.Writing;
+using Microsoft.AspNetCore.Http;
+
+namespace Light.PortableResults.AspNetCore.OpenApi;
+
+/// <summary>
+/// Documents a Light.PortableResults validation problem response.
+/// </summary>
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+public sealed class ProducesPortableValidationProblemAttribute : PortableOpenApiErrorResponseAttributeBase
+{
+    private ValidationProblemSerializationFormat _format;
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="ProducesPortableValidationProblemAttribute" />.
+    /// </summary>
+    /// <param name="statusCode">The documented HTTP status code.</param>
+    /// <param name="contentType">The documented content type.</param>
+    public ProducesPortableValidationProblemAttribute(
+        int statusCode = StatusCodes.Status400BadRequest,
+        string contentType = "application/problem+json"
+    ) : base(PortableOpenApiResponseKind.ValidationProblem, statusCode, contentType) { }
+
+    /// <summary>
+    /// Gets or sets the optional documentation-only override for the validation serialization format.
+    /// </summary>
+    public ValidationProblemSerializationFormat Format
+    {
+        get => _format;
+        set
+        {
+            _format = value;
+            HasFormatOverride = true;
+        }
+    }
+
+    internal bool HasFormatOverride { get; private set; }
+}

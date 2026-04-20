@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Light.PortableResults;
 using Light.PortableResults.AspNetCore.MinimalApis;
+using Light.PortableResults.AspNetCore.OpenApi;
+using Light.PortableResults.Http.Writing;
 using Light.PortableResults.Metadata;
 using Light.PortableResults.Validation;
 using Microsoft.AspNetCore.Builder;
@@ -26,7 +28,7 @@ public static class GetMoviesEndpoint
                 "details response when input validation fails or when the lastKnownMovieId does not exist."
             )
            .Produces<List<Movie>>()
-           .ProducesPortableRichValidationProblem();
+           .ProducesPortableValidationProblem(configure: x => x.UseFormat(ValidationProblemSerializationFormat.Rich));
 
     private static async Task<IResult> GetMovies(
         IGetMoviesSession session,

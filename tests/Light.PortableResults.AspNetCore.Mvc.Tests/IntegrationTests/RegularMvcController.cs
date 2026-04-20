@@ -10,7 +10,7 @@ namespace Light.PortableResults.AspNetCore.Mvc.Tests.IntegrationTests;
 public sealed class RegularMvcController : ControllerBase
 {
     [HttpGet]
-    [ProducesPortableSuccessResponse<List<ContactDto>, Dictionary<string, long>>]
+    [ProducesResponseType<List<ContactDto>>(200)]
     public LightActionResult<List<ContactDto>> GetContacts()
     {
         var contact1 = new ContactDto { Id = new Guid("D8FC9BEC-0606-4E9B-8EB4-04558B2B9D40"), Name = "Foo" };

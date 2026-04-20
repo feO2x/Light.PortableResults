@@ -1,6 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="PublishAot">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PublishAot>false</PublishAot>
     <Description>Framework-agnostic validation foundations for Light.PortableResults, including validation contexts, low-allocation checks, validator base classes, and validated value pipelines.</Description>
     <PackageReleaseNotes>
       Light.PortableResults.Validation 0.4.0
