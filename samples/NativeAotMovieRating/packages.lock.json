@@ -175,22 +175,6 @@
         "resolved": "1.4.1",
         "contentHash": "V6crLJ8a29raWeNwxYGfH9RTKA3H0nR0D9LAGzN3KtEsbiiaWkUjDor6OT5Oz7pxCK+NaY2hu2FLoYEOa8oCkA=="
       }
-    },
-    "net10.0/osx-arm64": {
-      "Microsoft.DotNet.ILCompiler": {
-        "type": "Direct",
-        "requested": "[10.0.6, )",
-        "resolved": "10.0.6",
-        "contentHash": "nBOzxOys8OeyJ+Nsi/uYlI/5TSsvwjaM/p5m4dTL6khCLx9UuP3b2ec3HeuBw/+F7hHCAZG1yFx8VBeoRAX+EQ==",
-        "dependencies": {
-          "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": "10.0.6"
-        }
-      },
-      "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": {
-        "type": "Transitive",
-        "resolved": "10.0.6",
-        "contentHash": "+yovwOAlIpfIcH+ZWmLYXWTSWYJ93wcQxF/RVk+X4MXgLASeosCJYVLqP20g0cufKjoRqvCmnklR6y9Su3ORtA=="
-      }
     }
   }
 }
