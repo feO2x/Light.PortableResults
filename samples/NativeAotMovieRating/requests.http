@@ -58,3 +58,12 @@ Content-Type: application/json
     "comment": null,
     "rating": -23
 }
+
+### New Movie
+PUT http://localhost:5000/api/movies
+Content-Type: application/json
+
+{
+    "movieId": "BCAE7EBA-C09B-4F1D-9406-1C8909919E48",
+    "movieName": "Star Wars - A New Hope"
+}

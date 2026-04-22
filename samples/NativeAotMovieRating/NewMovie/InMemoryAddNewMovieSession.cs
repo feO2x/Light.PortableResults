@@ -4,13 +4,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using NativeAotMovieRating.InMemoryDatabaseAccess;
 
-namespace NativeAotMovieRating;
+namespace NativeAotMovieRating.NewMovie;
 
-public sealed class InMemoryAddMovieRatingSession : IAddMovieRatingSession
+public sealed class InMemoryAddNewMovieSession : IAddNewMovieSession
 {
     private readonly InMemoryMovieDatabase _database;
 
-    public InMemoryAddMovieRatingSession(InMemoryMovieDatabase database)
+    public InMemoryAddNewMovieSession(InMemoryMovieDatabase database)
     {
         _database = database;
     }
@@ -21,8 +21,8 @@ public sealed class InMemoryAddMovieRatingSession : IAddMovieRatingSession
 
     public Task<Movie?> GetMovieAsync(Guid movieId, CancellationToken cancellationToken = default)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var movie = _database.Movies.FirstOrDefault(x => x.Id == movieId);
-        return Task.FromResult(movie);
+        return Task.FromResult(_database.Movies.FirstOrDefault(x => x.Id == movieId));
     }
+
+    public void AddMovie(Movie movie) => _database.Movies.Add(movie);
 }
