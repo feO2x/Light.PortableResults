@@ -4,13 +4,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using NativeAotMovieRating.InMemoryDatabaseAccess;
 
-namespace NativeAotMovieRating.AddMovieRating;
+namespace NativeAotMovieRating.NewMovieRating;
 
-public sealed class InMemoryAddMovieRatingSession : IAddMovieRatingSession
+public sealed class InMemoryNewMovieRatingSession : INewMovieRatingSession
 {
     private readonly InMemoryMovieDatabase _database;
 
-    public InMemoryAddMovieRatingSession(InMemoryMovieDatabase database)
+    public InMemoryNewMovieRatingSession(InMemoryMovieDatabase database)
     {
         _database = database;
     }

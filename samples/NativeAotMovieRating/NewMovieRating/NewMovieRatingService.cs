@@ -5,15 +5,15 @@ using Light.PortableResults.Metadata;
 using NativeAotMovieRating.InMemoryDatabaseAccess;
 using Serilog;
 
-namespace NativeAotMovieRating.AddMovieRating;
+namespace NativeAotMovieRating.NewMovieRating;
 
-public sealed class AddMovieRatingService
+public sealed class NewMovieRatingService
 {
     private readonly ILogger _logger;
-    private readonly IAddMovieRatingSession _session;
-    private readonly MovieRatingValidator _validator;
+    private readonly INewMovieRatingSession _session;
+    private readonly NewMovieRatingValidator _validator;
 
-    public AddMovieRatingService(MovieRatingValidator validator, IAddMovieRatingSession session, ILogger logger)
+    public NewMovieRatingService(NewMovieRatingValidator validator, INewMovieRatingSession session, ILogger logger)
     {
         _validator = validator;
         _session = session;
@@ -21,7 +21,7 @@ public sealed class AddMovieRatingService
     }
 
     public async Task<Result<MovieRating>> AddMovieRatingAsync(
-        MovieRatingDto dto,
+        NewMovieRatingDto dto,
         CancellationToken cancellationToken = default
     )
     {

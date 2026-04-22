@@ -7,9 +7,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using NativeAotMovieRating.InMemoryDatabaseAccess;
 
-namespace NativeAotMovieRating.AddMovieRating;
+namespace NativeAotMovieRating.NewMovieRating;
 
-public static class AddMovieRatingEndpoint
+public static class NewMovieRatingEndpoint
 {
     public static void MapAddMovieRatingEndpoint(this WebApplication app) =>
         app
@@ -25,8 +25,8 @@ public static class AddMovieRatingEndpoint
            .ProducesPortableProblem();
 
     private static async Task<IResult> AddMovieRating(
-        MovieRatingDto dto,
-        AddMovieRatingService service,
+        NewMovieRatingDto dto,
+        NewMovieRatingService service,
         CancellationToken cancellationToken = default
     )
     {

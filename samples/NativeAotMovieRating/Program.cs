@@ -3,11 +3,11 @@ using Light.PortableResults.AspNetCore.OpenApi;
 using Light.PortableResults.Validation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using NativeAotMovieRating.AddMovieRating;
 using NativeAotMovieRating.GetMovies;
 using NativeAotMovieRating.InMemoryDatabaseAccess;
 using NativeAotMovieRating.JsonSerialization;
 using NativeAotMovieRating.NewMovie;
+using NativeAotMovieRating.NewMovieRating;
 using NativeAotMovieRating.OpenApi;
 using Serilog;
 using Serilog.Events;
@@ -26,7 +26,7 @@ builder
    .ConfigureJsonSerialization()
    .AddInMemoryDatabase()
    .AddGetMoviesModule()
-   .AddAddMovieRatingModule()
+   .AddNewMovieRatingModule()
    .AddNewMovieModule()
    .AddHealthChecks()
    .Services
