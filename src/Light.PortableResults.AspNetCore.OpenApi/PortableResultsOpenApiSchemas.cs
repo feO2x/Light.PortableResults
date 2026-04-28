@@ -11,13 +11,37 @@ namespace Light.PortableResults.AspNetCore.OpenApi;
 /// </summary>
 public static class PortableResultsOpenApiSchemas
 {
-    internal const string PortableErrorSchemaId = "PortableError";
-    internal const string PortableValidationErrorDetailSchemaId = "PortableValidationErrorDetail";
-    internal const string PortableProblemDetailsSchemaId = "PortableProblemDetails";
-    internal const string PortableRichValidationProblemDetailsSchemaId = "PortableRichValidationProblemDetails";
-    internal const string PortableAspNetCoreValidationProblemDetailsSchemaId =
+    /// <summary>
+    /// The component schema id for the canonical portable error item shape.
+    /// </summary>
+    public const string PortableErrorSchemaId = "PortableError";
+
+    /// <summary>
+    /// The component schema id for the canonical portable validation error detail shape.
+    /// </summary>
+    public const string PortableValidationErrorDetailSchemaId = "PortableValidationErrorDetail";
+
+    /// <summary>
+    /// The component schema id for the canonical portable problem details envelope.
+    /// </summary>
+    public const string PortableProblemDetailsSchemaId = "PortableProblemDetails";
+
+    /// <summary>
+    /// The component schema id for the rich validation-problem envelope.
+    /// </summary>
+    public const string PortableRichValidationProblemDetailsSchemaId = "PortableRichValidationProblemDetails";
+
+
+    /// <summary>
+    /// The component schema id for the ASP.NET Core-compatible validation-problem envelope.
+    /// </summary>
+    public const string PortableAspNetCoreValidationProblemDetailsSchemaId =
         "PortableAspNetCoreValidationProblemDetails";
-    internal const string ErrorCategorySchemaId = "ErrorCategory";
+
+    /// <summary>
+    /// The component schema id for the <see cref="ErrorCategory" /> enum values.
+    /// </summary>
+    public const string ErrorCategorySchemaId = "ErrorCategory";
 
     /// <summary>
     /// Installs the canonical Light.PortableResults schema catalog into the specified document.
@@ -50,7 +74,11 @@ public static class PortableResultsOpenApiSchemas
         );
     }
 
-    internal static OpenApiSchema CreateOpenMetadataSchema()
+    /// <summary>
+    /// Creates an open-ended metadata schema that allows arbitrary object properties.
+    /// </summary>
+    /// <returns>The metadata schema.</returns>
+    public static OpenApiSchema CreateOpenMetadataSchema()
     {
         return new OpenApiSchema
         {
@@ -59,7 +87,13 @@ public static class PortableResultsOpenApiSchemas
         };
     }
 
-    internal static OpenApiSchemaReference CreateSchemaReference(OpenApiDocument document, string schemaId)
+    /// <summary>
+    /// Creates a reference to a schema component in the specified OpenAPI document.
+    /// </summary>
+    /// <param name="document">The OpenAPI document that owns the schema component.</param>
+    /// <param name="schemaId">The component schema id to reference.</param>
+    /// <returns>The schema reference.</returns>
+    public static OpenApiSchemaReference CreateSchemaReference(OpenApiDocument document, string schemaId)
     {
         return new OpenApiSchemaReference(schemaId, document, externalResource: null);
     }

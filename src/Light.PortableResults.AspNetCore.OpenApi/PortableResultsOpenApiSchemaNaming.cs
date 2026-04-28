@@ -4,9 +4,21 @@ using Microsoft.OpenApi;
 
 namespace Light.PortableResults.AspNetCore.OpenApi;
 
-internal static class PortableResultsOpenApiSchemaNaming
+/// <summary>
+/// Provides helpers for creating stable OpenAPI component schema ids used by Light.PortableResults.
+/// </summary>
+public static class PortableResultsOpenApiSchemaNaming
 {
-    internal static string CreateDerivedEnvelopeSchemaId(
+    /// <summary>
+    /// Creates a schema id for an endpoint-specific response envelope derived from a canonical base schema.
+    /// </summary>
+    /// <param name="canonicalName">The canonical base schema name.</param>
+    /// <param name="operation">The OpenAPI operation that owns the derived schema.</param>
+    /// <param name="apiDescription">The ASP.NET API description for the operation.</param>
+    /// <param name="statusCode">The documented HTTP status code.</param>
+    /// <param name="contentType">The documented content type.</param>
+    /// <returns>The derived schema id.</returns>
+    public static string CreateDerivedEnvelopeSchemaId(
         string canonicalName,
         OpenApiOperation operation,
         ApiDescription apiDescription,
@@ -18,7 +30,17 @@ internal static class PortableResultsOpenApiSchemaNaming
         return $"{canonicalName}__{operationToken}__{statusCode}__{SanitizeSegment(contentType)}";
     }
 
-    internal static string CreateInlineErrorSchemaId(
+    /// <summary>
+    /// Creates a schema id for an endpoint-specific error-item variant declared inline on an endpoint.
+    /// </summary>
+    /// <param name="baseSchemaName">The canonical base schema name for the error item.</param>
+    /// <param name="operation">The OpenAPI operation that owns the derived schema.</param>
+    /// <param name="apiDescription">The ASP.NET API description for the operation.</param>
+    /// <param name="statusCode">The documented HTTP status code.</param>
+    /// <param name="contentType">The documented content type.</param>
+    /// <param name="errorCode">The error code represented by the schema.</param>
+    /// <returns>The inline error schema id.</returns>
+    public static string CreateInlineErrorSchemaId(
         string baseSchemaName,
         OpenApiOperation operation,
         ApiDescription apiDescription,
@@ -32,30 +54,56 @@ internal static class PortableResultsOpenApiSchemaNaming
             $"{baseSchemaName}__{operationToken}__{statusCode}__{SanitizeSegment(contentType)}__{SanitizeErrorCode(errorCode)}";
     }
 
-    internal static string CreateGlobalErrorSchemaId(string baseSchemaName, string errorCode)
+    /// <summary>
+    /// Creates a schema id for a globally registered error-code-specific schema.
+    /// </summary>
+    /// <param name="baseSchemaName">The canonical base schema name for the error item.</param>
+    /// <param name="errorCode">The registered error code.</param>
+    /// <returns>The global error schema id.</returns>
+    public static string CreateGlobalErrorSchemaId(string baseSchemaName, string errorCode)
     {
         return $"{baseSchemaName}__{SanitizeErrorCode(errorCode)}";
     }
 
-    internal static string CreateMetadataSchemaId(string ownerSchemaId)
+    /// <summary>
+    /// Creates a schema id for a metadata schema owned by another schema component.
+    /// </summary>
+    /// <param name="ownerSchemaId">The schema id of the owning component.</param>
+    /// <returns>The metadata schema id.</returns>
+    public static string CreateMetadataSchemaId(string ownerSchemaId)
     {
         return $"{ownerSchemaId}__Metadata";
     }
 
-    internal static string EscapeJsonPointer(string value)
+    /// <summary>
+    /// Escapes a value for use inside a JSON Pointer segment.
+    /// </summary>
+    /// <param name="value">The raw segment value.</param>
+    /// <returns>The escaped JSON Pointer value.</returns>
+    public static string EscapeJsonPointer(string value)
     {
         ArgumentNullException.ThrowIfNull(value);
         return value.Replace("~", "~0", StringComparison.Ordinal)
                     .Replace("/", "~1", StringComparison.Ordinal);
     }
 
-    internal static string SanitizeErrorCode(string value)
+    /// <summary>
+    /// Sanitizes an error code so it can be embedded safely into an OpenAPI component schema id.
+    /// </summary>
+    /// <param name="value">The raw error code.</param>
+    /// <returns>The sanitized error code.</returns>
+    public static string SanitizeErrorCode(string value)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value);
         return SanitizeSegment(value);
     }
 
-    internal static string SanitizeSegment(string value)
+    /// <summary>
+    /// Replaces characters that are unsuitable for component schema ids with underscores.
+    /// </summary>
+    /// <param name="value">The raw segment value.</param>
+    /// <returns>The sanitized segment.</returns>
+    public static string SanitizeSegment(string value)
     {
         ArgumentNullException.ThrowIfNull(value);
 
@@ -69,7 +117,12 @@ internal static class PortableResultsOpenApiSchemaNaming
         return new string(buffer);
     }
 
-    internal static string SanitizeRoutePattern(string routePattern)
+    /// <summary>
+    /// Sanitizes a route pattern into a compact token suitable for schema ids.
+    /// </summary>
+    /// <param name="routePattern">The raw route pattern.</param>
+    /// <returns>The sanitized route token.</returns>
+    public static string SanitizeRoutePattern(string routePattern)
     {
         ArgumentNullException.ThrowIfNull(routePattern);
 
