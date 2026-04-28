@@ -7,7 +7,7 @@ namespace Light.PortableResults.AspNetCore.OpenApi;
 /// Documents a Light.PortableResults problem details response.
 /// </summary>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-public sealed class ProducesPortableProblemAttribute : PortableOpenApiErrorResponseAttributeBase
+public class ProducesPortableProblemAttribute : PortableOpenApiErrorResponseAttributeBase
 {
     /// <summary>
     /// Initializes a new instance of <see cref="ProducesPortableProblemAttribute" />.

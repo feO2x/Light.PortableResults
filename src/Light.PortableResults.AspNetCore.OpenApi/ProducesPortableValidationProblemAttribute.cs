@@ -8,10 +8,8 @@ namespace Light.PortableResults.AspNetCore.OpenApi;
 /// Documents a Light.PortableResults validation problem response.
 /// </summary>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-public sealed class ProducesPortableValidationProblemAttribute : PortableOpenApiErrorResponseAttributeBase
+public class ProducesPortableValidationProblemAttribute : PortableOpenApiErrorResponseAttributeBase
 {
-    private ValidationProblemSerializationFormat _format;
-
     /// <summary>
     /// Initializes a new instance of <see cref="ProducesPortableValidationProblemAttribute" />.
     /// </summary>
@@ -27,13 +25,16 @@ public sealed class ProducesPortableValidationProblemAttribute : PortableOpenApi
     /// </summary>
     public ValidationProblemSerializationFormat Format
     {
-        get => _format;
+        get;
         set
         {
-            _format = value;
+            field = value;
             HasFormatOverride = true;
         }
     }
 
-    internal bool HasFormatOverride { get; private set; }
+    /// <summary>
+    /// Indicates whether the serialization format for the validation problem response has been explicitly overridden.
+    /// </summary>
+    public bool HasFormatOverride { get; private set; }
 }

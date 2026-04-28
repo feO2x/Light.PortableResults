@@ -9,11 +9,9 @@ namespace Light.PortableResults.AspNetCore.OpenApi;
 /// </summary>
 /// <typeparam name="TValue">The response value type.</typeparam>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-public sealed class ProducesPortableSuccessResponseAttribute<TValue> : PortableOpenApiResponseAttributeBase
-    , IPortableSuccessResponseOpenApiAttribute
+public class ProducesPortableSuccessResponseAttribute<TValue>
+    : PortableOpenApiResponseAttributeBase, IPortableSuccessResponseOpenApiAttribute
 {
-    private MetadataSerializationMode _metadataSerializationMode;
-
     /// <summary>
     /// Initializes a new instance of <see cref="ProducesPortableSuccessResponseAttribute{TValue}" />.
     /// </summary>
@@ -37,10 +35,10 @@ public sealed class ProducesPortableSuccessResponseAttribute<TValue> : PortableO
     /// </summary>
     public MetadataSerializationMode MetadataSerializationMode
     {
-        get => _metadataSerializationMode;
+        get;
         set
         {
-            _metadataSerializationMode = value;
+            field = value;
             HasMetadataSerializationModeOverride = true;
         }
     }
