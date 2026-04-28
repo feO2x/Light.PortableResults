@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Light.PortableResults.Http.Writing;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
