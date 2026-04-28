@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Light.PortableResults.Http.Writing;
@@ -19,8 +22,8 @@ namespace Light.PortableResults.AspNetCore.OpenApi;
 /// </summary>
 public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocumentTransformer
 {
-    private readonly IOptions<PortableResultsHttpWriteOptions> _writeOptions;
     private readonly IPortableErrorMetadataContractRegistry _errorMetadataContractRegistry;
+    private readonly IOptions<PortableResultsHttpWriteOptions> _writeOptions;
 
     /// <summary>
     /// Initializes a new instance of <see cref="PortableResultsOpenApiDocumentTransformer" />.
@@ -44,11 +47,16 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(context);
 
+        // Install the library's fixed base schema catalog first, then add code-specific variants for
+        // globally registered error contracts. InstallInto only adds the canonical shared shapes;
+        // it does not know about application-defined error codes or their metadata CLR types.
         PortableResultsOpenApiSchemas.InstallInto(document);
         var openApiOptionsMonitor = context.ApplicationServices.GetRequiredService<IOptionsMonitor<OpenApiOptions>>();
         var openApiVersion = openApiOptionsMonitor.Get(context.DocumentName).OpenApiVersion;
         await EnsureGlobalErrorContractSchemasAsync(document, context, openApiVersion, cancellationToken);
 
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        // document.Paths can be null if no paths are defined in the OpenAPI document
         if (document.Paths is null)
         {
             return;
@@ -56,29 +64,24 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
 
         foreach (var apiDescription in context.DescriptionGroups.SelectMany(static group => group.Items))
         {
-            var attributes = apiDescription.ActionDescriptor.EndpointMetadata?
-                                   .OfType<PortableOpenApiResponseAttributeBase>()
-                                   .ToArray() ??
-                             [];
-            if (attributes.Length == 0)
-            {
-                continue;
-            }
+            var attributes = apiDescription
+               .ActionDescriptor
+               .EndpointMetadata
+               .OfType<PortableOpenApiResponseAttributeBase>()
+               .ToArray();
 
-            if (!TryGetOperation(document, apiDescription, out var operation))
+            if (attributes.Length > 0 && TryGetOperation(document, apiDescription, out var operation))
             {
-                continue;
+                await ApplyResponseMetadataAsync(
+                    document,
+                    context,
+                    openApiVersion,
+                    apiDescription,
+                    operation,
+                    attributes,
+                    cancellationToken
+                );
             }
-
-            await ApplyResponseMetadataAsync(
-                document,
-                context,
-                openApiVersion,
-                apiDescription,
-                operation,
-                attributes,
-                cancellationToken
-            );
         }
     }
 
@@ -89,6 +92,10 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         CancellationToken cancellationToken
     )
     {
+        // Pre-register schema components for every globally configured error code so endpoint-level
+        // documentation can later reference stable component ids instead of creating duplicates on demand.
+        // Each contract produces two variants because regular problems use PortableError items while
+        // ASP.NET-compatible validation problems use PortableValidationErrorDetail items.
         foreach (var (errorCode, metadataType) in _errorMetadataContractRegistry.Contracts)
         {
             var portableErrorSchemaId = PortableResultsOpenApiSchemaNaming.CreateGlobalErrorSchemaId(
@@ -133,9 +140,14 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         CancellationToken cancellationToken
     )
     {
-        var responseGroups = attributes.GroupBy(static attribute => new ResponseGroupKey(attribute.StatusCode, attribute.ContentType));
+        var responseGroups = attributes.GroupBy(
+            static attribute => new ResponseGroupKey(attribute.StatusCode, attribute.ContentType)
+        );
         foreach (var responseGroup in responseGroups)
         {
+            // A single HTTP response slot may combine different response kinds via anyOf, but it cannot
+            // describe the same kind twice for the same status code and content type because the resulting
+            // schema would be ambiguous and we would not know which marker should win.
             foreach (var duplicateGroup in responseGroup.GroupBy(static attribute => attribute.Kind))
             {
                 if (duplicateGroup.Count() <= 1)
@@ -148,6 +160,9 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                 );
             }
 
+            // "Contributing" is local terminology here: each response attribute yields one candidate
+            // schema for this response slot, and the final response schema is either that single schema
+            // or an anyOf composed from all contributed candidates.
             var contributingSchemas = new List<IOpenApiSchema>(responseGroup.Count());
             foreach (var attribute in responseGroup)
             {
@@ -167,9 +182,9 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
             response.Content ??= new Dictionary<string, OpenApiMediaType>(StringComparer.Ordinal);
             response.Content[responseGroup.Key.ContentType] = new OpenApiMediaType
             {
-                Schema = contributingSchemas.Count == 1
-                    ? contributingSchemas[0]
-                    : new OpenApiSchema { AnyOf = contributingSchemas }
+                Schema = contributingSchemas.Count == 1 ?
+                    contributingSchemas[0] :
+                    new OpenApiSchema { AnyOf = contributingSchemas }
             };
         }
     }
@@ -184,6 +199,9 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         CancellationToken cancellationToken
     )
     {
+        // By this point the transformer only cares about the discovered response metadata kind. The
+        // attribute may have originated from an MVC action attribute or from a Minimal API helper that
+        // attached the same attribute via EndpointMetadata, but both flow through the same schema builder.
         return attribute.Kind switch
         {
             PortableOpenApiResponseKind.SuccessResponse =>
@@ -225,9 +243,9 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
             );
         }
 
-        var metadataSerializationMode = successAttribute.HasMetadataSerializationModeOverride
-            ? successAttribute.MetadataSerializationMode
-            : _writeOptions.Value.MetadataSerializationMode;
+        var metadataSerializationMode = successAttribute.HasMetadataSerializationModeOverride ?
+            successAttribute.MetadataSerializationMode :
+            _writeOptions.Value.MetadataSerializationMode;
         if (attribute.TopLevelMetadataType is not null &&
             metadataSerializationMode == MetadataSerializationMode.ErrorsOnly)
         {
@@ -255,9 +273,9 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
             attribute.StatusCode,
             attribute.ContentType
         );
-        IOpenApiSchema metadataSchema = attribute.TopLevelMetadataType is null
-            ? PortableResultsOpenApiSchemas.CreateOpenMetadataSchema()
-            : await GetStableSchemaReferenceAsync(
+        IOpenApiSchema metadataSchema = attribute.TopLevelMetadataType is null ?
+            PortableResultsOpenApiSchemas.CreateOpenMetadataSchema() :
+            await GetStableSchemaReferenceAsync(
                 document,
                 context,
                 attribute.TopLevelMetadataType,
@@ -336,9 +354,10 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
 
         if (documentedErrorSchema is not null)
         {
-            var propertyName = canonicalSchemaId == PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId
-                ? "errorDetails"
-                : "errors";
+            var propertyName =
+                canonicalSchemaId == PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId ?
+                    "errorDetails" :
+                    "errors";
             extensionSchema.Properties[propertyName] = new OpenApiSchema
             {
                 Type = JsonSchemaType.Array,
@@ -518,16 +537,16 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         OpenApiSpecVersion openApiVersion
     )
     {
-        var codeSchema = openApiVersion >= OpenApiSpecVersion.OpenApi3_1
-            ? new OpenApiSchema
+        var codeSchema = openApiVersion >= OpenApiSpecVersion.OpenApi3_1 ?
+            new OpenApiSchema
             {
                 Type = JsonSchemaType.String,
                 Const = errorCode
-            }
-            : new OpenApiSchema
+            } :
+            new OpenApiSchema
             {
                 Type = JsonSchemaType.String,
-                Enum = [System.Text.Json.Nodes.JsonValue.Create(errorCode)!]
+                Enum = [JsonValue.Create(errorCode)!]
             };
 
         return new OpenApiSchema
@@ -586,10 +605,12 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
     private static bool TryGetOperation(
         OpenApiDocument document,
         ApiDescription apiDescription,
-        out OpenApiOperation operation
+        [NotNullWhen(true)] out OpenApiOperation? operation
     )
     {
-        operation = default!;
+        operation = null;
+
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (document.Paths is null)
         {
             return false;
@@ -601,12 +622,13 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
             return false;
         }
 
-        var httpMethod = string.IsNullOrWhiteSpace(apiDescription.HttpMethod)
-            ? null
-            : new HttpMethod(apiDescription.HttpMethod);
-        if (httpMethod is null || pathItem.Operations is null ||
-            !pathItem.Operations.TryGetValue(httpMethod, out var resolvedOperation) ||
-            resolvedOperation is null)
+        var httpMethod = string.IsNullOrWhiteSpace(apiDescription.HttpMethod) ?
+            null :
+            new HttpMethod(apiDescription.HttpMethod);
+
+        if (httpMethod is null ||
+            pathItem.Operations is null ||
+            !pathItem.Operations.TryGetValue(httpMethod, out var resolvedOperation))
         {
             return false;
         }
@@ -618,7 +640,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
     private static OpenApiResponse GetOrCreateResponse(OpenApiOperation operation, int statusCode)
     {
         operation.Responses ??= new OpenApiResponses();
-        var responseKey = statusCode.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var responseKey = statusCode.ToString(CultureInfo.InvariantCulture);
         if (!operation.Responses.TryGetValue(responseKey, out var response))
         {
             response = new OpenApiResponse
@@ -639,19 +661,20 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         }
 
         var validationAttribute = (ProducesPortableValidationProblemAttribute) attribute;
-        var format = validationAttribute.HasFormatOverride
-            ? validationAttribute.Format
-            : _writeOptions.Value.ValidationProblemSerializationFormat;
-        return format == ValidationProblemSerializationFormat.AspNetCoreCompatible
-            ? PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId
-            : PortableResultsOpenApiSchemas.PortableRichValidationProblemDetailsSchemaId;
+        var format = validationAttribute.HasFormatOverride ?
+            validationAttribute.Format :
+            _writeOptions.Value.ValidationProblemSerializationFormat;
+        return format == ValidationProblemSerializationFormat.AspNetCoreCompatible ?
+            PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId :
+            PortableResultsOpenApiSchemas.PortableRichValidationProblemDetailsSchemaId;
     }
 
     private static string ResolveErrorItemSchemaId(string canonicalEnvelopeSchemaId)
     {
-        return canonicalEnvelopeSchemaId == PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId
-            ? PortableResultsOpenApiSchemas.PortableValidationErrorDetailSchemaId
-            : PortableResultsOpenApiSchemas.PortableErrorSchemaId;
+        return canonicalEnvelopeSchemaId ==
+               PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId ?
+            PortableResultsOpenApiSchemas.PortableValidationErrorDetailSchemaId :
+            PortableResultsOpenApiSchemas.PortableErrorSchemaId;
     }
 
     private static void ValidateInlineMetadataArrays(PortableOpenApiErrorResponseAttributeBase attribute)
@@ -696,13 +719,6 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         rawCodeTypes.Add(code, metadataType);
     }
 
-    private readonly record struct ResponseGroupKey(int StatusCode, string ContentType);
-
-    private readonly record struct DocumentedErrorVariant(
-        string RawCode,
-        OpenApiSchemaReference SchemaReference
-    );
-
     private static string? NormalizePath(string? relativePath)
     {
         if (string.IsNullOrWhiteSpace(relativePath))
@@ -735,4 +751,11 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
 
         return "{" + content[..constraintSeparatorIndex] + "}";
     }
+
+    private readonly record struct ResponseGroupKey(int StatusCode, string ContentType);
+
+    private readonly record struct DocumentedErrorVariant(
+        string RawCode,
+        OpenApiSchemaReference SchemaReference
+    );
 }
