@@ -29,7 +29,7 @@ public static class BuiltInValidationErrorContractRegistrationExtensions
                 case PortableErrorMetadataSchemaContract schemaContract:
                     builder.ForCode(code, schemaContract.SchemaFactory);
                     break;
-                case PortableErrorMetadataNoMetadataContract:
+                case PortableNoMetadataContract:
                     builder.ForCode(code);
                     break;
                 default:

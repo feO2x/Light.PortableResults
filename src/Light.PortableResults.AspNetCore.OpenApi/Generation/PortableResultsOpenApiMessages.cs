@@ -31,7 +31,7 @@ internal static class PortableResultsOpenApiMessages
             PortableErrorMetadataTypeContract typeContract => typeContract.MetadataType.FullName ??
                                                              typeContract.MetadataType.Name,
             PortableErrorMetadataSchemaContract schemaContract => DescribeSchemaFactory(schemaContract),
-            PortableErrorMetadataNoMetadataContract => "no metadata",
+            PortableNoMetadataContract => "no metadata",
             _ => contract.GetType().FullName ?? contract.GetType().Name
         };
     }

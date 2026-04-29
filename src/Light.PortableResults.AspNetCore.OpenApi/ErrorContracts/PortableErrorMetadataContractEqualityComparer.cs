@@ -26,7 +26,7 @@ internal sealed class PortableErrorMetadataContractEqualityComparer : IEqualityC
                 xType.MetadataType == yType.MetadataType,
             PortableErrorMetadataSchemaContract xSchema when y is PortableErrorMetadataSchemaContract ySchema =>
                 ReferenceEquals(xSchema.SchemaFactory, ySchema.SchemaFactory),
-            PortableErrorMetadataNoMetadataContract when y is PortableErrorMetadataNoMetadataContract => true,
+            PortableNoMetadataContract when y is PortableNoMetadataContract => true,
             _ => false
         };
     }
@@ -37,7 +37,7 @@ internal sealed class PortableErrorMetadataContractEqualityComparer : IEqualityC
         {
             PortableErrorMetadataTypeContract typeContract => typeContract.MetadataType.GetHashCode(),
             PortableErrorMetadataSchemaContract schemaContract => schemaContract.SchemaFactory.GetHashCode(),
-            PortableErrorMetadataNoMetadataContract => 0,
+            PortableNoMetadataContract => 0,
             _ => obj.GetHashCode()
         };
     }

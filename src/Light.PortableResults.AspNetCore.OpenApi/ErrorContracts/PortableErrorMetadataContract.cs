@@ -9,14 +9,12 @@ namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 /// </summary>
 public abstract class PortableErrorMetadataContract
 {
-    private static readonly PortableErrorMetadataNoMetadataContract SharedNoMetadata = new ();
-
     private protected PortableErrorMetadataContract() { }
 
     /// <summary>
     /// Gets the singleton contract for error codes that do not emit metadata.
     /// </summary>
-    public static PortableErrorMetadataContract NoMetadata => SharedNoMetadata;
+    public static PortableErrorMetadataContract NoMetadata { get; } = new PortableNoMetadataContract();
 
     /// <summary>
     /// Creates a contract backed by a CLR metadata type.
@@ -137,7 +135,7 @@ public sealed class PortableErrorMetadataSchemaContract : PortableErrorMetadataC
 /// <summary>
 /// Represents a metadata contract for error codes that do not emit metadata.
 /// </summary>
-public sealed class PortableErrorMetadataNoMetadataContract : PortableErrorMetadataContract
+public sealed class PortableNoMetadataContract : PortableErrorMetadataContract
 {
-    internal PortableErrorMetadataNoMetadataContract() { }
+    internal PortableNoMetadataContract() { }
 }

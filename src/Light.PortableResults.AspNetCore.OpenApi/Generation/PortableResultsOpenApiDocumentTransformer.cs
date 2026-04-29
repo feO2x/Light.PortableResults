@@ -609,7 +609,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                 metadataSchemaId,
                 schemaContract.SchemaFactory(openApiVersion)
             ),
-            PortableErrorMetadataNoMetadataContract => null,
+            PortableNoMetadataContract => null,
             _ => throw new InvalidOperationException(
                 $"The error metadata contract '{contract.GetType().FullName}' is not supported."
             )

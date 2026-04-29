@@ -24,7 +24,7 @@ public sealed class PortableErrorMetadataContractTests
         schemaContract.Should().BeOfType<PortableErrorMetadataSchemaContract>()
            .Which.SchemaFactory.Should().BeSameAs(schemaFactory);
         ((PortableErrorMetadataSchemaContract) schemaContract).DiagnosticName.Should().Be(nameof(schemaFactory));
-        noMetadata.Should().BeOfType<PortableErrorMetadataNoMetadataContract>();
+        noMetadata.Should().BeOfType<PortableNoMetadataContract>();
         PortableErrorMetadataContract.NoMetadata.Should().BeSameAs(noMetadata);
         typeof(PortableErrorMetadataContract)
            .GetMember("Kind")
@@ -35,7 +35,7 @@ public sealed class PortableErrorMetadataContractTests
         {
             PortableErrorMetadataTypeContract => "type",
             PortableErrorMetadataSchemaContract => "schema",
-            PortableErrorMetadataNoMetadataContract => "none",
+            PortableNoMetadataContract => "none",
             _ => "unknown"
         };
         discriminator.Should().Be("type");
