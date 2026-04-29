@@ -628,7 +628,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
 
         var httpMethod = string.IsNullOrWhiteSpace(apiDescription.HttpMethod) ?
             null :
-            new HttpMethod(apiDescription.HttpMethod);
+            HttpMethod.Parse(apiDescription.HttpMethod);
 
         if (httpMethod is null ||
             pathItem.Operations is null ||
