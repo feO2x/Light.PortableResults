@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -258,6 +259,7 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
                    .MapGet("/minimal/problems/ambiguous-casing", static () => TypedResults.Problem())
                    .WithMetadata(new ProducesPortableProblemAttribute(
                         StatusCodes.Status400BadRequest,
+                        // ReSharper disable once RedundantArgumentDefaultValue
                         "application/problem+json"
                     ))
                    .WithMetadata(new ProducesPortableProblemAttribute(
@@ -285,6 +287,7 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
                    .MapGet("/minimal/problems/union-casing", static () => TypedResults.Problem())
                    .WithMetadata(new ProducesPortableProblemAttribute(
                         StatusCodes.Status400BadRequest,
+                        // ReSharper disable once RedundantArgumentDefaultValue
                         "application/problem+json"
                     ))
                    .WithMetadata(new ProducesPortableValidationProblemAttribute(
@@ -348,6 +351,62 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var response = (OpenApiResponse) responseEntry;
         response.Content.Should().ContainKey("application/problem+json");
         response.Content["application/problem+json"].Schema.Should().BeOfType<OpenApiSchemaReference>();
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldReplaceExistingSchemaForTheSameResponseSlot()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureOpenApi: options =>
+            {
+                options.AddOperationTransformer(
+                    (operation, context, _) =>
+                    {
+                        if (!string.Equals(context.Description.RelativePath, "minimal/success/replaces-existing", StringComparison.Ordinal))
+                        {
+                            return Task.CompletedTask;
+                        }
+
+                        operation.Responses ??= new OpenApiResponses();
+                        operation.Responses[StatusCodes.Status200OK.ToString(CultureInfo.InvariantCulture)] =
+                            new OpenApiResponse
+                            {
+                                Description = "HTTP 200",
+                                Content = new Dictionary<string, OpenApiMediaType>(StringComparer.OrdinalIgnoreCase)
+                                {
+                                    ["application/json"] = new()
+                                    {
+                                        Schema = new OpenApiSchema
+                                        {
+                                            Type = JsonSchemaType.String
+                                        }
+                                    }
+                                }
+                            };
+                        return Task.CompletedTask;
+                    }
+                );
+            },
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/success/replaces-existing", static () => TypedResults.Ok(new MovieDto()))
+                   .ProducesPortableSuccessResponse<MovieDto>();
+            }
+        );
+
+        var schema = GetResponseSchema(
+            await GetOpenApiDocumentAsync(app),
+            "/minimal/success/replaces-existing",
+            HttpMethod.Get,
+            StatusCodes.Status200OK,
+            "application/json"
+        );
+
+        schema.Should().BeOfType<OpenApiSchema>();
+        var concreteSchema = (OpenApiSchema) schema;
+        concreteSchema.Type.Should().NotBe(JsonSchemaType.String);
+        concreteSchema.Properties.Should().ContainKey("title");
     }
 
     [Theory]

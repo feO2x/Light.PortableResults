@@ -12,6 +12,11 @@ public static class PortableResultsOpenApiRouteHandlerBuilderExtensions
     /// <summary>
     /// Documents a Light.PortableResults success response.
     /// </summary>
+    /// <remarks>
+    /// For a given HTTP status code and content type, PortableResults OpenAPI metadata is authoritative.
+    /// If another OpenAPI contributor already documented the same response slot, this helper replaces that
+    /// media-type schema instead of merging it.
+    /// </remarks>
     public static RouteHandlerBuilder ProducesPortableSuccessResponse<TValue>(
         this RouteHandlerBuilder builder,
         int statusCode = StatusCodes.Status200OK,
@@ -34,6 +39,11 @@ public static class PortableResultsOpenApiRouteHandlerBuilderExtensions
     /// <summary>
     /// Documents a Light.PortableResults problem details response.
     /// </summary>
+    /// <remarks>
+    /// For a given HTTP status code and content type, PortableResults OpenAPI metadata is authoritative.
+    /// If another OpenAPI contributor already documented the same response slot, this helper replaces that
+    /// media-type schema instead of merging it.
+    /// </remarks>
     public static RouteHandlerBuilder ProducesPortableProblem(
         this RouteHandlerBuilder builder,
         int statusCode = StatusCodes.Status500InternalServerError,
@@ -51,6 +61,11 @@ public static class PortableResultsOpenApiRouteHandlerBuilderExtensions
     /// <summary>
     /// Documents a Light.PortableResults validation problem details response.
     /// </summary>
+    /// <remarks>
+    /// For a given HTTP status code and content type, PortableResults OpenAPI metadata is authoritative.
+    /// If another OpenAPI contributor already documented the same response slot, this helper replaces that
+    /// media-type schema instead of merging it.
+    /// </remarks>
     public static RouteHandlerBuilder ProducesPortableValidationProblem(
         this RouteHandlerBuilder builder,
         int statusCode = StatusCodes.Status400BadRequest,

@@ -1363,6 +1363,8 @@ Use `UseMetadataSerializationMode(...)` on Minimal APIs or the `MetadataSerializ
 
 `ProducesPortableValidationProblem(...)` automatically selects the rich or ASP.NET Core-compatible validation envelope from `PortableResultsHttpWriteOptions.ValidationProblemSerializationFormat`. Use `UseFormat(...)` on Minimal APIs or `Format = ...` on the MVC attribute for a per-endpoint override.
 
+PortableResults OpenAPI metadata is authoritative for a given `(status code, content type)` response slot. If another OpenAPI contributor already documented the same slot, the document transformer replaces that media-type schema instead of merging it. Avoid combining `ProducesPortable...` helpers or attributes with ASP.NET Core response-schema helpers for the same response slot unless you want PortableResults to win.
+
 ### Documenting metadata
 
 Top-level metadata and per-error-code metadata are caller-owned contracts. The OpenAPI package documents them explicitly; the runtime still writes `MetadataObject`.
