@@ -381,10 +381,14 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         CancellationToken cancellationToken
     )
     {
+        // Collect the narrowed variants we can document for this error item schema, while tracking the
+        // raw error codes we have already seen so we can reject conflicting metadata contracts.
         var documentedVariants = new List<DocumentedErrorVariant>();
         var rawCodeTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
         var inlineSanitizedCodes = new Dictionary<string, string>(StringComparer.Ordinal);
 
+        // Global error codes reuse pre-registered component schemas created from the application's
+        // error-contract registry, so here we only validate the code and reference the stable component id.
         foreach (var code in attribute.ErrorCodes ?? [])
         {
             if (!_errorMetadataContractRegistry.Contracts.TryGetValue(code, out var metadataType))
@@ -406,6 +410,9 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         var inlineTypes = attribute.InlineErrorMetadataTypes;
         if (inlineCodes is not null && inlineTypes is not null)
         {
+            // Inline contracts are declared directly on the endpoint, so this branch has to create
+            // endpoint-specific schemas and guard against both raw-code duplicates and sanitized-name
+            // collisions that would otherwise map different codes onto the same component schema id.
             for (var i = 0; i < inlineCodes.Length; i++)
             {
                 var code = inlineCodes[i];
@@ -468,6 +475,8 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
             return null;
         }
 
+        // The final item schema is a discriminated anyOf over all documented code-specific variants plus
+        // the generic fallback schema so undocumented error codes are still represented correctly.
         var fallbackSchema = PortableResultsOpenApiSchemas.CreateSchemaReference(document, itemBaseSchemaId);
         var anyOfSchemas = new List<IOpenApiSchema>(documentedVariants.Count + 1);
         anyOfSchemas.AddRange(documentedVariants.Select(static variant => (IOpenApiSchema) variant.SchemaReference));
@@ -540,7 +549,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
             new OpenApiSchema
             {
                 Type = JsonSchemaType.String,
-                Enum = [JsonValue.Create(errorCode)!]
+                Enum = [JsonValue.Create(errorCode)]
             };
 
         return new OpenApiSchema
