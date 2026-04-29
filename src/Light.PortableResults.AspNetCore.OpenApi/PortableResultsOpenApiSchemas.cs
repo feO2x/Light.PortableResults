@@ -79,7 +79,7 @@ public static class PortableResultsOpenApiSchemas
     {
         return new OpenApiSchema
         {
-            Type = JsonSchemaType.Object,
+            Type = JsonSchemaType.Object | JsonSchemaType.Null,
             AdditionalPropertiesAllowed = true
         };
     }

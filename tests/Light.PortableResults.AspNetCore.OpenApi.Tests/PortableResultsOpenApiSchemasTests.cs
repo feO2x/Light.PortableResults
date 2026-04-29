@@ -27,5 +27,11 @@ public sealed class PortableResultsOpenApiSchemasTests
                 "PortableAspNetCoreValidationProblemDetails"
             }
         );
+
+        var portableError =
+            (OpenApiSchema) document.Components.Schemas[PortableResultsOpenApiSchemas.PortableErrorSchemaId];
+        var metadataSchema = (OpenApiSchema) portableError.Properties!["metadata"];
+        metadataSchema.Type.Should().Be(JsonSchemaType.Object | JsonSchemaType.Null);
+        metadataSchema.AdditionalPropertiesAllowed.Should().BeTrue();
     }
 }

@@ -61,7 +61,7 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         ).Should().BeOfType<OpenApiSchemaReference>().Subject;
         var globalProblemComponent = GetSchemaComponent(document, GetSchemaReferenceId(globalProblemSchema));
         var globalProblemExtension = (OpenApiSchema) globalProblemComponent.AllOf![1];
-        var globalProblemErrors = (OpenApiSchema) globalProblemExtension.Properties!["errors"]!;
+        var globalProblemErrors = (OpenApiSchema) globalProblemExtension.Properties!["errors"];
         var globalProblemItems = (OpenApiSchema) globalProblemErrors.Items!;
         globalProblemItems.AnyOf.Should().HaveCount(3);
         GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.AnyOf![0]).Should()
@@ -85,7 +85,7 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         ).Should().BeOfType<OpenApiSchemaReference>().Subject;
         var inlineProblemComponent = GetSchemaComponent(document, GetSchemaReferenceId(inlineProblemSchema));
         var inlineProblemExtension = (OpenApiSchema) inlineProblemComponent.AllOf![1];
-        var inlineProblemItems = (OpenApiSchema) ((OpenApiSchema) inlineProblemExtension.Properties!["errors"]!).Items!;
+        var inlineProblemItems = (OpenApiSchema) ((OpenApiSchema) inlineProblemExtension.Properties!["errors"]).Items!;
         GetSchemaReferenceId((OpenApiSchemaReference) inlineProblemItems.AnyOf![0]).Should().Contain("PortableError__");
         GetSchemaReferenceId((OpenApiSchemaReference) inlineProblemItems.AnyOf[0]).Should().Contain("Movie_Gone");
         GetSchemaReferenceId((OpenApiSchemaReference) inlineProblemItems.AnyOf[1]).Should().Be("PortableError");
@@ -173,17 +173,17 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var openApi30Document = await GetOpenApiDocumentAsync(openApi30App);
 
         var openApi30Variant = GetSchemaComponent(openApi30Document, "PortableError__VersionMismatch");
-        var openApi30CodeSchema = (OpenApiSchema) ((OpenApiSchema) openApi30Variant.AllOf![1]).Properties!["code"]!;
+        var openApi30CodeSchema = (OpenApiSchema) ((OpenApiSchema) openApi30Variant.AllOf![1]).Properties!["code"];
         openApi30CodeSchema.Const.Should().BeNull();
         openApi30CodeSchema.Enum.Should().ContainSingle();
-        openApi30CodeSchema.Enum![0]!.ToJsonString().Should().Be("\"VersionMismatch\"");
+        openApi30CodeSchema.Enum![0].ToJsonString().Should().Be("\"VersionMismatch\"");
 
         await using var openApi31App =
             CreateMinimalApiApp(options => options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_1);
         var openApi31Document = await GetOpenApiDocumentAsync(openApi31App);
 
         var openApi31Variant = GetSchemaComponent(openApi31Document, "PortableError__VersionMismatch");
-        var openApi31CodeSchema = (OpenApiSchema) ((OpenApiSchema) openApi31Variant.AllOf![1]).Properties!["code"]!;
+        var openApi31CodeSchema = (OpenApiSchema) ((OpenApiSchema) openApi31Variant.AllOf![1]).Properties!["code"];
         openApi31CodeSchema.Const.Should().Be("VersionMismatch");
     }
 
@@ -199,6 +199,7 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             }
         );
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         var act = async () => await GetOpenApiDocumentAsync(app);
 
         await act.Should()
@@ -218,6 +219,7 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             }
         );
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         var act = async () => await GetOpenApiDocumentAsync(app);
 
         await act.Should()
@@ -238,10 +240,10 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             }
         );
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         var act = async () => await GetOpenApiDocumentAsync(app);
 
-        await act
-           .Should()
+        await act.Should()
            .ThrowAsync<InvalidOperationException>()
            .WithMessage("*status code 400*kind 'Problem'*");
     }
@@ -259,11 +261,11 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
                 var attribute = new ProducesPortableProblemAttribute(StatusCodes.Status404NotFound);
                 if (configureCodes)
                 {
-                    attribute.InlineErrorMetadataCodes = ["Movie/Gone"];
+                    attribute.InlineErrorMetadataCodes = new[] { "Movie/Gone" };
                 }
                 else
                 {
-                    attribute.InlineErrorMetadataTypes = [typeof(InlineProblemMetadata)];
+                    attribute.InlineErrorMetadataTypes = new[] { typeof(InlineProblemMetadata) };
                 }
 
                 webApplication
@@ -272,6 +274,7 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             }
         );
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         var act = async () => await GetOpenApiDocumentAsync(app);
 
         await act.Should()
@@ -395,7 +398,7 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         string contentType
     )
     {
-        var pathItem = document.Paths![path];
+        var pathItem = document.Paths[path];
         var operation = pathItem.Operations![httpMethod];
         var response = (OpenApiResponse) operation.Responses![statusCode.ToString(CultureInfo.InvariantCulture)];
         return response.Content![contentType].Schema!;
@@ -408,9 +411,9 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
 
     private static string GetSchemaReferenceId(OpenApiSchemaReference schemaReference)
     {
-        var referenceId = schemaReference.Reference?.Id ?? schemaReference.Id;
+        var referenceId = schemaReference.Reference.Id ?? schemaReference.Id;
         referenceId.Should().NotBeNull();
-        return referenceId!;
+        return referenceId;
     }
 }
 
@@ -429,14 +432,14 @@ public sealed class OpenApiMvcController : ControllerBase
     [ProducesPortableProblem(
         StatusCodes.Status404NotFound,
         TopLevelMetadataType = typeof(ProblemMetadata),
-        ErrorCodes = new[] { "VersionMismatch" }
+        ErrorCodes = ["VersionMismatch"]
     )]
     public IActionResult GetProblem() => Problem();
 
     [HttpGet("validation")]
     [ProducesPortableValidationProblem(
         Format = ValidationProblemSerializationFormat.Rich,
-        ErrorCodes = new[] { "VersionMismatch" }
+        ErrorCodes = ["VersionMismatch"]
     )]
     public IActionResult GetValidation() => Problem();
 
@@ -455,6 +458,7 @@ public sealed class CustomPortableSuccessResponseAttribute : PortableOpenApiSucc
     }
 }
 
+// ReSharper disable UnusedMember.Global - required for testing
 public sealed class MovieDto
 {
     public string Title { get; init; } = string.Empty;
@@ -475,12 +479,16 @@ public sealed class InlineProblemMetadata
     public string MovieId { get; init; } = string.Empty;
 }
 
+// ReSharper disable once ClassNeverInstantiated.Global
 public sealed class VersionMismatchMetadata
 {
     public string CurrentVersion { get; init; } = string.Empty;
 }
 
+// ReSharper disable once ClassNeverInstantiated.Global
 public sealed class FundsMetadata
 {
     public decimal MissingAmount { get; init; }
 }
+// ReSharper restore UnusedMember.Global
+
