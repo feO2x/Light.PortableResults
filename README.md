@@ -47,6 +47,18 @@ ASP.NET Core MVC integration with support for Dependency Injection and `IActionR
 dotnet add package Light.PortableResults.AspNetCore.Mvc
 ```
 
+OpenAPI integration:
+
+```bash
+dotnet add package Light.PortableResults.AspNetCore.OpenApi
+```
+
+Built-in validation error contracts for OpenAPI:
+
+```bash
+dotnet add package Light.PortableResults.Validation.OpenApi
+```
+
 If you only need the Result Pattern itself, `Light.PortableResults` is the most lightweight dependency.
 
 ## 🤓 Basic Usage
@@ -359,7 +371,7 @@ Content-Type: application/problem+json
   "errors": [
     {
       "message": "comment must be between 10 and 1000 characters long",
-      "code": "LengthIn",
+      "code": "LengthInRange",
       "target": "comment",
       "category": "Validation",
       "metadata": {
@@ -375,7 +387,7 @@ Content-Type: application/problem+json
     },
     {
       "message": "rating must be between 1 and 5",
-      "code": "IsInBetween",
+      "code": "InRange",
       "target": "rating",
       "category": "Validation",
       "metadata": {
@@ -1324,17 +1336,19 @@ services
 
 ## OpenAPI Support
 
-OpenAPI support lives in the dedicated `Light.PortableResults.AspNetCore.OpenApi` package. It is opt-in and does not change runtime serialization. `LightResult<T>` / `LightActionResult<T>` still serialize through the JSON writers in `Light.PortableResults`; the OpenAPI package only contributes endpoint metadata plus a document transformer.
+OpenAPI support lives in the dedicated `Light.PortableResults.AspNetCore.OpenApi` package. It is opt-in and does not change runtime serialization. `LightResult<T>` / `LightActionResult<T>` still serialize through the JSON writers in `Light.PortableResults`; the OpenAPI package only contributes endpoint metadata plus a document transformer. If you use `Light.PortableResults.Validation`, add `Light.PortableResults.Validation.OpenApi` to opt into the library-owned built-in validation error contracts.
 
 ### Registration
 
 ```csharp
 using Light.PortableResults.AspNetCore.MinimalApis;
 using Light.PortableResults.AspNetCore.OpenApi;
+using Light.PortableResults.Validation.OpenApi;
 
 builder.Services
        .AddPortableResultsForMinimalApis()
        .AddPortableResultsOpenApi()
+       .ConfigureErrorMetadataContracts(contracts => contracts.RegisterBuiltInValidationErrors())
        .AddOpenApi();
 ```
 
@@ -1369,6 +1383,34 @@ PortableResults OpenAPI metadata is authoritative for a given `(status code, con
 
 Top-level metadata and per-error-code metadata are caller-owned contracts. The OpenAPI package documents them explicitly; the runtime still writes `MetadataObject`.
 
+For built-in validation errors, reference `Light.PortableResults.Validation.OpenApi` and register the catalog once:
+
+```csharp
+using Light.PortableResults.AspNetCore.OpenApi;
+using Light.PortableResults.Validation.OpenApi;
+
+builder.Services.ConfigureErrorMetadataContracts(
+    contracts => contracts.RegisterBuiltInValidationErrors()
+);
+```
+
+Use `ValidationErrorCodes` when opting endpoints into built-in codes. Codes such as `NotEmpty`, `LengthInRange`, and `Count` reuse global schemas from the built-in catalog:
+
+```csharp
+using Light.PortableResults.Validation;
+using Light.PortableResults.Validation.OpenApi;
+
+app.MapPut("/api/movieRatings", AddMovieRating)
+   .ProducesPortableValidationProblem(
+        configure: x =>
+            x.UseFormat(ValidationProblemSerializationFormat.Rich)
+             .WithErrorCodes(ValidationErrorCodes.NotEmpty, ValidationErrorCodes.LengthInRange)
+             .WithInRangeError<int>()
+    );
+```
+
+Comparison and range codes are polymorphic at the global code level, so the validation bridge also ships typed endpoint helpers: `WithEqualToError<T>()`, `WithNotEqualToError<T>()`, `WithGreaterThanError<T>()`, `WithGreaterThanOrEqualToError<T>()`, `WithLessThanError<T>()`, `WithLessThanOrEqualToError<T>()`, `WithInRangeError<T>()`, `WithNotInRangeError<T>()`, and `WithExclusiveRangeError<T>()`. These helpers use the existing inline metadata path, so an endpoint can document concrete metadata such as integer range boundaries for `IsInBetween(1, 5)` while still reusing global schemas for shape-fixed codes.
+
 Register reusable per-error-code metadata contracts once in DI:
 
 ```csharp
@@ -1380,6 +1422,8 @@ builder.Services.ConfigureErrorMetadataContracts(contracts =>
     contracts.ForCode<InsufficientFundsMetadata>("InsufficientFunds");
 });
 ```
+
+User-defined codes continue to use the type-based overloads above, or endpoint-scoped `WithErrorMetadata<TMetadata>(code)` when a contract only applies to one operation.
 
 Then opt the relevant codes into each endpoint:
 

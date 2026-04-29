@@ -1,6 +1,7 @@
 using Light.PortableResults.AspNetCore.MinimalApis;
 using Light.PortableResults.AspNetCore.OpenApi;
 using Light.PortableResults.Validation;
+using Light.PortableResults.Validation.OpenApi;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using NativeAotMovieRating.GetMovies;
@@ -22,6 +23,7 @@ builder
    .Services
    .AddPortableResultsForMinimalApis()
    .AddPortableResultsOpenApi()
+   .ConfigureErrorMetadataContracts(contracts => contracts.RegisterBuiltInValidationErrors())
    .AddValidationForPortableResults()
    .ConfigureJsonSerialization()
    .AddInMemoryDatabase()

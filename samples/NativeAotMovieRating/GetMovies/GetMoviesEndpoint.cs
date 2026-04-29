@@ -8,6 +8,7 @@ using Light.PortableResults.AspNetCore.OpenApi;
 using Light.PortableResults.Http.Writing;
 using Light.PortableResults.Metadata;
 using Light.PortableResults.Validation;
+using Light.PortableResults.Validation.OpenApi;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using NativeAotMovieRating.InMemoryDatabaseAccess;
@@ -26,9 +27,14 @@ public static class GetMoviesEndpoint
                 "Supports keyset pagination via the optional lastKnownMovieId parameter and a configurable " +
                 "page size via the take parameter (1-40). Returns a rich Light.PortableResults problem " +
                 "details response when input validation fails or when the lastKnownMovieId does not exist."
-            )
+           )
            .Produces<List<Movie>>()
-           .ProducesPortableValidationProblem(configure: x => x.UseFormat(ValidationProblemSerializationFormat.Rich));
+           .ProducesPortableValidationProblem(
+                configure: x => x
+                   .UseFormat(ValidationProblemSerializationFormat.Rich)
+                   .WithErrorCodes(ValidationErrorCodes.NotEmpty)
+                   .WithInRangeError<int>()
+            );
 
     private static async Task<IResult> GetMovies(
         IGetMoviesSession session,

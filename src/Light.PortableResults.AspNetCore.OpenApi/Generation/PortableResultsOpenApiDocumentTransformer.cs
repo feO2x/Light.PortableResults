@@ -99,7 +99,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         // documentation can later reference stable component ids instead of creating duplicates on demand.
         // Each contract produces two variants because regular problems use PortableError items while
         // ASP.NET-compatible validation problems use PortableValidationErrorDetail items.
-        foreach (var (errorCode, metadataType) in _errorMetadataContractRegistry.Contracts)
+        foreach (var (errorCode, contract) in _errorMetadataContractRegistry.Contracts)
         {
             var portableErrorSchemaId = PortableResultsOpenApiSchemaNaming.CreateGlobalErrorSchemaId(
                 PortableResultsOpenApiSchemas.PortableErrorSchemaId,
@@ -111,7 +111,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                 PortableResultsOpenApiSchemas.PortableErrorSchemaId,
                 portableErrorSchemaId,
                 errorCode,
-                metadataType,
+                contract,
                 openApiVersion,
                 cancellationToken
             );
@@ -126,7 +126,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                 PortableResultsOpenApiSchemas.PortableValidationErrorDetailSchemaId,
                 validationErrorSchemaId,
                 errorCode,
-                metadataType,
+                contract,
                 openApiVersion,
                 cancellationToken
             );
@@ -390,19 +390,19 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         // Collect the narrowed variants we can document for this error item schema, while tracking the
         // raw error codes we have already seen so we can reject conflicting metadata contracts.
         var documentedVariants = new List<DocumentedErrorVariant>();
-        var rawCodeTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
+        var rawCodeContracts = new Dictionary<string, PortableErrorMetadataContract>(StringComparer.Ordinal);
         var inlineSanitizedCodes = new Dictionary<string, string>(StringComparer.Ordinal);
 
         // Global error codes reuse pre-registered component schemas created from the application's
         // error-contract registry, so here we only validate the code and reference the stable component id.
         foreach (var code in attribute.ErrorCodes ?? [])
         {
-            if (!_errorMetadataContractRegistry.Contracts.TryGetValue(code, out var metadataType))
+            if (!_errorMetadataContractRegistry.Contracts.TryGetValue(code, out var contract))
             {
                 throw new InvalidOperationException(PortableResultsOpenApiMessages.CreateUnknownErrorCodeMessage(code));
             }
 
-            AddDocumentedCode(rawCodeTypes, code, metadataType);
+            AddDocumentedCode(rawCodeContracts, code, contract);
             var schemaId = PortableResultsOpenApiSchemaNaming.CreateGlobalErrorSchemaId(itemBaseSchemaId, code);
             documentedVariants.Add(
                 new DocumentedErrorVariant(
@@ -436,15 +436,16 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                     );
                 }
 
-                if (rawCodeTypes.TryGetValue(code, out var existingType))
+                var metadataTypeContract = PortableErrorMetadataContract.FromType(metadataType);
+                if (rawCodeContracts.TryGetValue(code, out var existingContract))
                 {
-                    if (existingType != metadataType)
+                    if (!PortableErrorMetadataContractEqualityComparer.Instance.Equals(existingContract, metadataTypeContract))
                     {
                         throw new InvalidOperationException(
                             PortableResultsOpenApiMessages.CreateDuplicateErrorMetadataContractMessage(
                                 code,
-                                existingType,
-                                metadataType
+                                existingContract,
+                                metadataTypeContract
                             )
                         );
                     }
@@ -452,7 +453,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                     continue;
                 }
 
-                rawCodeTypes.Add(code, metadataType);
+                rawCodeContracts.Add(code, metadataTypeContract);
                 inlineSanitizedCodes.TryAdd(sanitizedCode, code);
                 var schemaId = PortableResultsOpenApiSchemaNaming.CreateInlineErrorSchemaId(
                     itemBaseSchemaId,
@@ -468,7 +469,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                     itemBaseSchemaId,
                     schemaId,
                     code,
-                    metadataType,
+                    metadataTypeContract,
                     openApiVersion,
                     cancellationToken
                 );
@@ -496,6 +497,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         return new OpenApiSchema
         {
             AnyOf = anyOfSchemas,
+            Required = new HashSet<string>(StringComparer.Ordinal) { "code" },
             Discriminator = new OpenApiDiscriminator
             {
                 PropertyName = "code",
@@ -510,7 +512,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         string baseSchemaId,
         string schemaId,
         string errorCode,
-        Type metadataType,
+        PortableErrorMetadataContract contract,
         OpenApiSpecVersion openApiVersion,
         CancellationToken cancellationToken
     )
@@ -518,11 +520,12 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         var schemas = EnsureSchemaStore(document);
         if (!schemas.ContainsKey(schemaId))
         {
-            var metadataSchema = await GetStableSchemaReferenceAsync(
+            var metadataSchema = await CreateMetadataSchemaAsync(
                 document,
                 context,
-                metadataType,
-                PortableResultsOpenApiSchemaNaming.CreateMetadataSchemaId(schemaId),
+                schemaId,
+                contract,
+                openApiVersion,
                 cancellationToken
             );
             var schema = CreateCodeSpecificSchema(
@@ -542,7 +545,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         OpenApiDocument document,
         string baseSchemaId,
         string errorCode,
-        IOpenApiSchema metadataSchema,
+        IOpenApiSchema? metadataSchema,
         OpenApiSpecVersion openApiVersion
     )
     {
@@ -558,6 +561,15 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                 Enum = [JsonValue.Create(errorCode)]
             };
 
+        var extensionProperties = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
+        {
+            ["code"] = codeSchema
+        };
+        if (metadataSchema is not null)
+        {
+            extensionProperties["metadata"] = metadataSchema;
+        }
+
         return new OpenApiSchema
         {
             AllOf =
@@ -566,14 +578,41 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                 new OpenApiSchema
                 {
                     Type = JsonSchemaType.Object,
-                    Properties = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
-                    {
-                        ["code"] = codeSchema,
-                        ["metadata"] = metadataSchema
-                    },
+                    Properties = extensionProperties,
                     Required = new HashSet<string>(StringComparer.Ordinal) { "code" }
                 }
             ]
+        };
+    }
+
+    private async Task<IOpenApiSchema?> CreateMetadataSchemaAsync(
+        OpenApiDocument document,
+        OpenApiDocumentTransformerContext context,
+        string ownerSchemaId,
+        PortableErrorMetadataContract contract,
+        OpenApiSpecVersion openApiVersion,
+        CancellationToken cancellationToken
+    )
+    {
+        var metadataSchemaId = PortableResultsOpenApiSchemaNaming.CreateMetadataSchemaId(ownerSchemaId);
+        return contract switch
+        {
+            PortableErrorMetadataTypeContract typeContract => await GetStableSchemaReferenceAsync(
+                document,
+                context,
+                typeContract.MetadataType,
+                metadataSchemaId,
+                cancellationToken
+            ),
+            PortableErrorMetadataSchemaContract schemaContract => AddComponentAndCreateReference(
+                document,
+                metadataSchemaId,
+                schemaContract.SchemaFactory(openApiVersion)
+            ),
+            PortableErrorMetadataNoMetadataContract => null,
+            _ => throw new InvalidOperationException(
+                $"The error metadata contract '{contract.GetType().FullName}' is not supported."
+            )
         };
     }
 
@@ -768,14 +807,14 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
     }
 
     private static void AddDocumentedCode(
-        IDictionary<string, Type> rawCodeTypes,
+        IDictionary<string, PortableErrorMetadataContract> rawCodeContracts,
         string code,
-        Type metadataType
+        PortableErrorMetadataContract contract
     )
     {
-        if (rawCodeTypes.TryGetValue(code, out var existingType))
+        if (rawCodeContracts.TryGetValue(code, out var existingContract))
         {
-            if (existingType == metadataType)
+            if (PortableErrorMetadataContractEqualityComparer.Instance.Equals(existingContract, contract))
             {
                 return;
             }
@@ -783,13 +822,13 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
             throw new InvalidOperationException(
                 PortableResultsOpenApiMessages.CreateDuplicateErrorMetadataContractMessage(
                     code,
-                    existingType,
-                    metadataType
+                    existingContract,
+                    contract
                 )
             );
         }
 
-        rawCodeTypes.Add(code, metadataType);
+        rawCodeContracts.Add(code, contract);
     }
 
     private static string? NormalizePath(string? relativePath)

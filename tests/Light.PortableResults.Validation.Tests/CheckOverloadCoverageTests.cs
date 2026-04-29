@@ -296,7 +296,7 @@ public sealed class CheckOverloadCoverageTests
 
         context.Check(2, target: "notInRange", displayName: "Not in range").IsNotInBetween(1, 3);
 
-        context.Errors.Should().ContainSingle(error => error.Target == "notInRange" && error.Code == "NotInBetween");
+        context.Errors.Should().ContainSingle(error => error.Target == "notInRange" && error.Code == "NotInRange");
     }
 
     [Fact]
@@ -416,7 +416,7 @@ public sealed class CheckOverloadCoverageTests
 
         context.Check(1, target: "inRangeDefault", displayName: "In range default").IsInBetween(2, 3);
 
-        context.Errors.Should().ContainSingle(error => error.Target == "inRangeDefault" && error.Code == "IsInBetween");
+        context.Errors.Should().ContainSingle(error => error.Target == "inRangeDefault" && error.Code == "InRange");
     }
 
     [Fact]
@@ -867,7 +867,7 @@ public sealed class CheckOverloadCoverageTests
 
         context.Check("12A", target: "regexDefault", displayName: "Regex default").Matches(new Regex("^\\d+$"));
 
-        context.Errors.Should().ContainSingle(error => error.Target == "regexDefault" && error.Code == "Matches");
+        context.Errors.Should().ContainSingle(error => error.Target == "regexDefault" && error.Code == "Pattern");
     }
 
     [Fact]

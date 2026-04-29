@@ -163,6 +163,13 @@
           "Light.PortableResults": "[0.4.0, )"
         }
       },
+      "light.portableresults.validation.openapi": {
+        "type": "Project",
+        "dependencies": {
+          "Light.PortableResults.AspNetCore.OpenApi": "[0.4.0, )",
+          "Light.PortableResults.Validation": "[0.4.0, )"
+        }
+      },
       "Microsoft.Bcl.HashCode": {
         "type": "CentralTransitive",
         "requested": "[6.0.0, )",

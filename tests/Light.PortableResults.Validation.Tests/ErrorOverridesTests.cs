@@ -47,7 +47,7 @@ public sealed class ErrorOverridesTests
                     new Error
                     {
                         Message = "Code must contain only digits",
-                        Code = "Matches",
+                        Code = "Pattern",
                         Target = "code",
                         Category = ErrorCategory.Validation,
                         Metadata = MetadataObject.Create(
@@ -58,7 +58,7 @@ public sealed class ErrorOverridesTests
                     new Error
                     {
                         Message = "Alternate code is invalid",
-                        Code = "Matches",
+                        Code = "Pattern",
                         Target = "alternateCode",
                         Category = ErrorCategory.Validation,
                         Metadata = MetadataObject.Create(

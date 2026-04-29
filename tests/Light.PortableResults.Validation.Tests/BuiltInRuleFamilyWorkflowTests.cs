@@ -418,7 +418,7 @@ public sealed class BuiltInRuleFamilyWorkflowTests
         context.Errors.Should().ContainSingle(
             error =>
                 error.Target == "password" &&
-                error.Code == "LengthIn"
+                error.Code == "LengthInRange"
         );
     }
 
@@ -432,7 +432,7 @@ public sealed class BuiltInRuleFamilyWorkflowTests
         context.Errors.Should().ContainSingle(
             error =>
                 error.Target == "digits" &&
-                error.Code == "Matches"
+                error.Code == "Pattern"
         );
     }
 
@@ -448,7 +448,7 @@ public sealed class BuiltInRuleFamilyWorkflowTests
         context.Errors.Should().ContainSingle(
             error =>
                 error.Target == "letters" &&
-                error.Code == "Matches" &&
+                error.Code == "Pattern" &&
                 error.Message == "Letters are invalid"
         );
     }

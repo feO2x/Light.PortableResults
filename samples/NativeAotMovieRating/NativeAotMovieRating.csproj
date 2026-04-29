@@ -14,6 +14,7 @@
     <ProjectReference Include="../../src/Light.PortableResults.AspNetCore.MinimalApis/Light.PortableResults.AspNetCore.MinimalApis.csproj" GlobalPropertiesToRemove="PublishAot" />
     <ProjectReference Include="../../src/Light.PortableResults.AspNetCore.OpenApi/Light.PortableResults.AspNetCore.OpenApi.csproj" GlobalPropertiesToRemove="PublishAot" />
     <ProjectReference Include="../../src/Light.PortableResults.Validation/Light.PortableResults.Validation.csproj" GlobalPropertiesToRemove="PublishAot" />
+    <ProjectReference Include="../../src/Light.PortableResults.Validation.OpenApi/Light.PortableResults.Validation.OpenApi.csproj" GlobalPropertiesToRemove="PublishAot" />
   </ItemGroup>
 
   <ItemGroup>

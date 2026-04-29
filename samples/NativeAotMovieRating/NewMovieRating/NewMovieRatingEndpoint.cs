@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Light.PortableResults.AspNetCore.MinimalApis;
 using Light.PortableResults.AspNetCore.OpenApi;
 using Light.PortableResults.Http.Writing;
+using Light.PortableResults.Validation;
+using Light.PortableResults.Validation.OpenApi;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using NativeAotMovieRating.InMemoryDatabaseAccess;
@@ -19,9 +21,18 @@ public static class NewMovieRatingEndpoint
            .WithSummary("Adds or updates a movie rating.")
            .WithDescription(
                 "Validates the request and stores the movie rating. Returns the stored rating on success, or a rich Light.PortableResults problem details response on validation or lookup failures."
-            )
+           )
            .Produces<MovieRating>()
-           .ProducesPortableValidationProblem(configure: x => x.UseFormat(ValidationProblemSerializationFormat.Rich))
+           .ProducesPortableValidationProblem(
+                configure: x => x
+                   .UseFormat(ValidationProblemSerializationFormat.Rich)
+                   .WithErrorCodes(
+                        ValidationErrorCodes.NotEmpty,
+                        ValidationErrorCodes.LengthInRange,
+                        ValidationErrorCodes.NotNullOrWhiteSpace
+                    )
+                   .WithInRangeError<int>()
+            )
            .ProducesPortableProblem();
 
     private static async Task<IResult> AddMovieRating(

@@ -19,13 +19,13 @@ public sealed class PortableErrorMetadataContractRegistry : IPortableErrorMetada
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        var contracts = new Dictionary<string, Type>(StringComparer.Ordinal);
+        var contracts = new Dictionary<string, PortableErrorMetadataContract>(StringComparer.Ordinal);
         var sanitizedCodes = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var (code, metadataType) in builder.Contracts)
+        foreach (var (code, contract) in builder.Contracts)
         {
-            if (contracts.TryGetValue(code, out var existingType))
+            if (contracts.TryGetValue(code, out var existingContract))
             {
-                if (existingType == metadataType)
+                if (PortableErrorMetadataContractEqualityComparer.Instance.Equals(existingContract, contract))
                 {
                     continue;
                 }
@@ -33,8 +33,8 @@ public sealed class PortableErrorMetadataContractRegistry : IPortableErrorMetada
                 throw new InvalidOperationException(
                     PortableResultsOpenApiMessages.CreateDuplicateErrorMetadataContractMessage(
                         code,
-                        existingType,
-                        metadataType
+                        existingContract,
+                        contract
                     )
                 );
             }
@@ -54,13 +54,13 @@ public sealed class PortableErrorMetadataContractRegistry : IPortableErrorMetada
                 );
             }
 
-            contracts.Add(code, metadataType);
+            contracts.Add(code, contract);
             sanitizedCodes.Add(sanitizedCode, code);
         }
 
-        Contracts = new ReadOnlyDictionary<string, Type>(contracts);
+        Contracts = new ReadOnlyDictionary<string, PortableErrorMetadataContract>(contracts);
     }
 
     /// <inheritdoc />
-    public IReadOnlyDictionary<string, Type> Contracts { get; }
+    public IReadOnlyDictionary<string, PortableErrorMetadataContract> Contracts { get; }
 }

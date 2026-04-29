@@ -50,7 +50,7 @@ public static partial class BuiltInValidationErrorDefinitions
         /// </summary>
         public EnumValidationErrorDefinition()
             : base(
-                code: "Enum",
+                code: ValidationErrorCodes.Enum,
                 metadata: CreateEnumMetadata(typeof(TEnum))
             ) { }
 
@@ -77,7 +77,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public EnumNameValidationErrorDefinition(bool ignoreCase)
             : base(
                 ignoreCase,
-                code: "EnumName",
+                code: ValidationErrorCodes.EnumName,
                 metadata: CreateEnumNameMetadata(typeof(TEnum), ignoreCase)
             )
         {

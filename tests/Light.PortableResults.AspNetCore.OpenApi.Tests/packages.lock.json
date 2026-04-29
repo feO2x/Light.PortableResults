@@ -273,6 +273,19 @@
           "Light.PortableResults": "[0.4.0, )"
         }
       },
+      "light.portableresults.validation": {
+        "type": "Project",
+        "dependencies": {
+          "Light.PortableResults": "[0.4.0, )"
+        }
+      },
+      "light.portableresults.validation.openapi": {
+        "type": "Project",
+        "dependencies": {
+          "Light.PortableResults.AspNetCore.OpenApi": "[0.4.0, )",
+          "Light.PortableResults.Validation": "[0.4.0, )"
+        }
+      },
       "Microsoft.AspNetCore.OpenApi": {
         "type": "CentralTransitive",
         "requested": "[10.0.5, )",

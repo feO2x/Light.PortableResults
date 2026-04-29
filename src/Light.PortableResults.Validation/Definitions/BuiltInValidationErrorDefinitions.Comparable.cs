@@ -247,7 +247,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public GreaterThanValidationErrorDefinition(T comparativeValue)
             : base(
                 comparativeValue,
-                code: "GreaterThan",
+                code: ValidationErrorCodes.GreaterThan,
                 metadata: CreateComparativeMetadata(comparativeValue)
             )
         {
@@ -283,7 +283,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public GreaterThanOrEqualToValidationErrorDefinition(T comparativeValue)
             : base(
                 comparativeValue,
-                code: "GreaterThanOrEqualTo",
+                code: ValidationErrorCodes.GreaterThanOrEqualTo,
                 metadata: CreateComparativeMetadata(comparativeValue)
             )
         {
@@ -322,7 +322,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public LessThanValidationErrorDefinition(T comparativeValue)
             : base(
                 comparativeValue,
-                code: "LessThan",
+                code: ValidationErrorCodes.LessThan,
                 metadata: CreateComparativeMetadata(comparativeValue)
             )
         {
@@ -358,7 +358,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public LessThanOrEqualToValidationErrorDefinition(T comparativeValue)
             : base(
                 comparativeValue,
-                code: "LessThanOrEqualTo",
+                code: ValidationErrorCodes.LessThanOrEqualTo,
                 metadata: CreateComparativeMetadata(comparativeValue)
             )
         {
@@ -397,7 +397,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public InBetweenValidationErrorDefinition(T lowerBoundary, T upperBoundary)
             : base(
                 new ValidationRange<T>(lowerBoundary, upperBoundary),
-                code: "IsInBetween",
+                code: ValidationErrorCodes.InRange,
                 metadata: CreateRangeMetadata(lowerBoundary, upperBoundary)
             )
         {
@@ -439,7 +439,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public NotInBetweenValidationErrorDefinition(T lowerBoundary, T upperBoundary)
             : base(
                 new ValidationRange<T>(lowerBoundary, upperBoundary),
-                code: "NotInBetween",
+                code: ValidationErrorCodes.NotInRange,
                 metadata: CreateRangeMetadata(lowerBoundary, upperBoundary)
             )
         {
@@ -481,7 +481,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public ExclusiveRangeValidationErrorDefinition(T lowerBoundary, T upperBoundary)
             : base(
                 new ValidationRange<T>(lowerBoundary, upperBoundary),
-                code: "ExclusiveRange",
+                code: ValidationErrorCodes.ExclusiveRange,
                 metadata: CreateRangeMetadata(lowerBoundary, upperBoundary)
             )
         {

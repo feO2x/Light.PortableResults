@@ -23,7 +23,7 @@ public static partial class BuiltInValidationErrorDefinitions
         /// Initializes a new instance of <see cref="EmptyValidationErrorDefinition" />.
         /// </summary>
         public EmptyValidationErrorDefinition()
-            : base(code: "Empty") { }
+            : base(code: ValidationErrorCodes.Empty) { }
 
         /// <inheritdoc />
         public override bool TryGetStableMessageProvider(
@@ -45,7 +45,7 @@ public static partial class BuiltInValidationErrorDefinitions
         /// Initializes a new instance of <see cref="NotEmptyValidationErrorDefinition" />.
         /// </summary>
         public NotEmptyValidationErrorDefinition()
-            : base(code: "NotEmpty") { }
+            : base(code: ValidationErrorCodes.NotEmpty) { }
 
         /// <inheritdoc />
         public override bool TryGetStableMessageProvider(

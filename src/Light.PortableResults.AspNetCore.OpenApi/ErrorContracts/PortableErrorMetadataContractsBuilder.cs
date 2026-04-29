@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Light.PortableResults.AspNetCore.OpenApi.Generation;
 using Light.PortableResults.AspNetCore.OpenApi.Schemas;
+using Microsoft.OpenApi;
 
 namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 
@@ -10,10 +11,10 @@ namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 /// </summary>
 public sealed class PortableErrorMetadataContractsBuilder
 {
-    private readonly Dictionary<string, Type> _contracts = new (StringComparer.Ordinal);
+    private readonly Dictionary<string, PortableErrorMetadataContract> _contracts = new (StringComparer.Ordinal);
     private readonly Dictionary<string, string> _sanitizedCodes = new (StringComparer.Ordinal);
 
-    internal IReadOnlyDictionary<string, Type> Contracts => _contracts;
+    internal IReadOnlyDictionary<string, PortableErrorMetadataContract> Contracts => _contracts;
 
     /// <summary>
     /// Registers <typeparamref name="TMetadata" /> as the metadata contract for the specified code.
@@ -28,12 +29,36 @@ public sealed class PortableErrorMetadataContractsBuilder
     /// </summary>
     public PortableErrorMetadataContractsBuilder ForCode(string code, Type metadataType)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(code);
-        ArgumentNullException.ThrowIfNull(metadataType);
+        return ForCode(code, PortableErrorMetadataContract.FromType(metadataType));
+    }
 
-        if (_contracts.TryGetValue(code, out var existingType))
+    /// <summary>
+    /// Registers the specified OpenAPI metadata schema factory for the specified code.
+    /// </summary>
+    public PortableErrorMetadataContractsBuilder ForCode(
+        string code,
+        Func<OpenApiSpecVersion, OpenApiSchema> metadataSchemaFactory
+    )
+    {
+        return ForCode(code, PortableErrorMetadataContract.FromSchema(metadataSchemaFactory));
+    }
+
+    /// <summary>
+    /// Registers the specified code as a code that emits no metadata.
+    /// </summary>
+    public PortableErrorMetadataContractsBuilder ForCode(string code)
+    {
+        return ForCode(code, PortableErrorMetadataContract.NoMetadata);
+    }
+
+    internal PortableErrorMetadataContractsBuilder ForCode(string code, PortableErrorMetadataContract contract)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
+        ArgumentNullException.ThrowIfNull(contract);
+
+        if (_contracts.TryGetValue(code, out var existingContract))
         {
-            if (existingType == metadataType)
+            if (PortableErrorMetadataContractEqualityComparer.Instance.Equals(existingContract, contract))
             {
                 return this;
             }
@@ -41,8 +66,8 @@ public sealed class PortableErrorMetadataContractsBuilder
             throw new InvalidOperationException(
                 PortableResultsOpenApiMessages.CreateDuplicateErrorMetadataContractMessage(
                     code,
-                    existingType,
-                    metadataType
+                    existingContract,
+                    contract
                 )
             );
         }
@@ -59,7 +84,7 @@ public sealed class PortableErrorMetadataContractsBuilder
             );
         }
 
-        _contracts.Add(code, metadataType);
+        _contracts.Add(code, contract);
         _sanitizedCodes.Add(sanitizedCode, code);
         return this;
     }

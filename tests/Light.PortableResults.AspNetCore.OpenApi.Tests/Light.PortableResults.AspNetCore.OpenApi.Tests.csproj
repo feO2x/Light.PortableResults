@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\src\Light.PortableResults.AspNetCore.MinimalApis\Light.PortableResults.AspNetCore.MinimalApis.csproj" />
     <ProjectReference Include="..\..\src\Light.PortableResults.AspNetCore.Mvc\Light.PortableResults.AspNetCore.Mvc.csproj" />
     <ProjectReference Include="..\..\src\Light.PortableResults.AspNetCore.OpenApi\Light.PortableResults.AspNetCore.OpenApi.csproj" />
+    <ProjectReference Include="..\..\src\Light.PortableResults.Validation.OpenApi\Light.PortableResults.Validation.OpenApi.csproj" />
   </ItemGroup>
 
 </Project>

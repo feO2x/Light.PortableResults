@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
@@ -9,7 +8,7 @@ namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 public interface IPortableErrorMetadataContractRegistry
 {
     /// <summary>
-    /// Gets the immutable map of documented error codes to their metadata CLR types.
+    /// Gets the immutable map of documented error codes to their metadata contracts.
     /// </summary>
-    IReadOnlyDictionary<string, Type> Contracts { get; }
+    IReadOnlyDictionary<string, PortableErrorMetadataContract> Contracts { get; }
 }
