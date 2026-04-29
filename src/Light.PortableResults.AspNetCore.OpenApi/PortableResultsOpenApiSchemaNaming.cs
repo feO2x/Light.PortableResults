@@ -91,7 +91,7 @@ public static class PortableResultsOpenApiSchemaNaming
     /// </summary>
     /// <param name="value">The raw segment value.</param>
     /// <returns>The sanitized segment.</returns>
-    public static string SanitizeSegment(string value)
+    private static string SanitizeSegment(string value)
     {
         ArgumentNullException.ThrowIfNull(value);
 
