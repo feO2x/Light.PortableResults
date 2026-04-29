@@ -248,6 +248,68 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
            .WithMessage("*status code 400*kind 'Problem'*");
     }
 
+    [Fact]
+    public async Task Transformer_ShouldTreatDuplicateKindsWithDifferentContentTypeCasingAsAmbiguous()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/ambiguous-casing", static () => TypedResults.Problem())
+                   .WithMetadata(new ProducesPortableProblemAttribute(
+                        StatusCodes.Status400BadRequest,
+                        "application/problem+json"
+                    ))
+                   .WithMetadata(new ProducesPortableProblemAttribute(
+                        StatusCodes.Status400BadRequest,
+                        "application/PROBLEM+JSON"
+                    ));
+            }
+        );
+
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
+        var act = async () => await GetOpenApiDocumentAsync(app);
+
+        await act.Should()
+           .ThrowAsync<InvalidOperationException>()
+           .WithMessage("*status code 400*application/problem+json*kind 'Problem'*");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldMergeResponseSchemas_WhenContentTypeOnlyDiffersByCasing()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/union-casing", static () => TypedResults.Problem())
+                   .WithMetadata(new ProducesPortableProblemAttribute(
+                        StatusCodes.Status400BadRequest,
+                        "application/problem+json"
+                    ))
+                   .WithMetadata(new ProducesPortableValidationProblemAttribute(
+                        StatusCodes.Status400BadRequest,
+                        "application/PROBLEM+JSON"
+                    ));
+            }
+        );
+
+        var response = GetResponse(
+            await GetOpenApiDocumentAsync(app),
+            "/minimal/problems/union-casing",
+            HttpMethod.Get,
+            StatusCodes.Status400BadRequest
+        );
+
+        response.Content.Should().ContainSingle();
+        response.Content!.Keys.Should().ContainSingle(
+            key => string.Equals(key, "application/problem+json", StringComparison.OrdinalIgnoreCase)
+        );
+        var mediaType = response.Content.Values.Should().ContainSingle().Subject;
+        mediaType.Schema.Should().BeOfType<OpenApiSchema>();
+        ((OpenApiSchema) mediaType.Schema!).AnyOf.Should().HaveCount(2);
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -398,10 +460,20 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         string contentType
     )
     {
+        var response = GetResponse(document, path, httpMethod, statusCode);
+        return response.Content![contentType].Schema!;
+    }
+
+    private static OpenApiResponse GetResponse(
+        OpenApiDocument document,
+        string path,
+        HttpMethod httpMethod,
+        int statusCode
+    )
+    {
         var pathItem = document.Paths[path];
         var operation = pathItem.Operations![httpMethod];
-        var response = (OpenApiResponse) operation.Responses![statusCode.ToString(CultureInfo.InvariantCulture)];
-        return response.Content![contentType].Schema!;
+        return (OpenApiResponse) operation.Responses![statusCode.ToString(CultureInfo.InvariantCulture)];
     }
 
     private static OpenApiSchema GetSchemaComponent(OpenApiDocument document, string schemaId)

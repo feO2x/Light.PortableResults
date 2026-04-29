@@ -180,13 +180,16 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
             }
 
             var response = GetOrCreateResponse(operation, responseGroup.Key.StatusCode);
-            response.Content ??= new Dictionary<string, OpenApiMediaType>(StringComparer.Ordinal);
-            response.Content[responseGroup.Key.ContentType] = new OpenApiMediaType
-            {
-                Schema = contributingSchemas.Count == 1 ?
-                    contributingSchemas[0] :
-                    new OpenApiSchema { AnyOf = contributingSchemas }
-            };
+            SetResponseContent(
+                response,
+                responseGroup.Key.ContentType,
+                new OpenApiMediaType
+                {
+                    Schema = contributingSchemas.Count == 1 ?
+                        contributingSchemas[0] :
+                        new OpenApiSchema { AnyOf = contributingSchemas }
+                }
+            );
         }
     }
 
@@ -654,6 +657,41 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         return (OpenApiResponse) response;
     }
 
+    private static void SetResponseContent(
+        OpenApiResponse response,
+        string contentType,
+        OpenApiMediaType mediaType
+    )
+    {
+        if (response.Content is null)
+        {
+            response.Content = new Dictionary<string, OpenApiMediaType>(StringComparer.OrdinalIgnoreCase)
+            {
+                [contentType] = mediaType
+            };
+            return;
+        }
+
+        var existingContentType = FindExistingContentType(response.Content, contentType);
+        response.Content[existingContentType ?? contentType] = mediaType;
+    }
+
+    private static string? FindExistingContentType(
+        IDictionary<string, OpenApiMediaType> content,
+        string contentType
+    )
+    {
+        foreach (var existingContentType in content.Keys)
+        {
+            if (string.Equals(existingContentType, contentType, StringComparison.OrdinalIgnoreCase))
+            {
+                return existingContentType;
+            }
+        }
+
+        return null;
+    }
+
     private string ResolveCanonicalErrorEnvelopeSchemaId(PortableOpenApiResponseAttributeBase attribute)
     {
         if (attribute.Kind == PortableOpenApiResponseKind.Problem)
@@ -760,7 +798,22 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         return "{" + content[..constraintSeparatorIndex] + "}";
     }
 
-    private readonly record struct ResponseGroupKey(int StatusCode, string ContentType);
+    private readonly record struct ResponseGroupKey(int StatusCode, string ContentType)
+    {
+        public bool Equals(ResponseGroupKey other)
+        {
+            return StatusCode == other.StatusCode &&
+                   string.Equals(ContentType, other.ContentType, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(
+                StatusCode,
+                ContentType is null ? 0 : StringComparer.OrdinalIgnoreCase.GetHashCode(ContentType)
+            );
+        }
+    }
 
     private readonly record struct DocumentedErrorVariant(
         string RawCode,
