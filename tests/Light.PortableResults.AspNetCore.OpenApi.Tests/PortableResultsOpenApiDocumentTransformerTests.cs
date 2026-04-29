@@ -469,6 +469,113 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
     }
 
     [Fact]
+    public async Task Transformer_ShouldOmitMetadataProperty_WhenGlobalCodeHasNoMetadata()
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+        builder.Services.AddPortableResultsForMinimalApis();
+        builder.Services.AddPortableResultsOpenApi();
+        builder.Services.ConfigureErrorMetadataContracts(contracts => contracts.ForCode("SimpleError"));
+        builder.Services.AddOpenApi();
+
+        await using var app = builder.Build();
+        app.MapGet("/simple-error", static () => TypedResults.Problem())
+           .ProducesPortableProblem(StatusCodes.Status400BadRequest, configure: x => x.WithErrorCodes("SimpleError"));
+
+        var document = await GetOpenApiDocumentAsync(app);
+        var schemaComponent = GetSchemaComponent(document, "PortableError__SimpleError");
+        var extension = (OpenApiSchema) schemaComponent.AllOf![1];
+
+        extension.Properties!.Keys.Should().BeEquivalentTo("code");
+        extension.Properties.Should().NotContainKey("metadata");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldAcceptDuplicateInlineMetadataCode_WhenTypeIsIdentical()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/inline-duplicate", static () => TypedResults.Problem())
+                   .ProducesPortableProblem(
+                        StatusCodes.Status404NotFound,
+                        configure: x => x
+                           .WithErrorMetadata<InlineProblemMetadata>("Movie/Gone")
+                           .WithErrorMetadata<InlineProblemMetadata>("Movie/Gone")
+                    );
+            }
+        );
+
+        var document = await GetOpenApiDocumentAsync(app);
+        var responseSchemaRef = GetResponseSchema(
+            document,
+            "/minimal/problems/inline-duplicate",
+            HttpMethod.Get,
+            StatusCodes.Status404NotFound,
+            "application/problem+json"
+        ).Should().BeOfType<OpenApiSchemaReference>().Subject;
+        var component = GetSchemaComponent(document, GetSchemaReferenceId(responseSchemaRef));
+        var items =
+            (OpenApiSchema) ((OpenApiSchema) ((OpenApiSchema) component.AllOf![1]).Properties!["errors"]).Items!;
+
+        // Duplicate inline code with identical type must be deduplicated: only one documented variant + fallback.
+        items.AnyOf.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldThrow_WhenInlineMetadataCodesConflict()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/inline-conflict", static () => TypedResults.Problem())
+                   .ProducesPortableProblem(
+                        StatusCodes.Status404NotFound,
+                        configure: x => x
+                           .WithErrorMetadata<InlineProblemMetadata>("Movie/Gone")
+                           .WithErrorMetadata<ProblemMetadata>("Movie/Gone")
+                    );
+            }
+        );
+
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
+        var act = async () => await GetOpenApiDocumentAsync(app);
+
+        await act
+           .Should()
+           .ThrowAsync<InvalidOperationException>()
+           .WithMessage("*Movie/Gone*InlineProblemMetadata*ProblemMetadata*");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldThrow_WhenInlineCodesSanitizeToSameName()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/inline-sanitize-collision", static () => TypedResults.Problem())
+                   .ProducesPortableProblem(
+                        StatusCodes.Status404NotFound,
+                        configure: x => x
+                           .WithErrorMetadata<InlineProblemMetadata>("Movie/Gone")
+                           .WithErrorMetadata<ProblemMetadata>("Movie_Gone")
+                    );
+            }
+        );
+
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
+        var act = async () => await GetOpenApiDocumentAsync(app);
+
+        await act
+           .Should()
+           .ThrowAsync<InvalidOperationException>()
+           .WithMessage("*Movie/Gone*Movie_Gone*");
+    }
+
+    [Fact]
     public void OpenApiModule_ShouldRegisterErrorMetadataRegistryOnlyOnce()
     {
         var services = new ServiceCollection();
