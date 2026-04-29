@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using FluentAssertions;
 using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 using Microsoft.OpenApi;
@@ -142,6 +143,40 @@ public sealed class PortableErrorMetadataContractTests
 
         registry.Contracts.Should().BeAssignableTo<IReadOnlyDictionary<string, PortableErrorMetadataContract>>();
         registry.Contracts["TypeCode"].Should().BeOfType<PortableErrorMetadataTypeContract>();
+    }
+
+    [Fact]
+    public void ContractRegistry_ShouldSnapshotBuilderState()
+    {
+        var builder = new PortableErrorMetadataContractsBuilder().ForCode<TestMetadata>("TypeCode");
+
+        var registry = new PortableErrorMetadataContractRegistry(builder);
+        builder.ForCode<OtherMetadata>("OtherCode");
+
+        registry.Contracts.Keys.Should().BeEquivalentTo("TypeCode");
+    }
+
+    [Fact]
+    public void ContractRegistry_ShouldRejectSanitizedCodeCollisions_WhenBuilderStateIsComposedExternally()
+    {
+        var builder = new PortableErrorMetadataContractsBuilder();
+        var contractsField = typeof(PortableErrorMetadataContractsBuilder).GetField(
+            "_contracts",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        );
+        contractsField.Should().NotBeNull();
+
+        var contracts = contractsField
+           .GetValue(builder)
+           .Should()
+           .BeOfType<Dictionary<string, PortableErrorMetadataContract>>()
+           .Subject;
+        contracts.Add("Code/One", PortableErrorMetadataContract.NoMetadata);
+        contracts.Add("Code_One", PortableErrorMetadataContract.NoMetadata);
+
+        var act = () => _ = new PortableErrorMetadataContractRegistry(builder);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Code/One*Code_One*");
     }
 
     // ReSharper disable UnusedMember.Local -- required for testing

@@ -1,14 +1,13 @@
+using System;
 using System.Collections.Frozen;
 using System.Linq;
 using FluentAssertions;
 using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
-using Light.PortableResults.Validation;
 using Light.PortableResults.Validation.Definitions;
-using Light.PortableResults.Validation.OpenApi;
 using Microsoft.OpenApi;
 using Xunit;
 
-namespace Light.PortableResults.AspNetCore.OpenApi.Tests;
+namespace Light.PortableResults.Validation.OpenApi.Tests;
 
 public sealed class BuiltInValidationErrorContractsTests
 {
@@ -115,9 +114,10 @@ public sealed class BuiltInValidationErrorContractsTests
         BuiltInValidationErrorContracts.Contracts.Keys.Should()
            .BeEquivalentTo(MetadataBearingCodes.Concat(expectedNoMetadataCodes));
         BuiltInValidationErrorContracts.Contracts.Should().NotContainKey(ValidationErrorCodes.Predicate);
-        BuiltInValidationErrorContracts.Contracts.Values.Should().AllSatisfy(
-            x => ReferenceEquals(x, PortableErrorMetadataContract.NoMetadata)
-        );
+        foreach (var code in expectedNoMetadataCodes)
+        {
+            BuiltInValidationErrorContracts.Contracts[code].Should().BeSameAs(PortableErrorMetadataContract.NoMetadata);
+        }
     }
 
     [Fact]
@@ -196,6 +196,29 @@ public sealed class BuiltInValidationErrorContractsTests
         registry.Contracts.Should().NotContainKey(ValidationErrorCodes.Predicate);
     }
 
+    [Fact]
+    public void RegisterBuiltInValidationErrors_ShouldBeIdempotent()
+    {
+        var builder = new PortableErrorMetadataContractsBuilder();
+
+        builder.RegisterBuiltInValidationErrors();
+        builder.RegisterBuiltInValidationErrors();
+        var registry = new PortableErrorMetadataContractRegistry(builder);
+
+        registry.Contracts.Keys.Should().BeEquivalentTo(BuiltInValidationErrorContracts.Contracts.Keys);
+    }
+
+    [Fact]
+    public void RegisterBuiltInValidationErrors_ShouldRejectConflictingPreRegisteredContracts()
+    {
+        var builder = new PortableErrorMetadataContractsBuilder()
+           .ForCode<ConflictingMetadata>(ValidationErrorCodes.Count);
+
+        var act = builder.RegisterBuiltInValidationErrors;
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Count*ConflictingMetadata*");
+    }
+
     private static OpenApiSchema GetFirstPrimitiveValueSchema(string code, OpenApiSpecVersion version)
     {
         var contract = (PortableErrorMetadataSchemaContract) BuiltInValidationErrorContracts.Contracts[code];
@@ -204,5 +227,11 @@ public sealed class BuiltInValidationErrorContractsTests
             ValidationErrorMetadataKeys.ComparativeValue :
             ValidationErrorMetadataKeys.LowerBoundary;
         return (OpenApiSchema) schema.Properties[propertyName];
+    }
+
+    // ReSharper disable once ClassNeverInstantiated.Local -- required for testing
+    private sealed class ConflictingMetadata
+    {
+        public int Value { get; init; }
     }
 }

@@ -88,6 +88,7 @@
     <File Path="tests\AGENTS.md" />
     <Project Path="tests\Light.PortableResults.AspNetCore.Mvc.Tests\Light.PortableResults.AspNetCore.Mvc.Tests.csproj" />
     <Project Path="tests\Light.PortableResults.AspNetCore.OpenApi.Tests\Light.PortableResults.AspNetCore.OpenApi.Tests.csproj" />
+    <Project Path="tests\Light.PortableResults.Validation.OpenApi.Tests\Light.PortableResults.Validation.OpenApi.Tests.csproj" />
     <Project Path="tests/Light.PortableResults.Validation.Tests/Light.PortableResults.Validation.Tests.csproj" />
     <Project Path="tests\Light.PortableResults.AspNetCore.MinimalApis.Tests\Light.PortableResults.AspNetCore.MinimalApis.Tests.csproj" />
     <Project Path="tests\Light.PortableResults.AspNetCore.Shared.Tests\Light.PortableResults.AspNetCore.Shared.Tests.csproj" />
