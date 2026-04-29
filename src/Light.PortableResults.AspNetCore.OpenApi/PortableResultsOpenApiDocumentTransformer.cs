@@ -590,10 +590,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
     )
     {
         var schemas = EnsureSchemaStore(document);
-        if (!schemas.ContainsKey(schemaId))
-        {
-            schemas.Add(schemaId, schema);
-        }
+        schemas.TryAdd(schemaId, schema);
 
         return PortableResultsOpenApiSchemas.CreateSchemaReference(document, schemaId);
     }
