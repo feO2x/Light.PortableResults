@@ -6,6 +6,14 @@ namespace Light.PortableResults.AspNetCore.OpenApi;
 /// <summary>
 /// Base class for Light.PortableResults success-response OpenAPI metadata.
 /// </summary>
+/// <remarks>
+/// The metadata serialization mode override is represented by the combination of
+/// <see cref="MetadataSerializationMode" /> and <see cref="HasMetadataSerializationModeOverride" />.
+/// This type intentionally does not use a nullable enum property because MVC attribute named arguments
+/// must use attribute-compatible property types; changing the property to
+/// <see cref="Nullable{T}" /> would trigger compiler error CS0655 for usages such as
+/// <c>[ProducesPortableSuccessResponse(MetadataSerializationMode = MetadataSerializationMode.Always)]</c>.
+/// </remarks>
 public abstract class PortableOpenApiSuccessResponseAttributeBase : PortableOpenApiResponseAttributeBase
 {
     /// <summary>
@@ -27,8 +35,14 @@ public abstract class PortableOpenApiSuccessResponseAttributeBase : PortableOpen
     public Type ValueType { get; }
 
     /// <summary>
-    /// Gets or sets the optional documentation-only override for the metadata serialization mode.
+    /// Gets or sets the documentation-only override for the metadata serialization mode.
     /// </summary>
+    /// <remarks>
+    /// Read this property together with <see cref="HasMetadataSerializationModeOverride" />.
+    /// When <see cref="HasMetadataSerializationModeOverride" /> is <see langword="false" />,
+    /// the value returned by this property is only the enum's default value and does not indicate
+    /// that an explicit override was configured.
+    /// </remarks>
     public MetadataSerializationMode MetadataSerializationMode
     {
         get;
@@ -40,7 +54,11 @@ public abstract class PortableOpenApiSuccessResponseAttributeBase : PortableOpen
     }
 
     /// <summary>
-    /// Indicates whether the metadata serialization mode has been explicitly overridden.
+    /// Indicates whether <see cref="MetadataSerializationMode" /> was explicitly overridden.
     /// </summary>
+    /// <remarks>
+    /// This mirror property exists because attribute properties cannot use a nullable enum type without
+    /// breaking MVC attribute named arguments with compiler error CS0655.
+    /// </remarks>
     public bool HasMetadataSerializationModeOverride { get; private set; }
 }
