@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Light.PortableResults.AspNetCore.OpenApi.Generation;
+using Light.PortableResults.AspNetCore.OpenApi.Schemas;
 
-namespace Light.PortableResults.AspNetCore.OpenApi;
+namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 
 /// <summary>
 /// Default implementation of <see cref="IPortableErrorMetadataContractRegistry" />.

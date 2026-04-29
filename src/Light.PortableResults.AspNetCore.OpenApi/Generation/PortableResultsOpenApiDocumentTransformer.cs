@@ -7,6 +7,8 @@ using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
+using Light.PortableResults.AspNetCore.OpenApi.Schemas;
 using Light.PortableResults.Http.Writing;
 using Light.PortableResults.SharedJsonSerialization;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
@@ -15,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 
-namespace Light.PortableResults.AspNetCore.OpenApi;
+namespace Light.PortableResults.AspNetCore.OpenApi.Generation;
 
 /// <summary>
 /// OpenAPI document transformer for Light.PortableResults.

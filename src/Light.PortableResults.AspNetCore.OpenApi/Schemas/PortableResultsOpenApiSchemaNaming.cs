@@ -2,7 +2,7 @@ using System;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.OpenApi;
 
-namespace Light.PortableResults.AspNetCore.OpenApi;
+namespace Light.PortableResults.AspNetCore.OpenApi.Schemas;
 
 /// <summary>
 /// Provides helpers for creating stable OpenAPI component schema ids used by Light.PortableResults.

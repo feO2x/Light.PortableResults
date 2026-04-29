@@ -1,6 +1,6 @@
 using System;
 
-namespace Light.PortableResults.AspNetCore.OpenApi;
+namespace Light.PortableResults.AspNetCore.OpenApi.Generation;
 
 internal static class PortableResultsOpenApiMessages
 {

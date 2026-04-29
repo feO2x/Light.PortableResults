@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Light.PortableResults.AspNetCore.OpenApi.Generation;
+using Light.PortableResults.AspNetCore.OpenApi.Schemas;
 
-namespace Light.PortableResults.AspNetCore.OpenApi;
+namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 
 /// <summary>
 /// Builds the global map of documented error-code metadata contracts.

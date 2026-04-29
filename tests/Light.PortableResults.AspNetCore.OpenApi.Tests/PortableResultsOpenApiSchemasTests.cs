@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using FluentAssertions;
+using Light.PortableResults.AspNetCore.OpenApi.Schemas;
 using Microsoft.OpenApi;
 using Xunit;
 

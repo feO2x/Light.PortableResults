@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using Microsoft.OpenApi;
 
-namespace Light.PortableResults.AspNetCore.OpenApi;
+namespace Light.PortableResults.AspNetCore.OpenApi.Schemas;
 
 /// <summary>
 /// Installs the canonical Light.PortableResults OpenAPI schemas into a document.

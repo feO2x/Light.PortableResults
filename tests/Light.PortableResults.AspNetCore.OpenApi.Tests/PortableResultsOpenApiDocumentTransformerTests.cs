@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Light.PortableResults.AspNetCore.MinimalApis;
 using Light.PortableResults.AspNetCore.Mvc;
+using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 using Light.PortableResults.Http.Writing;
 using Light.PortableResults.SharedJsonSerialization;
 using Microsoft.AspNetCore.Builder;

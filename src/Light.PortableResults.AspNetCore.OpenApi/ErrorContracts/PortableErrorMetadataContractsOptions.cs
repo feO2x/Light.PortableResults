@@ -1,4 +1,4 @@
-namespace Light.PortableResults.AspNetCore.OpenApi;
+namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 
 /// <summary>
 /// Options backing the global error-code metadata contract registry.

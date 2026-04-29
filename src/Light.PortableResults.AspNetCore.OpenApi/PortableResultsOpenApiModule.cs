@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
+using Light.PortableResults.AspNetCore.OpenApi.Generation;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
