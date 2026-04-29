@@ -2,23 +2,23 @@
 
 ## Rationale
 
-Plan `0040-1-openapi-redesign.md` introduces `IPortableErrorMetadataContractRegistry`, which maps error code strings to CLR metadata types so the OpenAPI document transformer can narrow `errors[*].metadata` and `errorDetails[*].metadata` to accurate schemas per code.
+Plan `0040-1-openapi-redesign.md` introduces `IPortableErrorMetadataContractRegistry` in `Light.PortableResults.AspNetCore.OpenApi.ErrorContracts`, which maps error code strings to CLR metadata types so the OpenAPI document transformer can narrow `errors[*].metadata` and `errorDetails[*].metadata` to accurate schemas per code.
 
 The `Light.PortableResults.Validation` package already defines a stable code-plus-metadata taxonomy through its built-in `ValidationErrorDefinition` subclasses (`CountValidationErrorDefinition`, `MinCountValidationErrorDefinition`, `GreaterThanValidationErrorDefinition<T>`, `RegexValidationErrorDefinition`, `EnumNameValidationErrorDefinition<TEnum>`, `PrecisionScaleValidationErrorDefinition`, etc.). The metadata keys are centralized in `ValidationErrorMetadataKeys`. Without this follow-up, every caller who uses built-in validation error definitions has to redeclare contracts the library already owns.
 
 Two aspects of the built-in contracts make a pure CLR-type registration awkward:
 
-1. **Polymorphic primitive values.** `CreateMetadataValue<T>` in `BuiltInValidationErrorDefinitions.Shared.cs` projects any `T` down to one of `null | boolean | int64 | double | decimal | string` for primitives. A code like `GreaterThan` is used for integers, dates, strings, and more \u2014 the metadata schema for `comparativeValue` is honestly a JSON-primitive union, not a single CLR type.
-2. **Package boundary.** `Light.PortableResults.AspNetCore.OpenApi` (where `IPortableErrorMetadataContractRegistry` lives, per `0040-1`) does not and should not depend on `Light.PortableResults.Validation`. The built-in contracts must live in the validation package and opt in from there.
+1. **Polymorphic primitive values.** `CreateMetadataValue<T>` in `BuiltInValidationErrorDefinitions.Shared.cs` projects any `T` down to one of `null | boolean | int64 | double | decimal | string` for primitives. A code like `GreaterThan` is used for integers, dates, strings, and more - the metadata schema for `comparativeValue` is honestly a JSON-primitive union, not a single CLR type.
+2. **Package boundary.** `Light.PortableResults.AspNetCore.OpenApi.ErrorContracts` (where `IPortableErrorMetadataContractRegistry` lives, per `0040-1`) does not and should not depend on `Light.PortableResults.Validation`. The built-in contracts must live in the validation package and opt in from there.
 
-This plan widens the registry to also accept pre-authored `OpenApiSchema` values, ships a catalog of canonical schemas for every built-in validation error code that carries metadata, and adds a one-line opt-in extension. It also exposes the built-in codes as compile-time constants so callers get IntelliSense and refactor safety when opting into specific codes.
+This plan widens the registry to also accept pre-authored `OpenApiSchema` values, ships a catalog of canonical schemas for every built-in validation error code that carries metadata, and adds a one-line opt-in extension. It also exposes the built-in codes as compile-time constants, so callers get IntelliSense and refactor safety when opting into specific codes.
 
 ## Acceptance Criteria
 
-- [ ] `PortableErrorMetadataContract` is introduced as a public readonly struct in `Light.PortableResults.AspNetCore.OpenApi` (alongside `IPortableErrorMetadataContractRegistry`), representing a discriminated union of either a CLR `Type` (to be run through the ASP.NET Core schema generator) or a pre-authored `OpenApiSchema`. It exposes `static FromType(Type metadataType)`, `static FromSchema(OpenApiSchema metadataSchema)`, a `Kind` enum property (`Type` / `Schema`), and `TryGetType(out Type)` / `TryGetSchema(out OpenApiSchema)` accessors.
+- [ ] `PortableErrorMetadataContract` is introduced as a public readonly struct in `Light.PortableResults.AspNetCore.OpenApi.ErrorContracts` (alongside `IPortableErrorMetadataContractRegistry`), representing a discriminated union of either a CLR `Type` (to be run through the ASP.NET Core schema generator) or a pre-authored `OpenApiSchema`. It exposes `static FromType(Type metadataType)`, `static FromSchema(OpenApiSchema metadataSchema)`, a `Kind` enum property (`Type` / `Schema`), and `TryGetType(out Type)` / `TryGetSchema(out OpenApiSchema)` accessors.
 - [ ] `IPortableErrorMetadataContractRegistry.Contracts` is widened from `IReadOnlyDictionary<string, Type>` to `IReadOnlyDictionary<string, PortableErrorMetadataContract>`. The default implementation and its tests are updated accordingly.
 - [ ] `PortableErrorMetadataContractsBuilder` gains a new overload `ForCode(string code, OpenApiSchema metadataSchema)`. The existing `ForCode<TMetadata>(string code)` and `ForCode(string code, Type metadataType)` overloads continue to work unchanged and internally store `PortableErrorMetadataContract.FromType(...)`.
-- [ ] `PortableResultsOpenApiDocumentTransformer` is updated to dispatch on `PortableErrorMetadataContract.Kind` when materializing registry entries into `Components.Schemas`: `Type` entries go through the ASP.NET Core schema generator as before, `Schema` entries are installed directly.
+- [ ] `PortableResultsOpenApiDocumentTransformer` in `Light.PortableResults.AspNetCore.OpenApi.Generation` is updated to dispatch on `PortableErrorMetadataContract.Kind` when materializing registry entries into `Components.Schemas`: `Type` entries go through the ASP.NET Core schema generator as before, `Schema` entries are installed directly.
 - [ ] A public static class `BuiltInValidationErrorContracts` is added to `Light.PortableResults.Validation` with the property `public static IReadOnlyDictionary<string, OpenApiSchema> Contracts { get; }`. The dictionary contains hand-authored canonical schemas for every built-in validation error code that carries metadata (`Count`, `MinCount`, `MaxCount`, `Length`, `MinLength`, `MaxLength`, `LengthInRange`, `GreaterThan`, `GreaterThanOrEqualTo`, `LessThan`, `LessThanOrEqualTo`, `InRange`, `Pattern`, `Enum`, `EnumName`, `PrecisionScale`), using the exact JSON property names defined in `ValidationErrorMetadataKeys`.
 - [ ] Built-in contract schemas that reference a typed value (`comparativeValue`, `lowerBoundary`, `upperBoundary`) declare that property as a `oneOf` over JSON primitives — `{ type: string }`, `{ type: number }`, `{ type: integer }`, `{ type: boolean }`, `{ type: "null" }` — matching what `CreateMetadataValue<T>` actually produces on the wire.
 - [ ] A public static class `ValidationErrorCodes` is added to `Light.PortableResults.Validation` exposing `public const string` fields for every built-in code (e.g. `Count`, `MinCount`, `GreaterThan`, `Pattern`, `EnumName`, `PrecisionScale`, `NotNull`, `NotEmpty`, `Empty`, `Predicate`, ...). The constant values match the code strings assigned in the built-in definition constructors exactly. The existing `BuiltInValidationErrorDefinitions.*` constructors are updated to reference these constants instead of string literals.
@@ -32,18 +32,26 @@ This plan widens the registry to also accept pre-authored `OpenApiSchema` values
 
 ### Contract Widening
 
-`PortableErrorMetadataContract` is a small readonly struct, not an interface, so the hot path stays allocation-free. The default implementation of `IPortableErrorMetadataContractRegistry` stores entries in a `Dictionary<string, PortableErrorMetadataContract>`. Existing call sites that wrote `Type` directly are updated to wrap with `PortableErrorMetadataContract.FromType(...)`. The public `ForCode<TMetadata>(string)` and `ForCode(string, Type)` overloads are unchanged.
+`PortableErrorMetadataContract` is a small readonly struct, not an interface, so the hot path stays allocation-free. The type, its `Kind` enum, the builder overloads, and the registry abstractions stay together in `Light.PortableResults.AspNetCore.OpenApi.ErrorContracts`. The default implementation of `IPortableErrorMetadataContractRegistry` stores entries in a `Dictionary<string, PortableErrorMetadataContract>`. Existing call sites that wrote `Type` directly are updated to wrap with `PortableErrorMetadataContract.FromType(...)`. The public `ForCode<TMetadata>(string)` and `ForCode(string, Type)` overloads are unchanged.
 
 The new `ForCode(string code, OpenApiSchema metadataSchema)` overload clones the provided schema defensively (using `OpenApiSchema`'s copy constructor) so later mutations by callers do not leak into the registry.
 
 ### Transformer Dispatch
 
-When the transformer synthesizes the canonical `PortableError_<Code>` and `PortableValidationErrorDetail_<Code>` schemas, it reads the contract and:
+When the transformer in `Light.PortableResults.AspNetCore.OpenApi.Generation` synthesizes the canonical `PortableError_<Code>` and `PortableValidationErrorDetail_<Code>` schemas, it reads the contract and:
 
 - For `PortableErrorMetadataContract.Kind == Type`, runs the CLR type through the ASP.NET Core schema generator exposed by `OpenApiDocumentTransformerContext` (unchanged behavior).
 - For `PortableErrorMetadataContract.Kind == Schema`, installs the provided schema under the name `<Code>Metadata` (if not already present) and `$ref`s it from the narrowed code schema.
 
 Naming for schema-based contracts uses `<Code>Metadata` (for example `CountMetadata`, `GreaterThanMetadata`) so they are discoverable in generated client code and do not collide with user types.
+
+### Project Structure
+
+The follow-up should respect the current OpenAPI project slices:
+
+- `Light.PortableResults.AspNetCore.OpenApi.ErrorContracts` contains the contract-registration model (`PortableErrorMetadataContract`, its `Kind` enum, builder overloads, options, and registry implementation).
+- `Light.PortableResults.AspNetCore.OpenApi.Generation` contains transformer changes and any internal message helpers needed to materialize schema-based contracts into the document.
+- `Light.PortableResults.AspNetCore.OpenApi.Schemas` continues to hold general reusable schema catalog and naming helpers only; the built-in validation contract catalog itself remains in `Light.PortableResults.Validation` and is not moved into the OpenAPI package.
 
 ### Built-In Contract Catalog
 
@@ -77,7 +85,7 @@ MetadataPrimitiveValue:
 
 ### Package Wiring
 
-`Light.PortableResults.Validation` takes on a `Microsoft.OpenApi` package reference to author `OpenApiSchema` instances. The reference is compile-time only; the validation package does not reference `Microsoft.AspNetCore.OpenApi` or `Light.PortableResults.AspNetCore.OpenApi` and remains usable from non-ASP.NET Core hosts — `RegisterBuiltInValidationErrors` is an extension on `PortableErrorMetadataContractsBuilder` (declared in `Light.PortableResults.AspNetCore.OpenApi`), so callers who pull in the validation package without the OpenAPI package simply never see the extension in scope. The `RegisterBuiltInValidationErrors` extension method lives in a file under the same namespace as `BuiltInValidationErrorContracts` so a single `using` import exposes the opt-in along with the constants.
+`Light.PortableResults.Validation` takes on a `Microsoft.OpenApi` package reference to author `OpenApiSchema` instances. The reference is compile-time only; the validation package does not reference `Microsoft.AspNetCore.OpenApi` or `Light.PortableResults.AspNetCore.OpenApi` and remains usable from non-ASP.NET Core hosts — `RegisterBuiltInValidationErrors` is an extension on `PortableErrorMetadataContractsBuilder` (declared in `Light.PortableResults.AspNetCore.OpenApi.ErrorContracts`), so callers who pull in the validation package without the OpenAPI package simply never see the extension in scope. The `RegisterBuiltInValidationErrors` extension method lives in a file under the same namespace as `BuiltInValidationErrorContracts` so a single `using` import exposes the opt-in along with the constants.
 
 ### Scope Boundaries
 
