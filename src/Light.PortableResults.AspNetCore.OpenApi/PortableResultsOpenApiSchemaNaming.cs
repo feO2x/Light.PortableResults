@@ -76,18 +76,6 @@ public static class PortableResultsOpenApiSchemaNaming
     }
 
     /// <summary>
-    /// Escapes a value for use inside a JSON Pointer segment.
-    /// </summary>
-    /// <param name="value">The raw segment value.</param>
-    /// <returns>The escaped JSON Pointer value.</returns>
-    public static string EscapeJsonPointer(string value)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        return value.Replace("~", "~0", StringComparison.Ordinal)
-                    .Replace("/", "~1", StringComparison.Ordinal);
-    }
-
-    /// <summary>
     /// Sanitizes an error code so it can be embedded safely into an OpenAPI component schema id.
     /// </summary>
     /// <param name="value">The raw error code.</param>
