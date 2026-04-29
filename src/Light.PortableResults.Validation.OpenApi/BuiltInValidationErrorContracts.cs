@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 using Light.PortableResults.Validation.Definitions;
@@ -14,9 +15,9 @@ public static class BuiltInValidationErrorContracts
     /// <summary>
     /// Gets the built-in validation error metadata contracts.
     /// </summary>
-    public static IReadOnlyDictionary<string, PortableErrorMetadataContract> Contracts { get; } = CreateContracts();
+    public static FrozenDictionary<string, PortableErrorMetadataContract> Contracts { get; } = CreateContracts();
 
-    private static IReadOnlyDictionary<string, PortableErrorMetadataContract> CreateContracts()
+    private static FrozenDictionary<string, PortableErrorMetadataContract> CreateContracts()
     {
         return new Dictionary<string, PortableErrorMetadataContract>(StringComparer.Ordinal)
         {
@@ -34,12 +35,18 @@ public static class BuiltInValidationErrorContracts
                     }
                 )
             ),
-            [ValidationErrorCodes.EqualTo] = Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
-            [ValidationErrorCodes.NotEqualTo] = Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
-            [ValidationErrorCodes.GreaterThan] = Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
-            [ValidationErrorCodes.GreaterThanOrEqualTo] = Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
-            [ValidationErrorCodes.LessThan] = Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
-            [ValidationErrorCodes.LessThanOrEqualTo] = Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
+            [ValidationErrorCodes.EqualTo] =
+                Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
+            [ValidationErrorCodes.NotEqualTo] =
+                Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
+            [ValidationErrorCodes.GreaterThan] =
+                Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
+            [ValidationErrorCodes.GreaterThanOrEqualTo] =
+                Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
+            [ValidationErrorCodes.LessThan] =
+                Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
+            [ValidationErrorCodes.LessThanOrEqualTo] =
+                Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
             [ValidationErrorCodes.InRange] = Schema(ObjectWithPrimitiveRange()),
             [ValidationErrorCodes.NotInRange] = Schema(ObjectWithPrimitiveRange()),
             [ValidationErrorCodes.ExclusiveRange] = Schema(ObjectWithPrimitiveRange()),
@@ -80,7 +87,7 @@ public static class BuiltInValidationErrorContracts
             [ValidationErrorCodes.Email] = PortableErrorMetadataContract.NoMetadata,
             [ValidationErrorCodes.DigitsOnly] = PortableErrorMetadataContract.NoMetadata,
             [ValidationErrorCodes.LettersAndDigitsOnly] = PortableErrorMetadataContract.NoMetadata
-        };
+        }.ToFrozenDictionary(StringComparer.Ordinal);
     }
 
     private static PortableErrorMetadataContract Schema(Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory) =>

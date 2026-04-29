@@ -1,5 +1,4 @@
-using System;
-using System.Collections.Generic;
+using System.Collections.Frozen;
 using System.Linq;
 using FluentAssertions;
 using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
@@ -66,9 +65,15 @@ public sealed class BuiltInValidationErrorContractsTests
                 ValidationErrorCodes.ExclusiveRange,
                 [ValidationErrorMetadataKeys.LowerBoundary, ValidationErrorMetadataKeys.UpperBoundary]
             },
-            { ValidationErrorCodes.Pattern, [ValidationErrorMetadataKeys.Pattern, ValidationErrorMetadataKeys.RegexOptions] },
+            {
+                ValidationErrorCodes.Pattern,
+                [ValidationErrorMetadataKeys.Pattern, ValidationErrorMetadataKeys.RegexOptions]
+            },
             { ValidationErrorCodes.Enum, [ValidationErrorMetadataKeys.EnumType] },
-            { ValidationErrorCodes.EnumName, [ValidationErrorMetadataKeys.EnumType, ValidationErrorMetadataKeys.IgnoreCase] },
+            {
+                ValidationErrorCodes.EnumName,
+                [ValidationErrorMetadataKeys.EnumType, ValidationErrorMetadataKeys.IgnoreCase]
+            },
             {
                 ValidationErrorCodes.PrecisionScale,
                 [
@@ -80,18 +85,17 @@ public sealed class BuiltInValidationErrorContractsTests
         };
 
     public static TheoryData<string> PrimitiveValueCodes =>
-        new ()
-        {
-            ValidationErrorCodes.EqualTo,
-            ValidationErrorCodes.NotEqualTo,
-            ValidationErrorCodes.GreaterThan,
-            ValidationErrorCodes.GreaterThanOrEqualTo,
-            ValidationErrorCodes.LessThan,
-            ValidationErrorCodes.LessThanOrEqualTo,
-            ValidationErrorCodes.InRange,
-            ValidationErrorCodes.NotInRange,
-            ValidationErrorCodes.ExclusiveRange
-        };
+    [
+        ValidationErrorCodes.EqualTo,
+        ValidationErrorCodes.NotEqualTo,
+        ValidationErrorCodes.GreaterThan,
+        ValidationErrorCodes.GreaterThanOrEqualTo,
+        ValidationErrorCodes.LessThan,
+        ValidationErrorCodes.LessThanOrEqualTo,
+        ValidationErrorCodes.InRange,
+        ValidationErrorCodes.NotInRange,
+        ValidationErrorCodes.ExclusiveRange
+    ];
 
     [Fact]
     public void Contracts_ShouldContainExpectedBuiltInCodes()
@@ -111,13 +115,15 @@ public sealed class BuiltInValidationErrorContractsTests
         BuiltInValidationErrorContracts.Contracts.Keys.Should()
            .BeEquivalentTo(MetadataBearingCodes.Concat(expectedNoMetadataCodes));
         BuiltInValidationErrorContracts.Contracts.Should().NotContainKey(ValidationErrorCodes.Predicate);
-        expectedNoMetadataCodes.Should().OnlyContain(
-            code => ReferenceEquals(
-                BuiltInValidationErrorContracts.Contracts[code],
-                PortableErrorMetadataContract.NoMetadata
-            )
+        BuiltInValidationErrorContracts.Contracts.Values.Should().AllSatisfy(
+            x => ReferenceEquals(x, PortableErrorMetadataContract.NoMetadata)
         );
     }
+
+    [Fact]
+    public void Contracts_ShouldBeBackedByFrozenDictionary() =>
+        BuiltInValidationErrorContracts.Contracts.Should()
+           .BeAssignableTo<FrozenDictionary<string, PortableErrorMetadataContract>>();
 
     [Theory]
     [MemberData(nameof(MetadataCodeProperties))]
