@@ -22,6 +22,7 @@ public sealed class PortableErrorMetadataContractTests
            .Which.MetadataType.Should().Be(typeof(TestMetadata));
         schemaContract.Should().BeOfType<PortableErrorMetadataSchemaContract>()
            .Which.SchemaFactory.Should().BeSameAs(schemaFactory);
+        ((PortableErrorMetadataSchemaContract) schemaContract).DiagnosticName.Should().Be(nameof(schemaFactory));
         noMetadata.Should().BeOfType<PortableErrorMetadataNoMetadataContract>();
         PortableErrorMetadataContract.NoMetadata.Should().BeSameAs(noMetadata);
         typeof(PortableErrorMetadataContract)
@@ -29,7 +30,7 @@ public sealed class PortableErrorMetadataContractTests
            .Should()
            .BeEmpty();
 
-        string discriminator = typeContract switch
+        var discriminator = typeContract switch
         {
             PortableErrorMetadataTypeContract => "type",
             PortableErrorMetadataSchemaContract => "schema",
@@ -57,6 +58,39 @@ public sealed class PortableErrorMetadataContractTests
     }
 
     [Fact]
+    public void SchemaContracts_ShouldAllowExplicitDiagnosticNames()
+    {
+        Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory = _ => new OpenApiSchema();
+
+        var schemaContract = PortableErrorMetadataContract.FromSchema(schemaFactory, "named schema");
+
+        schemaContract.Should().BeOfType<PortableErrorMetadataSchemaContract>()
+           .Which.DiagnosticName.Should().Be("named schema");
+    }
+
+    [Fact]
+    public void SchemaContracts_ShouldDeriveDiagnosticNamesFromMethodMetadata_WhenNoNameIsAvailable()
+    {
+        var schemaContract = new PortableErrorMetadataSchemaContract(CreateSchema, null);
+
+        schemaContract.DiagnosticName.Should().Contain(nameof(CreateSchema));
+    }
+
+    [Fact]
+    public void SchemaContracts_ShouldThrow_WhenNoMeaningfulDiagnosticNameCanBeDerived()
+    {
+        new Action(
+                () => PortableErrorMetadataContract.FromSchema(
+                    _ => new OpenApiSchema(),
+                    null
+                )
+            )
+           .Should()
+           .Throw<InvalidOperationException>()
+           .WithMessage("*meaningful diagnostic name*diagnosticName*");
+    }
+
+    [Fact]
     public void ContractsBuilder_ShouldRejectConflictingContractsForSameCode()
     {
         Func<OpenApiSpecVersion, OpenApiSchema> firstFactory = _ => new OpenApiSchema();
@@ -78,7 +112,16 @@ public sealed class PortableErrorMetadataContractTests
             )
            .Should()
            .Throw<InvalidOperationException>()
-           .WithMessage("*Conflict*schema factory*");
+           .WithMessage("*Conflict*firstFactory*secondFactory*");
+
+        new Action(
+                () => new PortableErrorMetadataContractsBuilder()
+                   .ForCode("Conflict", firstFactory, "first schema")
+                   .ForCode("Conflict", secondFactory, "second schema")
+            )
+           .Should()
+           .Throw<InvalidOperationException>()
+           .WithMessage("*Conflict*first schema*second schema*");
 
         new Action(
                 () => new PortableErrorMetadataContractsBuilder()
@@ -101,13 +144,18 @@ public sealed class PortableErrorMetadataContractTests
         registry.Contracts["TypeCode"].Should().BeOfType<PortableErrorMetadataTypeContract>();
     }
 
+    // ReSharper disable UnusedMember.Local -- required for testing
     private sealed class TestMetadata
     {
         public string Value { get; init; } = string.Empty;
     }
 
+    // ReSharper disable once ClassNeverInstantiated.Local -- required for testing
     private sealed class OtherMetadata
     {
         public string Value { get; init; } = string.Empty;
     }
+
+    private static OpenApiSchema CreateSchema(OpenApiSpecVersion _) => new ();
+    // ReSharper restore UnusedMember.Local
 }

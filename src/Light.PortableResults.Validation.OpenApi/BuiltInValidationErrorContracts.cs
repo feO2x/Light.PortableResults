@@ -21,12 +21,28 @@ public static class BuiltInValidationErrorContracts
     {
         return new Dictionary<string, PortableErrorMetadataContract>(StringComparer.Ordinal)
         {
-            [ValidationErrorCodes.Count] = Schema(ObjectWithInteger(ValidationErrorMetadataKeys.ExpectedCount)),
-            [ValidationErrorCodes.MinCount] = Schema(ObjectWithInteger(ValidationErrorMetadataKeys.MinCount)),
-            [ValidationErrorCodes.MaxCount] = Schema(ObjectWithInteger(ValidationErrorMetadataKeys.MaxCount)),
-            [ValidationErrorCodes.MinLength] = Schema(ObjectWithInteger(ValidationErrorMetadataKeys.MinLength)),
-            [ValidationErrorCodes.MaxLength] = Schema(ObjectWithInteger(ValidationErrorMetadataKeys.MaxLength)),
+            [ValidationErrorCodes.Count] = Schema(
+                ValidationErrorCodes.Count,
+                ObjectWithInteger(ValidationErrorMetadataKeys.ExpectedCount)
+            ),
+            [ValidationErrorCodes.MinCount] = Schema(
+                ValidationErrorCodes.MinCount,
+                ObjectWithInteger(ValidationErrorMetadataKeys.MinCount)
+            ),
+            [ValidationErrorCodes.MaxCount] = Schema(
+                ValidationErrorCodes.MaxCount,
+                ObjectWithInteger(ValidationErrorMetadataKeys.MaxCount)
+            ),
+            [ValidationErrorCodes.MinLength] = Schema(
+                ValidationErrorCodes.MinLength,
+                ObjectWithInteger(ValidationErrorMetadataKeys.MinLength)
+            ),
+            [ValidationErrorCodes.MaxLength] = Schema(
+                ValidationErrorCodes.MaxLength,
+                ObjectWithInteger(ValidationErrorMetadataKeys.MaxLength)
+            ),
             [ValidationErrorCodes.LengthInRange] = Schema(
+                ValidationErrorCodes.LengthInRange,
                 _ => CreateObjectSchema(
                     new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
                     {
@@ -35,22 +51,41 @@ public static class BuiltInValidationErrorContracts
                     }
                 )
             ),
-            [ValidationErrorCodes.EqualTo] =
-                Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
-            [ValidationErrorCodes.NotEqualTo] =
-                Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
-            [ValidationErrorCodes.GreaterThan] =
-                Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
-            [ValidationErrorCodes.GreaterThanOrEqualTo] =
-                Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
-            [ValidationErrorCodes.LessThan] =
-                Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
-            [ValidationErrorCodes.LessThanOrEqualTo] =
-                Schema(ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)),
-            [ValidationErrorCodes.InRange] = Schema(ObjectWithPrimitiveRange()),
-            [ValidationErrorCodes.NotInRange] = Schema(ObjectWithPrimitiveRange()),
-            [ValidationErrorCodes.ExclusiveRange] = Schema(ObjectWithPrimitiveRange()),
+            [ValidationErrorCodes.EqualTo] = Schema(
+                ValidationErrorCodes.EqualTo,
+                ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)
+            ),
+            [ValidationErrorCodes.NotEqualTo] = Schema(
+                ValidationErrorCodes.NotEqualTo,
+                ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)
+            ),
+            [ValidationErrorCodes.GreaterThan] = Schema(
+                ValidationErrorCodes.GreaterThan,
+                ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)
+            ),
+            [ValidationErrorCodes.GreaterThanOrEqualTo] = Schema(
+                ValidationErrorCodes.GreaterThanOrEqualTo,
+                ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)
+            ),
+            [ValidationErrorCodes.LessThan] = Schema(
+                ValidationErrorCodes.LessThan,
+                ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)
+            ),
+            [ValidationErrorCodes.LessThanOrEqualTo] = Schema(
+                ValidationErrorCodes.LessThanOrEqualTo,
+                ObjectWithPrimitiveValue(ValidationErrorMetadataKeys.ComparativeValue)
+            ),
+            [ValidationErrorCodes.InRange] = Schema(ValidationErrorCodes.InRange, ObjectWithPrimitiveRange()),
+            [ValidationErrorCodes.NotInRange] = Schema(
+                ValidationErrorCodes.NotInRange,
+                ObjectWithPrimitiveRange()
+            ),
+            [ValidationErrorCodes.ExclusiveRange] = Schema(
+                ValidationErrorCodes.ExclusiveRange,
+                ObjectWithPrimitiveRange()
+            ),
             [ValidationErrorCodes.Pattern] = Schema(
+                ValidationErrorCodes.Pattern,
                 _ => CreateObjectSchema(
                     new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
                     {
@@ -59,8 +94,12 @@ public static class BuiltInValidationErrorContracts
                     }
                 )
             ),
-            [ValidationErrorCodes.Enum] = Schema(ObjectWithString(ValidationErrorMetadataKeys.EnumType)),
+            [ValidationErrorCodes.Enum] = Schema(
+                ValidationErrorCodes.Enum,
+                ObjectWithString(ValidationErrorMetadataKeys.EnumType)
+            ),
             [ValidationErrorCodes.EnumName] = Schema(
+                ValidationErrorCodes.EnumName,
                 _ => CreateObjectSchema(
                     new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
                     {
@@ -70,6 +109,7 @@ public static class BuiltInValidationErrorContracts
                 )
             ),
             [ValidationErrorCodes.PrecisionScale] = Schema(
+                ValidationErrorCodes.PrecisionScale,
                 _ => CreateObjectSchema(
                     new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
                     {
@@ -90,8 +130,10 @@ public static class BuiltInValidationErrorContracts
         }.ToFrozenDictionary(StringComparer.Ordinal);
     }
 
-    private static PortableErrorMetadataContract Schema(Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory) =>
-        PortableErrorMetadataContract.FromSchema(schemaFactory);
+    private static PortableErrorMetadataContract Schema(
+        string code,
+        Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory
+    ) => PortableErrorMetadataContract.FromSchema(schemaFactory, "built-in validation schema for " + code);
 
     private static Func<OpenApiSpecVersion, OpenApiSchema> ObjectWithInteger(string propertyName) =>
         _ => CreateObjectSchema(

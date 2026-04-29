@@ -1,17 +1,9 @@
-using System;
 using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 
 namespace Light.PortableResults.AspNetCore.OpenApi.Generation;
 
 internal static class PortableResultsOpenApiMessages
 {
-    internal static string CreateDuplicateErrorMetadataContractMessage(
-        string code,
-        Type existingType,
-        Type newType
-    ) =>
-        $"The error code '{code}' is already registered with metadata type '{existingType.FullName}'. It cannot also be registered with '{newType.FullName}'.";
-
     internal static string CreateDuplicateErrorMetadataContractMessage(
         string code,
         PortableErrorMetadataContract existingContract,
@@ -38,9 +30,12 @@ internal static class PortableResultsOpenApiMessages
         {
             PortableErrorMetadataTypeContract typeContract => typeContract.MetadataType.FullName ??
                                                              typeContract.MetadataType.Name,
-            PortableErrorMetadataSchemaContract => "schema factory",
+            PortableErrorMetadataSchemaContract schemaContract => DescribeSchemaFactory(schemaContract),
             PortableErrorMetadataNoMetadataContract => "no metadata",
             _ => contract.GetType().FullName ?? contract.GetType().Name
         };
     }
+
+    private static string DescribeSchemaFactory(PortableErrorMetadataSchemaContract schemaContract)
+        => "schema factory " + schemaContract.DiagnosticName;
 }
