@@ -647,14 +647,39 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         var responseKey = statusCode.ToString(CultureInfo.InvariantCulture);
         if (!operation.Responses.TryGetValue(responseKey, out var response))
         {
-            response = new OpenApiResponse
+            var createdResponse = new OpenApiResponse
             {
                 Description = $"HTTP {statusCode}"
             };
-            operation.Responses.Add(responseKey, response);
+            operation.Responses.Add(responseKey, createdResponse);
+            return createdResponse;
         }
 
-        return (OpenApiResponse) response;
+        if (response is OpenApiResponse concreteResponse)
+        {
+            return concreteResponse;
+        }
+
+        if (response is not OpenApiResponseReference responseReference)
+        {
+            throw new InvalidOperationException(
+                $"The OpenAPI response entry for status code {statusCode} must be either an OpenApiResponse or an OpenApiResponseReference, but was '{response.GetType().FullName}'."
+            );
+        }
+
+        var materializedResponse = new OpenApiResponse
+        {
+            Description = string.IsNullOrWhiteSpace(responseReference.Description) ?
+                $"HTTP {statusCode}" :
+                responseReference.Description,
+            Content = responseReference.Content,
+            Headers = responseReference.Headers,
+            Links = responseReference.Links,
+            Extensions = responseReference.Extensions
+        };
+
+        operation.Responses[responseKey] = materializedResponse;
+        return materializedResponse;
     }
 
     private static void SetResponseContent(

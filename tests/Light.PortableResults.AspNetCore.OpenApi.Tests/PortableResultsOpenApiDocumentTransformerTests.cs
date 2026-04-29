@@ -310,6 +310,46 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         ((OpenApiSchema) mediaType.Schema!).AnyOf.Should().HaveCount(2);
     }
 
+    [Fact]
+    public async Task Transformer_ShouldMaterializeReferencedResponsesBeforeWritingContent()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureOpenApi: options =>
+            {
+                options.AddOperationTransformer(
+                    (operation, _, _) =>
+                    {
+                        operation.Responses ??= new OpenApiResponses();
+                        operation.Responses[StatusCodes.Status409Conflict.ToString(CultureInfo.InvariantCulture)] =
+                            new OpenApiResponseReference(
+                                "UpstreamConflictResponse",
+                                new OpenApiDocument(),
+                                externalResource: null
+                            );
+                        return Task.CompletedTask;
+                    }
+                );
+            },
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/upstream-reference", static () => TypedResults.Problem())
+                   .ProducesPortableProblem(StatusCodes.Status409Conflict);
+            }
+        );
+
+        var document = await GetOpenApiDocumentAsync(app);
+        var responseEntry = document
+           .Paths["/minimal/problems/upstream-reference"]
+           .Operations![HttpMethod.Get]
+           .Responses![StatusCodes.Status409Conflict.ToString(CultureInfo.InvariantCulture)];
+
+        responseEntry.Should().BeOfType<OpenApiResponse>();
+        var response = (OpenApiResponse) responseEntry;
+        response.Content.Should().ContainKey("application/problem+json");
+        response.Content["application/problem+json"].Schema.Should().BeOfType<OpenApiSchemaReference>();
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
