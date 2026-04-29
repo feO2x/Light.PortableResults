@@ -23,18 +23,19 @@ namespace Light.PortableResults.AspNetCore.OpenApi;
 public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocumentTransformer
 {
     private readonly IPortableErrorMetadataContractRegistry _errorMetadataContractRegistry;
-    private readonly IOptions<PortableResultsHttpWriteOptions> _writeOptions;
+    private readonly PortableResultsHttpWriteOptions _writeOptions;
 
     /// <summary>
     /// Initializes a new instance of <see cref="PortableResultsOpenApiDocumentTransformer" />.
     /// </summary>
     public PortableResultsOpenApiDocumentTransformer(
-        IOptions<PortableResultsHttpWriteOptions> writeOptions,
+        PortableResultsHttpWriteOptions writeOptions,
         IPortableErrorMetadataContractRegistry errorMetadataContractRegistry
     )
     {
-        _writeOptions = writeOptions;
-        _errorMetadataContractRegistry = errorMetadataContractRegistry;
+        _writeOptions = writeOptions ?? throw new ArgumentNullException(nameof(writeOptions));
+        _errorMetadataContractRegistry = errorMetadataContractRegistry ??
+                                         throw new ArgumentNullException(nameof(errorMetadataContractRegistry));
     }
 
     /// <inheritdoc />
@@ -240,7 +241,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
     {
         var metadataSerializationMode = attribute.HasMetadataSerializationModeOverride ?
             attribute.MetadataSerializationMode :
-            _writeOptions.Value.MetadataSerializationMode;
+            _writeOptions.MetadataSerializationMode;
         if (attribute.TopLevelMetadataType is not null &&
             metadataSerializationMode == MetadataSerializationMode.ErrorsOnly)
         {
@@ -663,7 +664,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         var validationAttribute = (ProducesPortableValidationProblemAttribute) attribute;
         var format = validationAttribute.HasFormatOverride ?
             validationAttribute.Format :
-            _writeOptions.Value.ValidationProblemSerializationFormat;
+            _writeOptions.ValidationProblemSerializationFormat;
         return format == ValidationProblemSerializationFormat.AspNetCoreCompatible ?
             PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId :
             PortableResultsOpenApiSchemas.PortableRichValidationProblemDetailsSchemaId;
