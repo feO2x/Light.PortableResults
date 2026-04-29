@@ -20,12 +20,7 @@ public static class PortableResultsOpenApiModule
         ArgumentNullException.ThrowIfNull(services);
 
         services.TryAddSingleton<PortableResultsOpenApiDocumentTransformer>();
-        services.TryAddSingleton<IPortableErrorMetadataContractRegistry>(
-            static serviceProvider =>
-                new PortableErrorMetadataContractRegistry(
-                    serviceProvider.GetRequiredService<IOptions<PortableErrorMetadataContractsOptions>>().Value.Builder
-                )
-        );
+        RegisterErrorMetadataContractRegistry(services);
 
         if (services.Any(static descriptor => descriptor.ServiceType == typeof(PortableResultsOpenApiRegistrationGate)))
         {
@@ -51,13 +46,18 @@ public static class PortableResultsOpenApiModule
         ArgumentNullException.ThrowIfNull(configure);
 
         services.Configure<PortableErrorMetadataContractsOptions>(options => configure(options.Builder));
+        RegisterErrorMetadataContractRegistry(services);
+        return services;
+    }
+
+    private static void RegisterErrorMetadataContractRegistry(IServiceCollection services)
+    {
         services.TryAddSingleton<IPortableErrorMetadataContractRegistry>(
             static serviceProvider =>
                 new PortableErrorMetadataContractRegistry(
                     serviceProvider.GetRequiredService<IOptions<PortableErrorMetadataContractsOptions>>().Value.Builder
                 )
         );
-        return services;
     }
 
     private sealed class PortableResultsOpenApiRegistrationGate;

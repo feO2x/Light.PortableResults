@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -257,15 +258,19 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             {
                 webApplication
                    .MapGet("/minimal/problems/ambiguous-casing", static () => TypedResults.Problem())
-                   .WithMetadata(new ProducesPortableProblemAttribute(
-                        StatusCodes.Status400BadRequest,
-                        // ReSharper disable once RedundantArgumentDefaultValue
-                        "application/problem+json"
-                    ))
-                   .WithMetadata(new ProducesPortableProblemAttribute(
-                        StatusCodes.Status400BadRequest,
-                        "application/PROBLEM+JSON"
-                    ));
+                   .WithMetadata(
+                        new ProducesPortableProblemAttribute(
+                            StatusCodes.Status400BadRequest,
+                            // ReSharper disable once RedundantArgumentDefaultValue
+                            "application/problem+json"
+                        )
+                    )
+                   .WithMetadata(
+                        new ProducesPortableProblemAttribute(
+                            StatusCodes.Status400BadRequest,
+                            "application/PROBLEM+JSON"
+                        )
+                    );
             }
         );
 
@@ -285,15 +290,19 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             {
                 webApplication
                    .MapGet("/minimal/problems/union-casing", static () => TypedResults.Problem())
-                   .WithMetadata(new ProducesPortableProblemAttribute(
-                        StatusCodes.Status400BadRequest,
-                        // ReSharper disable once RedundantArgumentDefaultValue
-                        "application/problem+json"
-                    ))
-                   .WithMetadata(new ProducesPortableValidationProblemAttribute(
-                        StatusCodes.Status400BadRequest,
-                        "application/PROBLEM+JSON"
-                    ));
+                   .WithMetadata(
+                        new ProducesPortableProblemAttribute(
+                            StatusCodes.Status400BadRequest,
+                            // ReSharper disable once RedundantArgumentDefaultValue
+                            "application/problem+json"
+                        )
+                    )
+                   .WithMetadata(
+                        new ProducesPortableValidationProblemAttribute(
+                            StatusCodes.Status400BadRequest,
+                            "application/PROBLEM+JSON"
+                        )
+                    );
             }
         );
 
@@ -362,7 +371,11 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
                 options.AddOperationTransformer(
                     (operation, context, _) =>
                     {
-                        if (!string.Equals(context.Description.RelativePath, "minimal/success/replaces-existing", StringComparison.Ordinal))
+                        if (!string.Equals(
+                                context.Description.RelativePath,
+                                "minimal/success/replaces-existing",
+                                StringComparison.Ordinal
+                            ))
                         {
                             return Task.CompletedTask;
                         }
@@ -374,7 +387,7 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
                                 Description = "HTTP 200",
                                 Content = new Dictionary<string, OpenApiMediaType>(StringComparer.OrdinalIgnoreCase)
                                 {
-                                    ["application/json"] = new()
+                                    ["application/json"] = new ()
                                     {
                                         Schema = new OpenApiSchema
                                         {
@@ -452,6 +465,31 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var act = () => builder.ForCode<FundsMetadata>("Code_One");
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*Code/One*Code_One*");
+    }
+
+    [Fact]
+    public void OpenApiModule_ShouldRegisterErrorMetadataRegistryOnlyOnce()
+    {
+        var services = new ServiceCollection();
+        services.AddOptions();
+
+        services.ConfigureErrorMetadataContracts(
+            contracts => contracts.ForCode<VersionMismatchMetadata>("VersionMismatch")
+        );
+        services.AddPortableResultsOpenApi();
+        services.ConfigureErrorMetadataContracts(
+            contracts => contracts.ForCode<FundsMetadata>("Insufficient/Funds")
+        );
+        services.AddPortableResultsOpenApi();
+
+        services.Where(static descriptor => descriptor.ServiceType == typeof(IPortableErrorMetadataContractRegistry))
+           .Should()
+           .ContainSingle();
+
+        using var serviceProvider = services.BuildServiceProvider();
+        var registry = serviceProvider.GetRequiredService<IPortableErrorMetadataContractRegistry>();
+        registry.Contracts.Should().ContainKey("VersionMismatch");
+        registry.Contracts.Should().ContainKey("Insufficient/Funds");
     }
 
     private static async Task<OpenApiDocument> GetOpenApiDocumentAsync(WebApplication app)
@@ -662,4 +700,3 @@ public sealed class FundsMetadata
     public decimal MissingAmount { get; init; }
 }
 // ReSharper restore UnusedMember.Global
-

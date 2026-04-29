@@ -38,6 +38,9 @@ public sealed class PortableErrorMetadataContractRegistry : IPortableErrorMetada
             }
 
             var sanitizedCode = PortableResultsOpenApiSchemaNaming.SanitizeErrorCode(code);
+            // ForCode already rejects sanitized-name collisions, but the registry is the final snapshot
+            // boundary before document generation and keeps the same guard in case the builder contents
+            // were composed outside that API or future option-pipeline changes bypass the builder check.
             if (sanitizedCodes.TryGetValue(sanitizedCode, out var existingCode))
             {
                 throw new InvalidOperationException(
