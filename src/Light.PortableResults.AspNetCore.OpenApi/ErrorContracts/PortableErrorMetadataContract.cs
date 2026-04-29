@@ -62,6 +62,13 @@ public sealed class PortableErrorMetadataTypeContract : PortableErrorMetadataCon
     /// Gets the CLR metadata type.
     /// </summary>
     public Type MetadataType { get; }
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj) =>
+        obj is PortableErrorMetadataTypeContract other && MetadataType == other.MetadataType;
+
+    /// <inheritdoc />
+    public override int GetHashCode() => MetadataType.GetHashCode();
 }
 
 /// <summary>
@@ -93,6 +100,13 @@ public sealed class PortableErrorMetadataSchemaContract : PortableErrorMetadataC
     /// Gets the diagnostic name used in duplicate-contract errors.
     /// </summary>
     public string DiagnosticName { get; }
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj) =>
+        obj is PortableErrorMetadataSchemaContract other && ReferenceEquals(SchemaFactory, other.SchemaFactory);
+
+    /// <inheritdoc />
+    public override int GetHashCode() => SchemaFactory.GetHashCode();
 
     private static string CreateDiagnosticName(
         Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory,
@@ -138,4 +152,10 @@ public sealed class PortableErrorMetadataSchemaContract : PortableErrorMetadataC
 public sealed class PortableNoMetadataContract : PortableErrorMetadataContract
 {
     internal PortableNoMetadataContract() { }
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj) => obj is PortableNoMetadataContract;
+
+    /// <inheritdoc />
+    public override int GetHashCode() => 0;
 }

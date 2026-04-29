@@ -63,7 +63,7 @@ public sealed class PortableErrorMetadataContractsBuilder
 
         if (_contracts.TryGetValue(code, out var existingContract))
         {
-            if (PortableErrorMetadataContractEqualityComparer.Instance.Equals(existingContract, contract))
+            if (existingContract.Equals(contract))
             {
                 return this;
             }

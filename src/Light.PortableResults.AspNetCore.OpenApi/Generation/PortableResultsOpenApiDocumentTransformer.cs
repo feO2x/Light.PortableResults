@@ -439,7 +439,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                 var metadataTypeContract = PortableErrorMetadataContract.FromType(metadataType);
                 if (rawCodeContracts.TryGetValue(code, out var existingContract))
                 {
-                    if (!PortableErrorMetadataContractEqualityComparer.Instance.Equals(existingContract, metadataTypeContract))
+                    if (!existingContract.Equals(metadataTypeContract))
                     {
                         throw new InvalidOperationException(
                             PortableResultsOpenApiMessages.CreateDuplicateErrorMetadataContractMessage(
@@ -814,7 +814,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
     {
         if (rawCodeContracts.TryGetValue(code, out var existingContract))
         {
-            if (PortableErrorMetadataContractEqualityComparer.Instance.Equals(existingContract, contract))
+            if (existingContract.Equals(contract))
             {
                 return;
             }

@@ -25,7 +25,7 @@ public sealed class PortableErrorMetadataContractRegistry : IPortableErrorMetada
         {
             if (contracts.TryGetValue(code, out var existingContract))
             {
-                if (PortableErrorMetadataContractEqualityComparer.Instance.Equals(existingContract, contract))
+                if (existingContract.Equals(contract))
                 {
                     continue;
                 }
