@@ -51,23 +51,20 @@ public static class PortableResultsOpenApiSchemas
         ArgumentNullException.ThrowIfNull(document);
 
         var schemas = EnsureSchemaStore(document);
-        AddIfMissing(document, schemas, ErrorCategorySchemaId, CreateErrorCategorySchema());
-        AddIfMissing(document, schemas, PortableErrorSchemaId, CreatePortableErrorSchema(document));
+        AddIfMissing(schemas, ErrorCategorySchemaId, CreateErrorCategorySchema());
+        AddIfMissing(schemas, PortableErrorSchemaId, CreatePortableErrorSchema(document));
         AddIfMissing(
-            document,
             schemas,
             PortableValidationErrorDetailSchemaId,
             CreatePortableValidationErrorDetailSchema(document)
         );
-        AddIfMissing(document, schemas, PortableProblemDetailsSchemaId, CreatePortableProblemDetailsSchema(document));
+        AddIfMissing(schemas, PortableProblemDetailsSchemaId, CreatePortableProblemDetailsSchema(document));
         AddIfMissing(
-            document,
             schemas,
             PortableRichValidationProblemDetailsSchemaId,
             CreatePortableRichValidationProblemDetailsSchema(document)
         );
         AddIfMissing(
-            document,
             schemas,
             PortableAspNetCoreValidationProblemDetailsSchemaId,
             CreatePortableAspNetCoreValidationProblemDetailsSchema(document)
@@ -106,16 +103,12 @@ public static class PortableResultsOpenApiSchemas
     }
 
     private static void AddIfMissing(
-        OpenApiDocument document,
         IDictionary<string, IOpenApiSchema> schemas,
         string schemaId,
         OpenApiSchema schema
     )
     {
-        if (!schemas.ContainsKey(schemaId))
-        {
-            schemas.Add(schemaId, schema);
-        }
+        schemas.TryAdd(schemaId, schema);
     }
 
     private static OpenApiSchema CreateErrorCategorySchema()
@@ -124,7 +117,7 @@ public static class PortableResultsOpenApiSchemas
         {
             Type = JsonSchemaType.String,
             Enum = Enum.GetNames(typeof(ErrorCategory))
-                       .Select(static name => (JsonNode) JsonValue.Create(name)!)
+                       .Select(static name => (JsonNode) JsonValue.Create(name))
                        .ToList()
         };
     }
