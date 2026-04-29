@@ -1,5 +1,4 @@
 using System;
-using Light.PortableResults.SharedJsonSerialization;
 using Microsoft.AspNetCore.Http;
 
 namespace Light.PortableResults.AspNetCore.OpenApi;
@@ -9,8 +8,7 @@ namespace Light.PortableResults.AspNetCore.OpenApi;
 /// </summary>
 /// <typeparam name="TValue">The response value type.</typeparam>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-public class ProducesPortableSuccessResponseAttribute<TValue>
-    : PortableOpenApiResponseAttributeBase, IPortableSuccessResponseOpenApiAttribute
+public class ProducesPortableSuccessResponseAttribute<TValue> : PortableOpenApiSuccessResponseAttributeBase
 {
     /// <summary>
     /// Initializes a new instance of <see cref="ProducesPortableSuccessResponseAttribute{TValue}" />.
@@ -20,31 +18,5 @@ public class ProducesPortableSuccessResponseAttribute<TValue>
     public ProducesPortableSuccessResponseAttribute(
         int statusCode = StatusCodes.Status200OK,
         string contentType = "application/json"
-    ) : base(PortableOpenApiResponseKind.SuccessResponse, statusCode, contentType)
-    {
-        ValueType = typeof(TValue);
-    }
-
-    /// <summary>
-    /// Gets the response value type.
-    /// </summary>
-    public Type ValueType { get; }
-
-    /// <summary>
-    /// Gets or sets the optional documentation-only override for the metadata serialization mode.
-    /// </summary>
-    public MetadataSerializationMode MetadataSerializationMode
-    {
-        get;
-        set
-        {
-            field = value;
-            HasMetadataSerializationModeOverride = true;
-        }
-    }
-
-    bool IPortableSuccessResponseOpenApiAttribute.HasMetadataSerializationModeOverride =>
-        HasMetadataSerializationModeOverride;
-
-    private bool HasMetadataSerializationModeOverride { get; set; }
+    ) : base(statusCode, contentType, typeof(TValue)) { }
 }

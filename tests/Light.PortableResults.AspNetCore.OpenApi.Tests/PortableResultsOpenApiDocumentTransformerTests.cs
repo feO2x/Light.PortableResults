@@ -153,6 +153,16 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             "application/problem+json"
         ).Should().BeOfType<OpenApiSchemaReference>().Subject;
         GetSchemaReferenceId(validationSchema).Should().StartWith("PortableRichValidationProblemDetails__");
+
+        var customSuccessSchema = GetResponseSchema(
+            document,
+            "/mvc/openapi/custom-success",
+            HttpMethod.Get,
+            StatusCodes.Status202Accepted,
+            "application/json"
+        ).Should().BeOfType<OpenApiSchemaReference>().Subject;
+        var customSuccessComponent = GetSchemaComponent(document, GetSchemaReferenceId(customSuccessSchema));
+        customSuccessComponent.Properties.Should().ContainKeys("value", "metadata");
     }
 
     [Fact]
@@ -392,6 +402,20 @@ public sealed class OpenApiMvcController : ControllerBase
         ErrorCodes = new[] { "VersionMismatch" }
     )]
     public IActionResult GetValidation() => Problem();
+
+    [HttpGet("custom-success")]
+    [CustomPortableSuccessResponse(typeof(SuccessMetadata), StatusCodes.Status202Accepted)]
+    public ActionResult<MovieDto> GetCustomSuccess() => Accepted(new MovieDto());
+}
+
+public sealed class CustomPortableSuccessResponseAttribute : PortableOpenApiSuccessResponseAttributeBase
+{
+    public CustomPortableSuccessResponseAttribute(Type metadataType, int statusCode = StatusCodes.Status200OK)
+        : base(statusCode, "application/json", typeof(MovieDto))
+    {
+        TopLevelMetadataType = metadataType;
+        MetadataSerializationMode = MetadataSerializationMode.Always;
+    }
 }
 
 public sealed class MovieDto

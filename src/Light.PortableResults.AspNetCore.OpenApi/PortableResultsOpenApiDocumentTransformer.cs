@@ -202,28 +202,30 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         // By this point the transformer only cares about the discovered response metadata kind. The
         // attribute may have originated from an MVC action attribute or from a Minimal API helper that
         // attached the same attribute via EndpointMetadata, but both flow through the same schema builder.
-        return attribute.Kind switch
+        return attribute switch
         {
-            PortableOpenApiResponseKind.SuccessResponse =>
+            PortableOpenApiSuccessResponseAttributeBase successAttribute =>
                 await CreateSuccessResponseSchemaAsync(
                     document,
                     context,
                     apiDescription,
                     operation,
-                    attribute,
+                    successAttribute,
                     cancellationToken
                 ),
-            PortableOpenApiResponseKind.Problem or PortableOpenApiResponseKind.ValidationProblem =>
+            PortableOpenApiErrorResponseAttributeBase errorAttribute =>
                 await CreateErrorResponseSchemaAsync(
                     document,
                     context,
                     openApiVersion,
                     apiDescription,
                     operation,
-                    attribute,
+                    errorAttribute,
                     cancellationToken
                 ),
-            _ => throw new InvalidOperationException($"The response kind '{attribute.Kind}' is not supported.")
+            _ => throw new InvalidOperationException(
+                $"The response attribute '{attribute.GetType().FullName}' does not expose supported OpenAPI response metadata."
+            )
         };
     }
 
@@ -232,19 +234,12 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         OpenApiDocumentTransformerContext context,
         ApiDescription apiDescription,
         OpenApiOperation operation,
-        PortableOpenApiResponseAttributeBase attribute,
+        PortableOpenApiSuccessResponseAttributeBase attribute,
         CancellationToken cancellationToken
     )
     {
-        if (attribute is not IPortableSuccessResponseOpenApiAttribute successAttribute)
-        {
-            throw new InvalidOperationException(
-                $"The response attribute '{attribute.GetType().FullName}' does not expose success-response metadata."
-            );
-        }
-
-        var metadataSerializationMode = successAttribute.HasMetadataSerializationModeOverride ?
-            successAttribute.MetadataSerializationMode :
+        var metadataSerializationMode = attribute.HasMetadataSerializationModeOverride ?
+            attribute.MetadataSerializationMode :
             _writeOptions.Value.MetadataSerializationMode;
         if (attribute.TopLevelMetadataType is not null &&
             metadataSerializationMode == MetadataSerializationMode.ErrorsOnly)
@@ -255,7 +250,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         }
 
         var valueSchema = await context.GetOrCreateSchemaAsync(
-            successAttribute.ValueType,
+            attribute.ValueType,
             parameterDescription: null,
             cancellationToken
         );
@@ -302,12 +297,11 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         OpenApiSpecVersion openApiVersion,
         ApiDescription apiDescription,
         OpenApiOperation operation,
-        PortableOpenApiResponseAttributeBase attribute,
+        PortableOpenApiErrorResponseAttributeBase attribute,
         CancellationToken cancellationToken
     )
     {
-        var errorAttribute = (PortableOpenApiErrorResponseAttributeBase) attribute;
-        ValidateInlineMetadataArrays(errorAttribute);
+        ValidateInlineMetadataArrays(attribute);
 
         var canonicalSchemaId = ResolveCanonicalErrorEnvelopeSchemaId(attribute);
         var itemBaseSchemaId = ResolveErrorItemSchemaId(canonicalSchemaId);
@@ -317,7 +311,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
             openApiVersion,
             apiDescription,
             operation,
-            errorAttribute,
+            attribute,
             itemBaseSchemaId,
             cancellationToken
         );

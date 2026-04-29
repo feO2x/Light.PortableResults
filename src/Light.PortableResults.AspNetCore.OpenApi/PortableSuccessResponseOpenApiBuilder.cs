@@ -8,11 +8,11 @@ namespace Light.PortableResults.AspNetCore.OpenApi;
 /// </summary>
 public sealed class PortableSuccessResponseOpenApiBuilder
 {
-    private readonly PortableOpenApiResponseAttributeBase _attribute;
+    private readonly PortableOpenApiSuccessResponseAttributeBase _attribute;
     private readonly Action<MetadataSerializationMode> _setMetadataSerializationMode;
 
     internal PortableSuccessResponseOpenApiBuilder(
-        PortableOpenApiResponseAttributeBase attribute,
+        PortableOpenApiSuccessResponseAttributeBase attribute,
         Action<MetadataSerializationMode> setMetadataSerializationMode
     )
     {
