@@ -1,20 +1,17 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Light.PortableResults.AspNetCore.MinimalApis;
 using Light.PortableResults.AspNetCore.Mvc;
-using Light.PortableResults.AspNetCore.OpenApi;
 using Light.PortableResults.Http.Writing;
 using Light.PortableResults.SharedJsonSerialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi;
 using Xunit;
@@ -67,8 +64,10 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var globalProblemErrors = (OpenApiSchema) globalProblemExtension.Properties!["errors"]!;
         var globalProblemItems = (OpenApiSchema) globalProblemErrors.Items!;
         globalProblemItems.AnyOf.Should().HaveCount(3);
-        GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.AnyOf![0]).Should().Be("PortableError__VersionMismatch");
-        GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.AnyOf[1]).Should().Be("PortableError__Insufficient_Funds");
+        GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.AnyOf![0]).Should()
+           .Be("PortableError__VersionMismatch");
+        GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.AnyOf[1]).Should()
+           .Be("PortableError__Insufficient_Funds");
         GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.AnyOf[2]).Should().Be("PortableError");
         globalProblemItems.Discriminator.Should().NotBeNull();
         globalProblemItems.Discriminator!.PropertyName.Should().Be("code");
@@ -133,7 +132,8 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             StatusCodes.Status200OK,
             "application/json"
         ).Should().BeOfType<OpenApiSchemaReference>().Subject;
-        GetSchemaComponent(document, GetSchemaReferenceId(successSchema)).Properties.Should().ContainKeys("value", "metadata");
+        GetSchemaComponent(document, GetSchemaReferenceId(successSchema)).Properties.Should()
+           .ContainKeys("value", "metadata");
 
         var problemSchema = GetResponseSchema(
             document,
@@ -168,7 +168,8 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
     [Fact]
     public async Task Transformer_ShouldUseEnumNarrowingForOpenApi30AndConstForOpenApi31()
     {
-        await using var openApi30App = CreateMinimalApiApp(options => options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0);
+        await using var openApi30App =
+            CreateMinimalApiApp(options => options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0);
         var openApi30Document = await GetOpenApiDocumentAsync(openApi30App);
 
         var openApi30Variant = GetSchemaComponent(openApi30Document, "PortableError__VersionMismatch");
@@ -177,7 +178,8 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         openApi30CodeSchema.Enum.Should().ContainSingle();
         openApi30CodeSchema.Enum![0]!.ToJsonString().Should().Be("\"VersionMismatch\"");
 
-        await using var openApi31App = CreateMinimalApiApp(options => options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_1);
+        await using var openApi31App =
+            CreateMinimalApiApp(options => options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_1);
         var openApi31Document = await GetOpenApiDocumentAsync(openApi31App);
 
         var openApi31Variant = GetSchemaComponent(openApi31Document, "PortableError__VersionMismatch");
@@ -200,8 +202,8 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var act = async () => await GetOpenApiDocumentAsync(app);
 
         await act.Should()
-                 .ThrowAsync<InvalidOperationException>()
-                 .WithMessage("*UnknownCode*ConfigureErrorMetadataContracts*WithErrorMetadata*");
+           .ThrowAsync<InvalidOperationException>()
+           .WithMessage("*UnknownCode*ConfigureErrorMetadataContracts*WithErrorMetadata*");
     }
 
     [Fact]
@@ -219,8 +221,8 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var act = async () => await GetOpenApiDocumentAsync(app);
 
         await act.Should()
-                 .ThrowAsync<InvalidOperationException>()
-                 .WithMessage("*MetadataSerializationMode is ErrorsOnly*");
+           .ThrowAsync<InvalidOperationException>()
+           .WithMessage("*MetadataSerializationMode is ErrorsOnly*");
     }
 
     [Fact]
@@ -238,9 +240,43 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
 
         var act = async () => await GetOpenApiDocumentAsync(app);
 
+        await act
+           .Should()
+           .ThrowAsync<InvalidOperationException>()
+           .WithMessage("*status code 400*kind 'Problem'*");
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Transformer_ShouldThrowWhenInlineErrorMetadataArraysAreOnlyPartiallyConfigured(
+        bool configureCodes
+    )
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                var attribute = new ProducesPortableProblemAttribute(StatusCodes.Status404NotFound);
+                if (configureCodes)
+                {
+                    attribute.InlineErrorMetadataCodes = ["Movie/Gone"];
+                }
+                else
+                {
+                    attribute.InlineErrorMetadataTypes = [typeof(InlineProblemMetadata)];
+                }
+
+                webApplication
+                   .MapGet($"/minimal/problems/invalid-inline-{configureCodes}", static () => TypedResults.Problem())
+                   .WithMetadata(attribute);
+            }
+        );
+
+        var act = async () => await GetOpenApiDocumentAsync(app);
+
         await act.Should()
-                 .ThrowAsync<InvalidOperationException>()
-                 .WithMessage("*status code 400*kind 'Problem'*");
+           .ThrowAsync<InvalidOperationException>()
+           .WithMessage("*InlineErrorMetadataCodes*InlineErrorMetadataTypes*");
     }
 
     [Fact]
@@ -274,7 +310,8 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             options =>
             {
                 options.MetadataSerializationMode = MetadataSerializationMode.ErrorsOnly;
-                options.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.AspNetCoreCompatible;
+                options.ValidationProblemSerializationFormat =
+                    ValidationProblemSerializationFormat.AspNetCoreCompatible;
             }
         );
         builder.Services.ConfigureErrorMetadataContracts(
@@ -293,21 +330,21 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
            .ProducesPortableSuccessResponse<MovieDto>(
                 configure: x =>
                     x.WithMetadata<SuccessMetadata>()
-                     .UseMetadataSerializationMode(MetadataSerializationMode.Always)
+                       .UseMetadataSerializationMode(MetadataSerializationMode.Always)
             );
         app.MapGet("/minimal/problems/global", static () => TypedResults.Problem())
            .ProducesPortableProblem(
                 StatusCodes.Status409Conflict,
                 configure: x =>
                     x.WithMetadata<ProblemMetadata>()
-                     .WithErrorCodes("VersionMismatch", "Insufficient/Funds")
+                       .WithErrorCodes("VersionMismatch", "Insufficient/Funds")
             );
         app.MapGet("/minimal/problems/inline", static () => TypedResults.Problem())
            .ProducesPortableProblem(
                 StatusCodes.Status404NotFound,
                 configure: x =>
                     x.WithMetadata<ProblemMetadata>()
-                     .WithErrorMetadata<InlineProblemMetadata>("Movie/Gone")
+                       .WithErrorMetadata<InlineProblemMetadata>("Movie/Gone")
             );
         app.MapGet("/minimal/validation/default", static () => TypedResults.Problem())
            .ProducesPortableValidationProblem();
@@ -315,11 +352,11 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
            .ProducesPortableValidationProblem(
                 configure: x =>
                     x.UseFormat(ValidationProblemSerializationFormat.Rich)
-                     .WithErrorCodes("VersionMismatch")
+                       .WithErrorCodes("VersionMismatch")
             );
         app.MapGet("/minimal/problems/union", static () => TypedResults.Problem())
            .ProducesPortableProblem(StatusCodes.Status400BadRequest)
-           .ProducesPortableValidationProblem(StatusCodes.Status400BadRequest);
+           .ProducesPortableValidationProblem();
 
         configureEndpoints?.Invoke(app);
         return app;
@@ -335,7 +372,8 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             options =>
             {
                 options.MetadataSerializationMode = MetadataSerializationMode.ErrorsOnly;
-                options.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.AspNetCoreCompatible;
+                options.ValidationProblemSerializationFormat =
+                    ValidationProblemSerializationFormat.AspNetCoreCompatible;
             }
         );
         builder.Services.ConfigureErrorMetadataContracts(
@@ -374,7 +412,6 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         referenceId.Should().NotBeNull();
         return referenceId!;
     }
-
 }
 
 [ApiController]

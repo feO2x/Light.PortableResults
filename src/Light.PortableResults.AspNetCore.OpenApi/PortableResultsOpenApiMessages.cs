@@ -20,4 +20,7 @@ internal static class PortableResultsOpenApiMessages
 
     internal static string CreateUnknownErrorCodeMessage(string code) =>
         $"The error code '{code}' is not registered in ConfigureErrorMetadataContracts. Register it globally or use WithErrorMetadata as an inline escape hatch.";
+
+    internal static string CreateIncompleteInlineErrorMetadataMessage() =>
+        "Inline error metadata must configure both InlineErrorMetadataCodes and InlineErrorMetadataTypes together.";
 }

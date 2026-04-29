@@ -680,9 +680,16 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
 
     private static void ValidateInlineMetadataArrays(PortableOpenApiErrorResponseAttributeBase attribute)
     {
-        if (attribute.InlineErrorMetadataCodes is null || attribute.InlineErrorMetadataTypes is null)
+        if (attribute.InlineErrorMetadataCodes is null && attribute.InlineErrorMetadataTypes is null)
         {
             return;
+        }
+
+        if (attribute.InlineErrorMetadataCodes is null || attribute.InlineErrorMetadataTypes is null)
+        {
+            throw new InvalidOperationException(
+                PortableResultsOpenApiMessages.CreateIncompleteInlineErrorMetadataMessage()
+            );
         }
 
         if (attribute.InlineErrorMetadataCodes.Length == attribute.InlineErrorMetadataTypes.Length)
