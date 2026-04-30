@@ -25,6 +25,11 @@ public abstract class PortableOpenApiErrorResponseAttributeBase : PortableOpenAp
     public string[]? ErrorCodes { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether undocumented error codes remain allowed in the schema.
+    /// </summary>
+    public bool AllowUnknownErrorCodes { get; set; }
+
+    /// <summary>
     /// Gets or sets the inline error codes whose metadata schema is defined directly on the endpoint.
     /// </summary>
     public string[]? InlineErrorMetadataCodes { get; set; }

@@ -1382,6 +1382,14 @@ PortableResults OpenAPI metadata is authoritative for a given `(status code, con
 
 Top-level metadata and per-error-code metadata are caller-owned contracts. The OpenAPI package documents them explicitly; the runtime still writes `MetadataObject`.
 
+`WithErrorCodes(...)`, endpoint-scoped `WithErrorMetadata<TMetadata>(code)`, and the typed validation helpers such as `WithInRangeError<T>()` narrow error items exhaustively by default once you document at least one code. The generated item schema becomes a discriminated `oneOf` over the documented variants with `code` required, so you are asserting that every emitted error item has a non-null `code` and that the code is in the documented set.
+
+If an endpoint can still emit additional codes outside the documented set, opt out explicitly with `AllowUnknownErrorCodes()` on the Minimal API builders or `AllowUnknownErrorCodes = true` on the MVC attributes. In that mode the generated schema falls back to the non-exhaustive `anyOf` shape with the canonical `PortableError` / `PortableValidationErrorDetail` branch preserved for unknown codes.
+
+`AllowUnknownErrorCodes()` does not relax the `code` requirement on narrowed item schemas. If an endpoint can emit code-less errors, do not narrow that endpoint's error items in the first place; use the canonical envelope schema instead.
+
+When top-level metadata or documented error items are narrowed, the generated response envelope is a flattened concrete object schema that copies the canonical problem-details properties and overrides only `errors` / `errorDetails` / `metadata`. This improves Swagger UI and code-generator output without changing the runtime wire format.
+
 For built-in validation errors, reference `Light.PortableResults.Validation.OpenApi` and pass the catalog registration to `AddPortableResultsOpenApi(...)` once:
 
 ```csharp
@@ -1405,6 +1413,19 @@ app.MapPut("/api/movieRatings", AddMovieRating)
             x.UseFormat(ValidationProblemSerializationFormat.Rich)
              .WithErrorCodes(ValidationErrorCodes.NotEmpty, ValidationErrorCodes.LengthInRange)
              .WithInRangeError<int>()
+    );
+```
+
+Use `AllowUnknownErrorCodes()` when the endpoint may emit additional documented-shape errors outside the documented code set, for example when built-in validation codes are documented but a downstream lookup may still add a custom code:
+
+```csharp
+app.MapGet("/api/movies", GetMovies)
+   .ProducesPortableValidationProblem(
+        configure: x =>
+            x.UseFormat(ValidationProblemSerializationFormat.Rich)
+             .WithErrorCodes(ValidationErrorCodes.NotEmpty)
+             .WithInRangeError<int>()
+             .AllowUnknownErrorCodes()
     );
 ```
 
@@ -1482,7 +1503,7 @@ public sealed class AddMovieRatingsController(AddMovieRatingService service) : C
         statusCode: StatusCodes.Status404NotFound,
         TopLevelMetadataType = typeof(MovieProblemMetadata),
         InlineErrorMetadataCodes = new[] { "MovieNotFound" },
-        InlineErrorMetadataTypes = new[] { typeof(MovieNotFoundMetadata) }
+        InlineErrorMetadataContracts = new[] { ErrorMetadataContract.FromType(typeof(MovieNotFoundMetadata)) }
     )]
     [ProducesPortableProblem]
     public async Task<LightActionResult<MovieRating>> AddMovieRating(AddMovieRatingDto dto)

@@ -117,8 +117,8 @@ public static class PortableResultsOpenApiSchemas
         {
             Type = JsonSchemaType.String,
             Enum = Enum.GetNames(typeof(ErrorCategory))
-                       .Select(static name => (JsonNode) JsonValue.Create(name))
-                       .ToList()
+               .Select(static name => (JsonNode) JsonValue.Create(name))
+               .ToList()
         };
     }
 
@@ -161,8 +161,8 @@ public static class PortableResultsOpenApiSchemas
         return new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
-            Properties = CreateProblemDetailsProperties(document),
-            Required = new HashSet<string>(StringComparer.Ordinal) { "type", "title", "status", "errors" }
+            Properties = CreatePortableProblemDetailsProperties(document),
+            Required = CreatePortableProblemDetailsRequired()
         };
     }
 
@@ -171,8 +171,8 @@ public static class PortableResultsOpenApiSchemas
         return new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
-            Properties = CreateProblemDetailsProperties(document),
-            Required = new HashSet<string>(StringComparer.Ordinal) { "type", "title", "status", "errors" }
+            Properties = CreatePortableProblemDetailsProperties(document),
+            Required = CreatePortableProblemDetailsRequired()
         };
     }
 
@@ -181,35 +181,15 @@ public static class PortableResultsOpenApiSchemas
         return new OpenApiSchema
         {
             Type = JsonSchemaType.Object,
-            Properties = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
-            {
-                ["type"] = new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null },
-                ["title"] = new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null },
-                ["status"] = new OpenApiSchema { Type = JsonSchemaType.Integer },
-                ["detail"] = new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null },
-                ["instance"] = new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null },
-                ["errors"] = new OpenApiSchema
-                {
-                    Type = JsonSchemaType.Object,
-                    AdditionalPropertiesAllowed = true,
-                    AdditionalProperties = new OpenApiSchema
-                    {
-                        Type = JsonSchemaType.Array,
-                        Items = new OpenApiSchema { Type = JsonSchemaType.String }
-                    }
-                },
-                ["errorDetails"] = new OpenApiSchema
-                {
-                    Type = JsonSchemaType.Array,
-                    Items = CreateSchemaReference(document, PortableValidationErrorDetailSchemaId)
-                },
-                ["metadata"] = CreateOpenMetadataSchema()
-            },
-            Required = new HashSet<string>(StringComparer.Ordinal) { "type", "title", "status", "errors" }
+            Properties = CreatePortableAspNetCoreValidationProblemDetailsProperties(document),
+            Required = CreatePortableAspNetCoreValidationProblemDetailsRequired()
         };
     }
 
-    private static Dictionary<string, IOpenApiSchema> CreateProblemDetailsProperties(OpenApiDocument document)
+    /// <summary>
+    /// Creates a fresh property dictionary for the portable problem-details envelopes.
+    /// </summary>
+    public static Dictionary<string, IOpenApiSchema> CreatePortableProblemDetailsProperties(OpenApiDocument document)
     {
         return new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
         {
@@ -225,5 +205,54 @@ public static class PortableResultsOpenApiSchemas
             },
             ["metadata"] = CreateOpenMetadataSchema()
         };
+    }
+
+    /// <summary>
+    /// Creates a fresh required-set for the portable problem-details envelopes.
+    /// </summary>
+    public static HashSet<string> CreatePortableProblemDetailsRequired()
+    {
+        return new HashSet<string>(StringComparer.Ordinal) { "type", "title", "status", "errors" };
+    }
+
+    /// <summary>
+    /// Creates a fresh property dictionary for the ASP.NET Core-compatible validation problem envelope.
+    /// </summary>
+    public static Dictionary<string, IOpenApiSchema> CreatePortableAspNetCoreValidationProblemDetailsProperties(
+        OpenApiDocument document
+    )
+    {
+        return new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
+        {
+            ["type"] = new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null },
+            ["title"] = new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null },
+            ["status"] = new OpenApiSchema { Type = JsonSchemaType.Integer },
+            ["detail"] = new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null },
+            ["instance"] = new OpenApiSchema { Type = JsonSchemaType.String | JsonSchemaType.Null },
+            ["errors"] = new OpenApiSchema
+            {
+                Type = JsonSchemaType.Object,
+                AdditionalPropertiesAllowed = true,
+                AdditionalProperties = new OpenApiSchema
+                {
+                    Type = JsonSchemaType.Array,
+                    Items = new OpenApiSchema { Type = JsonSchemaType.String }
+                }
+            },
+            ["errorDetails"] = new OpenApiSchema
+            {
+                Type = JsonSchemaType.Array,
+                Items = CreateSchemaReference(document, PortableValidationErrorDetailSchemaId)
+            },
+            ["metadata"] = CreateOpenMetadataSchema()
+        };
+    }
+
+    /// <summary>
+    /// Creates a fresh required-set for the ASP.NET Core-compatible validation problem envelope.
+    /// </summary>
+    public static HashSet<string> CreatePortableAspNetCoreValidationProblemDetailsRequired()
+    {
+        return new HashSet<string>(StringComparer.Ordinal) { "type", "title", "status", "errors" };
     }
 }

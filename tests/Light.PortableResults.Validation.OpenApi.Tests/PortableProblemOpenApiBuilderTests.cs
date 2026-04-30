@@ -85,17 +85,17 @@ public sealed class PortableProblemOpenApiBuilderTests
         var document = await ValidationOpenApiDocumentTestUtilities.GetOpenApiDocumentAsync(app);
         var responseItems = ValidationOpenApiDocumentTestUtilities.GetProblemItems(document, "/mixed-problem");
 
-        responseItems.AnyOf!.Select(
+        responseItems.AnyOf.Should().BeNull();
+        responseItems.OneOf!.Select(
                 static schema =>
                     ValidationOpenApiDocumentTestUtilities.GetSchemaReferenceId((OpenApiSchemaReference) schema)
             )
            .Should()
-           .Contain(
+           .BeEquivalentTo(
                 [
                     "PortableError__NotEmpty",
                     "PortableError__LengthInRange",
-                    "PortableError__MixedProblem__400__application_problem_json__InRange",
-                    "PortableError"
+                    "PortableError__MixedProblem__400__application_problem_json__InRange"
                 ]
             );
     }
@@ -121,6 +121,7 @@ public sealed class PortableProblemOpenApiBuilderTests
             }
         );
 
+        // ReSharper disable once AccessToDisposedClosure -- act is called before disposal
         var act = async () => await ValidationOpenApiDocumentTestUtilities.GetOpenApiDocumentAsync(app);
         await act.Should().NotThrowAsync();
     }

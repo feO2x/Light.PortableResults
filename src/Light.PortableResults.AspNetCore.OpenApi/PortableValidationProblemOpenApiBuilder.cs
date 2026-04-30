@@ -45,6 +45,15 @@ public sealed class PortableValidationProblemOpenApiBuilder
     }
 
     /// <summary>
+    /// Keeps the schema non-exhaustive so undocumented error codes remain representable.
+    /// </summary>
+    public PortableValidationProblemOpenApiBuilder AllowUnknownErrorCodes()
+    {
+        _attribute.AllowUnknownErrorCodes = true;
+        return this;
+    }
+
+    /// <summary>
     /// Registers an inline metadata contract for the specified error code.
     /// </summary>
     public PortableValidationProblemOpenApiBuilder WithErrorMetadata(string code, Type metadataType)

@@ -335,15 +335,11 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
             attribute.ContentType
         );
 
-        var extensionSchema = new OpenApiSchema
-        {
-            Type = JsonSchemaType.Object,
-            Properties = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
-        };
+        var properties = CreateCanonicalErrorEnvelopeProperties(document, canonicalSchemaId);
 
         if (attribute.TopLevelMetadataType is not null)
         {
-            extensionSchema.Properties["metadata"] = await GetStableSchemaReferenceAsync(
+            properties["metadata"] = await GetStableSchemaReferenceAsync(
                 document,
                 context,
                 attribute.TopLevelMetadataType,
@@ -354,11 +350,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
 
         if (documentedErrorSchema is not null)
         {
-            var propertyName =
-                canonicalSchemaId == PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId ?
-                    "errorDetails" :
-                    "errors";
-            extensionSchema.Properties[propertyName] = new OpenApiSchema
+            properties[ResolveDocumentedErrorPropertyName(canonicalSchemaId)] = new OpenApiSchema
             {
                 Type = JsonSchemaType.Array,
                 Items = documentedErrorSchema
@@ -367,11 +359,9 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
 
         var derivedSchema = new OpenApiSchema
         {
-            AllOf =
-            [
-                PortableResultsOpenApiSchemas.CreateSchemaReference(document, canonicalSchemaId),
-                extensionSchema
-            ]
+            Type = JsonSchemaType.Object,
+            Properties = properties,
+            Required = CreateCanonicalErrorEnvelopeRequired(canonicalSchemaId)
         };
         return AddComponentAndCreateReference(document, derivedEnvelopeSchemaId, derivedSchema);
     }
@@ -481,21 +471,34 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
             return null;
         }
 
-        // The final item schema is a discriminated anyOf over all documented code-specific variants plus
-        // the generic fallback schema so undocumented error codes are still represented correctly.
-        var fallbackSchema = PortableResultsOpenApiSchemas.CreateSchemaReference(document, itemBaseSchemaId);
-        var anyOfSchemas = new List<IOpenApiSchema>(documentedVariants.Count + 1);
-        anyOfSchemas.AddRange(documentedVariants.Select(static variant => (IOpenApiSchema) variant.SchemaReference));
-        anyOfSchemas.Add(fallbackSchema);
-
         var discriminatorMapping = documentedVariants.ToDictionary(
             static variant => variant.RawCode,
             static variant => variant.SchemaReference,
             StringComparer.Ordinal
         );
+
+        if (attribute.AllowUnknownErrorCodes)
+        {
+            var fallbackSchema = PortableResultsOpenApiSchemas.CreateSchemaReference(document, itemBaseSchemaId);
+            var anyOfSchemas = new List<IOpenApiSchema>(documentedVariants.Count + 1);
+            anyOfSchemas.AddRange(documentedVariants.Select(static variant => (IOpenApiSchema) variant.SchemaReference));
+            anyOfSchemas.Add(fallbackSchema);
+
+            return new OpenApiSchema
+            {
+                AnyOf = anyOfSchemas,
+                Required = new HashSet<string>(StringComparer.Ordinal) { "code" },
+                Discriminator = new OpenApiDiscriminator
+                {
+                    PropertyName = "code",
+                    Mapping = discriminatorMapping
+                }
+            };
+        }
+
         return new OpenApiSchema
         {
-            AnyOf = anyOfSchemas,
+            OneOf = documentedVariants.Select(static variant => (IOpenApiSchema) variant.SchemaReference).ToList(),
             Required = new HashSet<string>(StringComparer.Ordinal) { "code" },
             Discriminator = new OpenApiDiscriminator
             {
@@ -828,6 +831,48 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         }
 
         rawCodeContracts.Add(code, contract);
+    }
+
+    private static Dictionary<string, IOpenApiSchema> CreateCanonicalErrorEnvelopeProperties(
+        OpenApiDocument document,
+        string canonicalSchemaId
+    )
+    {
+        return canonicalSchemaId switch
+        {
+            PortableResultsOpenApiSchemas.PortableProblemDetailsSchemaId =>
+                PortableResultsOpenApiSchemas.CreatePortableProblemDetailsProperties(document),
+            PortableResultsOpenApiSchemas.PortableRichValidationProblemDetailsSchemaId =>
+                PortableResultsOpenApiSchemas.CreatePortableProblemDetailsProperties(document),
+            PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId =>
+                PortableResultsOpenApiSchemas.CreatePortableAspNetCoreValidationProblemDetailsProperties(document),
+            _ => throw new InvalidOperationException(
+                $"The canonical error envelope schema id '{canonicalSchemaId}' is not supported."
+            )
+        };
+    }
+
+    private static HashSet<string> CreateCanonicalErrorEnvelopeRequired(string canonicalSchemaId)
+    {
+        return canonicalSchemaId switch
+        {
+            PortableResultsOpenApiSchemas.PortableProblemDetailsSchemaId =>
+                PortableResultsOpenApiSchemas.CreatePortableProblemDetailsRequired(),
+            PortableResultsOpenApiSchemas.PortableRichValidationProblemDetailsSchemaId =>
+                PortableResultsOpenApiSchemas.CreatePortableProblemDetailsRequired(),
+            PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId =>
+                PortableResultsOpenApiSchemas.CreatePortableAspNetCoreValidationProblemDetailsRequired(),
+            _ => throw new InvalidOperationException(
+                $"The canonical error envelope schema id '{canonicalSchemaId}' is not supported."
+            )
+        };
+    }
+
+    private static string ResolveDocumentedErrorPropertyName(string canonicalSchemaId)
+    {
+        return canonicalSchemaId == PortableResultsOpenApiSchemas.PortableAspNetCoreValidationProblemDetailsSchemaId ?
+            "errorDetails" :
+            "errors";
     }
 
     private static string? NormalizePath(string? relativePath)

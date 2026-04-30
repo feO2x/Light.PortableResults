@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using FluentAssertions;
 using Light.PortableResults.AspNetCore.MinimalApis;
 using Light.PortableResults.AspNetCore.Mvc;
 using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
+using Light.PortableResults.AspNetCore.OpenApi.Schemas;
 using Light.PortableResults.Http.Writing;
 using Light.PortableResults.SharedJsonSerialization;
 using Microsoft.AspNetCore.Builder;
@@ -63,15 +65,16 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             "application/problem+json"
         ).Should().BeOfType<OpenApiSchemaReference>().Subject;
         var globalProblemComponent = GetSchemaComponent(document, GetSchemaReferenceId(globalProblemSchema));
-        var globalProblemExtension = (OpenApiSchema) globalProblemComponent.AllOf![1];
-        var globalProblemErrors = (OpenApiSchema) globalProblemExtension.Properties!["errors"];
-        var globalProblemItems = (OpenApiSchema) globalProblemErrors.Items!;
-        globalProblemItems.AnyOf.Should().HaveCount(3);
-        GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.AnyOf![0]).Should()
+        globalProblemComponent.AllOf.Should().BeNull();
+        globalProblemComponent.Type.Should().Be(JsonSchemaType.Object);
+        var globalProblemItems = GetErrorItems(globalProblemComponent);
+        globalProblemItems.AnyOf.Should().BeNull();
+        globalProblemItems.OneOf.Should().HaveCount(2);
+        GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.OneOf![0]).Should()
            .Be("PortableError__VersionMismatch");
-        GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.AnyOf[1]).Should()
+        GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.OneOf[1]).Should()
            .Be("PortableError__Insufficient_Funds");
-        GetSchemaReferenceId((OpenApiSchemaReference) globalProblemItems.AnyOf[2]).Should().Be("PortableError");
+        globalProblemItems.Required.Should().Contain("code");
         globalProblemItems.Discriminator.Should().NotBeNull();
         globalProblemItems.Discriminator!.PropertyName.Should().Be("code");
         globalProblemItems.Discriminator.Mapping.Should().NotBeNull();
@@ -87,11 +90,12 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             "application/problem+json"
         ).Should().BeOfType<OpenApiSchemaReference>().Subject;
         var inlineProblemComponent = GetSchemaComponent(document, GetSchemaReferenceId(inlineProblemSchema));
-        var inlineProblemExtension = (OpenApiSchema) inlineProblemComponent.AllOf![1];
-        var inlineProblemItems = (OpenApiSchema) ((OpenApiSchema) inlineProblemExtension.Properties!["errors"]).Items!;
-        GetSchemaReferenceId((OpenApiSchemaReference) inlineProblemItems.AnyOf![0]).Should().Contain("PortableError__");
-        GetSchemaReferenceId((OpenApiSchemaReference) inlineProblemItems.AnyOf[0]).Should().Contain("Movie_Gone");
-        GetSchemaReferenceId((OpenApiSchemaReference) inlineProblemItems.AnyOf[1]).Should().Be("PortableError");
+        inlineProblemComponent.AllOf.Should().BeNull();
+        var inlineProblemItems = GetErrorItems(inlineProblemComponent);
+        inlineProblemItems.OneOf.Should().ContainSingle();
+        inlineProblemItems.AnyOf.Should().BeNull();
+        GetSchemaReferenceId((OpenApiSchemaReference) inlineProblemItems.OneOf![0]).Should().Contain("PortableError__");
+        GetSchemaReferenceId((OpenApiSchemaReference) inlineProblemItems.OneOf[0]).Should().Contain("Movie_Gone");
 
         var defaultValidationSchema = GetResponseSchema(
             document,
@@ -146,7 +150,8 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             "application/problem+json"
         ).Should().BeOfType<OpenApiSchemaReference>().Subject;
         var problemComponent = GetSchemaComponent(document, GetSchemaReferenceId(problemSchema));
-        ((OpenApiSchema) problemComponent.AllOf![1]).Properties.Should().ContainKey("errors");
+        problemComponent.AllOf.Should().BeNull();
+        problemComponent.Properties.Should().ContainKey("errors");
 
         var validationSchema = GetResponseSchema(
             document,
@@ -188,6 +193,155 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var openApi31Variant = GetSchemaComponent(openApi31Document, "PortableError__VersionMismatch");
         var openApi31CodeSchema = (OpenApiSchema) ((OpenApiSchema) openApi31Variant.AllOf![1]).Properties!["code"];
         openApi31CodeSchema.Const.Should().Be("VersionMismatch");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldAllowUnknownErrorCodesWhenRequested()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/non-exhaustive", static () => TypedResults.Problem())
+                   .ProducesPortableProblem(
+                        StatusCodes.Status409Conflict,
+                        configure: x => x
+                           .WithErrorCodes("VersionMismatch")
+                           .AllowUnknownErrorCodes()
+                    );
+            }
+        );
+
+        var document = await GetOpenApiDocumentAsync(app);
+        var items = GetReferencedErrorItems(
+            document,
+            "/minimal/problems/non-exhaustive",
+            HttpMethod.Get,
+            StatusCodes.Status409Conflict
+        );
+
+        items.OneOf.Should().BeNull();
+        items.AnyOf.Should().HaveCount(2);
+        items.Required.Should().Contain("code");
+        GetSchemaReferenceId((OpenApiSchemaReference) items.AnyOf![0]).Should().Be("PortableError__VersionMismatch");
+        GetSchemaReferenceId((OpenApiSchemaReference) items.AnyOf[1]).Should().Be("PortableError");
+        items.Discriminator!.Mapping!.Keys.Should().BeEquivalentTo("VersionMismatch");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldKeepCanonicalEnvelopeReferenceWhenNoNarrowingIsConfigured()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/plain", static () => TypedResults.Problem())
+                   .ProducesPortableProblem(StatusCodes.Status400BadRequest);
+            }
+        );
+
+        var document = await GetOpenApiDocumentAsync(app);
+        var schemaReference = GetResponseSchema(
+            document,
+            "/minimal/problems/plain",
+            HttpMethod.Get,
+            StatusCodes.Status400BadRequest,
+            "application/problem+json"
+        ).Should().BeOfType<OpenApiSchemaReference>().Subject;
+
+        GetSchemaReferenceId(schemaReference).Should().Be(PortableResultsOpenApiSchemas.PortableProblemDetailsSchemaId);
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldFlattenDerivedEnvelopeWhenOnlyMetadataIsNarrowed()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/metadata-only", static () => TypedResults.Problem())
+                   .ProducesPortableProblem(
+                        StatusCodes.Status409Conflict,
+                        configure: x => x.WithMetadata<ProblemMetadata>()
+                    );
+            }
+        );
+
+        var document = await GetOpenApiDocumentAsync(app);
+        var component = GetReferencedResponseComponent(
+            document,
+            "/minimal/problems/metadata-only",
+            HttpMethod.Get,
+            StatusCodes.Status409Conflict,
+            "application/problem+json"
+        );
+
+        component.AllOf.Should().BeNull();
+        component.Type.Should().Be(JsonSchemaType.Object);
+        component.Properties.Should().ContainKeys(
+            "type",
+            "title",
+            "status",
+            "detail",
+            "instance",
+            "errors",
+            "metadata"
+        );
+        ((OpenApiSchema) component.Properties!["errors"]).Items.Should().BeOfType<OpenApiSchemaReference>();
+        GetSchemaReferenceId((OpenApiSchemaReference) ((OpenApiSchema) component.Properties["errors"]).Items!)
+           .Should().Be(PortableResultsOpenApiSchemas.PortableErrorSchemaId);
+        component.Properties["metadata"].Should().BeOfType<OpenApiSchemaReference>();
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldRequireCodeForNarrowedErrorItems()
+    {
+        await using var app = CreateMinimalApiApp();
+
+        var document = await GetOpenApiDocumentAsync(app);
+        var items = GetReferencedErrorItems(
+            document,
+            "/minimal/problems/global",
+            HttpMethod.Get,
+            StatusCodes.Status409Conflict
+        );
+        var variant = GetSchemaComponent(document, "PortableError__VersionMismatch");
+        var variantExtension = (OpenApiSchema) variant.AllOf![1];
+
+        items.Required.Should().Contain("code");
+        variantExtension.Required.Should().Contain("code");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldPreservePerCodeVariantAllOfShape()
+    {
+        await using var app = CreateMinimalApiApp();
+
+        var document = await GetOpenApiDocumentAsync(app);
+        var variant = GetSchemaComponent(document, "PortableError__VersionMismatch");
+
+        variant.AllOf.Should().HaveCount(2);
+        variant.AllOf![0].Should().BeOfType<OpenApiSchemaReference>();
+        GetSchemaReferenceId((OpenApiSchemaReference) variant.AllOf[0]).Should()
+           .Be(PortableResultsOpenApiSchemas.PortableErrorSchemaId);
+    }
+
+    [Theory]
+    [InlineData(OpenApiSpecVersion.OpenApi3_0)]
+    [InlineData(OpenApiSpecVersion.OpenApi3_1)]
+    public async Task Transformer_ShouldProduceSpecValidDocuments(OpenApiSpecVersion openApiVersion)
+    {
+        await using var app = CreateMinimalApiApp(
+            configureOpenApi: options => options.OpenApiVersion = openApiVersion
+        );
+
+        var document = await GetOpenApiDocumentAsync(app);
+        var validationErrors = document.Validate(ValidationRuleSet.GetDefaultRuleSet());
+        await using var stream = new MemoryStream();
+        await document.SerializeAsJsonAsync(stream, openApiVersion, TestContext.Current.CancellationToken);
+
+        validationErrors.Should().BeEmpty();
+        stream.Length.Should().BeGreaterThan(0L);
     }
 
     [Fact]
@@ -516,11 +670,10 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             "application/problem+json"
         ).Should().BeOfType<OpenApiSchemaReference>().Subject;
         var component = GetSchemaComponent(document, GetSchemaReferenceId(responseSchemaRef));
-        var items =
-            (OpenApiSchema) ((OpenApiSchema) ((OpenApiSchema) component.AllOf![1]).Properties!["errors"]).Items!;
+        var items = GetErrorItems(component);
 
-        // Duplicate inline code with identical type must be deduplicated: only one documented variant + fallback.
-        items.AnyOf.Should().HaveCount(2);
+        // Duplicate inline code with identical type must be deduplicated: only one documented variant remains.
+        items.OneOf.Should().ContainSingle();
     }
 
     [Fact]
@@ -720,6 +873,38 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
     private static OpenApiSchema GetSchemaComponent(OpenApiDocument document, string schemaId)
     {
         return (OpenApiSchema) document.Components!.Schemas![schemaId];
+    }
+
+    private static OpenApiSchema GetReferencedResponseComponent(
+        OpenApiDocument document,
+        string path,
+        HttpMethod httpMethod,
+        int statusCode,
+        string contentType
+    )
+    {
+        var schemaReference = GetResponseSchema(document, path, httpMethod, statusCode, contentType)
+           .Should()
+           .BeOfType<OpenApiSchemaReference>()
+           .Subject;
+        return GetSchemaComponent(document, GetSchemaReferenceId(schemaReference));
+    }
+
+    private static OpenApiSchema GetReferencedErrorItems(
+        OpenApiDocument document,
+        string path,
+        HttpMethod httpMethod,
+        int statusCode,
+        string contentType = "application/problem+json"
+    )
+    {
+        return GetErrorItems(GetReferencedResponseComponent(document, path, httpMethod, statusCode, contentType));
+    }
+
+    private static OpenApiSchema GetErrorItems(OpenApiSchema envelopeSchema)
+    {
+        var propertyName = envelopeSchema.Properties!.ContainsKey("errorDetails") ? "errorDetails" : "errors";
+        return (OpenApiSchema) ((OpenApiSchema) envelopeSchema.Properties[propertyName]).Items!;
     }
 
     private static string GetSchemaReferenceId(OpenApiSchemaReference schemaReference)

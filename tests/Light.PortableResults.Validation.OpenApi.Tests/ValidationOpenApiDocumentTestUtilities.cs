@@ -53,9 +53,8 @@ internal static class ValidationOpenApiDocumentTestUtilities
            .Responses![StatusCodes.Status400BadRequest.ToString(CultureInfo.InvariantCulture)];
         var schema = (OpenApiSchemaReference) response.Content!["application/problem+json"].Schema!;
         var component = GetSchemaComponent(document, GetSchemaReferenceId(schema));
-        var extension = (OpenApiSchema) component.AllOf![1];
-        var propertyName = extension.Properties!.ContainsKey("errorDetails") ? "errorDetails" : "errors";
-        return (OpenApiSchema) ((OpenApiSchema) extension.Properties[propertyName]).Items!;
+        var propertyName = component.Properties!.ContainsKey("errorDetails") ? "errorDetails" : "errors";
+        return (OpenApiSchema) ((OpenApiSchema) component.Properties[propertyName]).Items!;
     }
 
     internal static OpenApiSchema GetSchemaComponent(OpenApiDocument document, string schemaId)

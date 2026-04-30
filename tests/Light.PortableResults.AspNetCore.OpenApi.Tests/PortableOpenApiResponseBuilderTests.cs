@@ -30,6 +30,7 @@ public sealed class PortableOpenApiResponseBuilderTests
                     configure: builder => builder
                        .WithErrorCodes("First")
                        .WithErrorCodes("Second", "Third")
+                       .AllowUnknownErrorCodes()
                        .WithMetadata<InlineProblemMetadata>()
                        .WithMetadata(typeof(ProblemMetadata))
                        .WithErrorMetadata<InlineProblemMetadata>("Movie/Gone")
@@ -41,6 +42,7 @@ public sealed class PortableOpenApiResponseBuilderTests
         attribute.StatusCode.Should().Be(StatusCodes.Status404NotFound);
         attribute.TopLevelMetadataType.Should().Be(typeof(ProblemMetadata));
         attribute.ErrorCodes.Should().Equal("First", "Second", "Third");
+        attribute.AllowUnknownErrorCodes.Should().BeTrue();
         attribute.InlineErrorMetadataCodes.Should().Equal("Movie/Gone", "Movie/Archived");
         attribute.InlineErrorMetadataContracts.Should().Equal(
             ErrorMetadataContract.FromType(typeof(InlineProblemMetadata)),
@@ -57,6 +59,7 @@ public sealed class PortableOpenApiResponseBuilderTests
                     configure: x => x.WithErrorCodes("First")
                        .WithErrorCodes()
                        .WithErrorCodes("Second", "Third")
+                       .AllowUnknownErrorCodes()
                        .WithMetadata<InlineProblemMetadata>()
                        .WithMetadata(typeof(ProblemMetadata))
                        .WithErrorMetadata<InlineProblemMetadata>("Movie/Gone")
@@ -68,6 +71,7 @@ public sealed class PortableOpenApiResponseBuilderTests
 
         attribute.TopLevelMetadataType.Should().Be(typeof(ProblemMetadata));
         attribute.ErrorCodes.Should().Equal("First", "Second", "Third");
+        attribute.AllowUnknownErrorCodes.Should().BeTrue();
         attribute.InlineErrorMetadataCodes.Should().Equal("Movie/Gone", "Movie/Archived");
         attribute.InlineErrorMetadataContracts.Should().Equal(
             ErrorMetadataContract.FromType(typeof(InlineProblemMetadata)),

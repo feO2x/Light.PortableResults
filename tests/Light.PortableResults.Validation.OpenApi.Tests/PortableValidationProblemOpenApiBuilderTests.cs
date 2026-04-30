@@ -62,12 +62,13 @@ public sealed class PortableValidationProblemOpenApiBuilderTests
         var document = await ValidationOpenApiDocumentTestUtilities.GetOpenApiDocumentAsync(app);
         var responseItems = ValidationOpenApiDocumentTestUtilities.GetProblemItems(document, "/count-and-not-null");
 
-        responseItems.AnyOf!.Select(
+        responseItems.AnyOf.Should().BeNull();
+        responseItems.OneOf!.Select(
                 static schema =>
                     ValidationOpenApiDocumentTestUtilities.GetSchemaReferenceId((OpenApiSchemaReference) schema)
             )
            .Should()
-           .Contain(["PortableError__Count", "PortableError__NotNull", "PortableError"]);
+           .BeEquivalentTo("PortableError__Count", "PortableError__NotNull");
         var countMetadata = ValidationOpenApiDocumentTestUtilities.GetSchemaComponent(
             document,
             "PortableError__Count__Metadata"
@@ -181,18 +182,16 @@ public sealed class PortableValidationProblemOpenApiBuilderTests
         var document = await ValidationOpenApiDocumentTestUtilities.GetOpenApiDocumentAsync(app);
         var responseItems = ValidationOpenApiDocumentTestUtilities.GetProblemItems(document, "/mixed-validation");
 
-        responseItems.AnyOf!.Select(
+        responseItems.AnyOf.Should().BeNull();
+        responseItems.OneOf!.Select(
                 static schema =>
                     ValidationOpenApiDocumentTestUtilities.GetSchemaReferenceId((OpenApiSchemaReference) schema)
             )
            .Should()
-           .Contain(
-                [
-                    "PortableError__NotEmpty",
-                    "PortableError__LengthInRange",
-                    "PortableError__MixedValidation__400__application_problem_json__InRange",
-                    "PortableError"
-                ]
+           .BeEquivalentTo(
+                "PortableError__NotEmpty",
+                "PortableError__LengthInRange",
+                "PortableError__MixedValidation__400__application_problem_json__InRange"
             );
     }
 

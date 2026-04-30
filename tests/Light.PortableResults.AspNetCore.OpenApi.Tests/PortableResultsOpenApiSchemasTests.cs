@@ -35,4 +35,46 @@ public sealed class PortableResultsOpenApiSchemasTests
         metadataSchema.Type.Should().Be(JsonSchemaType.Object | JsonSchemaType.Null);
         metadataSchema.AdditionalPropertiesAllowed.Should().BeTrue();
     }
+
+    [Fact]
+    public void PropertyFactories_ShouldReturnFreshCopies()
+    {
+        var document = new OpenApiDocument();
+
+        var firstProblemProperties = PortableResultsOpenApiSchemas.CreatePortableProblemDetailsProperties(document);
+        var secondProblemProperties = PortableResultsOpenApiSchemas.CreatePortableProblemDetailsProperties(document);
+        var aspNetCoreProperties =
+            PortableResultsOpenApiSchemas.CreatePortableAspNetCoreValidationProblemDetailsProperties(document);
+        var firstProblemRequired = PortableResultsOpenApiSchemas.CreatePortableProblemDetailsRequired();
+        var secondProblemRequired = PortableResultsOpenApiSchemas.CreatePortableProblemDetailsRequired();
+        var aspNetCoreRequired = PortableResultsOpenApiSchemas.CreatePortableAspNetCoreValidationProblemDetailsRequired();
+
+        firstProblemProperties.Should().NotBeSameAs(secondProblemProperties);
+        firstProblemProperties.Should().ContainKeys(
+            "type",
+            "title",
+            "status",
+            "detail",
+            "instance",
+            "errors",
+            "metadata"
+        );
+        aspNetCoreProperties.Should().ContainKeys(
+            "type",
+            "title",
+            "status",
+            "detail",
+            "instance",
+            "errors",
+            "errorDetails",
+            "metadata"
+        );
+        firstProblemRequired.Should().BeEquivalentTo("type", "title", "status", "errors");
+        aspNetCoreRequired.Should().BeEquivalentTo("type", "title", "status", "errors");
+
+        firstProblemProperties.Remove("metadata");
+        secondProblemProperties.Should().ContainKey("metadata");
+        firstProblemRequired.Remove("errors");
+        secondProblemRequired.Should().Contain("errors");
+    }
 }

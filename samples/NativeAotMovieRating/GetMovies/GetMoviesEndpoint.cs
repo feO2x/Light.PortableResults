@@ -26,12 +26,13 @@ public static class GetMoviesEndpoint
                 "Supports keyset pagination via the optional lastKnownMovieId parameter and a configurable " +
                 "page size via the take parameter (1-40). Returns a rich Light.PortableResults problem " +
                 "details response when input validation fails or when the lastKnownMovieId does not exist."
-           )
+            )
            .Produces<List<Movie>>()
            .ProducesPortableValidationProblem(
                 configure: x => x
                    .UseFormat(ValidationProblemSerializationFormat.Rich)
                    .WithErrorCodes(ValidationErrorCodes.NotEmpty)
+                   .WithErrorMetadata<MovieNotFoundMetadata>("MovieNotFound")
                    .WithInRangeError<int>()
             );
 
@@ -81,4 +82,11 @@ public static class GetMoviesEndpoint
 
         return TypedResults.Ok(movies);
     }
+}
+
+// ReSharper disable once ClassNeverInstantiated.Global -- required for OpenAPI
+public sealed class MovieNotFoundMetadata
+{
+    // ReSharper disable once UnusedMember.Global -- required for OpenAPI
+    public string LastKnownMovieId { get; init; } = string.Empty;
 }
