@@ -19,7 +19,7 @@ internal static class PortableResultsOpenApiMessages
         $"The error codes '{firstCode}' and '{secondCode}' both sanitize to '{sanitizedCode}'. Error-code schema ids must be unique.";
 
     internal static string CreateUnknownErrorCodeMessage(string code) =>
-        $"The error code '{code}' is not registered in ConfigureErrorMetadataContracts. Register it globally or use WithErrorMetadata as an inline escape hatch.";
+        $"The error code '{code}' is not registered in AddPortableResultsOpenApi. Register it globally or use WithErrorMetadata as an inline escape hatch.";
 
     internal static string CreateIncompleteInlineErrorMetadataMessage() =>
         "Inline error metadata must configure both InlineErrorMetadataCodes and InlineErrorMetadataTypes together.";

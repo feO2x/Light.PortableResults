@@ -206,8 +206,8 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var act = async () => await GetOpenApiDocumentAsync(app);
 
         await act.Should()
-           .ThrowAsync<InvalidOperationException>()
-           .WithMessage("*UnknownCode*ConfigureErrorMetadataContracts*WithErrorMetadata*");
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage("*UnknownCode*AddPortableResultsOpenApi*WithErrorMetadata*");
     }
 
     [Fact]
@@ -474,8 +474,7 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddPortableResultsForMinimalApis();
-        builder.Services.AddPortableResultsOpenApi();
-        builder.Services.ConfigureErrorMetadataContracts(contracts => contracts.ForCode("SimpleError"));
+        builder.Services.AddPortableResultsOpenApi(contracts => contracts.ForCode("SimpleError"));
         builder.Services.AddOpenApi();
 
         await using var app = builder.Build();
@@ -576,19 +575,17 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
     }
 
     [Fact]
-    public void OpenApiModule_ShouldRegisterErrorMetadataRegistryOnlyOnce()
+    public void OpenApiModule_ShouldRegisterErrorMetadataRegistryOnlyOnce_WhenConfiguredViaAddPortableResultsOpenApi()
     {
         var services = new ServiceCollection();
         services.AddOptions();
 
-        services.ConfigureErrorMetadataContracts(
+        services.AddPortableResultsOpenApi(
             contracts => contracts.ForCode<VersionMismatchMetadata>("VersionMismatch")
         );
-        services.AddPortableResultsOpenApi();
-        services.ConfigureErrorMetadataContracts(
+        services.AddPortableResultsOpenApi(
             contracts => contracts.ForCode<FundsMetadata>("Insufficient/Funds")
         );
-        services.AddPortableResultsOpenApi();
 
         services.Where(static descriptor => descriptor.ServiceType == typeof(IPortableErrorMetadataContractRegistry))
            .Should()
@@ -615,20 +612,19 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddPortableResultsForMinimalApis();
-        builder.Services.AddPortableResultsOpenApi();
+        builder.Services.AddPortableResultsOpenApi(
+            contracts =>
+            {
+                contracts.ForCode<VersionMismatchMetadata>("VersionMismatch");
+                contracts.ForCode<FundsMetadata>("Insufficient/Funds");
+            }
+        );
         builder.Services.Configure<PortableResultsHttpWriteOptions>(
             options =>
             {
                 options.MetadataSerializationMode = MetadataSerializationMode.ErrorsOnly;
                 options.ValidationProblemSerializationFormat =
                     ValidationProblemSerializationFormat.AspNetCoreCompatible;
-            }
-        );
-        builder.Services.ConfigureErrorMetadataContracts(
-            contracts =>
-            {
-                contracts.ForCode<VersionMismatchMetadata>("VersionMismatch");
-                contracts.ForCode<FundsMetadata>("Insufficient/Funds");
             }
         );
         builder.Services.AddOpenApi(options => configureOpenApi?.Invoke(options));
@@ -677,7 +673,9 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddPortableResultsForMvc();
-        builder.Services.AddPortableResultsOpenApi();
+        builder.Services.AddPortableResultsOpenApi(
+            contracts => contracts.ForCode<VersionMismatchMetadata>("VersionMismatch")
+        );
         builder.Services.Configure<PortableResultsHttpWriteOptions>(
             options =>
             {
@@ -685,9 +683,6 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
                 options.ValidationProblemSerializationFormat =
                     ValidationProblemSerializationFormat.AspNetCoreCompatible;
             }
-        );
-        builder.Services.ConfigureErrorMetadataContracts(
-            contracts => contracts.ForCode<VersionMismatchMetadata>("VersionMismatch")
         );
         builder.Services.AddControllers().AddApplicationPart(typeof(OpenApiMvcController).Assembly);
         builder.Services.AddOpenApi();

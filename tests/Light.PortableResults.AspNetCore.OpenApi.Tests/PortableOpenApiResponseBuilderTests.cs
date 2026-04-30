@@ -172,7 +172,7 @@ public sealed class PortableOpenApiResponseBuilderTests
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddPortableResultsForMinimalApis();
-        builder.Services.AddPortableResultsOpenApi();
+        builder.Services.AddPortableResultsOpenApi(configureContracts);
         builder.Services.Configure<PortableResultsHttpWriteOptions>(
             options =>
             {
@@ -181,7 +181,6 @@ public sealed class PortableOpenApiResponseBuilderTests
                     ValidationProblemSerializationFormat.AspNetCoreCompatible;
             }
         );
-        builder.Services.ConfigureErrorMetadataContracts(configureContracts);
         builder.Services.AddOpenApi();
 
         var app = builder.Build();

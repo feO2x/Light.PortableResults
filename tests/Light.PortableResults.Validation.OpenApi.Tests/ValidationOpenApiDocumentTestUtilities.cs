@@ -28,11 +28,10 @@ internal static class ValidationOpenApiDocumentTestUtilities
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Services.AddPortableResultsForMinimalApis();
-        builder.Services.AddPortableResultsOpenApi();
+        builder.Services.AddPortableResultsOpenApi(configureContracts);
         builder.Services.Configure<PortableResultsHttpWriteOptions>(
             options => options.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich
         );
-        builder.Services.ConfigureErrorMetadataContracts(configureContracts);
         builder.Services.AddOpenApi(options => configureOpenApi?.Invoke(options));
 
         var app = builder.Build();

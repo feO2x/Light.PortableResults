@@ -22,17 +22,15 @@ builder.Host.UseSerilog(Log.Logger);
 builder
    .Services
    .AddPortableResultsForMinimalApis()
-   .AddPortableResultsOpenApi()
-   .ConfigureErrorMetadataContracts(contracts => contracts.RegisterBuiltInValidationErrors())
    .AddValidationForPortableResults()
+   .AddOpenApi()
+   .AddPortableResultsOpenApi(contracts => contracts.RegisterBuiltInValidationErrors())
    .ConfigureJsonSerialization()
    .AddInMemoryDatabase()
    .AddGetMoviesModule()
    .AddNewMovieRatingModule()
    .AddNewMovieModule()
-   .AddHealthChecks()
-   .Services
-   .AddOpenApi();
+   .AddHealthChecks();
 
 var app = builder.Build();
 app.UseSerilogRequestLogging();

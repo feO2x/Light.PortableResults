@@ -1346,10 +1346,9 @@ using Light.PortableResults.AspNetCore.OpenApi;
 using Light.PortableResults.Validation.OpenApi;
 
 builder.Services
+       .AddOpenApi()
        .AddPortableResultsForMinimalApis()
-       .AddPortableResultsOpenApi()
-       .ConfigureErrorMetadataContracts(contracts => contracts.RegisterBuiltInValidationErrors())
-       .AddOpenApi();
+       .AddPortableResultsOpenApi(contracts => contracts.RegisterBuiltInValidationErrors());
 ```
 
 Use `AddPortableResultsForMvc()` instead of `AddPortableResultsForMinimalApis()` for MVC applications. OpenAPI support is intentionally separate so applications that never generate OpenAPI documents do not take on the extra dependency.
@@ -1383,13 +1382,13 @@ PortableResults OpenAPI metadata is authoritative for a given `(status code, con
 
 Top-level metadata and per-error-code metadata are caller-owned contracts. The OpenAPI package documents them explicitly; the runtime still writes `MetadataObject`.
 
-For built-in validation errors, reference `Light.PortableResults.Validation.OpenApi` and register the catalog once:
+For built-in validation errors, reference `Light.PortableResults.Validation.OpenApi` and pass the catalog registration to `AddPortableResultsOpenApi(...)` once:
 
 ```csharp
 using Light.PortableResults.AspNetCore.OpenApi;
 using Light.PortableResults.Validation.OpenApi;
 
-builder.Services.ConfigureErrorMetadataContracts(
+builder.Services.AddPortableResultsOpenApi(
     contracts => contracts.RegisterBuiltInValidationErrors()
 );
 ```
@@ -1411,12 +1410,12 @@ app.MapPut("/api/movieRatings", AddMovieRating)
 
 Comparison and range codes are polymorphic at the global code level, so the validation bridge also ships typed endpoint helpers: `WithEqualToError<T>()`, `WithNotEqualToError<T>()`, `WithGreaterThanError<T>()`, `WithGreaterThanOrEqualToError<T>()`, `WithLessThanError<T>()`, `WithLessThanOrEqualToError<T>()`, `WithInRangeError<T>()`, `WithNotInRangeError<T>()`, and `WithExclusiveRangeError<T>()`. These helpers use the existing inline metadata path, so an endpoint can document concrete metadata such as integer range boundaries for `IsInBetween(1, 5)` while still reusing global schemas for shape-fixed codes.
 
-Register reusable per-error-code metadata contracts once in DI:
+Register reusable per-error-code metadata contracts once in DI by passing them to `AddPortableResultsOpenApi(...)`:
 
 ```csharp
 using Light.PortableResults.AspNetCore.OpenApi;
 
-builder.Services.ConfigureErrorMetadataContracts(contracts =>
+builder.Services.AddPortableResultsOpenApi(contracts =>
 {
     contracts.ForCode<VersionMismatchMetadata>("VersionMismatch");
     contracts.ForCode<InsufficientFundsMetadata>("InsufficientFunds");

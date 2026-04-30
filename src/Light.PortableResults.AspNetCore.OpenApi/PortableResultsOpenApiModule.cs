@@ -15,14 +15,25 @@ namespace Light.PortableResults.AspNetCore.OpenApi;
 public static class PortableResultsOpenApiModule
 {
     /// <summary>
-    /// Registers the Light.PortableResults OpenAPI document transformer.
+    /// Registers the Light.PortableResults OpenAPI document transformer and optional global error metadata contracts.
     /// </summary>
-    public static IServiceCollection AddPortableResultsOpenApi(this IServiceCollection services)
+    public static IServiceCollection AddPortableResultsOpenApi(
+        this IServiceCollection services,
+        Action<PortableErrorMetadataContractsBuilder>? configure = null
+    )
     {
         ArgumentNullException.ThrowIfNull(services);
 
         services.TryAddSingleton<PortableResultsOpenApiDocumentTransformer>();
         RegisterErrorMetadataContractRegistry(services);
+        if (configure is not null)
+        {
+            services.Configure<PortableErrorMetadataContractsOptions>(options => configure(options.Builder));
+        }
+        else
+        {
+            services.AddOptions<PortableErrorMetadataContractsOptions>();
+        }
 
         if (services.Any(static descriptor => descriptor.ServiceType == typeof(PortableResultsOpenApiRegistrationGate)))
         {
@@ -33,22 +44,6 @@ public static class PortableResultsOpenApiModule
         services.ConfigureAll<OpenApiOptions>(
             static options => options.AddDocumentTransformer<PortableResultsOpenApiDocumentTransformer>()
         );
-        return services;
-    }
-
-    /// <summary>
-    /// Registers global error-code metadata contracts that endpoints can opt into.
-    /// </summary>
-    public static IServiceCollection ConfigureErrorMetadataContracts(
-        this IServiceCollection services,
-        Action<PortableErrorMetadataContractsBuilder> configure
-    )
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configure);
-
-        services.Configure<PortableErrorMetadataContractsOptions>(options => configure(options.Builder));
-        RegisterErrorMetadataContractRegistry(services);
         return services;
     }
 
