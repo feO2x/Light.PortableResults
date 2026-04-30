@@ -14,8 +14,7 @@ namespace NativeAotMovieRating.NewMovieRating;
 public static class NewMovieRatingEndpoint
 {
     public static void MapAddMovieRatingEndpoint(this WebApplication app) =>
-        app
-           .MapPut("/api/moviesRatings", AddMovieRating)
+        app.MapPut("/api/moviesRatings", AddMovieRating)
            .WithName("AddMovieRating")
            .WithTags("Movie Ratings")
            .WithSummary("Adds or updates a movie rating.")

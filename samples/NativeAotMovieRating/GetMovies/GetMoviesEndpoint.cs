@@ -18,8 +18,7 @@ namespace NativeAotMovieRating.GetMovies;
 public static class GetMoviesEndpoint
 {
     public static void MapGetMoviesEndpoint(this WebApplication app) =>
-        app
-           .MapGet("/api/movies", GetMovies)
+        app.MapGet("/api/movies", GetMovies)
            .WithName("GetMovies")
            .WithTags("Movies")
            .WithSummary("Returns a paginated list of movies.")
