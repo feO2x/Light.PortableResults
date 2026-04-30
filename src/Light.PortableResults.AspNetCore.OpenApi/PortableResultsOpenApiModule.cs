@@ -19,7 +19,7 @@ public static class PortableResultsOpenApiModule
     /// </summary>
     public static IServiceCollection AddPortableResultsOpenApi(
         this IServiceCollection services,
-        Action<PortableErrorMetadataContractsBuilder>? configure = null
+        Action<ErrorMetadataContractsBuilder>? configure = null
     )
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -28,11 +28,11 @@ public static class PortableResultsOpenApiModule
         RegisterErrorMetadataContractRegistry(services);
         if (configure is not null)
         {
-            services.Configure<PortableErrorMetadataContractsOptions>(options => configure(options.Builder));
+            services.Configure<ErrorMetadataContractsOptions>(options => configure(options.Builder));
         }
         else
         {
-            services.AddOptions<PortableErrorMetadataContractsOptions>();
+            services.AddOptions<ErrorMetadataContractsOptions>();
         }
 
         if (services.Any(static descriptor => descriptor.ServiceType == typeof(PortableResultsOpenApiRegistrationGate)))
@@ -49,10 +49,10 @@ public static class PortableResultsOpenApiModule
 
     private static void RegisterErrorMetadataContractRegistry(IServiceCollection services)
     {
-        services.TryAddSingleton<IPortableErrorMetadataContractRegistry>(
+        services.TryAddSingleton<IErrorMetadataContractRegistry>(
             static serviceProvider =>
-                new DefaultPortableErrorMetadataContractRegistry(
-                    serviceProvider.GetRequiredService<IOptions<PortableErrorMetadataContractsOptions>>().Value.Builder
+                new DefaultErrorMetadataContractRegistry(
+                    serviceProvider.GetRequiredService<IOptions<ErrorMetadataContractsOptions>>().Value.Builder
                 )
         );
     }

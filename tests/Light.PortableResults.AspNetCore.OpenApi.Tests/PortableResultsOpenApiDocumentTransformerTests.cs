@@ -206,8 +206,8 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var act = async () => await GetOpenApiDocumentAsync(app);
 
         await act.Should()
-            .ThrowAsync<InvalidOperationException>()
-            .WithMessage("*UnknownCode*AddPortableResultsOpenApi*WithErrorMetadata*");
+           .ThrowAsync<InvalidOperationException>()
+           .WithMessage("*UnknownCode*AddPortableResultsOpenApi*WithErrorMetadata*");
     }
 
     [Fact]
@@ -436,11 +436,12 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
                 var attribute = new ProducesPortableProblemAttribute(StatusCodes.Status404NotFound);
                 if (configureCodes)
                 {
-                    attribute.InlineErrorMetadataCodes = new[] { "Movie/Gone" };
+                    attribute.InlineErrorMetadataCodes = ["Movie/Gone"];
                 }
                 else
                 {
-                    attribute.InlineErrorMetadataContracts = [PortableErrorMetadataContract.FromType(typeof(InlineProblemMetadata))];
+                    attribute.InlineErrorMetadataContracts =
+                        [ErrorMetadataContract.FromType(typeof(InlineProblemMetadata))];
                 }
 
                 webApplication
@@ -460,7 +461,7 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
     [Fact]
     public void ErrorMetadataContractsBuilder_ShouldRejectSanitizedCodeCollisions()
     {
-        var builder = new PortableErrorMetadataContractsBuilder();
+        var builder = new ErrorMetadataContractsBuilder();
 
         builder.ForCode<VersionMismatchMetadata>("Code/One");
         var act = () => builder.ForCode<FundsMetadata>("Code_One");
@@ -587,12 +588,12 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
             contracts => contracts.ForCode<FundsMetadata>("Insufficient/Funds")
         );
 
-        services.Where(static descriptor => descriptor.ServiceType == typeof(IPortableErrorMetadataContractRegistry))
+        services.Where(static descriptor => descriptor.ServiceType == typeof(IErrorMetadataContractRegistry))
            .Should()
            .ContainSingle();
 
         using var serviceProvider = services.BuildServiceProvider();
-        var registry = serviceProvider.GetRequiredService<IPortableErrorMetadataContractRegistry>();
+        var registry = serviceProvider.GetRequiredService<IErrorMetadataContractRegistry>();
         registry.Contracts.Should().ContainKey("VersionMismatch");
         registry.Contracts.Should().ContainKey("Insufficient/Funds");
     }

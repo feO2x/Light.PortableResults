@@ -33,5 +33,5 @@ public abstract class PortableOpenApiErrorResponseAttributeBase : PortableOpenAp
     /// Gets or sets the inline metadata contracts aligned by index with
     /// <see cref="InlineErrorMetadataCodes" />.
     /// </summary>
-    public PortableErrorMetadataContract[]? InlineErrorMetadataContracts { get; set; }
+    public ErrorMetadataContract[]? InlineErrorMetadataContracts { get; set; }
 }

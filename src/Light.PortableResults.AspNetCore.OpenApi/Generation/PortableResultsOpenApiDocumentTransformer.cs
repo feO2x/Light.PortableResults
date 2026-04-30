@@ -24,7 +24,7 @@ namespace Light.PortableResults.AspNetCore.OpenApi.Generation;
 /// </summary>
 public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocumentTransformer
 {
-    private readonly IPortableErrorMetadataContractRegistry _errorMetadataContractRegistry;
+    private readonly IErrorMetadataContractRegistry _errorMetadataContractRegistry;
     private readonly PortableResultsHttpWriteOptions _writeOptions;
 
     /// <summary>
@@ -32,7 +32,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
     /// </summary>
     public PortableResultsOpenApiDocumentTransformer(
         PortableResultsHttpWriteOptions writeOptions,
-        IPortableErrorMetadataContractRegistry errorMetadataContractRegistry
+        IErrorMetadataContractRegistry errorMetadataContractRegistry
     )
     {
         _writeOptions = writeOptions ?? throw new ArgumentNullException(nameof(writeOptions));
@@ -390,7 +390,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         // Collect the narrowed variants we can document for this error item schema, while tracking the
         // raw error codes we have already seen so we can reject conflicting metadata contracts.
         var documentedVariants = new List<DocumentedErrorVariant>();
-        var rawCodeContracts = new Dictionary<string, PortableErrorMetadataContract>(StringComparer.Ordinal);
+        var rawCodeContracts = new Dictionary<string, ErrorMetadataContract>(StringComparer.Ordinal);
         var inlineSanitizedCodes = new Dictionary<string, string>(StringComparer.Ordinal);
 
         // Global error codes reuse pre-registered component schemas created from the application's
@@ -511,7 +511,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         string baseSchemaId,
         string schemaId,
         string errorCode,
-        PortableErrorMetadataContract contract,
+        ErrorMetadataContract contract,
         OpenApiSpecVersion openApiVersion,
         CancellationToken cancellationToken
     )
@@ -588,7 +588,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         OpenApiDocument document,
         OpenApiDocumentTransformerContext context,
         string ownerSchemaId,
-        PortableErrorMetadataContract contract,
+        ErrorMetadataContract contract,
         OpenApiSpecVersion openApiVersion,
         CancellationToken cancellationToken
     )
@@ -596,19 +596,19 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         var metadataSchemaId = PortableResultsOpenApiSchemaNaming.CreateMetadataSchemaId(ownerSchemaId);
         return contract switch
         {
-            PortableErrorMetadataTypeContract typeContract => await GetStableSchemaReferenceAsync(
+            ErrorMetadataTypeContract typeContract => await GetStableSchemaReferenceAsync(
                 document,
                 context,
                 typeContract.MetadataType,
                 metadataSchemaId,
                 cancellationToken
             ),
-            PortableErrorMetadataSchemaContract schemaContract => AddComponentAndCreateReference(
+            ErrorMetadataSchemaContract schemaContract => AddComponentAndCreateReference(
                 document,
                 metadataSchemaId,
                 schemaContract.SchemaFactory(openApiVersion)
             ),
-            PortableNoMetadataContract => null,
+            NoMetadataContract => null,
             _ => throw new InvalidOperationException(
                 $"The error metadata contract '{contract.GetType().FullName}' is not supported."
             )
@@ -806,9 +806,9 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
     }
 
     private static void AddDocumentedCode(
-        IDictionary<string, PortableErrorMetadataContract> rawCodeContracts,
+        IDictionary<string, ErrorMetadataContract> rawCodeContracts,
         string code,
-        PortableErrorMetadataContract contract
+        ErrorMetadataContract contract
     )
     {
         if (rawCodeContracts.TryGetValue(code, out var existingContract))

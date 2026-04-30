@@ -42,9 +42,9 @@ internal static class PortableOpenApiBuilderUtilities
         return combinedValues;
     }
 
-    internal static PortableErrorMetadataContract[] AppendContracts(
-        PortableErrorMetadataContract[]? existingValues,
-        PortableErrorMetadataContract newValue
+    internal static ErrorMetadataContract[] AppendContracts(
+        ErrorMetadataContract[]? existingValues,
+        ErrorMetadataContract newValue
     )
     {
         ArgumentNullException.ThrowIfNull(newValue);
@@ -54,7 +54,7 @@ internal static class PortableOpenApiBuilderUtilities
             return [newValue];
         }
 
-        var combinedValues = new PortableErrorMetadataContract[existingValues.Length + 1];
+        var combinedValues = new ErrorMetadataContract[existingValues.Length + 1];
         Array.Copy(existingValues, combinedValues, existingValues.Length);
         combinedValues[^1] = newValue;
         return combinedValues;

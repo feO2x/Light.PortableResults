@@ -6,8 +6,8 @@ internal static class PortableResultsOpenApiMessages
 {
     internal static string CreateDuplicateErrorMetadataContractMessage(
         string code,
-        PortableErrorMetadataContract existingContract,
-        PortableErrorMetadataContract newContract
+        ErrorMetadataContract existingContract,
+        ErrorMetadataContract newContract
     ) =>
         $"The error code '{code}' is already registered with metadata contract '{DescribeContract(existingContract)}'. It cannot also be registered with '{DescribeContract(newContract)}'.";
 
@@ -24,18 +24,18 @@ internal static class PortableResultsOpenApiMessages
     internal static string CreateIncompleteInlineErrorMetadataMessage() =>
         "Inline error metadata must configure both InlineErrorMetadataCodes and InlineErrorMetadataContracts together.";
 
-    private static string DescribeContract(PortableErrorMetadataContract contract)
+    private static string DescribeContract(ErrorMetadataContract contract)
     {
         return contract switch
         {
-            PortableErrorMetadataTypeContract typeContract => typeContract.MetadataType.FullName ??
+            ErrorMetadataTypeContract typeContract => typeContract.MetadataType.FullName ??
                                                              typeContract.MetadataType.Name,
-            PortableErrorMetadataSchemaContract schemaContract => DescribeSchemaFactory(schemaContract),
-            PortableNoMetadataContract => "no metadata",
+            ErrorMetadataSchemaContract schemaContract => DescribeSchemaFactory(schemaContract),
+            NoMetadataContract => "no metadata",
             _ => contract.GetType().FullName ?? contract.GetType().Name
         };
     }
 
-    private static string DescribeSchemaFactory(PortableErrorMetadataSchemaContract schemaContract)
+    private static string DescribeSchemaFactory(ErrorMetadataSchemaContract schemaContract)
         => "schema factory " + schemaContract.DiagnosticName;
 }

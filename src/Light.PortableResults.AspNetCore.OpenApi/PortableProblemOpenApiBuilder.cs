@@ -56,7 +56,7 @@ public sealed class PortableProblemOpenApiBuilder
         );
         _attribute.InlineErrorMetadataContracts = PortableOpenApiBuilderUtilities.AppendContracts(
             _attribute.InlineErrorMetadataContracts,
-            PortableErrorMetadataContract.FromType(metadataType)
+            ErrorMetadataContract.FromType(metadataType)
         );
         return this;
     }
@@ -87,7 +87,7 @@ public sealed class PortableProblemOpenApiBuilder
         );
         _attribute.InlineErrorMetadataContracts = PortableOpenApiBuilderUtilities.AppendContracts(
             _attribute.InlineErrorMetadataContracts,
-            PortableErrorMetadataContract.FromSchema(schemaFactory, diagnosticName)
+            ErrorMetadataContract.FromSchema(schemaFactory, diagnosticName)
         );
         return this;
     }

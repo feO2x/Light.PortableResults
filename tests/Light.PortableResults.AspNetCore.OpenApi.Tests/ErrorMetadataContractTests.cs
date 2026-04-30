@@ -8,34 +8,34 @@ using Xunit;
 
 namespace Light.PortableResults.AspNetCore.OpenApi.Tests;
 
-public sealed class PortableErrorMetadataContractTests
+public sealed class ErrorMetadataContractTests
 {
     [Fact]
     public void ContractFactories_ShouldExposeClosedSubclassPayloads()
     {
         Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory = _ => new OpenApiSchema();
 
-        var typeContract = PortableErrorMetadataContract.FromType(typeof(TestMetadata));
-        var schemaContract = PortableErrorMetadataContract.FromSchema(schemaFactory);
-        var noMetadata = PortableErrorMetadataContract.NoMetadata;
+        var typeContract = ErrorMetadataContract.FromType(typeof(TestMetadata));
+        var schemaContract = ErrorMetadataContract.FromSchema(schemaFactory);
+        var noMetadata = ErrorMetadataContract.NoMetadata;
 
-        typeContract.Should().BeOfType<PortableErrorMetadataTypeContract>()
+        typeContract.Should().BeOfType<ErrorMetadataTypeContract>()
            .Which.MetadataType.Should().Be(typeof(TestMetadata));
-        schemaContract.Should().BeOfType<PortableErrorMetadataSchemaContract>()
+        schemaContract.Should().BeOfType<ErrorMetadataSchemaContract>()
            .Which.SchemaFactory.Should().BeSameAs(schemaFactory);
-        ((PortableErrorMetadataSchemaContract) schemaContract).DiagnosticName.Should().Be(nameof(schemaFactory));
-        noMetadata.Should().BeOfType<PortableNoMetadataContract>();
-        PortableErrorMetadataContract.NoMetadata.Should().BeSameAs(noMetadata);
-        typeof(PortableErrorMetadataContract)
+        ((ErrorMetadataSchemaContract) schemaContract).DiagnosticName.Should().Be(nameof(schemaFactory));
+        noMetadata.Should().BeOfType<NoMetadataContract>();
+        ErrorMetadataContract.NoMetadata.Should().BeSameAs(noMetadata);
+        typeof(ErrorMetadataContract)
            .GetMember("Kind")
            .Should()
            .BeEmpty();
 
         var discriminator = typeContract switch
         {
-            PortableErrorMetadataTypeContract => "type",
-            PortableErrorMetadataSchemaContract => "schema",
-            PortableNoMetadataContract => "none",
+            ErrorMetadataTypeContract => "type",
+            ErrorMetadataSchemaContract => "schema",
+            NoMetadataContract => "none",
             _ => "unknown"
         };
         discriminator.Should().Be("type");
@@ -45,7 +45,7 @@ public sealed class PortableErrorMetadataContractTests
     public void ContractsBuilder_ShouldBeIdempotentForEquivalentContracts()
     {
         Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory = _ => new OpenApiSchema();
-        var builder = new PortableErrorMetadataContractsBuilder();
+        var builder = new ErrorMetadataContractsBuilder();
 
         builder.ForCode<TestMetadata>("TypeCode");
         builder.ForCode("TypeCode", typeof(TestMetadata));
@@ -54,25 +54,26 @@ public sealed class PortableErrorMetadataContractTests
         builder.ForCode("NoMetadataCode");
         builder.ForCode("NoMetadataCode");
 
-        var registry = new DefaultPortableErrorMetadataContractRegistry(builder);
+        var registry = new DefaultErrorMetadataContractRegistry(builder);
         registry.Contracts.Keys.Should().BeEquivalentTo("TypeCode", "SchemaCode", "NoMetadataCode");
     }
 
     [Fact]
     public void SchemaContracts_ShouldAllowExplicitDiagnosticNames()
     {
+        // ReSharper disable once ConvertToLocalFunction
         Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory = _ => new OpenApiSchema();
 
-        var schemaContract = PortableErrorMetadataContract.FromSchema(schemaFactory, "named schema");
+        var schemaContract = ErrorMetadataContract.FromSchema(schemaFactory, "named schema");
 
-        schemaContract.Should().BeOfType<PortableErrorMetadataSchemaContract>()
+        schemaContract.Should().BeOfType<ErrorMetadataSchemaContract>()
            .Which.DiagnosticName.Should().Be("named schema");
     }
 
     [Fact]
     public void SchemaContracts_ShouldDeriveDiagnosticNamesFromMethodMetadata_WhenNoNameIsAvailable()
     {
-        var schemaContract = new PortableErrorMetadataSchemaContract(CreateSchema, null);
+        var schemaContract = new ErrorMetadataSchemaContract(CreateSchema, null);
 
         schemaContract.DiagnosticName.Should().Contain(nameof(CreateSchema));
     }
@@ -81,7 +82,7 @@ public sealed class PortableErrorMetadataContractTests
     public void SchemaContracts_ShouldThrow_WhenNoMeaningfulDiagnosticNameCanBeDerived()
     {
         new Action(
-                () => PortableErrorMetadataContract.FromSchema(
+                () => ErrorMetadataContract.FromSchema(
                     _ => new OpenApiSchema(),
                     null
                 )
@@ -98,7 +99,7 @@ public sealed class PortableErrorMetadataContractTests
         Func<OpenApiSpecVersion, OpenApiSchema> secondFactory = _ => new OpenApiSchema();
 
         new Action(
-                () => new PortableErrorMetadataContractsBuilder()
+                () => new ErrorMetadataContractsBuilder()
                    .ForCode<TestMetadata>("Conflict")
                    .ForCode<OtherMetadata>("Conflict")
             )
@@ -107,7 +108,7 @@ public sealed class PortableErrorMetadataContractTests
            .WithMessage("*Conflict*TestMetadata*OtherMetadata*");
 
         new Action(
-                () => new PortableErrorMetadataContractsBuilder()
+                () => new ErrorMetadataContractsBuilder()
                    .ForCode("Conflict", firstFactory)
                    .ForCode("Conflict", secondFactory)
             )
@@ -116,7 +117,7 @@ public sealed class PortableErrorMetadataContractTests
            .WithMessage("*Conflict*firstFactory*secondFactory*");
 
         new Action(
-                () => new PortableErrorMetadataContractsBuilder()
+                () => new ErrorMetadataContractsBuilder()
                    .ForCode("Conflict", firstFactory, "first schema")
                    .ForCode("Conflict", secondFactory, "second schema")
             )
@@ -125,7 +126,7 @@ public sealed class PortableErrorMetadataContractTests
            .WithMessage("*Conflict*first schema*second schema*");
 
         new Action(
-                () => new PortableErrorMetadataContractsBuilder()
+                () => new ErrorMetadataContractsBuilder()
                    .ForCode("Conflict")
                    .ForCode<TestMetadata>("Conflict")
             )
@@ -137,20 +138,20 @@ public sealed class PortableErrorMetadataContractTests
     [Fact]
     public void ContractRegistry_ShouldExposePortableMetadataContracts()
     {
-        var registry = new DefaultPortableErrorMetadataContractRegistry(
-            new PortableErrorMetadataContractsBuilder().ForCode<TestMetadata>("TypeCode")
+        var registry = new DefaultErrorMetadataContractRegistry(
+            new ErrorMetadataContractsBuilder().ForCode<TestMetadata>("TypeCode")
         );
 
-        registry.Contracts.Should().BeAssignableTo<IReadOnlyDictionary<string, PortableErrorMetadataContract>>();
-        registry.Contracts["TypeCode"].Should().BeOfType<PortableErrorMetadataTypeContract>();
+        registry.Contracts.Should().BeAssignableTo<IReadOnlyDictionary<string, ErrorMetadataContract>>();
+        registry.Contracts["TypeCode"].Should().BeOfType<ErrorMetadataTypeContract>();
     }
 
     [Fact]
     public void ContractRegistry_ShouldSnapshotBuilderState()
     {
-        var builder = new PortableErrorMetadataContractsBuilder().ForCode<TestMetadata>("TypeCode");
+        var builder = new ErrorMetadataContractsBuilder().ForCode<TestMetadata>("TypeCode");
 
-        var registry = new DefaultPortableErrorMetadataContractRegistry(builder);
+        var registry = new DefaultErrorMetadataContractRegistry(builder);
         builder.ForCode<OtherMetadata>("OtherCode");
 
         registry.Contracts.Keys.Should().BeEquivalentTo("TypeCode");
@@ -159,8 +160,8 @@ public sealed class PortableErrorMetadataContractTests
     [Fact]
     public void ContractRegistry_ShouldRejectSanitizedCodeCollisions_WhenBuilderStateIsComposedExternally()
     {
-        var builder = new PortableErrorMetadataContractsBuilder();
-        var contractsField = typeof(PortableErrorMetadataContractsBuilder).GetField(
+        var builder = new ErrorMetadataContractsBuilder();
+        var contractsField = typeof(ErrorMetadataContractsBuilder).GetField(
             "_contracts",
             BindingFlags.Instance | BindingFlags.NonPublic
         );
@@ -169,24 +170,24 @@ public sealed class PortableErrorMetadataContractTests
         var contracts = contractsField
            .GetValue(builder)
            .Should()
-           .BeOfType<Dictionary<string, PortableErrorMetadataContract>>()
+           .BeOfType<Dictionary<string, ErrorMetadataContract>>()
            .Subject;
-        contracts.Add("Code/One", PortableErrorMetadataContract.NoMetadata);
-        contracts.Add("Code_One", PortableErrorMetadataContract.NoMetadata);
+        contracts.Add("Code/One", ErrorMetadataContract.NoMetadata);
+        contracts.Add("Code_One", ErrorMetadataContract.NoMetadata);
 
-        var act = () => _ = new DefaultPortableErrorMetadataContractRegistry(builder);
+        var act = () => _ = new DefaultErrorMetadataContractRegistry(builder);
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*Code/One*Code_One*");
     }
 
     [Fact]
     public void NoMetadataContract_ShouldReturn0_WhenGetHashCodeIsCalled() =>
-        PortableErrorMetadataContract.NoMetadata.GetHashCode().Should().Be(0);
+        ErrorMetadataContract.NoMetadata.GetHashCode().Should().Be(0);
 
     [Fact]
     public void PortableErrorMetadataSchemaContract_ShouldReturnHashCodeFromDiagnosticName()
     {
-        var schemaContract = new PortableErrorMetadataSchemaContract(CreateSchema, null);
+        var schemaContract = new ErrorMetadataSchemaContract(CreateSchema, null);
 
         var hashCode = schemaContract.GetHashCode();
 
@@ -197,7 +198,7 @@ public sealed class PortableErrorMetadataContractTests
     [Fact]
     public void PortableErrorMetadataTypeContract_ShouldReturnHashCodeFromMetadataType()
     {
-        var typeContract = new PortableErrorMetadataTypeContract(typeof(TestMetadata));
+        var typeContract = new ErrorMetadataTypeContract(typeof(TestMetadata));
 
         var hashCode = typeContract.GetHashCode();
 

@@ -43,8 +43,8 @@ public sealed class PortableOpenApiResponseBuilderTests
         attribute.ErrorCodes.Should().Equal("First", "Second", "Third");
         attribute.InlineErrorMetadataCodes.Should().Equal("Movie/Gone", "Movie/Archived");
         attribute.InlineErrorMetadataContracts.Should().Equal(
-            PortableErrorMetadataContract.FromType(typeof(InlineProblemMetadata)),
-            PortableErrorMetadataContract.FromType(typeof(ProblemMetadata))
+            ErrorMetadataContract.FromType(typeof(InlineProblemMetadata)),
+            ErrorMetadataContract.FromType(typeof(ProblemMetadata))
         );
     }
 
@@ -70,8 +70,8 @@ public sealed class PortableOpenApiResponseBuilderTests
         attribute.ErrorCodes.Should().Equal("First", "Second", "Third");
         attribute.InlineErrorMetadataCodes.Should().Equal("Movie/Gone", "Movie/Archived");
         attribute.InlineErrorMetadataContracts.Should().Equal(
-            PortableErrorMetadataContract.FromType(typeof(InlineProblemMetadata)),
-            PortableErrorMetadataContract.FromType(typeof(ProblemMetadata))
+            ErrorMetadataContract.FromType(typeof(InlineProblemMetadata)),
+            ErrorMetadataContract.FromType(typeof(ProblemMetadata))
         );
         attribute.Format.Should().Be(ValidationProblemSerializationFormat.Rich);
         attribute.HasFormatOverride.Should().BeTrue();
@@ -171,7 +171,7 @@ public sealed class PortableOpenApiResponseBuilderTests
     }
 
     private static WebApplication CreateApp(
-        Action<PortableErrorMetadataContractsBuilder> configureContracts,
+        Action<ErrorMetadataContractsBuilder> configureContracts,
         Action<WebApplication> configureEndpoints
     )
     {

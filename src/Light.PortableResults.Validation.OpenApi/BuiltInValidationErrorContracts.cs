@@ -15,11 +15,11 @@ public static class BuiltInValidationErrorContracts
     /// <summary>
     /// Gets the built-in validation error metadata contracts.
     /// </summary>
-    public static FrozenDictionary<string, PortableErrorMetadataContract> Contracts { get; } = CreateContracts();
+    public static FrozenDictionary<string, ErrorMetadataContract> Contracts { get; } = CreateContracts();
 
-    private static FrozenDictionary<string, PortableErrorMetadataContract> CreateContracts()
+    private static FrozenDictionary<string, ErrorMetadataContract> CreateContracts()
     {
-        return new Dictionary<string, PortableErrorMetadataContract>(StringComparer.Ordinal)
+        return new Dictionary<string, ErrorMetadataContract>(StringComparer.Ordinal)
         {
             [ValidationErrorCodes.Count] = Schema(
                 ValidationErrorCodes.Count,
@@ -119,21 +119,21 @@ public static class BuiltInValidationErrorContracts
                     }
                 )
             ),
-            [ValidationErrorCodes.NotNull] = PortableErrorMetadataContract.NoMetadata,
-            [ValidationErrorCodes.Null] = PortableErrorMetadataContract.NoMetadata,
-            [ValidationErrorCodes.NotEmpty] = PortableErrorMetadataContract.NoMetadata,
-            [ValidationErrorCodes.Empty] = PortableErrorMetadataContract.NoMetadata,
-            [ValidationErrorCodes.NotNullOrWhiteSpace] = PortableErrorMetadataContract.NoMetadata,
-            [ValidationErrorCodes.Email] = PortableErrorMetadataContract.NoMetadata,
-            [ValidationErrorCodes.DigitsOnly] = PortableErrorMetadataContract.NoMetadata,
-            [ValidationErrorCodes.LettersAndDigitsOnly] = PortableErrorMetadataContract.NoMetadata
+            [ValidationErrorCodes.NotNull] = ErrorMetadataContract.NoMetadata,
+            [ValidationErrorCodes.Null] = ErrorMetadataContract.NoMetadata,
+            [ValidationErrorCodes.NotEmpty] = ErrorMetadataContract.NoMetadata,
+            [ValidationErrorCodes.Empty] = ErrorMetadataContract.NoMetadata,
+            [ValidationErrorCodes.NotNullOrWhiteSpace] = ErrorMetadataContract.NoMetadata,
+            [ValidationErrorCodes.Email] = ErrorMetadataContract.NoMetadata,
+            [ValidationErrorCodes.DigitsOnly] = ErrorMetadataContract.NoMetadata,
+            [ValidationErrorCodes.LettersAndDigitsOnly] = ErrorMetadataContract.NoMetadata
         }.ToFrozenDictionary(StringComparer.Ordinal);
     }
 
-    private static PortableErrorMetadataContract Schema(
+    private static ErrorMetadataContract Schema(
         string code,
         Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory
-    ) => PortableErrorMetadataContract.FromSchema(schemaFactory, "built-in validation schema for " + code);
+    ) => ErrorMetadataContract.FromSchema(schemaFactory, "built-in validation schema for " + code);
 
     private static Func<OpenApiSpecVersion, OpenApiSchema> ObjectWithInteger(string propertyName) =>
         _ => CreateObjectSchema(

@@ -10,17 +10,20 @@ namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 /// <summary>
 /// Builds the global map of documented error-code metadata contracts.
 /// </summary>
-public sealed class PortableErrorMetadataContractsBuilder
+public sealed class ErrorMetadataContractsBuilder
 {
-    private readonly Dictionary<string, PortableErrorMetadataContract> _contracts = new (StringComparer.Ordinal);
+    private readonly Dictionary<string, ErrorMetadataContract> _contracts = new (StringComparer.Ordinal);
     private readonly Dictionary<string, string> _sanitizedCodes = new (StringComparer.Ordinal);
 
-    internal IReadOnlyDictionary<string, PortableErrorMetadataContract> Contracts => _contracts;
+    /// <summary>
+    /// Gets the immutable map of documented error codes to their metadata contracts.
+    /// </summary>
+    public IReadOnlyDictionary<string, ErrorMetadataContract> Contracts => _contracts;
 
     /// <summary>
     /// Registers <typeparamref name="TMetadata" /> as the metadata contract for the specified code.
     /// </summary>
-    public PortableErrorMetadataContractsBuilder ForCode<TMetadata>(string code)
+    public ErrorMetadataContractsBuilder ForCode<TMetadata>(string code)
     {
         return ForCode(code, typeof(TMetadata));
     }
@@ -28,9 +31,9 @@ public sealed class PortableErrorMetadataContractsBuilder
     /// <summary>
     /// Registers the specified CLR metadata type for the specified code.
     /// </summary>
-    public PortableErrorMetadataContractsBuilder ForCode(string code, Type metadataType)
+    public ErrorMetadataContractsBuilder ForCode(string code, Type metadataType)
     {
-        return ForCode(code, PortableErrorMetadataContract.FromType(metadataType));
+        return ForCode(code, ErrorMetadataContract.FromType(metadataType));
     }
 
     /// <summary>
@@ -39,24 +42,24 @@ public sealed class PortableErrorMetadataContractsBuilder
     /// <param name="code">The error code to register.</param>
     /// <param name="metadataSchemaFactory">The factory that creates a fresh metadata schema for the requested OpenAPI version.</param>
     /// <param name="diagnosticName">The optional diagnostic name used in duplicate-contract errors.</param>
-    public PortableErrorMetadataContractsBuilder ForCode(
+    public ErrorMetadataContractsBuilder ForCode(
         string code,
         Func<OpenApiSpecVersion, OpenApiSchema> metadataSchemaFactory,
         [CallerArgumentExpression(nameof(metadataSchemaFactory))] string? diagnosticName = null
     )
     {
-        return ForCode(code, PortableErrorMetadataContract.FromSchema(metadataSchemaFactory, diagnosticName));
+        return ForCode(code, ErrorMetadataContract.FromSchema(metadataSchemaFactory, diagnosticName));
     }
 
     /// <summary>
     /// Registers the specified code as a code that emits no metadata.
     /// </summary>
-    public PortableErrorMetadataContractsBuilder ForCode(string code)
+    public ErrorMetadataContractsBuilder ForCode(string code)
     {
-        return ForCode(code, PortableErrorMetadataContract.NoMetadata);
+        return ForCode(code, ErrorMetadataContract.NoMetadata);
     }
 
-    internal PortableErrorMetadataContractsBuilder ForCode(string code, PortableErrorMetadataContract contract)
+    private ErrorMetadataContractsBuilder ForCode(string code, ErrorMetadataContract contract)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
         ArgumentNullException.ThrowIfNull(contract);

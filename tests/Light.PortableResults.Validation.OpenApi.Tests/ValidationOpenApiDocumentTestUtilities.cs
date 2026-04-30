@@ -20,7 +20,7 @@ namespace Light.PortableResults.Validation.OpenApi.Tests;
 internal static class ValidationOpenApiDocumentTestUtilities
 {
     internal static WebApplication CreateApp(
-        Action<PortableErrorMetadataContractsBuilder> configureContracts,
+        Action<ErrorMetadataContractsBuilder> configureContracts,
         Action<WebApplication> configureEndpoints,
         Action<OpenApiOptions>? configureOpenApi = null
     )

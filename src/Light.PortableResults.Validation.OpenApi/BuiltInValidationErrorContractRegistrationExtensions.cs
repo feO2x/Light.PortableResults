@@ -13,8 +13,8 @@ public static class BuiltInValidationErrorContractRegistrationExtensions
     /// </summary>
     /// <param name="builder">The error metadata contract builder.</param>
     /// <returns>The configured builder.</returns>
-    public static PortableErrorMetadataContractsBuilder RegisterBuiltInValidationErrors(
-        this PortableErrorMetadataContractsBuilder builder
+    public static ErrorMetadataContractsBuilder RegisterBuiltInValidationErrors(
+        this ErrorMetadataContractsBuilder builder
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -23,13 +23,13 @@ public static class BuiltInValidationErrorContractRegistrationExtensions
         {
             switch (contract)
             {
-                case PortableErrorMetadataTypeContract typeContract:
+                case ErrorMetadataTypeContract typeContract:
                     builder.ForCode(code, typeContract.MetadataType);
                     break;
-                case PortableErrorMetadataSchemaContract schemaContract:
+                case ErrorMetadataSchemaContract schemaContract:
                     builder.ForCode(code, schemaContract.SchemaFactory);
                     break;
-                case PortableNoMetadataContract:
+                case NoMetadataContract:
                     builder.ForCode(code);
                     break;
                 default:

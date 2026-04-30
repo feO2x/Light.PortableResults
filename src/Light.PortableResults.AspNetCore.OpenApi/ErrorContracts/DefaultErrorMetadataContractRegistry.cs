@@ -7,19 +7,19 @@ using Light.PortableResults.AspNetCore.OpenApi.Schemas;
 namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 
 /// <summary>
-/// Default implementation of <see cref="IPortableErrorMetadataContractRegistry" />.
+/// Default implementation of <see cref="IErrorMetadataContractRegistry" />.
 /// </summary>
-public sealed class DefaultPortableErrorMetadataContractRegistry : IPortableErrorMetadataContractRegistry
+public sealed class DefaultErrorMetadataContractRegistry : IErrorMetadataContractRegistry
 {
     /// <summary>
-    /// Initializes a new instance of <see cref="DefaultPortableErrorMetadataContractRegistry" />.
+    /// Initializes a new instance of <see cref="DefaultErrorMetadataContractRegistry" />.
     /// </summary>
     /// <param name="builder">The builder that holds the configured contracts.</param>
-    public DefaultPortableErrorMetadataContractRegistry(PortableErrorMetadataContractsBuilder builder)
+    public DefaultErrorMetadataContractRegistry(ErrorMetadataContractsBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        var contracts = new Dictionary<string, PortableErrorMetadataContract>(StringComparer.Ordinal);
+        var contracts = new Dictionary<string, ErrorMetadataContract>(StringComparer.Ordinal);
         var sanitizedCodes = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (code, contract) in builder.Contracts)
         {
@@ -62,5 +62,5 @@ public sealed class DefaultPortableErrorMetadataContractRegistry : IPortableErro
     }
 
     /// <inheritdoc />
-    public FrozenDictionary<string, PortableErrorMetadataContract> Contracts { get; }
+    public FrozenDictionary<string, ErrorMetadataContract> Contracts { get; }
 }

@@ -116,14 +116,14 @@ public sealed class BuiltInValidationErrorContractsTests
         BuiltInValidationErrorContracts.Contracts.Should().NotContainKey(ValidationErrorCodes.Predicate);
         foreach (var code in expectedNoMetadataCodes)
         {
-            BuiltInValidationErrorContracts.Contracts[code].Should().BeSameAs(PortableErrorMetadataContract.NoMetadata);
+            BuiltInValidationErrorContracts.Contracts[code].Should().BeSameAs(ErrorMetadataContract.NoMetadata);
         }
     }
 
     [Fact]
     public void Contracts_ShouldBeBackedByFrozenDictionary() =>
         BuiltInValidationErrorContracts.Contracts.Should()
-           .BeAssignableTo<FrozenDictionary<string, PortableErrorMetadataContract>>();
+           .BeAssignableTo<FrozenDictionary<string, ErrorMetadataContract>>();
 
     [Theory]
     [MemberData(nameof(MetadataCodeProperties))]
@@ -131,7 +131,7 @@ public sealed class BuiltInValidationErrorContractsTests
     {
         var contract = BuiltInValidationErrorContracts.Contracts[code]
            .Should()
-           .BeOfType<PortableErrorMetadataSchemaContract>()
+           .BeOfType<ErrorMetadataSchemaContract>()
            .Subject;
 
         var firstSchema = contract.SchemaFactory(OpenApiSpecVersion.OpenApi3_1);
@@ -187,10 +187,10 @@ public sealed class BuiltInValidationErrorContractsTests
     [Fact]
     public void RegisterBuiltInValidationErrors_ShouldRegisterExpectedCodes()
     {
-        var builder = new PortableErrorMetadataContractsBuilder();
+        var builder = new ErrorMetadataContractsBuilder();
 
         builder.RegisterBuiltInValidationErrors();
-        var registry = new DefaultPortableErrorMetadataContractRegistry(builder);
+        var registry = new DefaultErrorMetadataContractRegistry(builder);
 
         registry.Contracts.Keys.Should().BeEquivalentTo(BuiltInValidationErrorContracts.Contracts.Keys);
         registry.Contracts.Should().NotContainKey(ValidationErrorCodes.Predicate);
@@ -199,11 +199,11 @@ public sealed class BuiltInValidationErrorContractsTests
     [Fact]
     public void RegisterBuiltInValidationErrors_ShouldBeIdempotent()
     {
-        var builder = new PortableErrorMetadataContractsBuilder();
+        var builder = new ErrorMetadataContractsBuilder();
 
         builder.RegisterBuiltInValidationErrors();
         builder.RegisterBuiltInValidationErrors();
-        var registry = new DefaultPortableErrorMetadataContractRegistry(builder);
+        var registry = new DefaultErrorMetadataContractRegistry(builder);
 
         registry.Contracts.Keys.Should().BeEquivalentTo(BuiltInValidationErrorContracts.Contracts.Keys);
     }
@@ -211,7 +211,7 @@ public sealed class BuiltInValidationErrorContractsTests
     [Fact]
     public void RegisterBuiltInValidationErrors_ShouldRejectConflictingPreRegisteredContracts()
     {
-        var builder = new PortableErrorMetadataContractsBuilder()
+        var builder = new ErrorMetadataContractsBuilder()
            .ForCode<ConflictingMetadata>(ValidationErrorCodes.Count);
 
         var act = builder.RegisterBuiltInValidationErrors;
@@ -221,7 +221,7 @@ public sealed class BuiltInValidationErrorContractsTests
 
     private static OpenApiSchema GetFirstPrimitiveValueSchema(string code, OpenApiSpecVersion version)
     {
-        var contract = (PortableErrorMetadataSchemaContract) BuiltInValidationErrorContracts.Contracts[code];
+        var contract = (ErrorMetadataSchemaContract) BuiltInValidationErrorContracts.Contracts[code];
         var schema = contract.SchemaFactory(version);
         var propertyName = schema.Properties!.ContainsKey(ValidationErrorMetadataKeys.ComparativeValue) ?
             ValidationErrorMetadataKeys.ComparativeValue :
@@ -232,6 +232,7 @@ public sealed class BuiltInValidationErrorContractsTests
     // ReSharper disable once ClassNeverInstantiated.Local -- required for testing
     private sealed class ConflictingMetadata
     {
+        // ReSharper disable once UnusedMember.Local -- required for testing
         public int Value { get; init; }
     }
 }
