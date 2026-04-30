@@ -53,6 +53,12 @@
           "Serilog.Sinks.File": "7.0.0"
         }
       },
+      "Swashbuckle.AspNetCore.SwaggerUI": {
+        "type": "Direct",
+        "requested": "[10.1.7, )",
+        "resolved": "10.1.7",
+        "contentHash": "iJo3ODyUb/M8Vm8AH1r9y9iAba0w95xsCn3zFVl96ISRHbTDWxi+l7oFVCZqUEdjd97B8VMDPnMliWAdomR8uw=="
+      },
       "Light.GuardClauses": {
         "type": "Transitive",
         "resolved": "13.0.0",
@@ -183,20 +189,20 @@
         "contentHash": "V6crLJ8a29raWeNwxYGfH9RTKA3H0nR0D9LAGzN3KtEsbiiaWkUjDor6OT5Oz7pxCK+NaY2hu2FLoYEOa8oCkA=="
       }
     },
-    "net10.0/linux-x64": {
+    "net10.0/osx-arm64": {
       "Microsoft.DotNet.ILCompiler": {
         "type": "Direct",
         "requested": "[10.0.7, )",
         "resolved": "10.0.7",
         "contentHash": "2H7j1NltkQx04sPWBkUtFrZNBtro7vwsxRtdThP0oDj6Sn3ouGHCQlxATZ4Me2aJE67+KiXMX2V1IHDjt1uIpw==",
         "dependencies": {
-          "runtime.linux-x64.Microsoft.DotNet.ILCompiler": "10.0.7"
+          "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": "10.0.7"
         }
       },
-      "runtime.linux-x64.Microsoft.DotNet.ILCompiler": {
+      "runtime.osx-arm64.Microsoft.DotNet.ILCompiler": {
         "type": "Transitive",
         "resolved": "10.0.7",
-        "contentHash": "bz+Di9NJXvaWTvoma5Pf9JrgFj6MGkbPo9dlWRo+jOHXDEme511jeWVEBWoPdoDe6BjDWRngGi9P9EUBCCgzgw=="
+        "contentHash": "ycFCaZwEvd0nNqcW53l0KWM+fz74owXpWj5C/z0GjznwAtHwmGTeh3vGTGFrXD9LEagX8G3cHRtzGDrTabIrwQ=="
       }
     }
   }
