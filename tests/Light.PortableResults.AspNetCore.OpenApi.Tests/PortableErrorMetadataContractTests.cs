@@ -179,6 +179,32 @@ public sealed class PortableErrorMetadataContractTests
         act.Should().Throw<InvalidOperationException>().WithMessage("*Code/One*Code_One*");
     }
 
+    [Fact]
+    public void NoMetadataContract_ShouldReturn0_WhenGetHashCodeIsCalled() =>
+        PortableErrorMetadataContract.NoMetadata.GetHashCode().Should().Be(0);
+
+    [Fact]
+    public void PortableErrorMetadataSchemaContract_ShouldReturnHashCodeFromFactory()
+    {
+        var schemaContract = new PortableErrorMetadataSchemaContract(CreateSchema, null);
+
+        var hashCode = schemaContract.GetHashCode();
+
+        var expectedHashCode = schemaContract.SchemaFactory.GetHashCode();
+        hashCode.Should().Be(expectedHashCode);
+    }
+
+    [Fact]
+    public void PortableErrorMetadataTypeContract_ShouldReturnHashCodeFromMetadataType()
+    {
+        var typeContract = new PortableErrorMetadataTypeContract(typeof(TestMetadata));
+
+        var hashCode = typeContract.GetHashCode();
+
+        var expectedHashCode = typeContract.MetadataType.GetHashCode();
+        hashCode.Should().Be(expectedHashCode);
+    }
+
     // ReSharper disable UnusedMember.Local -- required for testing
     private sealed class TestMetadata
     {

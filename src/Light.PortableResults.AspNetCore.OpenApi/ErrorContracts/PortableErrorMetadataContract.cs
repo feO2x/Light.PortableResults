@@ -131,12 +131,7 @@ public sealed class PortableErrorMetadataSchemaContract : PortableErrorMetadataC
 
         if (!string.IsNullOrWhiteSpace(declaringTypeName) && !string.IsNullOrWhiteSpace(methodName))
         {
-            return declaringTypeName + "." + methodName;
-        }
-
-        if (!string.IsNullOrWhiteSpace(methodName))
-        {
-            return methodName;
+            return $"{declaringTypeName}.{methodName}";
         }
 
         throw new InvalidOperationException(
