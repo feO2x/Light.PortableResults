@@ -190,7 +190,7 @@ public sealed class BuiltInValidationErrorContractsTests
         var builder = new PortableErrorMetadataContractsBuilder();
 
         builder.RegisterBuiltInValidationErrors();
-        var registry = new PortableErrorMetadataContractRegistry(builder);
+        var registry = new DefaultPortableErrorMetadataContractRegistry(builder);
 
         registry.Contracts.Keys.Should().BeEquivalentTo(BuiltInValidationErrorContracts.Contracts.Keys);
         registry.Contracts.Should().NotContainKey(ValidationErrorCodes.Predicate);
@@ -203,7 +203,7 @@ public sealed class BuiltInValidationErrorContractsTests
 
         builder.RegisterBuiltInValidationErrors();
         builder.RegisterBuiltInValidationErrors();
-        var registry = new PortableErrorMetadataContractRegistry(builder);
+        var registry = new DefaultPortableErrorMetadataContractRegistry(builder);
 
         registry.Contracts.Keys.Should().BeEquivalentTo(BuiltInValidationErrorContracts.Contracts.Keys);
     }

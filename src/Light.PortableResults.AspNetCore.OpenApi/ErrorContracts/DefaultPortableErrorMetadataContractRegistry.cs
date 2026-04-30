@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using Light.PortableResults.AspNetCore.OpenApi.Generation;
 using Light.PortableResults.AspNetCore.OpenApi.Schemas;
 
@@ -9,13 +9,13 @@ namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 /// <summary>
 /// Default implementation of <see cref="IPortableErrorMetadataContractRegistry" />.
 /// </summary>
-public sealed class PortableErrorMetadataContractRegistry : IPortableErrorMetadataContractRegistry
+public sealed class DefaultPortableErrorMetadataContractRegistry : IPortableErrorMetadataContractRegistry
 {
     /// <summary>
-    /// Initializes a new instance of <see cref="PortableErrorMetadataContractRegistry" />.
+    /// Initializes a new instance of <see cref="DefaultPortableErrorMetadataContractRegistry" />.
     /// </summary>
     /// <param name="builder">The builder that holds the configured contracts.</param>
-    public PortableErrorMetadataContractRegistry(PortableErrorMetadataContractsBuilder builder)
+    public DefaultPortableErrorMetadataContractRegistry(PortableErrorMetadataContractsBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
@@ -58,9 +58,9 @@ public sealed class PortableErrorMetadataContractRegistry : IPortableErrorMetada
             sanitizedCodes.Add(sanitizedCode, code);
         }
 
-        Contracts = new ReadOnlyDictionary<string, PortableErrorMetadataContract>(contracts);
+        Contracts = contracts.ToFrozenDictionary();
     }
 
     /// <inheritdoc />
-    public IReadOnlyDictionary<string, PortableErrorMetadataContract> Contracts { get; }
+    public FrozenDictionary<string, PortableErrorMetadataContract> Contracts { get; }
 }

@@ -54,7 +54,7 @@ public sealed class PortableErrorMetadataContractTests
         builder.ForCode("NoMetadataCode");
         builder.ForCode("NoMetadataCode");
 
-        var registry = new PortableErrorMetadataContractRegistry(builder);
+        var registry = new DefaultPortableErrorMetadataContractRegistry(builder);
         registry.Contracts.Keys.Should().BeEquivalentTo("TypeCode", "SchemaCode", "NoMetadataCode");
     }
 
@@ -137,7 +137,7 @@ public sealed class PortableErrorMetadataContractTests
     [Fact]
     public void ContractRegistry_ShouldExposePortableMetadataContracts()
     {
-        var registry = new PortableErrorMetadataContractRegistry(
+        var registry = new DefaultPortableErrorMetadataContractRegistry(
             new PortableErrorMetadataContractsBuilder().ForCode<TestMetadata>("TypeCode")
         );
 
@@ -150,7 +150,7 @@ public sealed class PortableErrorMetadataContractTests
     {
         var builder = new PortableErrorMetadataContractsBuilder().ForCode<TestMetadata>("TypeCode");
 
-        var registry = new PortableErrorMetadataContractRegistry(builder);
+        var registry = new DefaultPortableErrorMetadataContractRegistry(builder);
         builder.ForCode<OtherMetadata>("OtherCode");
 
         registry.Contracts.Keys.Should().BeEquivalentTo("TypeCode");
@@ -174,7 +174,7 @@ public sealed class PortableErrorMetadataContractTests
         contracts.Add("Code/One", PortableErrorMetadataContract.NoMetadata);
         contracts.Add("Code_One", PortableErrorMetadataContract.NoMetadata);
 
-        var act = () => _ = new PortableErrorMetadataContractRegistry(builder);
+        var act = () => _ = new DefaultPortableErrorMetadataContractRegistry(builder);
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*Code/One*Code_One*");
     }

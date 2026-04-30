@@ -56,7 +56,7 @@ public static class PortableResultsOpenApiModule
     {
         services.TryAddSingleton<IPortableErrorMetadataContractRegistry>(
             static serviceProvider =>
-                new PortableErrorMetadataContractRegistry(
+                new DefaultPortableErrorMetadataContractRegistry(
                     serviceProvider.GetRequiredService<IOptions<PortableErrorMetadataContractsOptions>>().Value.Builder
                 )
         );

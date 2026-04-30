@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Collections.Frozen;
 
 namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 
@@ -10,5 +10,5 @@ public interface IPortableErrorMetadataContractRegistry
     /// <summary>
     /// Gets the immutable map of documented error codes to their metadata contracts.
     /// </summary>
-    IReadOnlyDictionary<string, PortableErrorMetadataContract> Contracts { get; }
+    FrozenDictionary<string, PortableErrorMetadataContract> Contracts { get; }
 }
