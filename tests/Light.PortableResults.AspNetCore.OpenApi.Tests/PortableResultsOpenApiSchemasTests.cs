@@ -47,7 +47,10 @@ public sealed class PortableResultsOpenApiSchemasTests
             PortableResultsOpenApiSchemas.CreatePortableAspNetCoreValidationProblemDetailsProperties(document);
         var firstProblemRequired = PortableResultsOpenApiSchemas.CreatePortableProblemDetailsRequired();
         var secondProblemRequired = PortableResultsOpenApiSchemas.CreatePortableProblemDetailsRequired();
-        var aspNetCoreRequired = PortableResultsOpenApiSchemas.CreatePortableAspNetCoreValidationProblemDetailsRequired();
+        var aspNetCoreRequired =
+            PortableResultsOpenApiSchemas.CreatePortableAspNetCoreValidationProblemDetailsRequired();
+        var secondAspNetCoreRequired =
+            PortableResultsOpenApiSchemas.CreatePortableAspNetCoreValidationProblemDetailsRequired();
 
         firstProblemProperties.Should().NotBeSameAs(secondProblemProperties);
         firstProblemProperties.Should().ContainKeys(
@@ -76,5 +79,7 @@ public sealed class PortableResultsOpenApiSchemasTests
         secondProblemProperties.Should().ContainKey("metadata");
         firstProblemRequired.Remove("errors");
         secondProblemRequired.Should().Contain("errors");
+        aspNetCoreRequired.Remove("errors");
+        secondAspNetCoreRequired.Should().Contain("errors");
     }
 }
