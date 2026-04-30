@@ -103,10 +103,11 @@ public sealed class PortableErrorMetadataSchemaContract : PortableErrorMetadataC
 
     /// <inheritdoc />
     public override bool Equals(object? obj) =>
-        obj is PortableErrorMetadataSchemaContract other && ReferenceEquals(SchemaFactory, other.SchemaFactory);
+        obj is PortableErrorMetadataSchemaContract other &&
+        string.Equals(DiagnosticName, other.DiagnosticName, StringComparison.Ordinal);
 
     /// <inheritdoc />
-    public override int GetHashCode() => SchemaFactory.GetHashCode();
+    public override int GetHashCode() => DiagnosticName.GetHashCode(StringComparison.Ordinal);
 
     private static string CreateDiagnosticName(
         Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory,

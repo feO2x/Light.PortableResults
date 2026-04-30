@@ -1,4 +1,4 @@
-using System;
+using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 
 namespace Light.PortableResults.AspNetCore.OpenApi;
 
@@ -30,8 +30,8 @@ public abstract class PortableOpenApiErrorResponseAttributeBase : PortableOpenAp
     public string[]? InlineErrorMetadataCodes { get; set; }
 
     /// <summary>
-    /// Gets or sets the inline metadata CLR types aligned by index with
+    /// Gets or sets the inline metadata contracts aligned by index with
     /// <see cref="InlineErrorMetadataCodes" />.
     /// </summary>
-    public Type[]? InlineErrorMetadataTypes { get; set; }
+    public PortableErrorMetadataContract[]? InlineErrorMetadataContracts { get; set; }
 }

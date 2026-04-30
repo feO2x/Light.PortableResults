@@ -100,6 +100,31 @@ public sealed class PortableProblemOpenApiBuilderTests
             );
     }
 
+    [Fact]
+    public async Task TypedHelpers_ShouldBeIdempotentWhenRegisteredTwice()
+    {
+        await using var app = ValidationOpenApiDocumentTestUtilities.CreateApp(
+            _ => { },
+            endpoints =>
+            {
+                endpoints
+                   .MapGet("/idempotent-problem", static () => Results.Problem())
+                   .WithName("IdempotentProblem")
+                   .ProducesPortableProblem(
+                        StatusCodes.Status400BadRequest,
+                        configure: builder =>
+                        {
+                            builder.WithInRangeError<int>();
+                            builder.WithInRangeError<int>();
+                        }
+                    );
+            }
+        );
+
+        var act = async () => await ValidationOpenApiDocumentTestUtilities.GetOpenApiDocumentAsync(app);
+        await act.Should().NotThrowAsync();
+    }
+
     private static WebApplication CreateTypedHelperApp<T>(string operationName)
     {
         return ValidationOpenApiDocumentTestUtilities.CreateApp(

@@ -22,7 +22,7 @@ internal static class PortableResultsOpenApiMessages
         $"The error code '{code}' is not registered in AddPortableResultsOpenApi. Register it globally or use WithErrorMetadata as an inline escape hatch.";
 
     internal static string CreateIncompleteInlineErrorMetadataMessage() =>
-        "Inline error metadata must configure both InlineErrorMetadataCodes and InlineErrorMetadataTypes together.";
+        "Inline error metadata must configure both InlineErrorMetadataCodes and InlineErrorMetadataContracts together.";
 
     private static string DescribeContract(PortableErrorMetadataContract contract)
     {

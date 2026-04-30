@@ -413,8 +413,8 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         }
 
         var inlineCodes = attribute.InlineErrorMetadataCodes;
-        var inlineTypes = attribute.InlineErrorMetadataTypes;
-        if (inlineCodes is not null && inlineTypes is not null)
+        var inlineContracts = attribute.InlineErrorMetadataContracts;
+        if (inlineCodes is not null && inlineContracts is not null)
         {
             // Inline contracts are declared directly on the endpoint, so this branch has to create
             // endpoint-specific schemas and guard against both raw-code duplicates and sanitized-name
@@ -422,7 +422,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
             for (var i = 0; i < inlineCodes.Length; i++)
             {
                 var code = inlineCodes[i];
-                var metadataType = inlineTypes[i];
+                var contract = inlineContracts[i];
                 var sanitizedCode = PortableResultsOpenApiSchemaNaming.SanitizeErrorCode(code);
                 if (inlineSanitizedCodes.TryGetValue(sanitizedCode, out var existingCode) &&
                     !string.Equals(existingCode, code, StringComparison.Ordinal))
@@ -436,16 +436,15 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                     );
                 }
 
-                var metadataTypeContract = PortableErrorMetadataContract.FromType(metadataType);
                 if (rawCodeContracts.TryGetValue(code, out var existingContract))
                 {
-                    if (!existingContract.Equals(metadataTypeContract))
+                    if (!existingContract.Equals(contract))
                     {
                         throw new InvalidOperationException(
                             PortableResultsOpenApiMessages.CreateDuplicateErrorMetadataContractMessage(
                                 code,
                                 existingContract,
-                                metadataTypeContract
+                                contract
                             )
                         );
                     }
@@ -453,7 +452,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                     continue;
                 }
 
-                rawCodeContracts.Add(code, metadataTypeContract);
+                rawCodeContracts.Add(code, contract);
                 inlineSanitizedCodes.TryAdd(sanitizedCode, code);
                 var schemaId = PortableResultsOpenApiSchemaNaming.CreateInlineErrorSchemaId(
                     itemBaseSchemaId,
@@ -469,7 +468,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                     itemBaseSchemaId,
                     schemaId,
                     code,
-                    metadataTypeContract,
+                    contract,
                     openApiVersion,
                     cancellationToken
                 );
@@ -784,25 +783,25 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
 
     private static void ValidateInlineMetadataArrays(PortableOpenApiErrorResponseAttributeBase attribute)
     {
-        if (attribute.InlineErrorMetadataCodes is null && attribute.InlineErrorMetadataTypes is null)
+        if (attribute.InlineErrorMetadataCodes is null && attribute.InlineErrorMetadataContracts is null)
         {
             return;
         }
 
-        if (attribute.InlineErrorMetadataCodes is null || attribute.InlineErrorMetadataTypes is null)
+        if (attribute.InlineErrorMetadataCodes is null || attribute.InlineErrorMetadataContracts is null)
         {
             throw new InvalidOperationException(
                 PortableResultsOpenApiMessages.CreateIncompleteInlineErrorMetadataMessage()
             );
         }
 
-        if (attribute.InlineErrorMetadataCodes.Length == attribute.InlineErrorMetadataTypes.Length)
+        if (attribute.InlineErrorMetadataCodes.Length == attribute.InlineErrorMetadataContracts.Length)
         {
             return;
         }
 
         throw new InvalidOperationException(
-            $"Inline error metadata arrays must have the same length, but codes has length {attribute.InlineErrorMetadataCodes.Length} and types has length {attribute.InlineErrorMetadataTypes.Length}."
+            $"Inline error metadata arrays must have the same length, but codes has length {attribute.InlineErrorMetadataCodes.Length} and contracts has length {attribute.InlineErrorMetadataContracts.Length}."
         );
     }
 

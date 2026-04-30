@@ -184,13 +184,13 @@ public sealed class PortableErrorMetadataContractTests
         PortableErrorMetadataContract.NoMetadata.GetHashCode().Should().Be(0);
 
     [Fact]
-    public void PortableErrorMetadataSchemaContract_ShouldReturnHashCodeFromFactory()
+    public void PortableErrorMetadataSchemaContract_ShouldReturnHashCodeFromDiagnosticName()
     {
         var schemaContract = new PortableErrorMetadataSchemaContract(CreateSchema, null);
 
         var hashCode = schemaContract.GetHashCode();
 
-        var expectedHashCode = schemaContract.SchemaFactory.GetHashCode();
+        var expectedHashCode = schemaContract.DiagnosticName.GetHashCode(StringComparison.Ordinal);
         hashCode.Should().Be(expectedHashCode);
     }
 

@@ -42,7 +42,10 @@ public sealed class PortableOpenApiResponseBuilderTests
         attribute.TopLevelMetadataType.Should().Be(typeof(ProblemMetadata));
         attribute.ErrorCodes.Should().Equal("First", "Second", "Third");
         attribute.InlineErrorMetadataCodes.Should().Equal("Movie/Gone", "Movie/Archived");
-        attribute.InlineErrorMetadataTypes.Should().Equal(typeof(InlineProblemMetadata), typeof(ProblemMetadata));
+        attribute.InlineErrorMetadataContracts.Should().Equal(
+            PortableErrorMetadataContract.FromType(typeof(InlineProblemMetadata)),
+            PortableErrorMetadataContract.FromType(typeof(ProblemMetadata))
+        );
     }
 
     [Fact]
@@ -66,7 +69,10 @@ public sealed class PortableOpenApiResponseBuilderTests
         attribute.TopLevelMetadataType.Should().Be(typeof(ProblemMetadata));
         attribute.ErrorCodes.Should().Equal("First", "Second", "Third");
         attribute.InlineErrorMetadataCodes.Should().Equal("Movie/Gone", "Movie/Archived");
-        attribute.InlineErrorMetadataTypes.Should().Equal(typeof(InlineProblemMetadata), typeof(ProblemMetadata));
+        attribute.InlineErrorMetadataContracts.Should().Equal(
+            PortableErrorMetadataContract.FromType(typeof(InlineProblemMetadata)),
+            PortableErrorMetadataContract.FromType(typeof(ProblemMetadata))
+        );
         attribute.Format.Should().Be(ValidationProblemSerializationFormat.Rich);
         attribute.HasFormatOverride.Should().BeTrue();
     }

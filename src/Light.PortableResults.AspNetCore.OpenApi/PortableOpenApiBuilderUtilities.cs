@@ -1,4 +1,5 @@
 using System;
+using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 
 namespace Light.PortableResults.AspNetCore.OpenApi;
 
@@ -41,7 +42,10 @@ internal static class PortableOpenApiBuilderUtilities
         return combinedValues;
     }
 
-    internal static Type[] AppendTypes(Type[]? existingValues, Type newValue)
+    internal static PortableErrorMetadataContract[] AppendContracts(
+        PortableErrorMetadataContract[]? existingValues,
+        PortableErrorMetadataContract newValue
+    )
     {
         ArgumentNullException.ThrowIfNull(newValue);
 
@@ -50,7 +54,7 @@ internal static class PortableOpenApiBuilderUtilities
             return [newValue];
         }
 
-        var combinedValues = new Type[existingValues.Length + 1];
+        var combinedValues = new PortableErrorMetadataContract[existingValues.Length + 1];
         Array.Copy(existingValues, combinedValues, existingValues.Length);
         combinedValues[^1] = newValue;
         return combinedValues;

@@ -1,4 +1,7 @@
 using System;
+using System.Runtime.CompilerServices;
+using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
+using Microsoft.OpenApi;
 
 namespace Light.PortableResults.AspNetCore.OpenApi;
 
@@ -51,9 +54,9 @@ public sealed class PortableProblemOpenApiBuilder
             _attribute.InlineErrorMetadataCodes,
             code
         );
-        _attribute.InlineErrorMetadataTypes = PortableOpenApiBuilderUtilities.AppendTypes(
-            _attribute.InlineErrorMetadataTypes,
-            metadataType
+        _attribute.InlineErrorMetadataContracts = PortableOpenApiBuilderUtilities.AppendContracts(
+            _attribute.InlineErrorMetadataContracts,
+            PortableErrorMetadataContract.FromType(metadataType)
         );
         return this;
     }
@@ -64,5 +67,28 @@ public sealed class PortableProblemOpenApiBuilder
     public PortableProblemOpenApiBuilder WithErrorMetadata<TMetadata>(string code)
     {
         return WithErrorMetadata(code, typeof(TMetadata));
+    }
+
+    /// <summary>
+    /// Registers an inline schema-factory metadata contract for the specified error code.
+    /// </summary>
+    public PortableProblemOpenApiBuilder WithErrorMetadata(
+        string code,
+        Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory,
+        [CallerArgumentExpression(nameof(schemaFactory))] string? diagnosticName = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(code);
+        ArgumentNullException.ThrowIfNull(schemaFactory);
+
+        _attribute.InlineErrorMetadataCodes = PortableOpenApiBuilderUtilities.AppendStrings(
+            _attribute.InlineErrorMetadataCodes,
+            code
+        );
+        _attribute.InlineErrorMetadataContracts = PortableOpenApiBuilderUtilities.AppendContracts(
+            _attribute.InlineErrorMetadataContracts,
+            PortableErrorMetadataContract.FromSchema(schemaFactory, diagnosticName)
+        );
+        return this;
     }
 }

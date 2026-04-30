@@ -440,7 +440,7 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
                 }
                 else
                 {
-                    attribute.InlineErrorMetadataTypes = new[] { typeof(InlineProblemMetadata) };
+                    attribute.InlineErrorMetadataContracts = [PortableErrorMetadataContract.FromType(typeof(InlineProblemMetadata))];
                 }
 
                 webApplication
@@ -454,7 +454,7 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
 
         await act.Should()
            .ThrowAsync<InvalidOperationException>()
-           .WithMessage("*InlineErrorMetadataCodes*InlineErrorMetadataTypes*");
+           .WithMessage("*InlineErrorMetadataCodes*InlineErrorMetadataContracts*");
     }
 
     [Fact]
