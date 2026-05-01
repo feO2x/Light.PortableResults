@@ -55,7 +55,7 @@ public sealed class PortableProblemOpenApiBuilder
     /// </summary>
     public PortableProblemOpenApiBuilder WithErrorMetadata(string code, Type metadataType)
     {
-        ArgumentNullException.ThrowIfNull(code);
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
         ArgumentNullException.ThrowIfNull(metadataType);
 
         _attribute.InlineErrorMetadataCodes = PortableOpenApiBuilderUtilities.AppendStrings(
@@ -86,7 +86,7 @@ public sealed class PortableProblemOpenApiBuilder
         string? schemaId = null
     )
     {
-        ArgumentNullException.ThrowIfNull(code);
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
         ArgumentNullException.ThrowIfNull(schemaFactory);
 
         _attribute.InlineErrorMetadataCodes = PortableOpenApiBuilderUtilities.AppendStrings(
