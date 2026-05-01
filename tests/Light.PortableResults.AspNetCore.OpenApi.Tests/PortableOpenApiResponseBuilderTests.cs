@@ -129,7 +129,8 @@ public sealed class PortableOpenApiResponseBuilderTests
                         ["value"] = new OpenApiSchema { Type = JsonSchemaType.Integer }
                     },
                     Required = new HashSet<string>(StringComparer.Ordinal) { "value" }
-                }
+                },
+                "Equivalent schema"
             ),
             endpoints =>
             {

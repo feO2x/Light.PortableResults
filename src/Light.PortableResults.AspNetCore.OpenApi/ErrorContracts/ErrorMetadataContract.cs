@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using Microsoft.OpenApi;
 
 namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
@@ -31,14 +30,14 @@ public abstract class ErrorMetadataContract
     /// Creates a contract backed by a schema factory.
     /// </summary>
     /// <param name="schemaFactory">The factory that creates a fresh metadata schema for the requested OpenAPI version.</param>
-    /// <param name="diagnosticName">The optional diagnostic name used in duplicate-contract errors.</param>
+    /// <param name="schemaId">The schema ID that uniquely identifies this contract. When null, the ID is derived from the factory's method metadata.</param>
     /// <returns>The metadata contract.</returns>
     public static ErrorMetadataContract FromSchema(
         Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory,
-        [CallerArgumentExpression(nameof(schemaFactory))] string? diagnosticName = null
+        string? schemaId = null
     )
     {
         ArgumentNullException.ThrowIfNull(schemaFactory);
-        return new ErrorMetadataSchemaContract(schemaFactory, diagnosticName);
+        return new ErrorMetadataSchemaContract(schemaFactory, schemaId);
     }
 }

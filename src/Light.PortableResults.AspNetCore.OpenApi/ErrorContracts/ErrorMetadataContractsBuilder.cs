@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using Light.PortableResults.AspNetCore.OpenApi.Generation;
 using Light.PortableResults.AspNetCore.OpenApi.Schemas;
 using Microsoft.OpenApi;
@@ -41,14 +40,14 @@ public sealed class ErrorMetadataContractsBuilder
     /// </summary>
     /// <param name="code">The error code to register.</param>
     /// <param name="metadataSchemaFactory">The factory that creates a fresh metadata schema for the requested OpenAPI version.</param>
-    /// <param name="diagnosticName">The optional diagnostic name used in duplicate-contract errors.</param>
+    /// <param name="schemaId">The schema ID that uniquely identifies this contract. When null, the ID is derived from the factory's method metadata.</param>
     public ErrorMetadataContractsBuilder ForCode(
         string code,
         Func<OpenApiSpecVersion, OpenApiSchema> metadataSchemaFactory,
-        [CallerArgumentExpression(nameof(metadataSchemaFactory))] string? diagnosticName = null
+        string? schemaId = null
     )
     {
-        return ForCode(code, ErrorMetadataContract.FromSchema(metadataSchemaFactory, diagnosticName));
+        return ForCode(code, ErrorMetadataContract.FromSchema(metadataSchemaFactory, schemaId));
     }
 
     /// <summary>

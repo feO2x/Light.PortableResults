@@ -27,7 +27,7 @@ public static class BuiltInValidationErrorContractRegistrationExtensions
                     builder.ForCode(code, typeContract.MetadataType);
                     break;
                 case ErrorMetadataSchemaContract schemaContract:
-                    builder.ForCode(code, schemaContract.SchemaFactory);
+                    builder.ForCode(code, schemaContract.SchemaFactory, schemaContract.SchemaId);
                     break;
                 case NoMetadataContract:
                     builder.ForCode(code);

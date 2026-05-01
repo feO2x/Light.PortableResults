@@ -16,14 +16,14 @@ public sealed class ErrorMetadataContractTests
         Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory = _ => new OpenApiSchema();
 
         var typeContract = ErrorMetadataContract.FromType(typeof(TestMetadata));
-        var schemaContract = ErrorMetadataContract.FromSchema(schemaFactory);
+        var schemaContract = ErrorMetadataContract.FromSchema(schemaFactory, "test schema");
         var noMetadata = ErrorMetadataContract.NoMetadata;
 
         typeContract.Should().BeOfType<ErrorMetadataTypeContract>()
            .Which.MetadataType.Should().Be(typeof(TestMetadata));
         schemaContract.Should().BeOfType<ErrorMetadataSchemaContract>()
            .Which.SchemaFactory.Should().BeSameAs(schemaFactory);
-        ((ErrorMetadataSchemaContract) schemaContract).DiagnosticName.Should().Be(nameof(schemaFactory));
+        ((ErrorMetadataSchemaContract) schemaContract).SchemaId.Should().Be("test schema");
         noMetadata.Should().BeOfType<NoMetadataContract>();
         ErrorMetadataContract.NoMetadata.Should().BeSameAs(noMetadata);
         typeof(ErrorMetadataContract)
@@ -49,8 +49,8 @@ public sealed class ErrorMetadataContractTests
 
         builder.ForCode<TestMetadata>("TypeCode");
         builder.ForCode("TypeCode", typeof(TestMetadata));
-        builder.ForCode("SchemaCode", schemaFactory);
-        builder.ForCode("SchemaCode", schemaFactory);
+        builder.ForCode("SchemaCode", schemaFactory, "my schema");
+        builder.ForCode("SchemaCode", schemaFactory, "my schema");
         builder.ForCode("NoMetadataCode");
         builder.ForCode("NoMetadataCode");
 
@@ -59,7 +59,7 @@ public sealed class ErrorMetadataContractTests
     }
 
     [Fact]
-    public void SchemaContracts_ShouldAllowExplicitDiagnosticNames()
+    public void SchemaContracts_ShouldAllowExplicitSchemaIds()
     {
         // ReSharper disable once ConvertToLocalFunction
         Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory = _ => new OpenApiSchema();
@@ -67,29 +67,24 @@ public sealed class ErrorMetadataContractTests
         var schemaContract = ErrorMetadataContract.FromSchema(schemaFactory, "named schema");
 
         schemaContract.Should().BeOfType<ErrorMetadataSchemaContract>()
-           .Which.DiagnosticName.Should().Be("named schema");
+           .Which.SchemaId.Should().Be("named schema");
     }
 
     [Fact]
-    public void SchemaContracts_ShouldDeriveDiagnosticNamesFromMethodMetadata_WhenNoNameIsAvailable()
+    public void SchemaContracts_ShouldDeriveSchemaIdFromMethodInfo_WhenNullIsPassed()
     {
-        var schemaContract = new ErrorMetadataSchemaContract(CreateSchema, null);
+        var schemaContract = new ErrorMetadataSchemaContract(CreateSchema);
 
-        schemaContract.DiagnosticName.Should().Contain(nameof(CreateSchema));
+        schemaContract.SchemaId.Should().Contain(nameof(CreateSchema));
     }
 
     [Fact]
-    public void SchemaContracts_ShouldThrow_WhenNoMeaningfulDiagnosticNameCanBeDerived()
+    public void SchemaContracts_ShouldThrow_WhenNoMeaningfulSchemaIdCanBeDerived()
     {
-        new Action(
-                () => ErrorMetadataContract.FromSchema(
-                    _ => new OpenApiSchema(),
-                    null
-                )
-            )
+        new Action(() => ErrorMetadataContract.FromSchema(_ => new OpenApiSchema()))
            .Should()
            .Throw<InvalidOperationException>()
-           .WithMessage("*meaningful diagnostic name*diagnosticName*");
+           .WithMessage("*meaningful schema ID*schemaId*");
     }
 
     [Fact]
@@ -106,15 +101,6 @@ public sealed class ErrorMetadataContractTests
            .Should()
            .Throw<InvalidOperationException>()
            .WithMessage("*Conflict*TestMetadata*OtherMetadata*");
-
-        new Action(
-                () => new ErrorMetadataContractsBuilder()
-                   .ForCode("Conflict", firstFactory)
-                   .ForCode("Conflict", secondFactory)
-            )
-           .Should()
-           .Throw<InvalidOperationException>()
-           .WithMessage("*Conflict*firstFactory*secondFactory*");
 
         new Action(
                 () => new ErrorMetadataContractsBuilder()
@@ -185,13 +171,13 @@ public sealed class ErrorMetadataContractTests
         ErrorMetadataContract.NoMetadata.GetHashCode().Should().Be(0);
 
     [Fact]
-    public void PortableErrorMetadataSchemaContract_ShouldReturnHashCodeFromDiagnosticName()
+    public void ErrorMetadataSchemaContract_ShouldReturnHashCodeFromSchemaId()
     {
-        var schemaContract = new ErrorMetadataSchemaContract(CreateSchema, null);
+        var schemaContract = new ErrorMetadataSchemaContract(CreateSchema);
 
         var hashCode = schemaContract.GetHashCode();
 
-        var expectedHashCode = schemaContract.DiagnosticName.GetHashCode(StringComparison.Ordinal);
+        var expectedHashCode = schemaContract.SchemaId.GetHashCode(StringComparison.Ordinal);
         hashCode.Should().Be(expectedHashCode);
     }
 

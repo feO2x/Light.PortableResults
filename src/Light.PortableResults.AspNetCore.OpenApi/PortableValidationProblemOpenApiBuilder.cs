@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 using Light.PortableResults.Http.Writing;
 using Microsoft.OpenApi;
@@ -86,7 +85,7 @@ public sealed class PortableValidationProblemOpenApiBuilder
     public PortableValidationProblemOpenApiBuilder WithErrorMetadata(
         string code,
         Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory,
-        [CallerArgumentExpression(nameof(schemaFactory))] string? diagnosticName = null
+        string? schemaId = null
     )
     {
         ArgumentNullException.ThrowIfNull(code);
@@ -98,7 +97,7 @@ public sealed class PortableValidationProblemOpenApiBuilder
         );
         _attribute.InlineErrorMetadataContracts = PortableOpenApiBuilderUtilities.AppendContracts(
             _attribute.InlineErrorMetadataContracts,
-            ErrorMetadataContract.FromSchema(schemaFactory, diagnosticName)
+            ErrorMetadataContract.FromSchema(schemaFactory, schemaId)
         );
         return this;
     }

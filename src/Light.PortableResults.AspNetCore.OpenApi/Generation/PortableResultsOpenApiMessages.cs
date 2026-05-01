@@ -37,5 +37,5 @@ internal static class PortableResultsOpenApiMessages
     }
 
     private static string DescribeSchemaFactory(ErrorMetadataSchemaContract schemaContract)
-        => "schema factory " + schemaContract.DiagnosticName;
+        => "schema factory " + schemaContract.SchemaId;
 }

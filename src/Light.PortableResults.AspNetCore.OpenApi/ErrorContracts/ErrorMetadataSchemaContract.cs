@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using Microsoft.OpenApi;
 
 namespace Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
@@ -13,15 +12,15 @@ public sealed class ErrorMetadataSchemaContract : ErrorMetadataContract
     /// Initializes a new instance of <see cref="ErrorMetadataSchemaContract" />.
     /// </summary>
     /// <param name="schemaFactory">The factory that creates a fresh metadata schema for the requested OpenAPI version.</param>
-    /// <param name="diagnosticName">The optional diagnostic name used in duplicate-contract errors.</param>
+    /// <param name="schemaId">The schema ID that uniquely identifies this contract. When null, the ID is derived from the factory's method metadata.</param>
     public ErrorMetadataSchemaContract(
         Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory,
-        [CallerArgumentExpression(nameof(schemaFactory))] string? diagnosticName = null
+        string? schemaId = null
     )
     {
         ArgumentNullException.ThrowIfNull(schemaFactory);
         SchemaFactory = schemaFactory;
-        DiagnosticName = CreateDiagnosticName(schemaFactory, diagnosticName);
+        SchemaId = CreateSchemaId(schemaFactory, schemaId);
     }
 
     /// <summary>
@@ -30,36 +29,36 @@ public sealed class ErrorMetadataSchemaContract : ErrorMetadataContract
     public Func<OpenApiSpecVersion, OpenApiSchema> SchemaFactory { get; }
 
     /// <summary>
-    /// Gets the diagnostic name used in duplicate-contract errors.
+    /// Gets the schema ID that uniquely identifies this contract and appears in duplicate-registration errors.
     /// </summary>
-    public string DiagnosticName { get; }
+    public string SchemaId { get; }
 
     /// <inheritdoc />
     public override bool Equals(object? obj) =>
         obj is ErrorMetadataSchemaContract other &&
-        string.Equals(DiagnosticName, other.DiagnosticName, StringComparison.Ordinal);
+        string.Equals(SchemaId, other.SchemaId, StringComparison.Ordinal);
 
     /// <inheritdoc />
-    public override int GetHashCode() => DiagnosticName.GetHashCode(StringComparison.Ordinal);
+    public override int GetHashCode() => SchemaId.GetHashCode(StringComparison.Ordinal);
 
-    private static string CreateDiagnosticName(
+    private static string CreateSchemaId(
         Func<OpenApiSpecVersion, OpenApiSchema> schemaFactory,
-        string? diagnosticName
+        string? schemaId
     )
     {
-        if (!string.IsNullOrWhiteSpace(diagnosticName))
+        if (!string.IsNullOrWhiteSpace(schemaId))
         {
-            return diagnosticName;
+            return schemaId;
         }
 
         var method = schemaFactory.Method;
         var methodName = method.Name;
         var declaringTypeName = method.DeclaringType?.FullName ?? method.DeclaringType?.Name;
-        if (string.IsNullOrWhiteSpace(methodName) || methodName.Contains("<", StringComparison.Ordinal))
+        if (string.IsNullOrWhiteSpace(methodName) || methodName.Contains('<', StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
-                "A schema-based error metadata contract requires a meaningful diagnostic name. " +
-                "Pass the diagnosticName argument explicitly when registering anonymous or compiler-generated schema factories."
+                "A schema-based error metadata contract requires a meaningful schema ID. " +
+                "Pass the schemaId argument explicitly when registering anonymous or compiler-generated schema factories."
             );
         }
 
@@ -69,8 +68,8 @@ public sealed class ErrorMetadataSchemaContract : ErrorMetadataContract
         }
 
         throw new InvalidOperationException(
-            "A schema-based error metadata contract requires a meaningful diagnostic name. " +
-            "Pass the diagnosticName argument explicitly when registering anonymous or compiler-generated schema factories."
+            "A schema-based error metadata contract requires a meaningful schema ID. " +
+            "Pass the schemaId argument explicitly when registering anonymous or compiler-generated schema factories."
         );
     }
 }
