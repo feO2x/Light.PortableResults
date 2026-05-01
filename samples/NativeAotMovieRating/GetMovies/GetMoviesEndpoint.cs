@@ -72,7 +72,7 @@ public static class GetMoviesEndpoint
                 {
                     Message = "There is no movie with the specified ID",
                     Target = nameof(lastKnownMovieId),
-                    Category = ErrorCategory.Validation, // Results in HTTP 404 Not Found
+                    Category = ErrorCategory.Validation, // Results in HTTP 400 Bad Request - invalid movie ID
                     Code = "MovieNotFound", // Should be custom to your app and identify the error uniquely
                     Metadata = MetadataObject.Create((nameof(lastKnownMovieId), lastKnownMovieId!.Value.ToString()))
                 }
