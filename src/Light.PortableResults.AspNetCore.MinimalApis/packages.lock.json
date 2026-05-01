@@ -4,9 +4,9 @@
     "net10.0": {
       "Microsoft.NET.ILLink.Tasks": {
         "type": "Direct",
-        "requested": "[10.0.3, )",
-        "resolved": "10.0.3",
-        "contentHash": "0B6nZyCHWXnvmlB559oduOspVdNOnpNXPjhpWVMovLPAsDVG7A4jJR9rzECf67JUzxP8/ee/wA8clwIzJcWNFA=="
+        "requested": "[10.0.7, )",
+        "resolved": "10.0.7",
+        "contentHash": "AA/yhzFHNtQZXLdqjzujPy25G8EWwGWsAnxOE2zYSBoT/8QHP6ketN3CToD3DFreO653ipUwnKHo22B8AlBMCw=="
       },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
@@ -47,7 +47,7 @@
       "light.portableresults.aspnetcore.shared": {
         "type": "Project",
         "dependencies": {
-          "Light.PortableResults": "[0.3.0, )"
+          "Light.PortableResults": "[0.4.0, )"
         }
       },
       "Microsoft.Bcl.HashCode": {

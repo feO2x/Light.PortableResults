@@ -1,8 +1,8 @@
 using System;
 
-namespace NativeAotMovieRating.AddMovieRating;
+namespace NativeAotMovieRating.NewMovieRating;
 
-public sealed record MovieRatingDto
+public sealed record NewMovieRatingDto
 {
     public required Guid Id { get; init; }
     public required Guid MovieId { get; init; }

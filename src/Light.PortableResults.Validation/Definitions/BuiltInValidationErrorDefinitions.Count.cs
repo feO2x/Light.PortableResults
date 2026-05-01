@@ -91,7 +91,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public CountValidationErrorDefinition(int expectedCount)
             : base(
                 expectedCount,
-                code: "Count",
+                code: ValidationErrorCodes.Count,
                 metadata: CreateCountMetadata(ValidationErrorMetadataKeys.ExpectedCount, expectedCount)
             )
         {
@@ -126,7 +126,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public MinCountValidationErrorDefinition(int minCount)
             : base(
                 minCount,
-                code: "MinCount",
+                code: ValidationErrorCodes.MinCount,
                 metadata: CreateCountMetadata(ValidationErrorMetadataKeys.MinCount, minCount)
             )
         {
@@ -161,7 +161,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public MaxCountValidationErrorDefinition(int maxCount)
             : base(
                 maxCount,
-                code: "MaxCount",
+                code: ValidationErrorCodes.MaxCount,
                 metadata: CreateCountMetadata(ValidationErrorMetadataKeys.MaxCount, maxCount)
             )
         {

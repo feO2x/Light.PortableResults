@@ -9,3 +9,4 @@ obj/
 *.received.*
 .DS_Store
 *.lscache
+.codex

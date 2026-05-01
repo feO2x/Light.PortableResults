@@ -242,7 +242,7 @@
       "light.portableresults.validation": {
         "type": "Project",
         "dependencies": {
-          "Light.PortableResults": "[0.3.0, )"
+          "Light.PortableResults": "[0.4.0, )"
         }
       },
       "Microsoft.Bcl.AsyncInterfaces": {

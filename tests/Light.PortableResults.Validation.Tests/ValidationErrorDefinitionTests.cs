@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using Light.PortableResults.Metadata;
+using Light.PortableResults.Validation;
 using Light.PortableResults.Validation.Definitions;
 using Light.PortableResults.Validation.Messaging;
 using Light.PortableResults.Validation.Targeting;
@@ -15,15 +16,24 @@ public sealed class ValidationErrorDefinitionTests
     [Fact]
     public void BuiltInDefinitions_ShouldExposeExpectedDefaults()
     {
-        BuiltInValidationErrorDefinitions.NotNull.Code.Should().Be("NotNull");
-        BuiltInValidationErrorDefinitions.Null.Code.Should().Be("Null");
-        BuiltInValidationErrorDefinitions.Empty.Code.Should().Be("Empty");
-        BuiltInValidationErrorDefinitions.NotEmpty.Code.Should().Be("NotEmpty");
-        BuiltInValidationErrorDefinitions.NotNullOrWhiteSpace.Code.Should().Be("NotNullOrWhiteSpace");
-        BuiltInValidationErrorDefinitions.Email.Code.Should().Be("Email");
-        BuiltInValidationErrorDefinitions.Predicate.Code.Should().Be("Predicate");
+        BuiltInValidationErrorDefinitions.NotNull.Code.Should().Be(ValidationErrorCodes.NotNull);
+        BuiltInValidationErrorDefinitions.Null.Code.Should().Be(ValidationErrorCodes.Null);
+        BuiltInValidationErrorDefinitions.Empty.Code.Should().Be(ValidationErrorCodes.Empty);
+        BuiltInValidationErrorDefinitions.NotEmpty.Code.Should().Be(ValidationErrorCodes.NotEmpty);
+        BuiltInValidationErrorDefinitions.NotNullOrWhiteSpace.Code.Should().Be(ValidationErrorCodes.NotNullOrWhiteSpace);
+        BuiltInValidationErrorDefinitions.Email.Code.Should().Be(ValidationErrorCodes.Email);
+        BuiltInValidationErrorDefinitions.Predicate.Code.Should().Be(ValidationErrorCodes.Predicate);
         BuiltInValidationErrorDefinitions.NotNull.Metadata.Should().BeNull();
         BuiltInValidationErrorDefinitions.Email.Metadata.Should().BeNull();
+    }
+
+    [Fact]
+    public void BuiltInDefinitions_ShouldEmitRenamedRuntimeCodes()
+    {
+        BuiltInValidationErrorDefinitions.LengthIn(2, 5).Code.Should().Be(ValidationErrorCodes.LengthInRange);
+        BuiltInValidationErrorDefinitions.Matches("^[0-9]+$").Code.Should().Be(ValidationErrorCodes.Pattern);
+        BuiltInValidationErrorDefinitions.IsInBetween(1, 5).Code.Should().Be(ValidationErrorCodes.InRange);
+        BuiltInValidationErrorDefinitions.IsNotInBetween(1, 5).Code.Should().Be(ValidationErrorCodes.NotInRange);
     }
 
     [Fact]

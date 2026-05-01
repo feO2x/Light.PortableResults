@@ -1,19 +1,40 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Light.PortableResults;
 using Light.PortableResults.AspNetCore.MinimalApis;
+using Light.PortableResults.AspNetCore.OpenApi;
+using Light.PortableResults.Http.Writing;
 using Light.PortableResults.Metadata;
 using Light.PortableResults.Validation;
+using Light.PortableResults.Validation.OpenApi;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using NativeAotMovieRating.InMemoryDatabaseAccess;
 
 namespace NativeAotMovieRating.GetMovies;
 
 public static class GetMoviesEndpoint
 {
     public static void MapGetMoviesEndpoint(this WebApplication app) =>
-        app.MapGet("/api/movies", GetMovies);
+        app.MapGet("/api/movies", GetMovies)
+           .WithName("GetMovies")
+           .WithTags("Movies")
+           .WithSummary("Returns a paginated list of movies.")
+           .WithDescription(
+                "Supports keyset pagination via the optional lastKnownMovieId parameter and a configurable " +
+                "page size via the take parameter (1-40). Returns a rich Light.PortableResults problem " +
+                "details response when input validation fails or when the lastKnownMovieId does not exist."
+            )
+           .Produces<List<Movie>>()
+           .ProducesPortableValidationProblem(
+                configure: x => x
+                   .UseFormat(ValidationProblemSerializationFormat.Rich)
+                   .WithErrorCodes(ValidationErrorCodes.NotEmpty)
+                   .WithErrorMetadata<MovieNotFoundMetadata>("MovieNotFound")
+                   .WithInRangeError<int>()
+            );
 
     private static async Task<IResult> GetMovies(
         IGetMoviesSession session,
@@ -51,7 +72,7 @@ public static class GetMoviesEndpoint
                 {
                     Message = "There is no movie with the specified ID",
                     Target = nameof(lastKnownMovieId),
-                    Category = ErrorCategory.Validation, // Results in HTTP 404 Not Found
+                    Category = ErrorCategory.Validation, // Results in HTTP 400 Bad Request - invalid movie ID
                     Code = "MovieNotFound", // Should be custom to your app and identify the error uniquely
                     Metadata = MetadataObject.Create((nameof(lastKnownMovieId), lastKnownMovieId!.Value.ToString()))
                 }
@@ -61,4 +82,11 @@ public static class GetMoviesEndpoint
 
         return TypedResults.Ok(movies);
     }
+}
+
+// ReSharper disable once ClassNeverInstantiated.Global -- required for OpenAPI
+public sealed class MovieNotFoundMetadata
+{
+    // ReSharper disable once UnusedMember.Global -- required for OpenAPI
+    public string LastKnownMovieId { get; init; } = string.Empty;
 }

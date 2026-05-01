@@ -66,7 +66,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public EqualToValidationErrorDefinition(T comparativeValue)
             : base(
                 comparativeValue,
-                code: "EqualTo",
+                code: ValidationErrorCodes.EqualTo,
                 metadata: CreateComparativeMetadata(comparativeValue)
             )
         {
@@ -102,7 +102,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public NotEqualToValidationErrorDefinition(T comparativeValue)
             : base(
                 comparativeValue,
-                code: "NotEqualTo",
+                code: ValidationErrorCodes.NotEqualTo,
                 metadata: CreateComparativeMetadata(comparativeValue)
             )
         {

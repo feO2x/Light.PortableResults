@@ -1,16 +1,16 @@
 using Light.PortableResults.Validation;
 
-namespace NativeAotMovieRating.AddMovieRating;
+namespace NativeAotMovieRating.NewMovieRating;
 
-public sealed class MovieRatingValidator : Validator<MovieRatingDto>
+public sealed class NewMovieRatingValidator : Validator<NewMovieRatingDto>
 {
-    public MovieRatingValidator(IValidationContextFactory validationContextFactory)
+    public NewMovieRatingValidator(IValidationContextFactory validationContextFactory)
         : base(validationContextFactory) { }
 
-    protected override ValidatedValue<MovieRatingDto> PerformValidation(
+    protected override ValidatedValue<NewMovieRatingDto> PerformValidation(
         ValidationContext context,
         ValidationCheckpoint checkpoint,
-        MovieRatingDto dto
+        NewMovieRatingDto dto
     )
     {
         context.Check(dto.Id).IsNotEmpty();

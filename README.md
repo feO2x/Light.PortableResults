@@ -47,6 +47,18 @@ ASP.NET Core MVC integration with support for Dependency Injection and `IActionR
 dotnet add package Light.PortableResults.AspNetCore.Mvc
 ```
 
+OpenAPI integration:
+
+```bash
+dotnet add package Light.PortableResults.AspNetCore.OpenApi
+```
+
+Built-in validation error contracts for OpenAPI:
+
+```bash
+dotnet add package Light.PortableResults.Validation.OpenApi
+```
+
 If you only need the Result Pattern itself, `Light.PortableResults` is the most lightweight dependency.
 
 ## 🤓 Basic Usage
@@ -359,7 +371,7 @@ Content-Type: application/problem+json
   "errors": [
     {
       "message": "comment must be between 10 and 1000 characters long",
-      "code": "LengthIn",
+      "code": "LengthInRange",
       "target": "comment",
       "category": "Validation",
       "metadata": {
@@ -375,7 +387,7 @@ Content-Type: application/problem+json
     },
     {
       "message": "rating must be between 1 and 5",
-      "code": "IsInBetween",
+      "code": "InRange",
       "target": "rating",
       "category": "Validation",
       "metadata": {
@@ -1321,6 +1333,186 @@ services
 ```
 
 `ValidateWithPortableResults` integrates with the standard options validation pipeline, supports named options, and forwards the current options name to the `ValidationContext`. Use `ValidationContext.TryGetItem(ConfigurationConstants.OptionsNameKey, out var optionsName);` to access the options name in your validator.
+
+## OpenAPI Support
+
+OpenAPI support lives in the dedicated `Light.PortableResults.AspNetCore.OpenApi` package. It is opt-in and does not change runtime serialization. `LightResult<T>` / `LightActionResult<T>` still serialize through the JSON writers in `Light.PortableResults`; the OpenAPI package only contributes endpoint metadata plus a document transformer. If you use `Light.PortableResults.Validation`, add `Light.PortableResults.Validation.OpenApi` to opt into the library-owned built-in validation error contracts.
+
+### Registration
+
+```csharp
+using Light.PortableResults.AspNetCore.MinimalApis;
+using Light.PortableResults.AspNetCore.OpenApi;
+using Light.PortableResults.Validation.OpenApi;
+
+builder.Services
+       .AddOpenApi()
+       .AddPortableResultsForMinimalApis()
+       .AddPortableResultsOpenApi(contracts => contracts.RegisterBuiltInValidationErrors());
+```
+
+Use `AddPortableResultsForMvc()` instead of `AddPortableResultsForMinimalApis()` for MVC applications. OpenAPI support is intentionally separate so applications that never generate OpenAPI documents do not take on the extra dependency.
+
+### Public surface
+
+Minimal APIs expose three helpers in `Light.PortableResults.AspNetCore.OpenApi`:
+
+- `ProducesPortableSuccessResponse<TValue>(...)`
+- `ProducesPortableProblem(...)`
+- `ProducesPortableValidationProblem(...)`
+
+MVC exposes three matching attributes:
+
+- `[ProducesPortableSuccessResponse<TValue>]`
+- `[ProducesPortableProblem]`
+- `[ProducesPortableValidationProblem]`
+
+`ProducesPortableSuccessResponse<TValue>` documents both runtime success shapes:
+
+- Under `MetadataSerializationMode.ErrorsOnly`, the documented body is the bare `TValue`.
+- Under `MetadataSerializationMode.Always`, the documented body is `{ value, metadata }`.
+
+Use `UseMetadataSerializationMode(...)` on Minimal APIs or the `MetadataSerializationMode = ...` named argument on the MVC attribute when the endpoint’s documented shape differs from the DI default.
+
+`ProducesPortableValidationProblem(...)` automatically selects the rich or ASP.NET Core-compatible validation envelope from `PortableResultsHttpWriteOptions.ValidationProblemSerializationFormat`. Use `UseFormat(...)` on Minimal APIs or `Format = ...` on the MVC attribute for a per-endpoint override.
+
+PortableResults OpenAPI metadata is authoritative for a given `(status code, content type)` response slot. If another OpenAPI contributor already documented the same slot, the document transformer replaces that media-type schema instead of merging it. Avoid combining `ProducesPortable...` helpers or attributes with ASP.NET Core response-schema helpers for the same response slot unless you want PortableResults to win.
+
+### Documenting metadata
+
+Top-level metadata and per-error-code metadata are caller-owned contracts. The OpenAPI package documents them explicitly; the runtime still writes `MetadataObject`.
+
+`WithErrorCodes(...)`, endpoint-scoped `WithErrorMetadata<TMetadata>(code)`, and the typed validation helpers such as `WithInRangeError<T>()` narrow error items exhaustively by default once you document at least one code. The generated item schema becomes a discriminated `oneOf` over the documented variants with `code` required, so you are asserting that every emitted error item has a non-null `code` and that the code is in the documented set.
+
+If an endpoint can still emit additional codes outside the documented set, opt out explicitly with `AllowUnknownErrorCodes()` on the Minimal API builders or `AllowUnknownErrorCodes = true` on the MVC attributes. In that mode the generated schema falls back to the non-exhaustive `anyOf` shape with the canonical `PortableError` / `PortableValidationErrorDetail` branch preserved for unknown codes.
+
+`AllowUnknownErrorCodes()` does not relax the `code` requirement on narrowed item schemas. If an endpoint can emit code-less errors, do not narrow that endpoint's error items in the first place; use the canonical envelope schema instead.
+
+When top-level metadata or documented error items are narrowed, the generated response envelope is a flattened concrete object schema that copies the canonical problem-details properties and overrides only `errors` / `errorDetails` / `metadata`. This improves Swagger UI and code-generator output without changing the runtime wire format.
+
+For built-in validation errors, reference `Light.PortableResults.Validation.OpenApi` and pass the catalog registration to `AddPortableResultsOpenApi(...)` once:
+
+```csharp
+using Light.PortableResults.AspNetCore.OpenApi;
+using Light.PortableResults.Validation.OpenApi;
+
+builder.Services.AddPortableResultsOpenApi(
+    contracts => contracts.RegisterBuiltInValidationErrors()
+);
+```
+
+Use `ValidationErrorCodes` when opting endpoints into built-in codes. Codes such as `NotEmpty`, `LengthInRange`, and `Count` reuse global schemas from the built-in catalog:
+
+```csharp
+using Light.PortableResults.Validation;
+using Light.PortableResults.Validation.OpenApi;
+
+app.MapPut("/api/movieRatings", AddMovieRating)
+   .ProducesPortableValidationProblem(
+        configure: x =>
+            x.UseFormat(ValidationProblemSerializationFormat.Rich)
+             .WithErrorCodes(ValidationErrorCodes.NotEmpty, ValidationErrorCodes.LengthInRange)
+             .WithInRangeError<int>()
+    );
+```
+
+Use `AllowUnknownErrorCodes()` when the endpoint may emit additional documented-shape errors outside the documented code set, for example when built-in validation codes are documented but a downstream lookup may still add a custom code:
+
+```csharp
+app.MapGet("/api/movies", GetMovies)
+   .ProducesPortableValidationProblem(
+        configure: x =>
+            x.UseFormat(ValidationProblemSerializationFormat.Rich)
+             .WithErrorCodes(ValidationErrorCodes.NotEmpty)
+             .WithInRangeError<int>()
+             .AllowUnknownErrorCodes()
+    );
+```
+
+Comparison and range codes are polymorphic at the global code level, so the validation bridge also ships typed endpoint helpers: `WithEqualToError<T>()`, `WithNotEqualToError<T>()`, `WithGreaterThanError<T>()`, `WithGreaterThanOrEqualToError<T>()`, `WithLessThanError<T>()`, `WithLessThanOrEqualToError<T>()`, `WithInRangeError<T>()`, `WithNotInRangeError<T>()`, and `WithExclusiveRangeError<T>()`. These helpers use the existing inline metadata path, so an endpoint can document concrete metadata such as integer range boundaries for `IsInBetween(1, 5)` while still reusing global schemas for shape-fixed codes.
+
+Register reusable per-error-code metadata contracts once in DI by passing them to `AddPortableResultsOpenApi(...)`:
+
+```csharp
+using Light.PortableResults.AspNetCore.OpenApi;
+
+builder.Services.AddPortableResultsOpenApi(contracts =>
+{
+    contracts.ForCode<VersionMismatchMetadata>("VersionMismatch");
+    contracts.ForCode<InsufficientFundsMetadata>("InsufficientFunds");
+});
+```
+
+User-defined codes continue to use the type-based overloads above, or endpoint-scoped `WithErrorMetadata<TMetadata>(code)` when a contract only applies to one operation.
+
+Then opt the relevant codes into each endpoint:
+
+```csharp
+using Light.PortableResults;
+using Light.PortableResults.AspNetCore.MinimalApis;
+using Light.PortableResults.AspNetCore.OpenApi;
+using Light.PortableResults.Http.Writing;
+
+app.MapPut("/api/movieRatings", async (MovieRatingDto dto, AddMovieRatingService service) =>
+    {
+        var result = await service.AddMovieRatingAsync(dto);
+        return result.ToMinimalApiResult();
+    })
+   .ProducesPortableSuccessResponse<MovieRating>(
+        configure: x =>
+            x.WithMetadata<MovieRatingResponseMetadata>()
+             .UseMetadataSerializationMode(MetadataSerializationMode.Always)
+    )
+   .ProducesPortableValidationProblem(
+        configure: x =>
+            x.UseFormat(ValidationProblemSerializationFormat.Rich)
+             .WithErrorCodes("VersionMismatch")
+    )
+   .ProducesPortableProblem(
+        statusCode: StatusCodes.Status404NotFound,
+        configure: x =>
+            x.WithMetadata<MovieProblemMetadata>()
+             .WithErrorMetadata<MovieNotFoundMetadata>("MovieNotFound")
+    )
+   .ProducesPortableProblem();
+```
+
+The MVC equivalent uses named attribute arguments:
+
+```csharp
+using Light.PortableResults;
+using Light.PortableResults.AspNetCore.Mvc;
+using Light.PortableResults.AspNetCore.OpenApi;
+using Light.PortableResults.Http.Writing;
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("api/movieRatings")]
+public sealed class AddMovieRatingsController(AddMovieRatingService service) : ControllerBase
+{
+    [HttpPut]
+    [ProducesPortableSuccessResponse<MovieRating>(
+        TopLevelMetadataType = typeof(MovieRatingResponseMetadata),
+        MetadataSerializationMode = MetadataSerializationMode.Always
+    )]
+    [ProducesPortableValidationProblem(
+        Format = ValidationProblemSerializationFormat.Rich,
+        ErrorCodes = new[] { "VersionMismatch" }
+    )]
+    [ProducesPortableProblem(
+        statusCode: StatusCodes.Status404NotFound,
+        TopLevelMetadataType = typeof(MovieProblemMetadata),
+        InlineErrorMetadataCodes = new[] { "MovieNotFound" },
+        InlineErrorMetadataContracts = new[] { ErrorMetadataContract.FromType(typeof(MovieNotFoundMetadata)) }
+    )]
+    [ProducesPortableProblem]
+    public async Task<LightActionResult<MovieRating>> AddMovieRating(AddMovieRatingDto dto)
+    {
+        var result = await service.AddMovieRatingAsync(dto);
+        return result.ToMvcActionResult();
+    }
+}
+```
 
 ## ⚙️ Configuration for HTTP and CloudEvents
 

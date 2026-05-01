@@ -48,7 +48,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public PrecisionScaleValidationErrorDefinition(PrecisionScaleDescriptor descriptor)
             : base(
                 descriptor,
-                code: "PrecisionScale",
+                code: ValidationErrorCodes.PrecisionScale,
                 metadata: CreatePrecisionScaleMetadata(descriptor)
             )
         {

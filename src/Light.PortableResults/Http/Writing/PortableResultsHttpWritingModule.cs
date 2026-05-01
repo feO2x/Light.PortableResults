@@ -34,9 +34,7 @@ public static class PortableResultsHttpWritingModule
     /// <exception cref="ArgumentNullException">
     /// Thrown when <paramref name="serializerOptions" /> is <see langword="null" />.
     /// </exception>
-    public static void AddDefaultPortableResultsHttpWriteJsonConverters(
-        this JsonSerializerOptions serializerOptions
-    )
+    public static void AddDefaultPortableResultsHttpWriteJsonConverters(this JsonSerializerOptions serializerOptions)
     {
         if (serializerOptions is null)
         {

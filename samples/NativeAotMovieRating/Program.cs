@@ -1,11 +1,15 @@
 using Light.PortableResults.AspNetCore.MinimalApis;
+using Light.PortableResults.AspNetCore.OpenApi;
 using Light.PortableResults.Validation;
+using Light.PortableResults.Validation.OpenApi;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using NativeAotMovieRating.AddMovieRating;
 using NativeAotMovieRating.GetMovies;
 using NativeAotMovieRating.InMemoryDatabaseAccess;
 using NativeAotMovieRating.JsonSerialization;
+using NativeAotMovieRating.NewMovie;
+using NativeAotMovieRating.NewMovieRating;
+using NativeAotMovieRating.OpenApi;
 using Serilog;
 using Serilog.Events;
 
@@ -19,18 +23,24 @@ builder
    .Services
    .AddPortableResultsForMinimalApis()
    .AddValidationForPortableResults()
+   .AddOpenApi()
+   .AddPortableResultsOpenApi(contracts => contracts.RegisterBuiltInValidationErrors())
    .ConfigureJsonSerialization()
    .AddInMemoryDatabase()
    .AddGetMoviesModule()
-   .AddAddMovieRatingModule()
+   .AddNewMovieRatingModule()
+   .AddNewMovieModule()
    .AddHealthChecks();
 
 var app = builder.Build();
 app.UseSerilogRequestLogging();
 app.UseRouting();
-app.UseHealthChecks("/");
+app.UseHealthChecks("/health");
+app.MapOpenApiAndScalar();
 app.MapGetMoviesEndpoint();
 app.MapAddMovieRatingEndpoint();
+app.MapNewMovieEndpoint();
+app.RedirectHomeToDocs();
 
 try
 {

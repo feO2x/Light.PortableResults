@@ -144,7 +144,7 @@ public static partial class BuiltInValidationErrorDefinitions
         /// Initializes a new instance of <see cref="NotNullOrWhiteSpaceValidationErrorDefinition" />.
         /// </summary>
         public NotNullOrWhiteSpaceValidationErrorDefinition()
-            : base(code: "NotNullOrWhiteSpace") { }
+            : base(code: ValidationErrorCodes.NotNullOrWhiteSpace) { }
 
         /// <inheritdoc />
         public override bool TryGetStableMessageProvider(
@@ -168,7 +168,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public MinLengthValidationErrorDefinition(int minLength)
             : base(
                 minLength,
-                code: "MinLength",
+                code: ValidationErrorCodes.MinLength,
                 metadata: CreateCountMetadata(ValidationErrorMetadataKeys.MinLength, minLength)
             )
         {
@@ -203,7 +203,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public MaxLengthValidationErrorDefinition(int maxLength)
             : base(
                 maxLength,
-                code: "MaxLength",
+                code: ValidationErrorCodes.MaxLength,
                 metadata: CreateCountMetadata(ValidationErrorMetadataKeys.MaxLength, maxLength)
             )
         {
@@ -238,7 +238,7 @@ public static partial class BuiltInValidationErrorDefinitions
         public LengthInValidationErrorDefinition(int minLength, int maxLength)
             : base(
                 new ValidationRange<int>(minLength, maxLength),
-                code: "LengthIn",
+                code: ValidationErrorCodes.LengthInRange,
                 metadata: CreateLengthMetadata(minLength, maxLength)
             )
         {
@@ -278,7 +278,7 @@ public static partial class BuiltInValidationErrorDefinitions
         /// </summary>
         public PatternValidationErrorDefinition(string pattern, RegexOptions options)
             : base(
-                code: "Matches",
+                code: ValidationErrorCodes.Pattern,
                 metadata: CreateRegexMetadata(pattern, options)
             )
         {
@@ -322,7 +322,7 @@ public static partial class BuiltInValidationErrorDefinitions
         /// Initializes a new instance of <see cref="EmailValidationErrorDefinition" />.
         /// </summary>
         public EmailValidationErrorDefinition()
-            : base(code: "Email") { }
+            : base(code: ValidationErrorCodes.Email) { }
 
         /// <inheritdoc />
         public override bool TryGetStableMessageProvider(
@@ -344,7 +344,7 @@ public static partial class BuiltInValidationErrorDefinitions
         /// Initializes a new instance of <see cref="DigitsOnlyValidationErrorDefinition" />.
         /// </summary>
         public DigitsOnlyValidationErrorDefinition()
-            : base(code: "DigitsOnly") { }
+            : base(code: ValidationErrorCodes.DigitsOnly) { }
 
         /// <inheritdoc />
         public override bool TryGetStableMessageProvider(
@@ -366,7 +366,7 @@ public static partial class BuiltInValidationErrorDefinitions
         /// Initializes a new instance of <see cref="LettersAndDigitsOnlyValidationErrorDefinition" />.
         /// </summary>
         public LettersAndDigitsOnlyValidationErrorDefinition()
-            : base(code: "LettersAndDigitsOnly") { }
+            : base(code: ValidationErrorCodes.LettersAndDigitsOnly) { }
 
         /// <inheritdoc />
         public override bool TryGetStableMessageProvider(

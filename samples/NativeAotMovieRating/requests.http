@@ -1,5 +1,11 @@
 ### Health
-http://localhost:5000
+http://localhost:5000/health
+
+### OpenAPI document (JSON)
+http://localhost:5000/openapi/v1.json
+
+### Scalar API reference (open in browser)
+http://localhost:5000/docs
 
 ### Get Movies (first page)
 http://localhost:5000/api/movies
@@ -51,4 +57,13 @@ Content-Type: application/json
     "userName": " ",
     "comment": null,
     "rating": -23
+}
+
+### New Movie
+PUT http://localhost:5000/api/movies
+Content-Type: application/json
+
+{
+    "movieId": "BCAE7EBA-C09B-4F1D-9406-1C8909919E48",
+    "movieName": "Star Wars - A New Hope"
 }

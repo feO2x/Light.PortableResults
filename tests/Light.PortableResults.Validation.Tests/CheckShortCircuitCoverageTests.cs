@@ -1073,7 +1073,7 @@ public sealed class CheckShortCircuitCoverageTests
         var regex = new Regex("^\\d+$");
 
         check.Matches(regex, shortCircuitOnError: true).IsShortCircuited.Should().BeTrue();
-        context.Errors.Should().Contain(error => error.Target == "regex" && error.Code == "Matches");
+        context.Errors.Should().Contain(error => error.Target == "regex" && error.Code == "Pattern");
     }
 
     [Fact]
@@ -1083,7 +1083,7 @@ public sealed class CheckShortCircuitCoverageTests
         var check = context.Check("abc", target: "pattern", displayName: "Pattern");
 
         check.Matches("^\\d+$", shortCircuitOnError: true).IsShortCircuited.Should().BeTrue();
-        context.Errors.Should().Contain(error => error.Target == "pattern" && error.Code == "Matches");
+        context.Errors.Should().Contain(error => error.Target == "pattern" && error.Code == "Pattern");
     }
 
     [Fact]

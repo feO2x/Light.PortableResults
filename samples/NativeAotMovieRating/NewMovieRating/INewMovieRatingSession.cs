@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Light.SharedCore.DatabaseAccessAbstractions;
 using NativeAotMovieRating.InMemoryDatabaseAccess;
 
-namespace NativeAotMovieRating;
+namespace NativeAotMovieRating.NewMovieRating;
 
-public interface IAddMovieRatingSession : ISession
+public interface INewMovieRatingSession : ISession
 {
     Task<Movie?> GetMovieAsync(Guid movieId, CancellationToken cancellationToken = default);
 }

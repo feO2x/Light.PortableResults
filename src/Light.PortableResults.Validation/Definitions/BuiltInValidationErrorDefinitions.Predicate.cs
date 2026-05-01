@@ -18,7 +18,7 @@ public static partial class BuiltInValidationErrorDefinitions
         /// Initializes a new instance of <see cref="PredicateValidationErrorDefinition" />.
         /// </summary>
         public PredicateValidationErrorDefinition()
-            : base(code: "Predicate") { }
+            : base(code: ValidationErrorCodes.Predicate) { }
 
         /// <inheritdoc />
         public override bool TryGetStableMessageProvider(

@@ -23,7 +23,7 @@ public static partial class BuiltInValidationErrorDefinitions
         /// Initializes a new instance of <see cref="NotNullValidationErrorDefinition" />.
         /// </summary>
         public NotNullValidationErrorDefinition()
-            : base(code: "NotNull") { }
+            : base(code: ValidationErrorCodes.NotNull) { }
 
         /// <inheritdoc />
         public override bool TryGetStableMessageProvider(
@@ -45,7 +45,7 @@ public static partial class BuiltInValidationErrorDefinitions
         /// Initializes a new instance of <see cref="NullValidationErrorDefinition" />.
         /// </summary>
         public NullValidationErrorDefinition()
-            : base(code: "Null") { }
+            : base(code: ValidationErrorCodes.Null) { }
 
         /// <inheritdoc />
         public override bool TryGetStableMessageProvider(
