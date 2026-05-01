@@ -6,6 +6,7 @@ using Light.PortableResults.Http.Writing;
 using Light.PortableResults.Validation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using NativeAotMovieRating.InMemoryDatabaseAccess;
 
 namespace NativeAotMovieRating.NewMovie;
 
@@ -19,7 +20,7 @@ public static class AddNewMovieEndpoint
            .WithDescription(
                 "Validates the request and stores a new movie. Returns the stored movie on success, or a rich Light.PortableResults problem details response on validation failures."
            )
-           .Produces<NewMovieDto>()
+           .Produces<Movie>()
            .ProducesPortableValidationProblem(
                 configure: x => x
                    .UseFormat(ValidationProblemSerializationFormat.Rich)
