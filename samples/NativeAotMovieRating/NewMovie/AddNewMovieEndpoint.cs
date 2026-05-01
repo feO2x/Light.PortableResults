@@ -13,7 +13,7 @@ namespace NativeAotMovieRating.NewMovie;
 public static class AddNewMovieEndpoint
 {
     public static void MapNewMovieEndpoint(this WebApplication app) =>
-        app.MapPut("/api/movies", NewMovieRating)
+        app.MapPut("/api/movies", NewMovie)
            .WithName("AddNewMovie")
            .WithTags("Movies")
            .WithSummary("Adds a new movie.")
@@ -28,7 +28,7 @@ public static class AddNewMovieEndpoint
             )
            .ProducesPortableProblem();
 
-    private static async Task<IResult> NewMovieRating(
+    private static async Task<IResult> NewMovie(
         NewMovieDto dto,
         NewMovieService service,
         CancellationToken cancellationToken = default
