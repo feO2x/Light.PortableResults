@@ -4,7 +4,7 @@
     <PublishAot>false</PublishAot>
     <Description>Framework-agnostic validation foundations for Light.PortableResults, including validation contexts, low-allocation checks, validator base classes, and validated value pipelines.</Description>
     <PackageReleaseNotes>
-      Light.PortableResults.Validation 0.4.0
+      Light.PortableResults.Validation 0.5.0
       ---------------------------------
 
       - Validation foundations with validation contexts, checks, validated value pipelines, and sync/async validator base classes.
