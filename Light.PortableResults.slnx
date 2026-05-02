@@ -56,6 +56,7 @@
     <File Path="ai-plans\0040-4-native-aot-compatibility-for-built-in-validation-contracts.md" />
     <File Path="ai-plans\0040-5-openapi-exhaustive.md" />
     <File Path="ai-plans\0040-6-plan-deviations.md" />
+    <File Path="ai-plans\0042-openapi-source-generation.md" />
     <File Path="ai-plans\AGENTS.md" />
   </Folder>
   <Folder Name="/benchmarks/">
