@@ -118,7 +118,8 @@ public static class PortableResultsOpenApiSchemas
             Type = JsonSchemaType.String,
             Enum = Enum.GetNames(typeof(ErrorCategory))
                .Select(static name => (JsonNode) JsonValue.Create(name))
-               .ToList()
+               .ToList(),
+            Examples = [JsonValue.Create(ErrorCategory.Validation.ToString())]
         };
     }
 

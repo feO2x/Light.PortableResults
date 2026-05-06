@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Light.PortableResults.AspNetCore.MinimalApis;
 using Light.PortableResults.AspNetCore.OpenApi;
 using Light.PortableResults.Http.Writing;
-using Light.PortableResults.Validation;
 using Light.PortableResults.Validation.OpenApi;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -22,15 +21,9 @@ public static class NewMovieRatingEndpoint
                 "Validates the request and stores the movie rating. Returns the stored rating on success, or a rich Light.PortableResults problem details response on validation or lookup failures."
            )
            .Produces<MovieRating>()
-           .ProducesPortableValidationProblem(
+           .ProducesPortableValidationProblemFor<NewMovieRatingValidator>(
                 configure: x => x
                    .UseFormat(ValidationProblemSerializationFormat.Rich)
-                   .WithErrorCodes(
-                        ValidationErrorCodes.NotEmpty,
-                        ValidationErrorCodes.LengthInRange,
-                        ValidationErrorCodes.NotNullOrWhiteSpace
-                    )
-                   .WithInRangeError<int>()
             )
            .ProducesPortableProblem();
 

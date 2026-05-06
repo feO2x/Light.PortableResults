@@ -371,7 +371,7 @@ public sealed class CheckShortCircuitCoverageTests
         var context = CreateContext();
         var check = context.Check<string?>(null, NoOpValueNormalizer.Instance, target: "code").ShortCircuit();
 
-        check.IsInBetween("A", "Z").IsShortCircuited.Should().BeTrue();
+        check.IsInRange("A", "Z").IsShortCircuited.Should().BeTrue();
     }
 
     [Fact]
@@ -380,7 +380,7 @@ public sealed class CheckShortCircuitCoverageTests
         var context = CreateContext();
         var check = context.Check<string?>(null, NoOpValueNormalizer.Instance, target: "code").ShortCircuit();
 
-        check.IsInBetween("A", "Z", new ErrorOverrides { Code = "UnusedIn" }).IsShortCircuited.Should().BeTrue();
+        check.IsInRange("A", "Z", new ErrorOverrides { Code = "UnusedIn" }).IsShortCircuited.Should().BeTrue();
     }
 
     [Fact]
@@ -389,7 +389,7 @@ public sealed class CheckShortCircuitCoverageTests
         var context = CreateContext();
         var check = context.Check<string?>(null, NoOpValueNormalizer.Instance, target: "code").ShortCircuit();
 
-        check.IsNotInBetween("A", "Z").IsShortCircuited.Should().BeTrue();
+        check.IsNotInRange("A", "Z").IsShortCircuited.Should().BeTrue();
     }
 
     [Fact]
@@ -398,7 +398,7 @@ public sealed class CheckShortCircuitCoverageTests
         var context = CreateContext();
         var check = context.Check<string?>(null, NoOpValueNormalizer.Instance, target: "code").ShortCircuit();
 
-        check.IsNotInBetween("A", "Z", new ErrorOverrides { Code = "UnusedNotIn" }).IsShortCircuited.Should().BeTrue();
+        check.IsNotInRange("A", "Z", new ErrorOverrides { Code = "UnusedNotIn" }).IsShortCircuited.Should().BeTrue();
     }
 
     [Fact]

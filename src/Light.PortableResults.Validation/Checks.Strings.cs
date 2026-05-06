@@ -20,6 +20,7 @@ public static partial class Checks
     /// assertions in the chain are skipped; defaults to <see langword="false" />.
     /// </param>
     /// <returns>The current check for fluent chaining.</returns>
+    [ValidationRule(ValidationErrorCodes.NotNullOrWhiteSpace)]
     public static Check<string> IsNotNullOrWhiteSpace(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)
@@ -100,6 +101,8 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.MinLength)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.MinLength, nameof(minLength))]
     public static Check<string> HasMinLength(
         this Check<string> check,
         int minLength,
@@ -192,6 +195,8 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.MaxLength)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.MaxLength, nameof(maxLength))]
     public static Check<string?> HasMaxLength(
         this Check<string?> check,
         int maxLength,
@@ -293,6 +298,9 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.LengthInRange)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.MinLength, nameof(minLength))]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.MaxLength, nameof(maxLength))]
     public static Check<string> HasLengthIn(
         this Check<string> check,
         int minLength,
@@ -518,6 +526,9 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.Pattern)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.Pattern, nameof(pattern))]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.RegexOptions, nameof(options))]
     public static Check<string> Matches(
         this Check<string> check,
         string pattern,
@@ -631,6 +642,7 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.Email)]
     public static Check<string> IsEmail(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)
@@ -713,6 +725,7 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.DigitsOnly)]
     public static Check<string> ContainsOnlyDigits(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)
@@ -793,6 +806,7 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.LettersAndDigitsOnly)]
     public static Check<string> ContainsOnlyLettersAndDigits(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)

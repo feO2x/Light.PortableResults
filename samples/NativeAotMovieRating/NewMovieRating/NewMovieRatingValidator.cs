@@ -1,8 +1,10 @@
 using Light.PortableResults.Validation;
+using Light.PortableResults.Validation.OpenApi;
 
 namespace NativeAotMovieRating.NewMovieRating;
 
-public sealed class NewMovieRatingValidator : Validator<NewMovieRatingDto>
+[GeneratePortableValidationOpenApi]
+public sealed partial class NewMovieRatingValidator : Validator<NewMovieRatingDto>
 {
     public NewMovieRatingValidator(IValidationContextFactory validationContextFactory)
         : base(validationContextFactory) { }
@@ -17,7 +19,7 @@ public sealed class NewMovieRatingValidator : Validator<NewMovieRatingDto>
         context.Check(dto.MovieId).IsNotEmpty();
         dto.Comment = context.Check(dto.Comment).HasLengthIn(10, 1000);
         dto.UserName = context.Check(dto.UserName).IsNotNullOrWhiteSpace();
-        context.Check(dto.Rating).IsInBetween(1, 5);
+        context.Check(dto.Rating).IsInRange(1, 5);
         return checkpoint.ToValidatedValue(dto);
     }
 }

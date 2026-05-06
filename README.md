@@ -226,7 +226,7 @@ public sealed class MovieRatingValidator : Validator<MovieRatingDto>
         dto.Comment = context.Check(dto.Comment).HasLengthIn(10, 1000);
         dto.UserName = context.Check(dto.UserName).IsNotNullOrWhiteSpace();
 
-        context.Check(dto.Rating).IsInBetween(1, 5);
+        context.Check(dto.Rating).IsInRange(1, 5);
 
         // Use the checkpoint to determine if validation errors were attached to
         // to the ValidationContext during this method call. The checkpoint will
@@ -813,7 +813,7 @@ public sealed class LightPortableResultsMovieRatingDtoValidator : Validator<Movi
     {
         context.Check(dto.Id).IsNotEmpty();
         dto.Comment = context.Check(dto.Comment).IsNotNullOrWhiteSpace().HasLengthIn(10, 1000);
-        context.Check(dto.Rating).IsInBetween(1, 5);
+        context.Check(dto.Rating).IsInRange(1, 5);
         return checkpoint.ToValidatedValue(dto);
     }
 }
@@ -929,7 +929,7 @@ public sealed class CreateMovieValidator : Validator<CreateMovieDto, Movie>
     )
     {
         var title = context.Check(dto.Title).IsNotNullOrWhiteSpace();
-        context.Check(dto.ReleaseYear).IsInBetween(1888, DateTime.UtcNow.Year);
+        context.Check(dto.ReleaseYear).IsInRange(1888, DateTime.UtcNow.Year);
         var directorName = context.Check(dto.DirectorName).IsNotNullOrWhiteSpace();
 
         if (checkpoint.HasNewErrors)
@@ -995,7 +995,7 @@ public sealed class AddMovieRatingValidator : AsyncValidator<MovieRatingDto>
         context.Check(dto.MovieId).IsNotEmpty();
         dto.UserName = context.Check(dto.UserName).IsNotNullOrWhiteSpace();
         dto.Comment = context.Check(dto.Comment).HasLengthIn(10, 1000);
-        context.Check(dto.Rating).IsInBetween(1, 5);
+        context.Check(dto.Rating).IsInRange(1, 5);
 
         // Only hit the database if the synchronous checks passed
         if (!checkpoint.HasNewErrors)
@@ -1075,7 +1075,7 @@ public sealed class MovieSearchService
         var context = _contextFactory.CreateValidationContext();
         var normalizedQuery = context.Check(query).IsNotNullOrWhiteSpace();
         context.Check(page).IsGreaterThanOrEqualTo(1);
-        context.Check(pageSize).IsInBetween(1, 100);
+        context.Check(pageSize).IsInRange(1, 100);
 
         if (context.HasErrors)
         {
@@ -1129,7 +1129,7 @@ public sealed class AddMovieRatingValidator : AsyncValidator<MovieRatingDto>
         context.Check(dto.MovieId).IsNotEmpty(shortCircuitOnError: true);
         dto.UserName = context.Check(dto.UserName).IsNotNullOrWhiteSpace();
         dto.Comment = context.Check(dto.Comment).HasLengthIn(10, 1000);
-        context.Check(dto.Rating).IsInBetween(1, 5);
+        context.Check(dto.Rating).IsInRange(1, 5);
 
         if (!checkpoint.HasNewErrors)
         {
@@ -1317,7 +1317,7 @@ public sealed class EmailSenderOptionsValidator : Validator<EmailSenderOptions>
     )
     {
         context.Check(options.Host).IsNotNullOrWhiteSpace();
-        context.Check(options.Port).IsInBetween(1, 65535);
+        context.Check(options.Port).IsInRange(1, 65535);
         context.Check(options.ApiKey).IsNotNullOrWhiteSpace();
         return checkpoint.ToValidatedValue(options);
     }
@@ -1429,7 +1429,43 @@ app.MapGet("/api/movies", GetMovies)
     );
 ```
 
-Comparison and range codes are polymorphic at the global code level, so the validation bridge also ships typed endpoint helpers: `WithEqualToError<T>()`, `WithNotEqualToError<T>()`, `WithGreaterThanError<T>()`, `WithGreaterThanOrEqualToError<T>()`, `WithLessThanError<T>()`, `WithLessThanOrEqualToError<T>()`, `WithInRangeError<T>()`, `WithNotInRangeError<T>()`, and `WithExclusiveRangeError<T>()`. These helpers use the existing inline metadata path, so an endpoint can document concrete metadata such as integer range boundaries for `IsInBetween(1, 5)` while still reusing global schemas for shape-fixed codes.
+Comparison and range codes are polymorphic at the global code level, so the validation bridge also ships typed endpoint helpers: `WithEqualToError<T>()`, `WithNotEqualToError<T>()`, `WithGreaterThanError<T>()`, `WithGreaterThanOrEqualToError<T>()`, `WithLessThanError<T>()`, `WithLessThanOrEqualToError<T>()`, `WithInRangeError<T>()`, `WithNotInRangeError<T>()`, and `WithExclusiveRangeError<T>()`. These helpers use the existing inline metadata path, so an endpoint can document concrete metadata such as integer range boundaries for `IsInRange(1, 5)` while still reusing global schemas for shape-fixed codes.
+
+### Validation OpenAPI source generation
+
+`Light.PortableResults.Validation.OpenApi` also includes an opt-in source generator for Minimal API validation responses. Mark a synchronous validator with `[GeneratePortableValidationOpenApi]`, make it `partial`, and use `ProducesPortableValidationProblemFor<TValidator>(...)` on the endpoint:
+
+```csharp
+using Light.PortableResults.Validation;
+using Light.PortableResults.Validation.OpenApi;
+
+[GeneratePortableValidationOpenApi]
+public sealed partial class AddMovieRatingValidator : Validator<MovieRatingDto>
+{
+    protected override ValidatedValue<MovieRatingDto> PerformValidation(
+        ValidationContext context,
+        ValidationCheckpoint checkpoint,
+        MovieRatingDto dto
+    )
+    {
+        context.Check(dto.Id).IsNotEmpty();
+        context.Check(dto.Comment).HasLengthIn(10, 1000);
+        context.Check(dto.Rating).IsInRange(1, 5);
+        return checkpoint.ToValidatedValue(dto);
+    }
+}
+
+app.MapPut("/api/movieRatings", AddMovieRating)
+   .ProducesPortableValidationProblemFor<AddMovieRatingValidator>(
+        configure: x => x.UseFormat(ValidationProblemSerializationFormat.Rich)
+    );
+```
+
+The generated contract calls the same builder APIs you would write by hand, then the endpoint's `configure` callback runs afterward. This means you can still set the validation format, add manual metadata contracts, or call `AllowUnknownErrorCodes()` for errors that are outside the validator's documentable rules.
+
+The generator analyzes top-level `context.Check(...).Rule(...)` chains in synchronous `Validator<T>` and `Validator<TSource, TValidated>` implementations. It supports built-in annotated rules, assignments that consume a checked value, explicit error hints via `[PortableValidationOpenApiErrorHint]`, and user-defined check methods annotated with `[ValidationRule]` plus optional `[ValidationErrorContract]` metadata definitions. Checks inside `if`, `switch`, loops, lambdas, local functions, `try`, or `using` blocks are skipped with a warning; lift the check to a top-level statement or add explicit hints when those errors must appear in the OpenAPI schema.
+
+When metadata arguments are compile-time constants, such as `HasLengthIn(10, 1000)` or `IsInRange(1, 5)`, the generated contract also contributes a response-level OpenAPI example. Scalar and Swagger UI show these concrete values in the validation problem example body. Non-constant metadata arguments still get documented schemas, but that specific call site is omitted from the example. Delegate-based `Must(...)`, `Custom(...)`, `ErrorOverrides`, async validators, source-null errors emitted before `PerformValidation`, child validators, and complex target inference are intentionally outside the first-generation analysis.
 
 Register reusable per-error-code metadata contracts once in DI by passing them to `AddPortableResultsOpenApi(...)`:
 

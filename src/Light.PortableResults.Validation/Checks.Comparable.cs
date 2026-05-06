@@ -30,6 +30,8 @@ public static partial class Checks
     /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.GreaterThan, ValidationRuleMetadataShape.TypedComparison)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.ComparativeValue, nameof(comparativeValue))]
     public static Check<T> IsGreaterThan<T>(
         this Check<T> check,
         T comparativeValue,
@@ -134,6 +136,8 @@ public static partial class Checks
     /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.GreaterThanOrEqualTo, ValidationRuleMetadataShape.TypedComparison)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.ComparativeValue, nameof(comparativeValue))]
     public static Check<T> IsGreaterThanOrEqualTo<T>(
         this Check<T> check,
         T comparativeValue,
@@ -238,6 +242,8 @@ public static partial class Checks
     /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.LessThan, ValidationRuleMetadataShape.TypedComparison)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.ComparativeValue, nameof(comparativeValue))]
     public static Check<T> IsLessThan<T>(
         this Check<T> check,
         T comparativeValue,
@@ -342,6 +348,8 @@ public static partial class Checks
     /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.LessThanOrEqualTo, ValidationRuleMetadataShape.TypedComparison)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.ComparativeValue, nameof(comparativeValue))]
     public static Check<T> IsLessThanOrEqualTo<T>(
         this Check<T> check,
         T comparativeValue,
@@ -449,7 +457,10 @@ public static partial class Checks
     /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
-    public static Check<T> IsInBetween<T>(
+    [ValidationRule(ValidationErrorCodes.InRange, ValidationRuleMetadataShape.TypedRange)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.LowerBoundary, nameof(lowerBoundary))]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.UpperBoundary, nameof(upperBoundary))]
+    public static Check<T> IsInRange<T>(
         this Check<T> check,
         T lowerBoundary,
         T upperBoundary,
@@ -462,14 +473,14 @@ public static partial class Checks
             return check;
         }
 
-        var value = GetRequiredValue(check.Value, nameof(IsInBetween));
+        var value = GetRequiredValue(check.Value, nameof(IsInRange));
         var comparer = Comparer<T>.Default;
         if (comparer.Compare(value, lowerBoundary) >= 0 && comparer.Compare(value, upperBoundary) <= 0)
         {
             return check;
         }
 
-        var definition = BuiltInValidationErrorDefinitions.IsInBetween(
+        var definition = BuiltInValidationErrorDefinitions.IsInRange(
             check.Context.ErrorDefinitionCache,
             lowerBoundary,
             upperBoundary
@@ -511,7 +522,7 @@ public static partial class Checks
     /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
-    public static Check<T> IsInBetween<T>(
+    public static Check<T> IsInRange<T>(
         this Check<T> check,
         T lowerBoundary,
         T upperBoundary,
@@ -526,14 +537,14 @@ public static partial class Checks
             return check;
         }
 
-        var value = GetRequiredValue(check.Value, nameof(IsInBetween));
+        var value = GetRequiredValue(check.Value, nameof(IsInRange));
         var comparer = Comparer<T>.Default;
         if (comparer.Compare(value, lowerBoundary) >= 0 && comparer.Compare(value, upperBoundary) <= 0)
         {
             return check;
         }
 
-        var definition = BuiltInValidationErrorDefinitions.IsInBetween(
+        var definition = BuiltInValidationErrorDefinitions.IsInRange(
             check.Context.ErrorDefinitionCache,
             lowerBoundary,
             upperBoundary
@@ -565,7 +576,10 @@ public static partial class Checks
     /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
-    public static Check<T> IsNotInBetween<T>(
+    [ValidationRule(ValidationErrorCodes.NotInRange, ValidationRuleMetadataShape.TypedRange)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.LowerBoundary, nameof(lowerBoundary))]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.UpperBoundary, nameof(upperBoundary))]
+    public static Check<T> IsNotInRange<T>(
         this Check<T> check,
         T lowerBoundary,
         T upperBoundary,
@@ -578,14 +592,14 @@ public static partial class Checks
             return check;
         }
 
-        var value = GetRequiredValue(check.Value, nameof(IsNotInBetween));
+        var value = GetRequiredValue(check.Value, nameof(IsNotInRange));
         var comparer = Comparer<T>.Default;
         if (comparer.Compare(value, lowerBoundary) < 0 || comparer.Compare(value, upperBoundary) > 0)
         {
             return check;
         }
 
-        var definition = BuiltInValidationErrorDefinitions.IsNotInBetween(
+        var definition = BuiltInValidationErrorDefinitions.IsNotInRange(
             check.Context.ErrorDefinitionCache,
             lowerBoundary,
             upperBoundary
@@ -627,7 +641,7 @@ public static partial class Checks
     /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
-    public static Check<T> IsNotInBetween<T>(
+    public static Check<T> IsNotInRange<T>(
         this Check<T> check,
         T lowerBoundary,
         T upperBoundary,
@@ -642,14 +656,14 @@ public static partial class Checks
             return check;
         }
 
-        var value = GetRequiredValue(check.Value, nameof(IsNotInBetween));
+        var value = GetRequiredValue(check.Value, nameof(IsNotInRange));
         var comparer = Comparer<T>.Default;
         if (comparer.Compare(value, lowerBoundary) < 0 || comparer.Compare(value, upperBoundary) > 0)
         {
             return check;
         }
 
-        var definition = BuiltInValidationErrorDefinitions.IsNotInBetween(
+        var definition = BuiltInValidationErrorDefinitions.IsNotInRange(
             check.Context.ErrorDefinitionCache,
             lowerBoundary,
             upperBoundary
@@ -683,6 +697,9 @@ public static partial class Checks
     /// Thrown when the checked value is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.ExclusiveRange, ValidationRuleMetadataShape.TypedRange)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.LowerBoundary, nameof(lowerBoundary))]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.UpperBoundary, nameof(upperBoundary))]
     public static Check<T> IsInExclusiveRange<T>(
         this Check<T> check,
         T lowerBoundary,

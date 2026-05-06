@@ -59,4 +59,22 @@ internal static class PortableOpenApiBuilderUtilities
         combinedValues[^1] = newValue;
         return combinedValues;
     }
+
+    internal static PortableOpenApiErrorExampleEntry[] AppendExamples(
+        PortableOpenApiErrorExampleEntry[]? existingValues,
+        PortableOpenApiErrorExampleEntry newValue
+    )
+    {
+        ArgumentNullException.ThrowIfNull(newValue);
+
+        if (existingValues is null)
+        {
+            return [newValue];
+        }
+
+        var combinedValues = new PortableOpenApiErrorExampleEntry[existingValues.Length + 1];
+        Array.Copy(existingValues, combinedValues, existingValues.Length);
+        combinedValues[^1] = newValue;
+        return combinedValues;
+    }
 }

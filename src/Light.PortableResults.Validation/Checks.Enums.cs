@@ -22,6 +22,7 @@ public static partial class Checks
     /// Uses <see cref="Enum.IsDefined" /> internally. Flags-combined values that are not themselves
     /// declared members of <typeparamref name="TEnum" /> are considered invalid.
     /// </remarks>
+    [ValidationRule(ValidationErrorCodes.Enum)]
     public static Check<TEnum> IsInEnum<TEnum>(this Check<TEnum> check, bool shortCircuitOnError = false)
         where TEnum : struct, Enum
     {
@@ -96,6 +97,7 @@ public static partial class Checks
     /// Thrown when the checked nullable value has no value. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.Enum)]
     public static Check<TEnum?> IsInEnum<TEnum>(this Check<TEnum?> check, bool shortCircuitOnError = false)
         where TEnum : struct, Enum
     {
@@ -189,6 +191,8 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.EnumName)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.IgnoreCase, nameof(ignoreCase))]
     public static Check<string?> IsEnumName<TEnum>(
         this Check<string?> check,
         bool ignoreCase = false,

@@ -263,7 +263,7 @@ public sealed class LightPortableResultsMovieRatingDtoValidator : Validator<Movi
     {
         context.Check(dto.Id).IsNotEmpty();
         dto.Comment = context.Check(dto.Comment).IsNotNullOrWhiteSpace().HasLengthIn(10, 1000);
-        context.Check(dto.Rating).IsInBetween(1, 5);
+        context.Check(dto.Rating).IsInRange(1, 5);
         return checkpoint.ToValidatedValue(dto);
     }
 }

@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 using Light.PortableResults.AspNetCore.OpenApi.Schemas;
+using Light.PortableResults.Http;
 using Light.PortableResults.Http.Writing;
 using Light.PortableResults.SharedJsonSerialization;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
@@ -182,17 +183,189 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
             }
 
             var response = GetOrCreateResponse(operation, responseGroup.Key.StatusCode);
+            var mediaType = new OpenApiMediaType
+            {
+                Schema = contributingSchemas.Count == 1 ?
+                    contributingSchemas[0] :
+                    new OpenApiSchema { AnyOf = contributingSchemas }
+            };
+            ApplyResponseExample(mediaType, responseGroup.ToArray(), responseGroup.Key.StatusCode);
             SetResponseContent(
                 response,
                 responseGroup.Key.ContentType,
-                new OpenApiMediaType
-                {
-                    Schema = contributingSchemas.Count == 1 ?
-                        contributingSchemas[0] :
-                        new OpenApiSchema { AnyOf = contributingSchemas }
-                }
+                mediaType
             );
         }
+    }
+
+    private void ApplyResponseExample(
+        OpenApiMediaType mediaType,
+        IReadOnlyList<PortableOpenApiResponseAttributeBase> attributes,
+        int statusCode
+    )
+    {
+        var errorAttribute = attributes
+           .OfType<PortableOpenApiErrorResponseAttributeBase>()
+           .FirstOrDefault(static attribute => attribute.ErrorExamples is { Length: > 0 });
+        if (errorAttribute is null)
+        {
+            return;
+        }
+
+        mediaType.Examples = new Dictionary<string, IOpenApiExample>(StringComparer.Ordinal)
+        {
+            ["ValidationProblem"] = new OpenApiExample
+            {
+                Summary = "Validation problem",
+                Value = CreateResponseExample(errorAttribute, statusCode)
+            }
+        };
+    }
+
+    private JsonObject CreateResponseExample(
+        PortableOpenApiErrorResponseAttributeBase attribute,
+        int statusCode
+    )
+    {
+        var example = new JsonObject
+        {
+            ["type"] = ErrorCategory.Validation.GetTypeUri(),
+            ["title"] = ErrorCategory.Validation.GetTitle(),
+            ["status"] = statusCode,
+            ["detail"] = ErrorCategory.Validation.GetDetail()
+        };
+
+        if (attribute is ProducesPortableValidationProblemAttribute validationAttribute &&
+            ResolveValidationProblemFormat(validationAttribute) == ValidationProblemSerializationFormat.AspNetCoreCompatible)
+        {
+            AddAspNetCoreCompatibleValidationExample(example, validationAttribute.ErrorExamples!);
+        }
+        else
+        {
+            AddRichErrorExample(example, attribute.ErrorExamples!);
+        }
+
+        return example;
+    }
+
+    private ValidationProblemSerializationFormat ResolveValidationProblemFormat(
+        ProducesPortableValidationProblemAttribute attribute
+    )
+    {
+        return attribute.HasFormatOverride ?
+            attribute.Format :
+            _writeOptions.ValidationProblemSerializationFormat;
+    }
+
+    private static void AddRichErrorExample(
+        JsonObject example,
+        IReadOnlyList<PortableOpenApiErrorExampleEntry> entries
+    )
+    {
+        var errors = new JsonArray();
+        foreach (var entry in entries)
+        {
+            var error = new JsonObject
+            {
+                ["message"] = "Validation failed.",
+                ["code"] = entry.Code,
+                ["target"] = entry.Target,
+                ["category"] = ErrorCategory.Validation.ToString()
+            };
+            AddMetadata(error, entry.Metadata);
+            errors.Add((JsonNode) error);
+        }
+
+        example["errors"] = errors;
+    }
+
+    private static void AddAspNetCoreCompatibleValidationExample(
+        JsonObject example,
+        IReadOnlyList<PortableOpenApiErrorExampleEntry> entries
+    )
+    {
+        var groupedErrors = new Dictionary<string, JsonArray>(StringComparer.Ordinal);
+        var nextIndexByTarget = new Dictionary<string, int>(StringComparer.Ordinal);
+        var errorDetails = new JsonArray();
+
+        foreach (var entry in entries)
+        {
+            var target = entry.Target ?? "";
+            if (!groupedErrors.TryGetValue(target, out var messages))
+            {
+                messages = [];
+                groupedErrors.Add(target, messages);
+                nextIndexByTarget.Add(target, 0);
+            }
+
+            var index = nextIndexByTarget[target];
+            nextIndexByTarget[target] = index + 1;
+            messages.Add((JsonNode?) JsonValue.Create("Validation failed."));
+
+            var detail = new JsonObject
+            {
+                ["target"] = target,
+                ["index"] = index,
+                ["code"] = entry.Code,
+                ["category"] = ErrorCategory.Validation.ToString()
+            };
+            AddMetadata(detail, entry.Metadata);
+            errorDetails.Add((JsonNode) detail);
+        }
+
+        var errors = new JsonObject();
+        foreach (var (target, messages) in groupedErrors)
+        {
+            errors[target] = messages;
+        }
+
+        example["errors"] = errors;
+        example["errorDetails"] = errorDetails;
+    }
+
+    private static void AddMetadata(
+        JsonObject error,
+        IReadOnlyDictionary<string, object?>? metadata
+    )
+    {
+        if (metadata is null || metadata.Count == 0)
+        {
+            return;
+        }
+
+        var metadataObject = new JsonObject();
+        foreach (var (key, value) in metadata)
+        {
+            metadataObject[key] = CreateJsonValue(value);
+        }
+
+        error["metadata"] = metadataObject;
+    }
+
+    private static JsonNode? CreateJsonValue(object? value)
+    {
+        return value switch
+        {
+            null => null,
+            string stringValue => JsonValue.Create(stringValue),
+            bool boolValue => JsonValue.Create(boolValue),
+            byte byteValue => JsonValue.Create(byteValue),
+            sbyte sbyteValue => JsonValue.Create(sbyteValue),
+            short shortValue => JsonValue.Create(shortValue),
+            ushort ushortValue => JsonValue.Create(ushortValue),
+            int intValue => JsonValue.Create(intValue),
+            uint uintValue => JsonValue.Create(uintValue),
+            long longValue => JsonValue.Create(longValue),
+            ulong ulongValue => JsonValue.Create(ulongValue),
+            float floatValue => JsonValue.Create(floatValue),
+            double doubleValue => JsonValue.Create(doubleValue),
+            decimal decimalValue => JsonValue.Create(decimalValue),
+            DateTime dateTimeValue => JsonValue.Create(dateTimeValue),
+            DateTimeOffset dateTimeOffsetValue => JsonValue.Create(dateTimeOffsetValue),
+            Guid guidValue => JsonValue.Create(guidValue),
+            Enum enumValue => JsonValue.Create(Convert.ToInt64(enumValue, CultureInfo.InvariantCulture)),
+            _ => JsonValue.Create(value.ToString())
+        };
     }
 
     private async Task<IOpenApiSchema> CreateContributingSchemaAsync(
