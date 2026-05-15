@@ -47,7 +47,12 @@ public static class ValidatorOpenApiAnalyzer
 
         ValidateValidatorShape(validatorType, classDeclaration, diagnostics, cancellationToken);
         var hasShapeError = diagnostics.Any(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
-        if (!TryGetPerformValidationMethod(validatorType, cancellationToken, out var performValidation, out var methodDeclaration))
+        if (!TryGetPerformValidationMethod(
+                validatorType,
+                cancellationToken,
+                out var performValidation,
+                out var methodDeclaration
+            ))
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -65,7 +70,8 @@ public static class ValidatorOpenApiAnalyzer
         }
 
         var semanticModel = compilation.GetSemanticModel(methodDeclaration.SyntaxTree);
-        var sourceParameterName = performValidation.Parameters.Length >= 3 ? performValidation.Parameters[2].Name : null;
+        var sourceParameterName =
+            performValidation.Parameters.Length >= 3 ? performValidation.Parameters[2].Name : null;
         var rules = ImmutableArray.CreateBuilder<RuleCallModel>();
         AnalyzePerformValidationBody(
             semanticModel,
@@ -165,8 +171,7 @@ public static class ValidatorOpenApiAnalyzer
         }
 
         var baseMetadataName = GetMetadataName(baseType.OriginalDefinition);
-        if (baseMetadataName == KnownTypeNames.AsyncValidator ||
-            baseMetadataName == KnownTypeNames.TransformingAsyncValidator)
+        if (baseMetadataName is KnownTypeNames.AsyncValidator or KnownTypeNames.TransformingAsyncValidator)
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -211,7 +216,14 @@ public static class ValidatorOpenApiAnalyzer
             cancellationToken.ThrowIfCancellationRequested();
             if (TryGetTopLevelCheckExpression(statement, out var expression))
             {
-                AnalyzeCheckExpression(semanticModel, expression, sourceParameterName, rules, diagnostics, cancellationToken);
+                AnalyzeCheckExpression(
+                    semanticModel,
+                    expression,
+                    sourceParameterName,
+                    rules,
+                    diagnostics,
+                    cancellationToken
+                );
                 continue;
             }
 
@@ -274,7 +286,15 @@ public static class ValidatorOpenApiAnalyzer
                 continue;
             }
 
-            var rule = CreateRuleCall(semanticModel, invocation, symbol, ruleAttribute, target, diagnostics, cancellationToken);
+            var rule = CreateRuleCall(
+                semanticModel,
+                invocation,
+                symbol,
+                ruleAttribute,
+                target,
+                diagnostics,
+                cancellationToken
+            );
             if (rule is not null)
             {
                 rules.Add(rule);
@@ -392,8 +412,9 @@ public static class ValidatorOpenApiAnalyzer
         var builder = ImmutableArray.CreateBuilder<MetadataSchemaPropertyModel>();
         metadataSchemaProperties = builder.ToImmutable();
 
-        var errorDefinitionType = ruleAttribute.NamedArguments.FirstOrDefault(static argument =>
-            argument.Key == "ErrorDefinitionType"
+        var errorDefinitionType = ruleAttribute.NamedArguments.FirstOrDefault(
+            static argument =>
+                argument.Key == "ErrorDefinitionType"
         ).Value.Value as INamedTypeSymbol;
         if (errorDefinitionType is null)
         {
@@ -419,10 +440,12 @@ public static class ValidatorOpenApiAnalyzer
         }
 
         foreach (var metadataAttribute in errorDefinitionType.GetAttributes()
-                    .Where(static attribute => IsAttribute(
-                        attribute,
-                        KnownTypeNames.ValidationErrorMetadataContractAttribute
-                    )))
+                    .Where(
+                         static attribute => IsAttribute(
+                             attribute,
+                             KnownTypeNames.ValidationErrorMetadataContractAttribute
+                         )
+                     ))
         {
             if (metadataAttribute.ConstructorArguments.Length < 2 ||
                 metadataAttribute.ConstructorArguments[0].Value is not string metadataKey ||
@@ -612,7 +635,7 @@ public static class ValidatorOpenApiAnalyzer
             case ExpressionStatementSyntax expressionStatement:
                 expression = UnwrapAssignment(expressionStatement.Expression);
                 return true;
-            case LocalDeclarationStatementSyntax localDeclaration when localDeclaration.Declaration.Variables.Count == 1:
+            case LocalDeclarationStatementSyntax { Declaration.Variables.Count: 1 } localDeclaration:
                 var initializer = localDeclaration.Declaration.Variables[0].Initializer;
                 if (initializer is null)
                 {
@@ -640,7 +663,10 @@ public static class ValidatorOpenApiAnalyzer
         return invocations;
     }
 
-    private static void CollectInvocationChain(ExpressionSyntax expression, ICollection<InvocationExpressionSyntax> invocations)
+    private static void CollectInvocationChain(
+        ExpressionSyntax expression,
+        ICollection<InvocationExpressionSyntax> invocations
+    )
     {
         if (expression is not InvocationExpressionSyntax invocation)
         {
@@ -741,7 +767,9 @@ public static class ValidatorOpenApiAnalyzer
 
     private static bool UsesErrorOverrides(IMethodSymbol symbol)
     {
-        return symbol.Parameters.Any(static parameter => GetMetadataName(parameter.Type) == KnownTypeNames.ErrorOverrides);
+        return symbol.Parameters.Any(
+            static parameter => GetMetadataName(parameter.Type) == KnownTypeNames.ErrorOverrides
+        );
     }
 
     private static AttributeData? GetAttribute(ISymbol symbol, string metadataName)
@@ -799,8 +827,7 @@ public static class ValidatorOpenApiAnalyzer
 
         foreach (var namedArgument in attribute.NamedArguments)
         {
-            if (namedArgument.Key == "AllowUnknownErrorCodes" &&
-                namedArgument.Value.Value is bool allowUnknownErrorCodes)
+            if (namedArgument is { Key: "AllowUnknownErrorCodes", Value.Value: bool allowUnknownErrorCodes })
             {
                 return allowUnknownErrorCodes;
             }
@@ -860,22 +887,18 @@ public static class ValidatorOpenApiAnalyzer
         return false;
     }
 
-    private static string GetAccessibility(Accessibility accessibility)
-    {
-        switch (accessibility)
+    private static string GetAccessibility(Accessibility accessibility) =>
+        accessibility switch
         {
-            case Accessibility.Public:
-                return "public";
-            case Accessibility.Internal:
-                return "internal";
-            default:
-                return "public";
-        }
-    }
+            Accessibility.Public => "public",
+            Accessibility.Internal => "internal",
+            _ => "public"
+        };
 
     private static string CreateHintName(INamedTypeSymbol validatorType)
     {
-        var metadataName = validatorType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+        var metadataName = validatorType
+           .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
            .Replace("global::", string.Empty);
         var chars = metadataName.Select(static c => char.IsLetterOrDigit(c) || c == '.' ? c : '_').ToArray();
         return new string(chars) + ".PortableValidationOpenApi.g.cs";

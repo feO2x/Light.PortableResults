@@ -34,7 +34,9 @@ internal static class ValidatorOpenApiEmitter
            .Append(" : IPortableValidationOpenApiContract")
            .AppendLine();
         builder.Append(indent).AppendLine("{");
-        builder.Append(indent).AppendLine("    public static void ConfigurePortableValidationOpenApi(PortableValidationProblemOpenApiBuilder builder)");
+        builder.Append(indent).AppendLine(
+            "    public static void ConfigurePortableValidationOpenApi(PortableValidationProblemOpenApiBuilder builder)"
+        );
         builder.Append(indent).AppendLine("    {");
         builder.Append(indent).AppendLine("        if (builder is null)");
         builder.Append(indent).AppendLine("        {");
@@ -63,9 +65,12 @@ internal static class ValidatorOpenApiEmitter
 
     private static void EmitSchemaConfiguration(StringBuilder builder, ValidatorModel model, string indent)
     {
-        var registeredCodes = model.Rules
-           .Where(static rule => rule.Shape == RuleMetadataShape.Registered &&
-                                 rule.MetadataSchemaProperties.Length == 0)
+        var registeredCodes = model
+           .Rules
+           .Where(
+                static rule => rule.Shape == RuleMetadataShape.Registered &&
+                               rule.MetadataSchemaProperties.Length == 0
+            )
            .Select(static rule => rule.Code)
            .Concat(model.Hints.Where(static hint => hint.MetadataTypeName is null).Select(static hint => hint.Code))
            .Distinct(StringComparer.Ordinal)
@@ -89,7 +94,8 @@ internal static class ValidatorOpenApiEmitter
 
         foreach (var hint in model.Hints.Where(static hint => hint.MetadataTypeName is not null))
         {
-            builder.Append(indent)
+            builder
+               .Append(indent)
                .Append("builder.WithErrorMetadata<")
                .Append(hint.MetadataTypeName)
                .Append(">(")
@@ -98,8 +104,10 @@ internal static class ValidatorOpenApiEmitter
         }
 
         foreach (var rule in model.Rules
-                    .Where(static rule => rule.Shape == RuleMetadataShape.Registered &&
-                                          rule.MetadataSchemaProperties.Length > 0)
+                    .Where(
+                         static rule => rule.Shape == RuleMetadataShape.Registered &&
+                                        rule.MetadataSchemaProperties.Length > 0
+                     )
                     .Distinct(InlineSchemaRuleComparer.Instance)
                     .OrderBy(static rule => rule.Code, StringComparer.Ordinal))
         {
@@ -118,7 +126,8 @@ internal static class ValidatorOpenApiEmitter
                 continue;
             }
 
-            builder.Append(indent)
+            builder
+               .Append(indent)
                .Append("builder.")
                .Append(helperName)
                .Append('<')
@@ -129,8 +138,10 @@ internal static class ValidatorOpenApiEmitter
         if (registeredCodes.Length > 0 ||
             model.Hints.Length > 0 ||
             model.Rules.Any(static rule => rule.Shape != RuleMetadataShape.Registered) ||
-            model.Rules.Any(static rule => rule.Shape == RuleMetadataShape.Registered &&
-                                           rule.MetadataSchemaProperties.Length > 0))
+            model.Rules.Any(
+                static rule => rule.Shape == RuleMetadataShape.Registered &&
+                               rule.MetadataSchemaProperties.Length > 0
+            ))
         {
             builder.AppendLine();
         }
@@ -138,18 +149,25 @@ internal static class ValidatorOpenApiEmitter
 
     private static void EmitInlineSchemaConfiguration(StringBuilder builder, RuleCallModel rule, string indent)
     {
-        builder.Append(indent)
+        builder
+           .Append(indent)
            .Append("builder.WithErrorMetadata(")
            .Append(ToStringLiteral(rule.Code))
            .AppendLine(", _ => new OpenApiSchema");
         builder.Append(indent).AppendLine("{");
         builder.Append(indent).AppendLine("    Type = JsonSchemaType.Object,");
-        builder.Append(indent).AppendLine("    Properties = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)");
+        builder
+           .Append(indent)
+           .AppendLine("    Properties = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)");
         builder.Append(indent).AppendLine("    {");
 
-        foreach (var property in rule.MetadataSchemaProperties.OrderBy(static property => property.Key, StringComparer.Ordinal))
+        foreach (var property in rule.MetadataSchemaProperties.OrderBy(
+                     static property => property.Key,
+                     StringComparer.Ordinal
+                 ))
         {
-            builder.Append(indent)
+            builder
+               .Append(indent)
                .Append("        [")
                .Append(ToStringLiteral(property.Key))
                .Append("] = PortableOpenApiSchemaTypeMapper.Map<")
@@ -170,7 +188,8 @@ internal static class ValidatorOpenApiEmitter
         }
 
         builder.AppendLine(" }");
-        builder.Append(indent)
+        builder
+           .Append(indent)
            .Append("}, ")
            .Append(ToStringLiteral(rule.Code + "Metadata"))
            .AppendLine(");");
@@ -227,71 +246,41 @@ internal static class ValidatorOpenApiEmitter
         builder.Append(" }");
     }
 
-    private static string? GetTypedHelperName(RuleCallModel rule)
-    {
-        switch (rule.Code)
+    private static string? GetTypedHelperName(RuleCallModel rule) =>
+        rule.Code switch
         {
-            case "EqualTo":
-                return "WithEqualToError";
-            case "NotEqualTo":
-                return "WithNotEqualToError";
-            case "GreaterThan":
-                return "WithGreaterThanError";
-            case "GreaterThanOrEqualTo":
-                return "WithGreaterThanOrEqualToError";
-            case "LessThan":
-                return "WithLessThanError";
-            case "LessThanOrEqualTo":
-                return "WithLessThanOrEqualToError";
-            case "InRange":
-                return "WithInRangeError";
-            case "NotInRange":
-                return "WithNotInRangeError";
-            case "ExclusiveRange":
-                return "WithExclusiveRangeError";
-            default:
-                return null;
-        }
-    }
+            "EqualTo" => "WithEqualToError",
+            "NotEqualTo" => "WithNotEqualToError",
+            "GreaterThan" => "WithGreaterThanError",
+            "GreaterThanOrEqualTo" => "WithGreaterThanOrEqualToError",
+            "LessThan" => "WithLessThanError",
+            "LessThanOrEqualTo" => "WithLessThanOrEqualToError",
+            "InRange" => "WithInRangeError",
+            "NotInRange" => "WithNotInRangeError",
+            "ExclusiveRange" => "WithExclusiveRangeError",
+            _ => null
+        };
 
-    private static string ToLiteral(object? value)
-    {
-        switch (value)
+    private static string ToLiteral(object? value) =>
+        value switch
         {
-            case null:
-                return "null";
-            case string stringValue:
-                return ToStringLiteral(stringValue);
-            case char charValue:
-                return "'" + EscapeChar(charValue) + "'";
-            case bool boolValue:
-                return boolValue ? "true" : "false";
-            case byte byteValue:
-                return byteValue.ToString(CultureInfo.InvariantCulture);
-            case sbyte sbyteValue:
-                return sbyteValue.ToString(CultureInfo.InvariantCulture);
-            case short shortValue:
-                return shortValue.ToString(CultureInfo.InvariantCulture);
-            case ushort ushortValue:
-                return ushortValue.ToString(CultureInfo.InvariantCulture);
-            case int intValue:
-                return intValue.ToString(CultureInfo.InvariantCulture);
-            case uint uintValue:
-                return uintValue.ToString(CultureInfo.InvariantCulture) + "U";
-            case long longValue:
-                return longValue.ToString(CultureInfo.InvariantCulture) + "L";
-            case ulong ulongValue:
-                return ulongValue.ToString(CultureInfo.InvariantCulture) + "UL";
-            case float floatValue:
-                return floatValue.ToString("R", CultureInfo.InvariantCulture) + "F";
-            case double doubleValue:
-                return doubleValue.ToString("R", CultureInfo.InvariantCulture) + "D";
-            case decimal decimalValue:
-                return decimalValue.ToString(CultureInfo.InvariantCulture) + "M";
-            default:
-                return ToStringLiteral(value.ToString() ?? string.Empty);
-        }
-    }
+            null => "null",
+            string stringValue => ToStringLiteral(stringValue),
+            char charValue => "'" + EscapeChar(charValue) + "'",
+            bool boolValue => boolValue ? "true" : "false",
+            byte byteValue => byteValue.ToString(CultureInfo.InvariantCulture),
+            sbyte sbyteValue => sbyteValue.ToString(CultureInfo.InvariantCulture),
+            short shortValue => shortValue.ToString(CultureInfo.InvariantCulture),
+            ushort ushortValue => ushortValue.ToString(CultureInfo.InvariantCulture),
+            int intValue => intValue.ToString(CultureInfo.InvariantCulture),
+            uint uintValue => uintValue.ToString(CultureInfo.InvariantCulture) + "U",
+            long longValue => longValue.ToString(CultureInfo.InvariantCulture) + "L",
+            ulong ulongValue => ulongValue.ToString(CultureInfo.InvariantCulture) + "UL",
+            float floatValue => floatValue.ToString("R", CultureInfo.InvariantCulture) + "F",
+            double doubleValue => doubleValue.ToString("R", CultureInfo.InvariantCulture) + "D",
+            decimal decimalValue => decimalValue.ToString(CultureInfo.InvariantCulture) + "M",
+            _ => ToStringLiteral(value.ToString() ?? string.Empty)
+        };
 
     private static string ToStringLiteral(string value)
     {
@@ -306,36 +295,22 @@ internal static class ValidatorOpenApiEmitter
         return builder.ToString();
     }
 
-    private static string EscapeChar(char value)
-    {
-        switch (value)
+    private static string EscapeChar(char value) =>
+        value switch
         {
-            case '\\':
-                return "\\\\";
-            case '"':
-                return "\\\"";
-            case '\'':
-                return "\\'";
-            case '\0':
-                return "\\0";
-            case '\a':
-                return "\\a";
-            case '\b':
-                return "\\b";
-            case '\f':
-                return "\\f";
-            case '\n':
-                return "\\n";
-            case '\r':
-                return "\\r";
-            case '\t':
-                return "\\t";
-            case '\v':
-                return "\\v";
-            default:
-                return char.IsControl(value) ?
-                    "\\u" + ((int) value).ToString("x4", CultureInfo.InvariantCulture) :
-                    value.ToString();
-        }
-    }
+            '\\' => @"\\",
+            '"' => "\\\"",
+            '\'' => "\\'",
+            '\0' => "\\0",
+            '\a' => "\\a",
+            '\b' => "\\b",
+            '\f' => "\\f",
+            '\n' => "\\n",
+            '\r' => "\\r",
+            '\t' => "\\t",
+            '\v' => "\\v",
+            _ => char.IsControl(value) ?
+                "\\u" + ((int) value).ToString("x4", CultureInfo.InvariantCulture) :
+                value.ToString()
+        };
 }
