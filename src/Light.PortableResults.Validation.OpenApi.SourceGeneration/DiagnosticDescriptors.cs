@@ -5,6 +5,7 @@ namespace Light.PortableResults.Validation.OpenApi.SourceGeneration;
 internal static class DiagnosticDescriptors
 {
     private const string Category = "Light.PortableResults.Validation.OpenApi.SourceGeneration";
+
     private const string HelpLinkBase =
         "https://github.com/feO2x/Light.PortableResults/blob/main/README.md#validation-openapi-source-generation";
 
@@ -94,6 +95,36 @@ internal static class DiagnosticDescriptors
         "Validation rule '{0}' references error definition '{1}', but it does not declare a matching validation error contract for code '{2}'",
         Category,
         DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        helpLinkUri: HelpLinkBase
+    );
+
+    public static readonly DiagnosticDescriptor InvalidHint = new (
+        "LPRSG0010",
+        "Validation OpenAPI hint is malformed",
+        "Validation OpenAPI hint is malformed: {0}",
+        Category,
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        helpLinkUri: HelpLinkBase
+    );
+
+    public static readonly DiagnosticDescriptor ConflictingHint = new (
+        "LPRSG0011",
+        "Validation OpenAPI hint conflicts with another contract",
+        "Validation OpenAPI hint for code '{0}' conflicts with another documented metadata contract",
+        Category,
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        helpLinkUri: HelpLinkBase
+    );
+
+    public static readonly DiagnosticDescriptor ExampleMetadataWithoutSchema = new (
+        "LPRSG0012",
+        "Validation OpenAPI example metadata is not declared by a schema hint",
+        "Validation OpenAPI example metadata key '{1}' for code '{0}' is not declared by any inline metadata schema for that code",
+        Category,
+        DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         helpLinkUri: HelpLinkBase
     );

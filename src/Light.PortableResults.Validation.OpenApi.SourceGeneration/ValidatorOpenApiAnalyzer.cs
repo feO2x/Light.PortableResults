@@ -82,9 +82,11 @@ public static class ValidatorOpenApiAnalyzer
             cancellationToken
         );
 
-        var hints = GetErrorHints(validatorType, performValidation).ToImmutableArray();
+        var hints = GetErrorHints(validatorType, performValidation, diagnostics).ToImmutableArray();
+        var examples = GetExampleHints(validatorType, performValidation, diagnostics).ToImmutableArray();
+        ValidateHintContracts(rules, hints, examples, diagnostics);
         var allowUnknownErrorCodes = GetAllowUnknownErrorCodes(validatorType);
-        if (rules.Count == 0 && hints.Length == 0 && !allowUnknownErrorCodes)
+        if (rules.Count == 0 && hints.Length == 0 && examples.Length == 0 && !allowUnknownErrorCodes)
         {
             diagnostics.Add(
                 Diagnostic.Create(
@@ -105,7 +107,8 @@ public static class ValidatorOpenApiAnalyzer
             validatorType.Name,
             allowUnknownErrorCodes,
             rules.ToImmutable(),
-            hints
+            hints,
+            examples
         );
         var source = ValidatorOpenApiEmitter.Emit(model);
         return new ValidatorOpenApiAnalysis(hintName, source, diagnostics.ToImmutable());
@@ -784,23 +787,48 @@ public static class ValidatorOpenApiAnalyzer
 
     private static IEnumerable<ErrorHintModel> GetErrorHints(
         INamedTypeSymbol validatorType,
-        IMethodSymbol performValidation
+        IMethodSymbol performValidation,
+        ICollection<Diagnostic> diagnostics
     )
     {
-        foreach (var hint in GetErrorHints(validatorType.GetAttributes()))
+        foreach (var hint in GetErrorHints(validatorType.GetAttributes(), diagnostics))
         {
             yield return hint;
         }
 
-        foreach (var hint in GetErrorHints(performValidation.GetAttributes()))
+        foreach (var hint in GetErrorHints(performValidation.GetAttributes(), diagnostics))
         {
             yield return hint;
         }
     }
 
-    private static IEnumerable<ErrorHintModel> GetErrorHints(IEnumerable<AttributeData> attributes)
+    private static IEnumerable<ErrorHintModel> GetErrorHints(
+        IEnumerable<AttributeData> attributes,
+        ICollection<Diagnostic> diagnostics
+    )
     {
-        foreach (var attribute in attributes)
+        var attributeArray = attributes.ToArray();
+        var metadataProperties = attributeArray
+           .Where(static attribute => IsAttribute(attribute, KnownTypeNames.ErrorMetadataPropertyAttribute))
+           .Select(
+                static attribute => new
+                {
+                    Attribute = attribute,
+                    Code = attribute.ConstructorArguments.Length > 0 ?
+                        attribute.ConstructorArguments[0].Value as string :
+                        null
+                }
+            )
+           .Where(static item => !string.IsNullOrWhiteSpace(item.Code))
+           .GroupBy(static item => item.Code!, StringComparer.Ordinal)
+           .ToDictionary(
+                static group => group.Key,
+                group => group.Select(static item => item.Attribute).ToArray(),
+                StringComparer.Ordinal
+            );
+        var parentCodes = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var attribute in attributeArray)
         {
             if (!IsAttribute(attribute, KnownTypeNames.ErrorHintAttribute) ||
                 attribute.ConstructorArguments.Length == 0 ||
@@ -809,12 +837,347 @@ public static class ValidatorOpenApiAnalyzer
                 continue;
             }
 
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidHint,
+                        GetAttributeLocation(attribute),
+                        "error hint code must not be empty"
+                    )
+                );
+                continue;
+            }
+
+            parentCodes.Add(code);
             var metadataTypeName = attribute.ConstructorArguments.Length > 1 &&
                                    attribute.ConstructorArguments[1].Value is ITypeSymbol metadataType ?
                 metadataType.ToDisplayString(FullyQualifiedTypeFormat) :
                 null;
-            yield return new ErrorHintModel(code, metadataTypeName);
+            if (metadataTypeName == "void" || metadataTypeName == "global::System.Void")
+            {
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidHint,
+                        GetAttributeLocation(attribute),
+                        "metadata type must not be void"
+                    )
+                );
+                continue;
+            }
+
+            var properties = GetInlineHintMetadataProperties(
+                metadataProperties.TryGetValue(code, out var matchedProperties) ? matchedProperties : [],
+                diagnostics
+            );
+            yield return new ErrorHintModel(code, metadataTypeName, properties);
         }
+
+        foreach (var metadataProperty in attributeArray.Where(
+                     static attribute => IsAttribute(attribute, KnownTypeNames.ErrorMetadataPropertyAttribute)
+                 ))
+        {
+            var code = metadataProperty.ConstructorArguments.Length > 0 ?
+                metadataProperty.ConstructorArguments[0].Value as string :
+                null;
+            if (string.IsNullOrWhiteSpace(code) || parentCodes.Contains(code!))
+            {
+                continue;
+            }
+
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.InvalidHint,
+                    GetAttributeLocation(metadataProperty),
+                    $"inline metadata property for code '{code}' has no matching error hint in the same scope"
+                )
+            );
+        }
+    }
+
+    private static ImmutableArray<MetadataSchemaPropertyModel> GetInlineHintMetadataProperties(
+        IEnumerable<AttributeData> attributes,
+        ICollection<Diagnostic> diagnostics
+    )
+    {
+        var builder = ImmutableArray.CreateBuilder<MetadataSchemaPropertyModel>();
+        foreach (var attribute in attributes)
+        {
+            if (attribute.ConstructorArguments.Length < 3 ||
+                attribute.ConstructorArguments[1].Value is not string key ||
+                attribute.ConstructorArguments[2].Value is not ITypeSymbol type)
+            {
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidHint,
+                        GetAttributeLocation(attribute),
+                        "metadata key must not be empty"
+                    )
+                );
+                continue;
+            }
+
+            var typeName = type.ToDisplayString(FullyQualifiedTypeFormat);
+            if (typeName == "void" || typeName == "global::System.Void")
+            {
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidHint,
+                        GetAttributeLocation(attribute),
+                        "metadata property type must not be void"
+                    )
+                );
+                continue;
+            }
+
+            builder.Add(new MetadataSchemaPropertyModel(key, typeName));
+        }
+
+        return builder
+           .GroupBy(static property => property.Key, StringComparer.Ordinal)
+           .Select(static group => group.First())
+           .OrderBy(static property => property.Key, StringComparer.Ordinal)
+           .ToImmutableArray();
+    }
+
+    private static IEnumerable<ExampleHintModel> GetExampleHints(
+        INamedTypeSymbol validatorType,
+        IMethodSymbol performValidation,
+        ICollection<Diagnostic> diagnostics
+    )
+    {
+        foreach (var hint in GetExampleHints(validatorType.GetAttributes(), diagnostics))
+        {
+            yield return hint;
+        }
+
+        foreach (var hint in GetExampleHints(performValidation.GetAttributes(), diagnostics))
+        {
+            yield return hint;
+        }
+    }
+
+    private static IEnumerable<ExampleHintModel> GetExampleHints(
+        IEnumerable<AttributeData> attributes,
+        ICollection<Diagnostic> diagnostics
+    )
+    {
+        var attributeArray = attributes.ToArray();
+        var parentCodes = new HashSet<string>(StringComparer.Ordinal);
+        var duplicates = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var attribute in attributeArray.Where(
+                     static attribute => IsAttribute(attribute, KnownTypeNames.ExampleHintAttribute)
+                 ))
+        {
+            var code = attribute.ConstructorArguments.Length > 0 ?
+                attribute.ConstructorArguments[0].Value as string :
+                null;
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidHint,
+                        GetAttributeLocation(attribute),
+                        "example hint code must not be empty"
+                    )
+                );
+                continue;
+            }
+
+            if (!parentCodes.Add(code!))
+            {
+                duplicates.Add(code!);
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidHint,
+                        GetAttributeLocation(attribute),
+                        $"more than one example hint for code '{code}' is declared in the same scope"
+                    )
+                );
+                continue;
+            }
+
+            var target = attribute.NamedArguments.FirstOrDefault(static argument => argument.Key == "Target")
+               .Value.Value as string;
+            var metadataValues = GetExampleMetadataValues(attributeArray, code!, diagnostics);
+            yield return new ExampleHintModel(code!, target, metadataValues);
+        }
+
+        foreach (var metadataAttribute in attributeArray.Where(
+                     static attribute => IsAttribute(attribute, KnownTypeNames.ExampleMetadataAttribute)
+                 ))
+        {
+            var code = metadataAttribute.ConstructorArguments.Length > 0 ?
+                metadataAttribute.ConstructorArguments[0].Value as string :
+                null;
+            if (string.IsNullOrWhiteSpace(code) || parentCodes.Contains(code!) || duplicates.Contains(code!))
+            {
+                continue;
+            }
+
+            diagnostics.Add(
+                Diagnostic.Create(
+                    DiagnosticDescriptors.InvalidHint,
+                    GetAttributeLocation(metadataAttribute),
+                    $"example metadata for code '{code}' has no matching example hint in the same scope"
+                )
+            );
+        }
+    }
+
+    private static ImmutableArray<MetadataValueModel> GetExampleMetadataValues(
+        IEnumerable<AttributeData> attributes,
+        string code,
+        ICollection<Diagnostic> diagnostics
+    )
+    {
+        var builder = ImmutableArray.CreateBuilder<MetadataValueModel>();
+        foreach (var attribute in attributes.Where(
+                     attribute => IsAttribute(attribute, KnownTypeNames.ExampleMetadataAttribute) &&
+                                  attribute.ConstructorArguments.Length >= 3 &&
+                                  attribute.ConstructorArguments[0].Value as string == code
+                 ))
+        {
+            if (attribute.ConstructorArguments[1].Value is not string key ||
+                string.IsNullOrWhiteSpace(key))
+            {
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.InvalidHint,
+                        GetAttributeLocation(attribute),
+                        "example metadata key must not be empty"
+                    )
+                );
+                continue;
+            }
+
+            var argument = attribute.ConstructorArguments[2];
+            var value = argument.Value is ITypeSymbol typeSymbol ?
+                typeSymbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat) :
+                argument.Value;
+            var typeName = argument.Value is ITypeSymbol ?
+                "global::System.String" :
+                argument.Type?.ToDisplayString(FullyQualifiedTypeFormat) ?? "object";
+            builder.Add(new MetadataValueModel(key, value, true, typeName));
+        }
+
+        return builder
+           .OrderBy(static metadata => metadata.Key, StringComparer.Ordinal)
+           .ToImmutableArray();
+    }
+
+    private static void ValidateHintContracts(
+        IEnumerable<RuleCallModel> rules,
+        ImmutableArray<ErrorHintModel> hints,
+        ImmutableArray<ExampleHintModel> examples,
+        ICollection<Diagnostic> diagnostics
+    )
+    {
+        var typedHints = new Dictionary<string, string>(StringComparer.Ordinal);
+        var inlineHints = new Dictionary<string, ImmutableArray<MetadataSchemaPropertyModel>>(StringComparer.Ordinal);
+        foreach (var hint in hints)
+        {
+            if (hint.MetadataTypeName is not null)
+            {
+                if (typedHints.TryGetValue(hint.Code, out var existingType) &&
+                    existingType != hint.MetadataTypeName)
+                {
+                    diagnostics.Add(
+                        Diagnostic.Create(DiagnosticDescriptors.ConflictingHint, Location.None, hint.Code)
+                    );
+                }
+
+                typedHints[hint.Code] = hint.MetadataTypeName;
+            }
+
+            if (hint.MetadataSchemaProperties.Length > 0)
+            {
+                if (hint.MetadataTypeName is not null)
+                {
+                    diagnostics.Add(
+                        Diagnostic.Create(DiagnosticDescriptors.ConflictingHint, Location.None, hint.Code)
+                    );
+                }
+
+                if (inlineHints.TryGetValue(hint.Code, out var existingProperties) &&
+                    !MetadataSchemaPropertiesEqual(existingProperties, hint.MetadataSchemaProperties))
+                {
+                    diagnostics.Add(
+                        Diagnostic.Create(DiagnosticDescriptors.ConflictingHint, Location.None, hint.Code)
+                    );
+                }
+
+                inlineHints[hint.Code] = hint.MetadataSchemaProperties;
+            }
+        }
+
+        foreach (var rule in rules.Where(static rule => rule.MetadataSchemaProperties.Length > 0))
+        {
+            if (inlineHints.TryGetValue(rule.Code, out var hintProperties) &&
+                !MetadataSchemaPropertiesEqual(hintProperties, rule.MetadataSchemaProperties))
+            {
+                diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.ConflictingHint, Location.None, rule.Code));
+            }
+        }
+
+        foreach (var example in examples)
+        {
+            if (!inlineHints.TryGetValue(example.Code, out var schemaProperties))
+            {
+                continue;
+            }
+
+            var schemaKeys = new HashSet<string>(
+                schemaProperties.Select(static property => property.Key),
+                StringComparer.Ordinal
+            );
+            foreach (var metadataValue in example.MetadataValues)
+            {
+                if (!schemaKeys.Contains(metadataValue.Key))
+                {
+                    diagnostics.Add(
+                        Diagnostic.Create(
+                            DiagnosticDescriptors.ExampleMetadataWithoutSchema,
+                            Location.None,
+                            example.Code,
+                            metadataValue.Key
+                        )
+                    );
+                }
+            }
+        }
+    }
+
+    private static bool MetadataSchemaPropertiesEqual(
+        ImmutableArray<MetadataSchemaPropertyModel> left,
+        ImmutableArray<MetadataSchemaPropertyModel> right
+    )
+    {
+        if (left.Length != right.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < left.Length; i++)
+        {
+            if (left[i].Key != right[i].Key || left[i].TypeName != right[i].TypeName)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static Location GetAttributeLocation(AttributeData attribute)
+    {
+        var syntaxReference = attribute.ApplicationSyntaxReference;
+        return syntaxReference?.GetSyntax().GetLocation() ?? Location.None;
     }
 
     private static bool GetAllowUnknownErrorCodes(INamedTypeSymbol validatorType)

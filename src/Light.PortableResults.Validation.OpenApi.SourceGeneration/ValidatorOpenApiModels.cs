@@ -107,7 +107,8 @@ internal sealed class ValidatorModel
         string className,
         bool allowUnknownErrorCodes,
         ImmutableArray<RuleCallModel> rules,
-        ImmutableArray<ErrorHintModel> hints
+        ImmutableArray<ErrorHintModel> hints,
+        ImmutableArray<ExampleHintModel> examples
     )
     {
         MetadataName = metadataName;
@@ -118,6 +119,7 @@ internal sealed class ValidatorModel
         AllowUnknownErrorCodes = allowUnknownErrorCodes;
         Rules = rules;
         Hints = hints;
+        Examples = examples;
     }
 
     public string MetadataName { get; }
@@ -128,6 +130,7 @@ internal sealed class ValidatorModel
     public bool AllowUnknownErrorCodes { get; }
     public ImmutableArray<RuleCallModel> Rules { get; }
     public ImmutableArray<ErrorHintModel> Hints { get; }
+    public ImmutableArray<ExampleHintModel> Examples { get; }
 }
 
 internal sealed class RuleCallModel
@@ -187,14 +190,38 @@ internal sealed class MetadataSchemaPropertyModel
 
 internal sealed class ErrorHintModel
 {
-    public ErrorHintModel(string code, string? metadataTypeName)
+    public ErrorHintModel(
+        string code,
+        string? metadataTypeName,
+        ImmutableArray<MetadataSchemaPropertyModel> metadataSchemaProperties
+    )
     {
         Code = code;
         MetadataTypeName = metadataTypeName;
+        MetadataSchemaProperties = metadataSchemaProperties;
     }
 
     public string Code { get; }
     public string? MetadataTypeName { get; }
+    public ImmutableArray<MetadataSchemaPropertyModel> MetadataSchemaProperties { get; }
+}
+
+internal sealed class ExampleHintModel
+{
+    public ExampleHintModel(
+        string code,
+        string? target,
+        ImmutableArray<MetadataValueModel> metadataValues
+    )
+    {
+        Code = code;
+        Target = target;
+        MetadataValues = metadataValues;
+    }
+
+    public string Code { get; }
+    public string? Target { get; }
+    public ImmutableArray<MetadataValueModel> MetadataValues { get; }
 }
 
 internal enum RuleMetadataShape

@@ -6,15 +6,15 @@ The first validation OpenAPI source generator (plan 0043-0) introduced a minimal
 
 ## Acceptance Criteria
 
-- [ ] The validation OpenAPI hint API can document an error code with optional metadata schema information, optional response-example target, and optional response-example metadata values without requiring the generator to interpret arbitrary runtime objects.
-- [ ] Existing `[PortableValidationOpenApiErrorHint]` usages remain source-compatible for code-only and metadata-type hints.
-- [ ] Hints can be applied at validator class level and `PerformValidation` method level. Both placements feed the same hint pipeline and are subject to the same conflict rules.
-- [ ] Generated code emits the same builder calls a user would write manually: `WithErrorCodes(...)`, `WithErrorMetadata<T>(...)` or an inline metadata schema configuration, and `WithErrorExample(...)` when example data is supplied.
-- [ ] Hints compose with inferred rules: matching schema shapes are deduplicated; conflicting shapes produce diagnostics; hints never silently weaken an exhaustive schema or trigger `AllowUnknownErrorCodes()` on their own.
-- [ ] The implementation remains incremental-generator-friendly: all hint model values flowing through the pipeline use value equality, deterministic ordering, and source-generator-safe attribute argument shapes.
-- [ ] Generated source compiles in consumer projects with implicit usings disabled and nullable enabled, and continues to use the existing controlled using block or fully qualified names.
-- [ ] Automated tests are written.
-- [ ] Documentation is updated to explain when to use explicit hints instead of `AllowUnknownErrorCodes()`, how hints compose with generated inference, and which flows still require the endpoint `configure` callback.
+- [x] The validation OpenAPI hint API can document an error code with optional metadata schema information, optional response-example target, and optional response-example metadata values without requiring the generator to interpret arbitrary runtime objects.
+- [x] Existing `[PortableValidationOpenApiErrorHint]` usages remain source-compatible for code-only and metadata-type hints.
+- [x] Hints can be applied at validator class level and `PerformValidation` method level. Both placements feed the same hint pipeline and are subject to the same conflict rules.
+- [x] Generated code emits the same builder calls a user would write manually: `WithErrorCodes(...)`, `WithErrorMetadata<T>(...)` or an inline metadata schema configuration, and `WithErrorExample(...)` when example data is supplied.
+- [x] Hints compose with inferred rules: matching schema shapes are deduplicated; conflicting shapes produce diagnostics; hints never silently weaken an exhaustive schema or trigger `AllowUnknownErrorCodes()` on their own.
+- [x] The implementation remains incremental-generator-friendly: all hint model values flowing through the pipeline use value equality, deterministic ordering, and source-generator-safe attribute argument shapes.
+- [x] Generated source compiles in consumer projects with implicit usings disabled and nullable enabled, and continues to use the existing controlled using block or fully qualified names.
+- [x] Automated tests are written.
+- [x] Documentation is updated to explain when to use explicit hints instead of `AllowUnknownErrorCodes()`, how hints compose with generated inference, and which flows still require the endpoint `configure` callback.
 
 ## Technical Details
 

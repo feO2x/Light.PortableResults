@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using FluentAssertions;
 using Light.PortableResults.AspNetCore.OpenApi;
-using Light.PortableResults.Validation;
-using Light.PortableResults.Validation.OpenApi;
-using Light.PortableResults.Validation.OpenApi.SourceGeneration;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.OpenApi;
@@ -183,7 +181,9 @@ public sealed class PortableValidationOpenApiGeneratorTests
         var source = result.GeneratedSources.Single();
         source.Should().Contain("builder.WithErrorMetadata(\"DivisibleBy\", _ => new OpenApiSchema");
         source.Should().Contain("[\"divisor\"] = PortableOpenApiSchemaTypeMapper.Map<global::System.Int32>()");
-        source.Should().Contain("builder.WithErrorExample(\"DivisibleBy\", null, new Dictionary<string, object?>(StringComparer.Ordinal) { [\"divisor\"] = 3 });");
+        source.Should().Contain(
+            "builder.WithErrorExample(\"DivisibleBy\", null, new Dictionary<string, object?>(StringComparer.Ordinal) { [\"divisor\"] = 3 });"
+        );
     }
 
     [Fact]
@@ -216,6 +216,155 @@ public sealed class PortableValidationOpenApiGeneratorTests
         result.GeneratedSources.Single().Should().Contain("builder.WithErrorCodes(\"CustomCode\");");
     }
 
+    [Fact]
+    public void Generator_ShouldEmitInlineSchemaAndExampleHints()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.OpenApi;
+
+            [GeneratePortableValidationOpenApi]
+            [PortableValidationOpenApiErrorHint("RatingTooLow")]
+            [PortableValidationOpenApiErrorMetadataProperty("RatingTooLow", "lowerBoundary", typeof(int))]
+            [PortableValidationOpenApiErrorMetadataProperty("RatingTooLow", "upperBoundary", typeof(int))]
+            [PortableValidationOpenApiExampleHint("RatingTooLow", Target = "rating")]
+            [PortableValidationOpenApiExampleMetadata("RatingTooLow", "lowerBoundary", 1)]
+            [PortableValidationOpenApiExampleMetadata("RatingTooLow", "upperBoundary", 5)]
+            public sealed partial class InlineHintValidator : Validator<int>
+            {
+                public InlineHintValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValidatedValue<int> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    int value
+                ) => checkpoint.ToValidatedValue(value);
+            }
+            """
+        );
+
+        result.Diagnostics.Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+           .Should()
+           .BeEmpty();
+        var source = result.GeneratedSources.Single();
+        source.Should().Contain("builder.WithErrorMetadata(\"RatingTooLow\", _ => new OpenApiSchema");
+        source.Should().Contain("[\"lowerBoundary\"] = PortableOpenApiSchemaTypeMapper.Map<global::System.Int32>()");
+        source.Should().Contain("[\"upperBoundary\"] = PortableOpenApiSchemaTypeMapper.Map<global::System.Int32>()");
+        source.Should().Contain(
+            "builder.WithErrorExample(\"RatingTooLow\", \"rating\", new Dictionary<string, object?>(StringComparer.Ordinal) { [\"lowerBoundary\"] = 1, [\"upperBoundary\"] = 5 });"
+        );
+        source.Should().NotContain("builder.AllowUnknownErrorCodes();");
+    }
+
+    [Fact]
+    public void Generator_ShouldTreatExampleOnlyHintsAsCodeOnlySchemaHints()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.OpenApi;
+
+            [GeneratePortableValidationOpenApi]
+            public sealed partial class ExampleOnlyHintValidator : Validator<string>
+            {
+                public ExampleOnlyHintValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                [PortableValidationOpenApiExampleHint("CustomCode", Target = "name")]
+                protected override ValidatedValue<string> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    string value
+                ) => checkpoint.ToValidatedValue(value);
+            }
+            """
+        );
+
+        result.Diagnostics.Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+           .Should()
+           .BeEmpty();
+        var source = result.GeneratedSources.Single();
+        source.Should().Contain("builder.WithErrorCodes(\"CustomCode\");");
+        source.Should().Contain("builder.WithErrorExample(\"CustomCode\", \"name\");");
+    }
+
+    [Fact]
+    public void Generator_ShouldEmitMetadataTypeHintAndDeduplicateMatchingCodeHints()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.OpenApi;
+
+            public sealed class CustomMetadata
+            {
+                public int Value { get; init; }
+            }
+
+            [GeneratePortableValidationOpenApi]
+            [PortableValidationOpenApiErrorHint("CustomCode", typeof(CustomMetadata))]
+            public sealed partial class MetadataTypeHintValidator : Validator<string>
+            {
+                public MetadataTypeHintValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                [PortableValidationOpenApiErrorHint("CustomCode", typeof(CustomMetadata))]
+                [PortableValidationOpenApiExampleHint("CustomCode", Target = "name")]
+                protected override ValidatedValue<string> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    string value
+                ) => checkpoint.ToValidatedValue(value);
+            }
+            """
+        );
+
+        result.Diagnostics.Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+           .Should()
+           .BeEmpty();
+        var source = result.GeneratedSources.Single();
+        source.Should().Contain("builder.WithErrorMetadata<global::CustomMetadata>(\"CustomCode\");");
+        source.Should().Contain("builder.WithErrorExample(\"CustomCode\", \"name\");");
+        source.Should().NotContain("builder.WithErrorCodes(\"CustomCode\");");
+    }
+
+    [Fact]
+    public void Generator_ShouldReportDiagnosticsForMalformedHints()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.OpenApi;
+
+            public sealed class MetadataOne { }
+            public sealed class MetadataTwo { }
+
+            [GeneratePortableValidationOpenApi]
+            [PortableValidationOpenApiErrorHint("CustomCode", typeof(MetadataOne))]
+            [PortableValidationOpenApiErrorHint("CustomCode", typeof(MetadataTwo))]
+            [PortableValidationOpenApiErrorMetadataProperty("OrphanCode", "value", typeof(int))]
+            [PortableValidationOpenApiExampleMetadata("OtherCode", "value", 1)]
+            public sealed partial class MalformedHintValidator : Validator<string>
+            {
+                public MalformedHintValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValidatedValue<string> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    string value
+                ) => checkpoint.ToValidatedValue(value);
+            }
+            """
+        );
+
+        result.Diagnostics.Select(static diagnostic => diagnostic.Id)
+           .Should()
+           .Contain(["LPRSG0010", "LPRSG0011"]);
+    }
+
     private static GeneratorRunResult RunGenerator(string source)
     {
         var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview);
@@ -230,10 +379,10 @@ public sealed class PortableValidationOpenApiGeneratorTests
         var driver = CSharpGeneratorDriver.Create(generator)
            .WithUpdatedParseOptions(parseOptions)
            .RunGeneratorsAndUpdateCompilation(
-            compilation,
-            out var outputCompilation,
-            out var generatorDiagnostics
-        );
+                compilation,
+                out var outputCompilation,
+                out var generatorDiagnostics
+            );
 
         var runResult = driver.GetRunResult();
         var diagnostics = outputCompilation.GetDiagnostics()
@@ -260,7 +409,7 @@ public sealed class PortableValidationOpenApiGeneratorTests
         return references.Select(static path => MetadataReference.CreateFromFile(path)).ToArray();
     }
 
-    private static void AddAssembly(ISet<string> references, System.Reflection.Assembly assembly)
+    private static void AddAssembly(ISet<string> references, Assembly assembly)
     {
         if (!string.IsNullOrWhiteSpace(assembly.Location))
         {

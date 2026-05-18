@@ -1467,6 +1467,39 @@ The generator analyzes top-level `context.Check(...).Rule(...)` chains in synchr
 
 When metadata arguments are compile-time constants, such as `HasLengthIn(10, 1000)` or `IsInRange(1, 5)`, the generated contract also contributes a response-level OpenAPI example. Scalar and Swagger UI show these concrete values in the validation problem example body. Non-constant metadata arguments still get documented schemas, but that specific call site is omitted from the example. Delegate-based `Must(...)`, `Custom(...)`, `ErrorOverrides`, async validators, source-null errors emitted before `PerformValidation`, child validators, and complex target inference are intentionally outside the first-generation analysis.
 
+Use explicit hints when the validator emits known validation error contracts that the generator cannot infer. For an opaque `Custom(...)` path that only needs a code in the schema, add a code-only hint at the validator or `PerformValidation` method level:
+
+```csharp
+[GeneratePortableValidationOpenApi]
+[PortableValidationOpenApiErrorHint("MovieAlreadyRated")]
+public sealed partial class AddMovieRatingValidator : Validator<MovieRatingDto>
+{
+    // ...
+}
+```
+
+If the opaque path has endpoint-specific metadata, either point to a metadata type or declare the metadata schema inline:
+
+```csharp
+[PortableValidationOpenApiErrorHint("MovieAlreadyRated", typeof(MovieAlreadyRatedMetadata))]
+
+[PortableValidationOpenApiErrorHint("RatingTooLow")]
+[PortableValidationOpenApiErrorMetadataProperty("RatingTooLow", "lowerBoundary", typeof(int))]
+[PortableValidationOpenApiErrorMetadataProperty("RatingTooLow", "upperBoundary", typeof(int))]
+```
+
+Hints compose with inferred rules. Matching schema shapes are deduplicated, while conflicting metadata shapes for the same code are reported by the generator because the emitted OpenAPI contract would otherwise be ambiguous. Hinting a code never makes the generated response non-exhaustive and never calls `AllowUnknownErrorCodes()` by itself.
+
+You can also provide response-example entries for opaque paths. An example-only hint documents the code as code-only, so the common case does not need a separate `[PortableValidationOpenApiErrorHint]`. Metadata values are compile-time constants declared with companion attributes:
+
+```csharp
+[PortableValidationOpenApiExampleHint("RatingTooLow", Target = "rating")]
+[PortableValidationOpenApiExampleMetadata("RatingTooLow", "lowerBoundary", 1)]
+[PortableValidationOpenApiExampleMetadata("RatingTooLow", "upperBoundary", 5)]
+```
+
+Use `AllowUnknownErrorCodes()` only when the endpoint may emit additional codes that are not enumerable at build time. Explicit hints and `AllowUnknownErrorCodes()` compose: hints document the known contract, and the unknown-code opt-in keeps the generated schema non-exhaustive for the rest. Endpoint-level customization that is not validator-local, such as changing the validation problem format, documenting multiple example targets for the same code, or adding contracts decided outside the validator, still belongs in the endpoint `configure` callback.
+
 Register reusable per-error-code metadata contracts once in DI by passing them to `AddPortableResultsOpenApi(...)`:
 
 ```csharp

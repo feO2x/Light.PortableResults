@@ -64,6 +64,10 @@ internal static class ValidatorOpenApiEmitter
 
     private static CodeWriter EmitSchemaConfiguration(CodeWriter writer, ValidatorModel model)
     {
+        var schemaCodes = new HashSet<string>(
+            model.Rules.Select(static rule => rule.Code).Concat(model.Hints.Select(static hint => hint.Code)),
+            StringComparer.Ordinal
+        );
         var registeredCodes = model
            .Rules
            .Where(
@@ -71,7 +75,19 @@ internal static class ValidatorOpenApiEmitter
                                rule.MetadataSchemaProperties.Length == 0
             )
            .Select(static rule => rule.Code)
-           .Concat(model.Hints.Where(static hint => hint.MetadataTypeName is null).Select(static hint => hint.Code))
+           .Concat(
+                model.Hints
+                   .Where(
+                        static hint => hint.MetadataTypeName is null &&
+                                       hint.MetadataSchemaProperties.Length == 0
+                    )
+                   .Select(static hint => hint.Code)
+           )
+           .Concat(
+                model.Examples
+                   .Where(example => !schemaCodes.Contains(example.Code))
+                   .Select(static example => example.Code)
+            )
            .Distinct(StringComparer.Ordinal)
            .OrderBy(static code => code, StringComparer.Ordinal)
            .ToArray();
@@ -83,7 +99,12 @@ internal static class ValidatorOpenApiEmitter
                .WriteLine(");");
         }
 
-        foreach (var hint in model.Hints.Where(static hint => hint.MetadataTypeName is not null))
+        foreach (var hint in model.Hints
+                    .Where(static hint => hint.MetadataTypeName is not null)
+                    .GroupBy(static hint => new { hint.Code, hint.MetadataTypeName })
+                    .Select(static group => group.First())
+                    .OrderBy(static hint => hint.Code, StringComparer.Ordinal)
+                    .ThenBy(static hint => hint.MetadataTypeName, StringComparer.Ordinal))
         {
             writer
                .Write("builder.WithErrorMetadata<")
@@ -91,6 +112,20 @@ internal static class ValidatorOpenApiEmitter
                .Write(">(")
                .Write(ToStringLiteral(hint.Code))
                .WriteLine(");");
+        }
+
+        foreach (var hint in model.Hints
+                    .Where(static hint => hint.MetadataSchemaProperties.Length > 0)
+                    .GroupBy(static hint => hint.Code, StringComparer.Ordinal)
+                    .Select(static group => group.First())
+                    .OrderBy(static hint => hint.Code, StringComparer.Ordinal))
+        {
+            EmitInlineSchemaConfiguration(
+                writer,
+                hint.Code,
+                hint.MetadataSchemaProperties,
+                hint.Code + "Metadata"
+            );
         }
 
         foreach (var rule in model.Rules
@@ -126,6 +161,7 @@ internal static class ValidatorOpenApiEmitter
 
         if (registeredCodes.Length > 0 ||
             model.Hints.Length > 0 ||
+            model.Examples.Length > 0 ||
             model.Rules.Any(static rule => rule.Shape != RuleMetadataShape.Registered) ||
             model.Rules.Any(
                 static rule => rule.Shape == RuleMetadataShape.Registered &&
@@ -140,14 +176,29 @@ internal static class ValidatorOpenApiEmitter
 
     private static CodeWriter EmitInlineSchemaConfiguration(CodeWriter writer, RuleCallModel rule)
     {
-        var requiredKeys = string.Join(
-            ", ",
-            rule.MetadataSchemaProperties.Select(static property => ToStringLiteral(property.Key))
+        return EmitInlineSchemaConfiguration(
+            writer,
+            rule.Code,
+            rule.MetadataSchemaProperties,
+            rule.Code + "Metadata"
         );
+    }
+
+    private static CodeWriter EmitInlineSchemaConfiguration(
+        CodeWriter writer,
+        string code,
+        IEnumerable<MetadataSchemaPropertyModel> metadataSchemaProperties,
+        string schemaId
+    )
+    {
+        var properties = metadataSchemaProperties
+           .OrderBy(static property => property.Key, StringComparer.Ordinal)
+           .ToArray();
+        var requiredKeys = string.Join(", ", properties.Select(static property => ToStringLiteral(property.Key)));
 
         writer
            .Write("builder.WithErrorMetadata(")
-           .Write(ToStringLiteral(rule.Code))
+           .Write(ToStringLiteral(code))
            .WriteLine(", _ => new OpenApiSchema")
            .WriteLine("{")
            .IncreaseIndent()
@@ -156,10 +207,7 @@ internal static class ValidatorOpenApiEmitter
            .WriteLine("{")
            .IncreaseIndent();
 
-        foreach (var property in rule.MetadataSchemaProperties.OrderBy(
-                     static property => property.Key,
-                     StringComparer.Ordinal
-                 ))
+        foreach (var property in properties)
         {
             writer
                .Write("[")
@@ -177,7 +225,7 @@ internal static class ValidatorOpenApiEmitter
            .WriteLine(" }")
            .DecreaseIndent()
            .Write("}, ")
-           .Write(ToStringLiteral(rule.Code + "Metadata"))
+           .Write(ToStringLiteral(schemaId))
            .WriteLine(");");
     }
 
@@ -204,7 +252,39 @@ internal static class ValidatorOpenApiEmitter
             writer.WriteLine(");");
         }
 
-        if (model.Rules.Length > 0)
+        foreach (var example in model.Examples
+                    .GroupBy(
+                         static example => new
+                         {
+                             example.Code,
+                             Target = example.Target ?? string.Empty,
+                             Metadata = string.Join(
+                                 "\u001F",
+                                 example.MetadataValues.Select(
+                                     static metadata => metadata.Key + "=" + (metadata.Value?.ToString() ?? string.Empty)
+                                 )
+                             )
+                         }
+                     )
+                    .Select(static group => group.First())
+                    .OrderBy(static example => example.Code, StringComparer.Ordinal)
+                    .ThenBy(static example => example.Target, StringComparer.Ordinal))
+        {
+            writer
+               .Write("builder.WithErrorExample(")
+               .Write(ToStringLiteral(example.Code))
+               .Write(", ")
+               .Write(example.Target is null ? "null" : ToStringLiteral(example.Target));
+
+            if (example.MetadataValues.Length > 0)
+            {
+                EmitMetadataDictionary(writer.Write(", "), example.MetadataValues);
+            }
+
+            writer.WriteLine(");");
+        }
+
+        if (model.Rules.Length > 0 || model.Examples.Length > 0)
         {
             writer.WriteLine();
         }

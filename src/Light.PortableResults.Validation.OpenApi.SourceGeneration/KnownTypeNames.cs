@@ -6,6 +6,12 @@ internal static class KnownTypeNames
         "Light.PortableResults.Validation.OpenApi.GeneratePortableValidationOpenApiAttribute";
     public const string ErrorHintAttribute =
         "Light.PortableResults.Validation.OpenApi.PortableValidationOpenApiErrorHintAttribute";
+    public const string ExampleHintAttribute =
+        "Light.PortableResults.Validation.OpenApi.PortableValidationOpenApiExampleHintAttribute";
+    public const string ExampleMetadataAttribute =
+        "Light.PortableResults.Validation.OpenApi.PortableValidationOpenApiExampleMetadataAttribute";
+    public const string ErrorMetadataPropertyAttribute =
+        "Light.PortableResults.Validation.OpenApi.PortableValidationOpenApiErrorMetadataPropertyAttribute";
     public const string ValidationRuleAttribute =
         "Light.PortableResults.Validation.Definitions.ValidationRuleAttribute";
     public const string ValidationRuleMetadataAttribute =
