@@ -58,6 +58,7 @@
     <File Path="ai-plans\0040-6-plan-deviations.md" />
     <File Path="ai-plans\0043-0-openapi-source-generation.md" />
     <File Path="ai-plans\0043-1-improve-documentation-hints.md" />
+    <File Path="ai-plans\0043-2-openapi-example-messages.md" />
     <File Path="ai-plans\AGENTS.md" />
   </Folder>
   <Folder Name="/benchmarks/">
