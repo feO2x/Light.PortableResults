@@ -21,6 +21,7 @@ public static partial class Checks
     /// </param>
     /// <returns>The current check for fluent chaining.</returns>
     [ValidationRule(ValidationErrorCodes.NotNullOrWhiteSpace)]
+    [ValidationRuleMessage("{displayName} must not be empty or whitespace")]
     public static Check<string> IsNotNullOrWhiteSpace(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)
@@ -102,6 +103,7 @@ public static partial class Checks
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.MinLength)]
+    [ValidationRuleMessage("{displayName} must be at least {minLength} characters long")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.MinLength, nameof(minLength))]
     public static Check<string> HasMinLength(
         this Check<string> check,
@@ -196,6 +198,7 @@ public static partial class Checks
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.MaxLength)]
+    [ValidationRuleMessage("{displayName} must be at most {maxLength} characters long")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.MaxLength, nameof(maxLength))]
     public static Check<string?> HasMaxLength(
         this Check<string?> check,
@@ -299,6 +302,7 @@ public static partial class Checks
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.LengthInRange)]
+    [ValidationRuleMessage("{displayName} must be between {minLength} and {maxLength} characters long")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.MinLength, nameof(minLength))]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.MaxLength, nameof(maxLength))]
     public static Check<string> HasLengthIn(
@@ -527,6 +531,7 @@ public static partial class Checks
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.Pattern)]
+    [ValidationRuleMessage("{displayName} has an invalid format")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.Pattern, nameof(pattern))]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.RegexOptions, nameof(options))]
     public static Check<string> Matches(
@@ -643,6 +648,7 @@ public static partial class Checks
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.Email)]
+    [ValidationRuleMessage("{displayName} must be an email address")]
     public static Check<string> IsEmail(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)
@@ -726,6 +732,7 @@ public static partial class Checks
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.DigitsOnly)]
+    [ValidationRuleMessage("{displayName} must contain only digits")]
     public static Check<string> ContainsOnlyDigits(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)
@@ -807,6 +814,7 @@ public static partial class Checks
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.LettersAndDigitsOnly)]
+    [ValidationRuleMessage("{displayName} must contain only letters and digits")]
     public static Check<string> ContainsOnlyLettersAndDigits(this Check<string> check, bool shortCircuitOnError = false)
     {
         if (check.IsShortCircuited)

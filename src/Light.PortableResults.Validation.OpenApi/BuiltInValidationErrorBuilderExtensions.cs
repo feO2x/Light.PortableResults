@@ -113,7 +113,12 @@ public static class BuiltInValidationErrorBuilderExtensions
             _ => CreateComparisonSchema<T>(),
             $"GreaterThanOrEqualToMetadata<{typeof(T).Name}>"
         );
-        return AddComparisonExample(configuredBuilder, ValidationErrorCodes.GreaterThanOrEqualTo, target, comparativeValue);
+        return AddComparisonExample(
+            configuredBuilder,
+            ValidationErrorCodes.GreaterThanOrEqualTo,
+            target,
+            comparativeValue
+        );
     }
 
     /// <summary>Documents endpoint-specific GreaterThanOrEqualTo validation error metadata.</summary>
@@ -128,7 +133,12 @@ public static class BuiltInValidationErrorBuilderExtensions
             _ => CreateComparisonSchema<T>(),
             $"GreaterThanOrEqualToMetadata<{typeof(T).Name}>"
         );
-        return AddComparisonExample(configuredBuilder, ValidationErrorCodes.GreaterThanOrEqualTo, target, comparativeValue);
+        return AddComparisonExample(
+            configuredBuilder,
+            ValidationErrorCodes.GreaterThanOrEqualTo,
+            target,
+            comparativeValue
+        );
     }
 
     /// <summary>Documents endpoint-specific LessThan validation error metadata.</summary>
@@ -173,7 +183,12 @@ public static class BuiltInValidationErrorBuilderExtensions
             _ => CreateComparisonSchema<T>(),
             $"LessThanOrEqualToMetadata<{typeof(T).Name}>"
         );
-        return AddComparisonExample(configuredBuilder, ValidationErrorCodes.LessThanOrEqualTo, target, comparativeValue);
+        return AddComparisonExample(
+            configuredBuilder,
+            ValidationErrorCodes.LessThanOrEqualTo,
+            target,
+            comparativeValue
+        );
     }
 
     /// <summary>Documents endpoint-specific LessThanOrEqualTo validation error metadata.</summary>
@@ -188,7 +203,12 @@ public static class BuiltInValidationErrorBuilderExtensions
             _ => CreateComparisonSchema<T>(),
             $"LessThanOrEqualToMetadata<{typeof(T).Name}>"
         );
-        return AddComparisonExample(configuredBuilder, ValidationErrorCodes.LessThanOrEqualTo, target, comparativeValue);
+        return AddComparisonExample(
+            configuredBuilder,
+            ValidationErrorCodes.LessThanOrEqualTo,
+            target,
+            comparativeValue
+        );
     }
 
     /// <summary>Documents endpoint-specific InRange validation error metadata.</summary>
@@ -236,7 +256,13 @@ public static class BuiltInValidationErrorBuilderExtensions
             _ => CreateRangeSchema<T>(),
             $"NotInRangeMetadata<{typeof(T).Name}>"
         );
-        return AddRangeExample(configuredBuilder, ValidationErrorCodes.NotInRange, target, lowerBoundary, upperBoundary);
+        return AddRangeExample(
+            configuredBuilder,
+            ValidationErrorCodes.NotInRange,
+            target,
+            lowerBoundary,
+            upperBoundary
+        );
     }
 
     /// <summary>Documents endpoint-specific NotInRange validation error metadata.</summary>
@@ -252,7 +278,13 @@ public static class BuiltInValidationErrorBuilderExtensions
             _ => CreateRangeSchema<T>(),
             $"NotInRangeMetadata<{typeof(T).Name}>"
         );
-        return AddRangeExample(configuredBuilder, ValidationErrorCodes.NotInRange, target, lowerBoundary, upperBoundary);
+        return AddRangeExample(
+            configuredBuilder,
+            ValidationErrorCodes.NotInRange,
+            target,
+            lowerBoundary,
+            upperBoundary
+        );
     }
 
     /// <summary>Documents endpoint-specific ExclusiveRange validation error metadata.</summary>
@@ -268,7 +300,13 @@ public static class BuiltInValidationErrorBuilderExtensions
             _ => CreateRangeSchema<T>(),
             $"ExclusiveRangeMetadata<{typeof(T).Name}>"
         );
-        return AddRangeExample(configuredBuilder, ValidationErrorCodes.ExclusiveRange, target, lowerBoundary, upperBoundary);
+        return AddRangeExample(
+            configuredBuilder,
+            ValidationErrorCodes.ExclusiveRange,
+            target,
+            lowerBoundary,
+            upperBoundary
+        );
     }
 
     /// <summary>Documents endpoint-specific ExclusiveRange validation error metadata.</summary>
@@ -284,11 +322,17 @@ public static class BuiltInValidationErrorBuilderExtensions
             _ => CreateRangeSchema<T>(),
             $"ExclusiveRangeMetadata<{typeof(T).Name}>"
         );
-        return AddRangeExample(configuredBuilder, ValidationErrorCodes.ExclusiveRange, target, lowerBoundary, upperBoundary);
+        return AddRangeExample(
+            configuredBuilder,
+            ValidationErrorCodes.ExclusiveRange,
+            target,
+            lowerBoundary,
+            upperBoundary
+        );
     }
 
     private static OpenApiSchema CreateComparisonSchema<T>() =>
-        new()
+        new ()
         {
             Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
@@ -299,7 +343,7 @@ public static class BuiltInValidationErrorBuilderExtensions
         };
 
     private static OpenApiSchema CreateRangeSchema<T>() =>
-        new()
+        new ()
         {
             Type = JsonSchemaType.Object,
             Properties = new Dictionary<string, IOpenApiSchema>(StringComparer.Ordinal)
@@ -322,7 +366,7 @@ public static class BuiltInValidationErrorBuilderExtensions
     ) =>
         target is null ?
             builder :
-            builder.WithErrorExample(code, target, CreateComparisonMetadata(comparativeValue));
+            builder.WithErrorExample(code, target, null, CreateComparisonMetadata(comparativeValue));
 
     private static PortableValidationProblemOpenApiBuilder AddComparisonExample<T>(
         PortableValidationProblemOpenApiBuilder builder,
@@ -332,7 +376,7 @@ public static class BuiltInValidationErrorBuilderExtensions
     ) =>
         target is null ?
             builder :
-            builder.WithErrorExample(code, target, CreateComparisonMetadata(comparativeValue));
+            builder.WithErrorExample(code, target, null, CreateComparisonMetadata(comparativeValue));
 
     private static PortableProblemOpenApiBuilder AddRangeExample<T>(
         PortableProblemOpenApiBuilder builder,
@@ -343,7 +387,7 @@ public static class BuiltInValidationErrorBuilderExtensions
     ) =>
         target is null ?
             builder :
-            builder.WithErrorExample(code, target, CreateRangeMetadata(lowerBoundary, upperBoundary));
+            builder.WithErrorExample(code, target, null, CreateRangeMetadata(lowerBoundary, upperBoundary));
 
     private static PortableValidationProblemOpenApiBuilder AddRangeExample<T>(
         PortableValidationProblemOpenApiBuilder builder,
@@ -354,7 +398,7 @@ public static class BuiltInValidationErrorBuilderExtensions
     ) =>
         target is null ?
             builder :
-            builder.WithErrorExample(code, target, CreateRangeMetadata(lowerBoundary, upperBoundary));
+            builder.WithErrorExample(code, target, null, CreateRangeMetadata(lowerBoundary, upperBoundary));
 
     private static IReadOnlyDictionary<string, object?> CreateComparisonMetadata<T>(T? comparativeValue) =>
         new Dictionary<string, object?>(StringComparer.Ordinal)
@@ -375,7 +419,9 @@ public static class BuiltInValidationErrorBuilderExtensions
         return builder;
     }
 
-    private static PortableValidationProblemOpenApiBuilder EnsureBuilder(PortableValidationProblemOpenApiBuilder builder)
+    private static PortableValidationProblemOpenApiBuilder EnsureBuilder(
+        PortableValidationProblemOpenApiBuilder builder
+    )
     {
         ArgumentNullException.ThrowIfNull(builder);
         return builder;

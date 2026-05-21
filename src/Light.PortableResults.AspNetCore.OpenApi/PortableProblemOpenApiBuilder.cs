@@ -48,12 +48,13 @@ public sealed class PortableProblemOpenApiBuilder
     public PortableProblemOpenApiBuilder WithErrorExample(
         string code,
         string? target,
+        string? message = null,
         IReadOnlyDictionary<string, object?>? metadata = null
     )
     {
         _attribute.ErrorExamples = PortableOpenApiBuilderUtilities.AppendExamples(
             _attribute.ErrorExamples,
-            new PortableOpenApiErrorExampleEntry(code, target, metadata)
+            new PortableOpenApiErrorExampleEntry(code, target, message, metadata)
         );
         return this;
     }

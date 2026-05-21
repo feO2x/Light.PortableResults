@@ -128,4 +128,24 @@ internal static class DiagnosticDescriptors
         isEnabledByDefault: true,
         helpLinkUri: HelpLinkBase
     );
+
+    public static readonly DiagnosticDescriptor UnknownMessageTemplatePlaceholder = new (
+        "LPRSG0013",
+        "Validation rule message template has an unknown placeholder",
+        "Validation rule message template for rule '{0}' contains unknown placeholder '{1}'",
+        Category,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        helpLinkUri: HelpLinkBase
+    );
+
+    public static readonly DiagnosticDescriptor MalformedMessageTemplate = new (
+        "LPRSG0014",
+        "Validation rule message template is malformed",
+        "Validation rule message template for rule '{0}' is malformed: {1}",
+        Category,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        helpLinkUri: HelpLinkBase
+    );
 }

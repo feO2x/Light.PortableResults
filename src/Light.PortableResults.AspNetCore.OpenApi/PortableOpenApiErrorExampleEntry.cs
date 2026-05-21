@@ -14,6 +14,7 @@ public sealed class PortableOpenApiErrorExampleEntry : IEquatable<PortableOpenAp
     public PortableOpenApiErrorExampleEntry(
         string code,
         string? target,
+        string? message,
         IReadOnlyDictionary<string, object?>? metadata
     )
     {
@@ -21,6 +22,7 @@ public sealed class PortableOpenApiErrorExampleEntry : IEquatable<PortableOpenAp
 
         Code = code;
         Target = target;
+        Message = message;
         Metadata = metadata;
     }
 
@@ -33,6 +35,11 @@ public sealed class PortableOpenApiErrorExampleEntry : IEquatable<PortableOpenAp
     /// Gets the validation target, or <see langword="null" /> when the target could not be inferred.
     /// </summary>
     public string? Target { get; }
+
+    /// <summary>
+    /// Gets the optional example validation message.
+    /// </summary>
+    public string? Message { get; }
 
     /// <summary>
     /// Gets the optional error metadata values.
@@ -49,6 +56,7 @@ public sealed class PortableOpenApiErrorExampleEntry : IEquatable<PortableOpenAp
 
         return string.Equals(Code, other.Code, StringComparison.Ordinal) &&
                string.Equals(Target, other.Target, StringComparison.Ordinal) &&
+               string.Equals(Message, other.Message, StringComparison.Ordinal) &&
                MetadataEquals(Metadata, other.Metadata);
     }
 
@@ -61,6 +69,7 @@ public sealed class PortableOpenApiErrorExampleEntry : IEquatable<PortableOpenAp
         var hashCode = new HashCode();
         hashCode.Add(Code, StringComparer.Ordinal);
         hashCode.Add(Target, StringComparer.Ordinal);
+        hashCode.Add(Message, StringComparer.Ordinal);
         if (Metadata is not null)
         {
             foreach (var (key, value) in Metadata)

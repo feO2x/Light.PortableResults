@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -250,6 +252,7 @@ public static class ValidatorOpenApiAnalyzer
         }
 
         var target = TryInferTarget(semanticModel, invocations[0], sourceParameterName, cancellationToken);
+        var displayName = TryGetExplicitDisplayName(semanticModel, invocations[0], cancellationToken) ?? target;
         for (var i = 1; i < invocations.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -295,6 +298,7 @@ public static class ValidatorOpenApiAnalyzer
                 symbol,
                 ruleAttribute,
                 target,
+                displayName,
                 diagnostics,
                 cancellationToken
             );
@@ -311,6 +315,7 @@ public static class ValidatorOpenApiAnalyzer
         IMethodSymbol symbol,
         AttributeData ruleAttribute,
         string? target,
+        string? displayName,
         ICollection<Diagnostic> diagnostics,
         CancellationToken cancellationToken
     )
@@ -393,14 +398,227 @@ public static class ValidatorOpenApiAnalyzer
         }
 
         var typedValueTypeName = ResolveTypedValueTypeName(symbol, shape);
+        var message = CreateExampleMessage(definitionSymbol, symbol.Name, displayName, metadataValues, diagnostics);
         return new RuleCallModel(
             code!,
             shape,
             target,
+            message,
             typedValueTypeName,
             metadataValues.ToImmutable(),
             metadataSchemaProperties
         );
+    }
+
+    private static string? CreateExampleMessage(
+        IMethodSymbol definitionSymbol,
+        string ruleName,
+        string? displayName,
+        ImmutableArray<MetadataValueModel>.Builder metadataValues,
+        ICollection<Diagnostic> diagnostics
+    )
+    {
+        var messageAttribute = GetAttribute(definitionSymbol, KnownTypeNames.ValidationRuleMessageAttribute);
+        var template = messageAttribute?.ConstructorArguments.Length > 0 ?
+            messageAttribute.ConstructorArguments[0].Value as string :
+            null;
+        if (string.IsNullOrWhiteSpace(template))
+        {
+            return null;
+        }
+
+        var allowedPlaceholders = new HashSet<string>(
+            metadataValues.Select(static metadata => metadata.Key),
+            StringComparer.Ordinal
+        ) { "displayName" };
+        if (!TryParseMessageTemplate(
+                template!,
+                allowedPlaceholders,
+                ruleName,
+                messageAttribute!,
+                diagnostics,
+                out var parts
+            ))
+        {
+            return null;
+        }
+
+        var replacements = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (displayName is not null)
+        {
+            replacements.Add("displayName", displayName);
+        }
+
+        foreach (var metadata in metadataValues)
+        {
+            if (!metadata.HasConstantValue)
+            {
+                continue;
+            }
+
+            replacements[metadata.Key] = FormatMessageValue(metadata.Value);
+        }
+
+        var builder = new StringBuilder(template!.Length);
+        foreach (var part in parts)
+        {
+            if (part.Placeholder is null)
+            {
+                builder.Append(part.Text);
+                continue;
+            }
+
+            if (!replacements.TryGetValue(part.Placeholder, out var replacement))
+            {
+                return null;
+            }
+
+            builder.Append(replacement);
+        }
+
+        return builder.ToString();
+    }
+
+    private static bool TryParseMessageTemplate(
+        string template,
+        ISet<string> allowedPlaceholders,
+        string ruleName,
+        AttributeData messageAttribute,
+        ICollection<Diagnostic> diagnostics,
+        out ImmutableArray<MessageTemplatePart> parts
+    )
+    {
+        var builder = ImmutableArray.CreateBuilder<MessageTemplatePart>();
+        var literal = new StringBuilder();
+        var isValid = true;
+
+        for (var i = 0; i < template.Length; i++)
+        {
+            var c = template[i];
+            if (c == '{')
+            {
+                if (i + 1 < template.Length && template[i + 1] == '{')
+                {
+                    literal.Append('{');
+                    i++;
+                    continue;
+                }
+
+                var closeIndex = template.IndexOf('}', i + 1);
+                if (closeIndex < 0)
+                {
+                    diagnostics.Add(
+                        Diagnostic.Create(
+                            DiagnosticDescriptors.MalformedMessageTemplate,
+                            GetAttributeLocation(messageAttribute),
+                            ruleName,
+                            "unmatched '{'"
+                        )
+                    );
+                    isValid = false;
+                    break;
+                }
+
+                var placeholder = template.Substring(i + 1, closeIndex - i - 1);
+                if (!IsBarePlaceholderName(placeholder))
+                {
+                    diagnostics.Add(
+                        Diagnostic.Create(
+                            DiagnosticDescriptors.MalformedMessageTemplate,
+                            GetAttributeLocation(messageAttribute),
+                            ruleName,
+                            $"placeholder '{{{placeholder}}}' is not a bare identifier"
+                        )
+                    );
+                    isValid = false;
+                    i = closeIndex;
+                    continue;
+                }
+
+                if (literal.Length > 0)
+                {
+                    builder.Add(MessageTemplatePart.Literal(literal.ToString()));
+                    literal.Clear();
+                }
+
+                if (!allowedPlaceholders.Contains(placeholder))
+                {
+                    diagnostics.Add(
+                        Diagnostic.Create(
+                            DiagnosticDescriptors.UnknownMessageTemplatePlaceholder,
+                            GetAttributeLocation(messageAttribute),
+                            ruleName,
+                            placeholder
+                        )
+                    );
+                    isValid = false;
+                }
+
+                builder.Add(MessageTemplatePart.PlaceholderValue(placeholder));
+                i = closeIndex;
+                continue;
+            }
+
+            if (c == '}')
+            {
+                if (i + 1 < template.Length && template[i + 1] == '}')
+                {
+                    literal.Append('}');
+                    i++;
+                    continue;
+                }
+
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        DiagnosticDescriptors.MalformedMessageTemplate,
+                        GetAttributeLocation(messageAttribute),
+                        ruleName,
+                        "unmatched '}'"
+                    )
+                );
+                isValid = false;
+                continue;
+            }
+
+            literal.Append(c);
+        }
+
+        if (literal.Length > 0)
+        {
+            builder.Add(MessageTemplatePart.Literal(literal.ToString()));
+        }
+
+        parts = builder.ToImmutable();
+        return isValid;
+    }
+
+    private static bool IsBarePlaceholderName(string value)
+    {
+        if (value.Length == 0 || !(char.IsLetter(value[0]) || value[0] == '_'))
+        {
+            return false;
+        }
+
+        for (var i = 1; i < value.Length; i++)
+        {
+            var c = value[i];
+            if (!(char.IsLetterOrDigit(c) || c == '_'))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static string FormatMessageValue(object? value)
+    {
+        return value switch
+        {
+            null => string.Empty,
+            IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+            _ => value.ToString() ?? string.Empty
+        };
     }
 
     private static bool TryGetMetadataSchemaProperties(
@@ -729,6 +947,55 @@ public static class ValidatorOpenApiAnalyzer
         return ToCamelCase(memberAccess.Name.Identifier.ValueText);
     }
 
+    private static string? TryGetExplicitDisplayName(
+        SemanticModel semanticModel,
+        InvocationExpressionSyntax checkInvocation,
+        CancellationToken cancellationToken
+    )
+    {
+        var symbol = semanticModel.GetSymbolInfo(checkInvocation, cancellationToken).Symbol as IMethodSymbol;
+        if (symbol is null)
+        {
+            return null;
+        }
+
+        var displayNameParameterIndex = -1;
+        for (var i = 0; i < symbol.Parameters.Length; i++)
+        {
+            if (symbol.Parameters[i].Name == "displayName")
+            {
+                displayNameParameterIndex = i;
+                break;
+            }
+        }
+
+        if (displayNameParameterIndex < 0)
+        {
+            return null;
+        }
+
+        for (var i = 0; i < checkInvocation.ArgumentList.Arguments.Count; i++)
+        {
+            var argument = checkInvocation.ArgumentList.Arguments[i];
+            if (argument.NameColon is not null)
+            {
+                if (argument.NameColon.Name.Identifier.ValueText != "displayName")
+                {
+                    continue;
+                }
+            }
+            else if (i != displayNameParameterIndex)
+            {
+                continue;
+            }
+
+            var constant = semanticModel.GetConstantValue(argument.Expression, cancellationToken);
+            return constant.HasValue ? constant.Value as string : null;
+        }
+
+        return null;
+    }
+
     private static string? GetJsonPropertyName(IPropertySymbol propertySymbol)
     {
         foreach (var attribute in propertySymbol.GetAttributes())
@@ -751,6 +1018,22 @@ public static class ValidatorOpenApiAnalyzer
         }
 
         return char.ToLowerInvariant(name[0]) + name.Substring(1);
+    }
+
+    private readonly struct MessageTemplatePart
+    {
+        private MessageTemplatePart(string text, string? placeholder)
+        {
+            Text = text;
+            Placeholder = placeholder;
+        }
+
+        public string Text { get; }
+        public string? Placeholder { get; }
+
+        public static MessageTemplatePart Literal(string text) => new (text, null);
+
+        public static MessageTemplatePart PlaceholderValue(string placeholder) => new (string.Empty, placeholder);
     }
 
     private static string? ResolveTypedValueTypeName(IMethodSymbol symbol, RuleMetadataShape shape)
@@ -1004,8 +1287,10 @@ public static class ValidatorOpenApiAnalyzer
 
             var target = attribute.NamedArguments.FirstOrDefault(static argument => argument.Key == "Target")
                .Value.Value as string;
+            var message = attribute.NamedArguments.FirstOrDefault(static argument => argument.Key == "Message")
+               .Value.Value as string;
             var metadataValues = GetExampleMetadataValues(attributeArray, code!, diagnostics);
-            yield return new ExampleHintModel(code!, target, metadataValues);
+            yield return new ExampleHintModel(code!, target, message, metadataValues);
         }
 
         foreach (var metadataAttribute in attributeArray.Where(

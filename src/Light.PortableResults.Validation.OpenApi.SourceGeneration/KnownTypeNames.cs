@@ -16,6 +16,8 @@ internal static class KnownTypeNames
         "Light.PortableResults.Validation.Definitions.ValidationRuleAttribute";
     public const string ValidationRuleMetadataAttribute =
         "Light.PortableResults.Validation.Definitions.ValidationRuleMetadataAttribute";
+    public const string ValidationRuleMessageAttribute =
+        "Light.PortableResults.Validation.Definitions.ValidationRuleMessageAttribute";
     public const string ValidationErrorContractAttribute =
         "Light.PortableResults.Validation.Definitions.ValidationErrorContractAttribute";
     public const string ValidationErrorMetadataContractAttribute =

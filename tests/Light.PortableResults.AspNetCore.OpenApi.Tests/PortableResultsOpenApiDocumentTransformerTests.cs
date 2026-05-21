@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Light.PortableResults.AspNetCore.MinimalApis;
@@ -478,6 +479,63 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
     }
 
     [Fact]
+    public async Task Transformer_ShouldUseConfiguredMessagesInRichValidationExamples()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/validation/message-rich", static () => TypedResults.Problem())
+                   .WithName("MessageRich")
+                   .ProducesPortableValidationProblem(
+                        configure: builder => builder
+                           .UseFormat(ValidationProblemSerializationFormat.Rich)
+                           .WithErrorExample("NotEmpty", "name", "name must not be empty")
+                           .WithErrorExample("Unknown", "description")
+                    );
+            }
+        );
+
+        var body = GetValidationProblemExample(
+            await GetOpenApiDocumentAsync(app),
+            "/minimal/validation/message-rich"
+        );
+        var errors = body["errors"].Should().BeOfType<JsonArray>().Subject;
+
+        errors[0]!["message"]!.ToString().Should().Be("name must not be empty");
+        errors[1]!["message"]!.ToString().Should().Be("Validation failed.");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldUseConfiguredMessagesInAspNetCoreCompatibleValidationExamples()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/validation/message-aspnet", static () => TypedResults.Problem())
+                   .WithName("MessageAspNet")
+                   .ProducesPortableValidationProblem(
+                        configure: builder => builder
+                           .UseFormat(ValidationProblemSerializationFormat.AspNetCoreCompatible)
+                           .WithErrorExample("NotEmpty", "name", "name must not be empty")
+                           .WithErrorExample("Unknown", "name")
+                    );
+            }
+        );
+
+        var body = GetValidationProblemExample(
+            await GetOpenApiDocumentAsync(app),
+            "/minimal/validation/message-aspnet"
+        );
+        var messages = body["errors"]!["name"].Should().BeOfType<JsonArray>().Subject;
+
+        messages.Select(static message => message!.ToString())
+           .Should()
+           .Equal("name must not be empty", "Validation failed.");
+    }
+
+    [Fact]
     public async Task Transformer_ShouldMaterializeReferencedResponsesBeforeWritingContent()
     {
         await using var app = CreateMinimalApiApp(
@@ -868,6 +926,14 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var pathItem = document.Paths[path];
         var operation = pathItem.Operations![httpMethod];
         return (OpenApiResponse) operation.Responses![statusCode.ToString(CultureInfo.InvariantCulture)];
+    }
+
+    private static JsonObject GetValidationProblemExample(OpenApiDocument document, string path)
+    {
+        var response = GetResponse(document, path, HttpMethod.Get, StatusCodes.Status400BadRequest);
+        var mediaType = response.Content!["application/problem+json"];
+        var example = (OpenApiExample) mediaType.Examples!["ValidationProblem"];
+        return example.Value.Should().BeOfType<JsonObject>().Subject;
     }
 
     private static OpenApiSchema GetSchemaComponent(OpenApiDocument document, string schemaId)

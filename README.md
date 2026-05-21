@@ -1465,7 +1465,7 @@ The generated contract calls the same builder APIs you would write by hand, then
 
 The generator analyzes top-level `context.Check(...).Rule(...)` chains in synchronous `Validator<T>` and `Validator<TSource, TValidated>` implementations. It supports built-in annotated rules, assignments that consume a checked value, explicit error hints via `[PortableValidationOpenApiErrorHint]`, and user-defined check methods annotated with `[ValidationRule]` plus optional `[ValidationErrorContract]` metadata definitions. Checks inside `if`, `switch`, loops, lambdas, local functions, `try`, or `using` blocks are skipped with a warning; lift the check to a top-level statement or add explicit hints when those errors must appear in the OpenAPI schema.
 
-When metadata arguments are compile-time constants, such as `HasLengthIn(10, 1000)` or `IsInRange(1, 5)`, the generated contract also contributes a response-level OpenAPI example. Scalar and Swagger UI show these concrete values in the validation problem example body. Non-constant metadata arguments still get documented schemas, but that specific call site is omitted from the example. Delegate-based `Must(...)`, `Custom(...)`, `ErrorOverrides`, async validators, source-null errors emitted before `PerformValidation`, child validators, and complex target inference are intentionally outside the first-generation analysis.
+When metadata arguments are compile-time constants, such as `HasLengthIn(10, 1000)` or `IsInRange(1, 5)`, the generated contract also contributes a response-level OpenAPI example. Scalar and Swagger UI show these concrete values in the validation problem example body, including representative default messages such as `"comment must be between 10 and 1000 characters long"` and `"rating must be between 1 and 5"`. These messages are documentation examples based on the framework defaults; runtime responses can differ when applications configure validation templates, display names, target normalization, culture, or error overrides. Non-constant metadata arguments still get documented schemas and can still appear as code/target examples, but the generated message and concrete metadata values are omitted for that call site so the OpenAPI transformer uses the generic fallback message. Delegate-based `Must(...)`, `Custom(...)`, `ErrorOverrides`, async validators, source-null errors emitted before `PerformValidation`, child validators, and complex target inference are intentionally outside the first-generation analysis.
 
 Use explicit hints when the validator emits known validation error contracts that the generator cannot infer. For an opaque `Custom(...)` path that only needs a code in the schema, add a code-only hint at the validator or `PerformValidation` method level:
 
@@ -1490,10 +1490,14 @@ If the opaque path has endpoint-specific metadata, either point to a metadata ty
 
 Hints compose with inferred rules. Matching schema shapes are deduplicated, while conflicting metadata shapes for the same code are reported by the generator because the emitted OpenAPI contract would otherwise be ambiguous. Hinting a code never makes the generated response non-exhaustive and never calls `AllowUnknownErrorCodes()` by itself.
 
-You can also provide response-example entries for opaque paths. An example-only hint documents the code as code-only, so the common case does not need a separate `[PortableValidationOpenApiErrorHint]`. Metadata values are compile-time constants declared with companion attributes:
+You can also provide response-example entries for opaque paths. An example-only hint documents the code as code-only, so the common case does not need a separate `[PortableValidationOpenApiErrorHint]`. Use `Message` when the opaque path needs exact example text; otherwise the OpenAPI transformer writes `"Validation failed."`. Metadata values are compile-time constants declared with companion attributes:
 
 ```csharp
-[PortableValidationOpenApiExampleHint("RatingTooLow", Target = "rating")]
+[PortableValidationOpenApiExampleHint(
+    "RatingTooLow",
+    Target = "rating",
+    Message = "rating must be at least 1"
+)]
 [PortableValidationOpenApiExampleMetadata("RatingTooLow", "lowerBoundary", 1)]
 [PortableValidationOpenApiExampleMetadata("RatingTooLow", "upperBoundary", 5)]
 ```

@@ -64,6 +64,10 @@ public sealed class GeneratedValidationOpenApiIntegrationTests
         exampleErrors.ToJsonString().Should().Contain("\"upperBoundary\":5");
         exampleErrors.ToJsonString().Should().Contain("\"minLength\":10");
         exampleErrors.ToJsonString().Should().Contain("\"maxLength\":1000");
+        exampleErrors.ToJsonString().Should().Contain("\"message\":\"id must not be empty\"");
+        exampleErrors.ToJsonString().Should()
+           .Contain("\"message\":\"comment must be between 10 and 1000 characters long\"");
+        exampleErrors.ToJsonString().Should().Contain("\"message\":\"rating must be between 1 and 5\"");
 
         var genericProblemResponse = (OpenApiResponse) operation.Responses![StatusCodes.Status500InternalServerError.ToString()];
         genericProblemResponse.Content!["application/problem+json"].Examples.Should().BeNullOrEmpty();

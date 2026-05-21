@@ -25,6 +25,8 @@ namespace Light.PortableResults.AspNetCore.OpenApi.Generation;
 /// </summary>
 public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocumentTransformer
 {
+    private const string DefaultValidationExampleMessage = "Validation failed.";
+
     private readonly IErrorMetadataContractRegistry _errorMetadataContractRegistry;
     private readonly PortableResultsHttpWriteOptions _writeOptions;
 
@@ -267,7 +269,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         {
             var error = new JsonObject
             {
-                ["message"] = "Validation failed.",
+                ["message"] = entry.Message ?? DefaultValidationExampleMessage,
                 ["code"] = entry.Code,
                 ["target"] = entry.Target,
                 ["category"] = ErrorCategory.Validation.ToString()
@@ -300,7 +302,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
 
             var index = nextIndexByTarget[target];
             nextIndexByTarget[target] = index + 1;
-            messages.Add((JsonNode?) JsonValue.Create("Validation failed."));
+            messages.Add((JsonNode?) JsonValue.Create(entry.Message ?? DefaultValidationExampleMessage));
 
             var detail = new JsonObject
             {

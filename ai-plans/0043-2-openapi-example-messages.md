@@ -8,19 +8,19 @@ This plan extends the example model so generated and manually configured validat
 
 ## Acceptance Criteria
 
-- [ ] OpenAPI response examples can carry a per-error message in addition to the existing code, target, category, and metadata values.
-- [ ] `WithErrorExample(...)` and `PortableOpenApiErrorExampleEntry` use a message-before-metadata signature; existing internal call sites are updated because the feature has not been published in a stable release yet.
-- [ ] The OpenAPI document transformer uses the supplied example message for both rich validation problem responses and ASP.NET Core-compatible validation problem responses.
-- [ ] The validation rule annotation model can describe a default example-message template for built-in and explicitly annotated custom rules without referencing ASP.NET Core or `Microsoft.OpenApi`.
-- [ ] Built-in validation rules are annotated with default example-message templates that match the framework's default `ValidationErrorTemplates` as closely as possible.
-- [ ] Message-template parsing supports literal braces via `{{` and `}}`. Placeholder names are case-sensitive, must match the metadata key (or `displayName`) exactly, and disallow inner whitespace (`{ minLength }` is malformed).
-- [ ] The source generator emits per-rule example messages when it can resolve every value needed by the message template at generation time.
-- [ ] The source generator omits the rule-specific example message when required inputs cannot be resolved statically, allowing the OpenAPI transformer to apply its centralized fallback message.
-- [ ] The source generator reports two distinct Roslyn warning diagnostics for message-template annotation problems: one for unknown placeholders (a name that is neither `displayName` nor a metadata key declared by the rule) and one for malformed brace sequences (unmatched `{` or `}`).
-- [ ] Explicit OpenAPI example hints can supply a message for opaque or custom validation paths.
-- [ ] Generated source remains deterministic, NativeAOT-safe, reflection-free, and independent of consumer implicit usings, global usings, aliases, and local using directives.
-- [ ] Automated tests are written for builder APIs, document transformation, source-generator output, inferred built-in rule messages, explicit hint messages, fallback behavior, and non-constant message omission.
-- [ ] Documentation is updated to explain that generated messages are representative examples based on framework defaults and may differ from runtime messages when applications customize validation behavior.
+- [x] OpenAPI response examples can carry a per-error message in addition to the existing code, target, category, and metadata values.
+- [x] `WithErrorExample(...)` and `PortableOpenApiErrorExampleEntry` use a message-before-metadata signature; existing internal call sites are updated because the feature has not been published in a stable release yet.
+- [x] The OpenAPI document transformer uses the supplied example message for both rich validation problem responses and ASP.NET Core-compatible validation problem responses.
+- [x] The validation rule annotation model can describe a default example-message template for built-in and explicitly annotated custom rules without referencing ASP.NET Core or `Microsoft.OpenApi`.
+- [x] Built-in validation rules are annotated with default example-message templates that match the framework's default `ValidationErrorTemplates` as closely as possible.
+- [x] Message-template parsing supports literal braces via `{{` and `}}`. Placeholder names are case-sensitive, must match the metadata key (or `displayName`) exactly, and disallow inner whitespace (`{ minLength }` is malformed).
+- [x] The source generator emits per-rule example messages when it can resolve every value needed by the message template at generation time.
+- [x] The source generator omits the rule-specific example message when required inputs cannot be resolved statically, allowing the OpenAPI transformer to apply its centralized fallback message.
+- [x] The source generator reports two distinct Roslyn warning diagnostics for message-template annotation problems: one for unknown placeholders (a name that is neither `displayName` nor a metadata key declared by the rule) and one for malformed brace sequences (unmatched `{` or `}`).
+- [x] Explicit OpenAPI example hints can supply a message for opaque or custom validation paths.
+- [x] Generated source remains deterministic, NativeAOT-safe, reflection-free, and independent of consumer implicit usings, global usings, aliases, and local using directives.
+- [x] Automated tests are written for builder APIs, document transformation, source-generator output, inferred built-in rule messages, explicit hint messages, fallback behavior, and non-constant message omission.
+- [x] Documentation is updated to explain that generated messages are representative examples based on framework defaults and may differ from runtime messages when applications customize validation behavior.
 
 ## Technical Details
 

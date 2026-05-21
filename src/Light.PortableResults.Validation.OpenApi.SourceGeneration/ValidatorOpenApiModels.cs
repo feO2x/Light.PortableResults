@@ -139,6 +139,7 @@ internal sealed class RuleCallModel
         string code,
         RuleMetadataShape shape,
         string? target,
+        string? message,
         string? typedValueTypeName,
         ImmutableArray<MetadataValueModel> metadataValues,
         ImmutableArray<MetadataSchemaPropertyModel> metadataSchemaProperties
@@ -147,6 +148,7 @@ internal sealed class RuleCallModel
         Code = code;
         Shape = shape;
         Target = target;
+        Message = message;
         TypedValueTypeName = typedValueTypeName;
         MetadataValues = metadataValues;
         MetadataSchemaProperties = metadataSchemaProperties;
@@ -155,6 +157,7 @@ internal sealed class RuleCallModel
     public string Code { get; }
     public RuleMetadataShape Shape { get; }
     public string? Target { get; }
+    public string? Message { get; }
     public string? TypedValueTypeName { get; }
     public ImmutableArray<MetadataValueModel> MetadataValues { get; }
     public ImmutableArray<MetadataSchemaPropertyModel> MetadataSchemaProperties { get; }
@@ -211,16 +214,19 @@ internal sealed class ExampleHintModel
     public ExampleHintModel(
         string code,
         string? target,
+        string? message,
         ImmutableArray<MetadataValueModel> metadataValues
     )
     {
         Code = code;
         Target = target;
+        Message = message;
         MetadataValues = metadataValues;
     }
 
     public string Code { get; }
     public string? Target { get; }
+    public string? Message { get; }
     public ImmutableArray<MetadataValueModel> MetadataValues { get; }
 }
 

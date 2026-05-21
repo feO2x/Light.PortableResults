@@ -82,6 +82,46 @@ public sealed class PortableOpenApiResponseBuilderTests
     }
 
     [Fact]
+    public void ErrorExampleEntries_ShouldIncludeMessageInEqualityAndHashing()
+    {
+        var first = new PortableOpenApiErrorExampleEntry("NotEmpty", "name", "name must not be empty", null);
+        var same = new PortableOpenApiErrorExampleEntry("NotEmpty", "name", "name must not be empty", null);
+        var differentMessage = new PortableOpenApiErrorExampleEntry("NotEmpty", "name", "custom message", null);
+
+        first.Should().Be(same);
+        first.GetHashCode().Should().Be(same.GetHashCode());
+        first.Should().NotBe(differentMessage);
+    }
+
+    [Fact]
+    public void ProducesPortableValidationProblem_ShouldAccumulateMessageAwareExamples()
+    {
+        var metadata = new Dictionary<string, object?>(StringComparer.Ordinal) { ["minLength"] = 3 };
+        var attribute = GetMetadata<ProducesPortableValidationProblemAttribute>(
+            builder =>
+                builder.ProducesPortableValidationProblem(
+                    configure: x => x.WithErrorExample(
+                        "MinLength",
+                        "name",
+                        "name must be at least 3 characters long",
+                        metadata
+                    )
+                ),
+            static () => TypedResults.Problem()
+        );
+
+        attribute.ErrorExamples.Should()
+           .ContainSingle()
+           .Which.Should()
+           .Be(new PortableOpenApiErrorExampleEntry(
+                "MinLength",
+                "name",
+                "name must be at least 3 characters long",
+                metadata
+            ));
+    }
+
+    [Fact]
     public void ProducesPortableSuccessResponse_ShouldAccumulateRouteMetadata()
     {
         var attribute = GetMetadata<PortableOpenApiSuccessResponseAttributeBase>(

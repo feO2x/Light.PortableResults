@@ -61,7 +61,11 @@ public sealed class PortableValidationOpenApiGeneratorTests
         source.Should().Contain("partial class RatingValidator : IPortableValidationOpenApiContract");
         source.Should().Contain("builder.WithErrorCodes(\"LengthInRange\", \"NotEmpty\");");
         source.Should().Contain("builder.WithInRangeError<global::System.Int32>();");
-        source.Should().Contain("builder.WithErrorExample(\"NotEmpty\", \"id\");");
+        source.Should().Contain("builder.WithErrorExample(\"NotEmpty\", \"id\", \"id must not be empty\");");
+        source.Should().Contain(
+            "builder.WithErrorExample(\"LengthInRange\", \"comment\", \"comment must be between 10 and 1000 characters long\""
+        );
+        source.Should().Contain("builder.WithErrorExample(\"InRange\", \"rating\", \"rating must be between 1 and 5\"");
         source.Should().Contain("[\"minLength\"] = 10");
         source.Should().Contain("[\"upperBoundary\"] = 5");
     }
@@ -182,7 +186,7 @@ public sealed class PortableValidationOpenApiGeneratorTests
         source.Should().Contain("builder.WithErrorMetadata(\"DivisibleBy\", _ => new OpenApiSchema");
         source.Should().Contain("[\"divisor\"] = PortableOpenApiSchemaTypeMapper.Map<global::System.Int32>()");
         source.Should().Contain(
-            "builder.WithErrorExample(\"DivisibleBy\", null, new Dictionary<string, object?>(StringComparer.Ordinal) { [\"divisor\"] = 3 });"
+            "builder.WithErrorExample(\"DivisibleBy\", null, null, new Dictionary<string, object?>(StringComparer.Ordinal) { [\"divisor\"] = 3 });"
         );
     }
 
@@ -253,7 +257,7 @@ public sealed class PortableValidationOpenApiGeneratorTests
         source.Should().Contain("[\"lowerBoundary\"] = PortableOpenApiSchemaTypeMapper.Map<global::System.Int32>()");
         source.Should().Contain("[\"upperBoundary\"] = PortableOpenApiSchemaTypeMapper.Map<global::System.Int32>()");
         source.Should().Contain(
-            "builder.WithErrorExample(\"RatingTooLow\", \"rating\", new Dictionary<string, object?>(StringComparer.Ordinal) { [\"lowerBoundary\"] = 1, [\"upperBoundary\"] = 5 });"
+            "builder.WithErrorExample(\"RatingTooLow\", \"rating\", null, new Dictionary<string, object?>(StringComparer.Ordinal) { [\"lowerBoundary\"] = 1, [\"upperBoundary\"] = 5 });"
         );
         source.Should().NotContain("builder.AllowUnknownErrorCodes();");
     }
@@ -287,7 +291,208 @@ public sealed class PortableValidationOpenApiGeneratorTests
            .BeEmpty();
         var source = result.GeneratedSources.Single();
         source.Should().Contain("builder.WithErrorCodes(\"CustomCode\");");
-        source.Should().Contain("builder.WithErrorExample(\"CustomCode\", \"name\");");
+        source.Should().Contain("builder.WithErrorExample(\"CustomCode\", \"name\", null);");
+    }
+
+    [Fact]
+    public void Generator_ShouldEmitExplicitDisplayNameAndHintMessages()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.OpenApi;
+
+            [GeneratePortableValidationOpenApi]
+            [PortableValidationOpenApiExampleHint("Opaque", Target = "movieId", Message = "movieId has already been rated")]
+            public sealed partial class MessageHintValidator : Validator<MovieDto>
+            {
+                public MessageHintValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValidatedValue<MovieDto> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    MovieDto dto
+                )
+                {
+                    context.Check(dto.Name, displayName: "Movie name").IsNotEmpty();
+                    return checkpoint.ToValidatedValue(dto);
+                }
+            }
+
+            public sealed class MovieDto
+            {
+                public string Name { get; init; } = "";
+            }
+            """
+        );
+
+        result.Diagnostics.Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+           .Should()
+           .BeEmpty();
+        var source = result.GeneratedSources.Single();
+        source.Should().Contain(
+            "builder.WithErrorExample(\"NotEmpty\", \"name\", \"Movie name must not be empty\");"
+        );
+        source.Should().Contain(
+            "builder.WithErrorExample(\"Opaque\", \"movieId\", \"movieId has already been rated\");"
+        );
+    }
+
+    [Fact]
+    public void Generator_ShouldOmitMessageWhenTemplateValuesAreNotConstant()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.OpenApi;
+
+            [GeneratePortableValidationOpenApi]
+            public sealed partial class NonConstantMessageValidator : Validator<MovieDto>
+            {
+                public NonConstantMessageValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValidatedValue<MovieDto> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    MovieDto dto
+                )
+                {
+                    var minimum = dto.MinimumLength;
+                    context.Check(dto.Name).HasMinLength(minimum);
+                    return checkpoint.ToValidatedValue(dto);
+                }
+            }
+
+            public sealed class MovieDto
+            {
+                public string Name { get; init; } = "";
+                public int MinimumLength { get; init; }
+            }
+            """
+        );
+
+        result.Diagnostics.Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+           .Should()
+           .BeEmpty();
+        var source = result.GeneratedSources.Single();
+        source.Should().Contain("builder.WithErrorCodes(\"MinLength\");");
+        source.Should().Contain("builder.WithErrorExample(\"MinLength\", \"name\", null);");
+        source.Should().NotContain("name must be at least");
+    }
+
+    [Fact]
+    public void Generator_ShouldEmitAnnotatedCustomRuleMessagesWithEscapedBraces()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.Definitions;
+            using Light.PortableResults.Validation.OpenApi;
+
+            [GeneratePortableValidationOpenApi]
+            public sealed partial class CustomMessageValidator : Validator<MovieDto>
+            {
+                public CustomMessageValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValidatedValue<MovieDto> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    MovieDto dto
+                )
+                {
+                    context.Check(dto.Rating).IsMultipleOf(5);
+                    return checkpoint.ToValidatedValue(dto);
+                }
+            }
+
+            public static class CustomChecks
+            {
+                [ValidationRule("MultipleOf")]
+                [ValidationRuleMetadata("divisor", "divisor")]
+                [ValidationRuleMessage("{displayName} must be a multiple of {divisor}; literal braces: {{ok}}")]
+                public static Check<int> IsMultipleOf(this Check<int> check, int divisor) => check;
+            }
+
+            public sealed class MovieDto
+            {
+                public int Rating { get; init; }
+            }
+            """
+        );
+
+        result.Diagnostics.Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+           .Should()
+           .BeEmpty();
+        result.GeneratedSources.Single().Should().Contain(
+            "builder.WithErrorExample(\"MultipleOf\", \"rating\", \"rating must be a multiple of 5; literal braces: {ok}\""
+        );
+    }
+
+    [Fact]
+    public void Generator_ShouldReportDistinctDiagnosticsForMessageTemplateProblems()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.Definitions;
+            using Light.PortableResults.Validation.OpenApi;
+
+            [GeneratePortableValidationOpenApi]
+            public sealed partial class BadTemplateValidator : Validator<int>
+            {
+                public BadTemplateValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValidatedValue<int> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    int value
+                )
+                {
+                    context.Check(value).HasUnknownPlaceholder(1);
+                    context.Check(value).HasMalformedTemplate(1);
+                    context.Check(value).HasWhitespaceTemplate(1);
+                    context.Check(value).HasUnmatchedCloseBraceTemplate(1);
+                    return checkpoint.ToValidatedValue(value);
+                }
+            }
+
+            public static class BadTemplateChecks
+            {
+                [ValidationRule("Unknown")]
+                [ValidationRuleMetadata("known", "value")]
+                [ValidationRuleMessage("{displayName} {missing}")]
+                public static Check<int> HasUnknownPlaceholder(this Check<int> check, int value) => check;
+
+                [ValidationRule("Malformed")]
+                [ValidationRuleMetadata("known", "value")]
+                [ValidationRuleMessage("{displayName")]
+                public static Check<int> HasMalformedTemplate(this Check<int> check, int value) => check;
+
+                [ValidationRule("Whitespace")]
+                [ValidationRuleMetadata("known", "value")]
+                [ValidationRuleMessage("{ displayName }")]
+                public static Check<int> HasWhitespaceTemplate(this Check<int> check, int value) => check;
+
+                [ValidationRule("UnmatchedCloseBrace")]
+                [ValidationRuleMetadata("known", "value")]
+                [ValidationRuleMessage("{displayName}}")]
+                public static Check<int> HasUnmatchedCloseBraceTemplate(this Check<int> check, int value) => check;
+            }
+            """
+        );
+
+        result.Diagnostics.Select(static diagnostic => diagnostic.Id)
+           .Should()
+           .Contain(["LPRSG0013", "LPRSG0014"]);
+        var source = result.GeneratedSources.Single();
+        source.Should().Contain("builder.WithErrorExample(\"Unknown\", null, null");
+        source.Should().Contain("builder.WithErrorExample(\"Malformed\", null, null");
+        source.Should().Contain("builder.WithErrorExample(\"Whitespace\", null, null");
+        source.Should().Contain("builder.WithErrorExample(\"UnmatchedCloseBrace\", null, null");
     }
 
     [Fact]
@@ -326,7 +531,7 @@ public sealed class PortableValidationOpenApiGeneratorTests
            .BeEmpty();
         var source = result.GeneratedSources.Single();
         source.Should().Contain("builder.WithErrorMetadata<global::CustomMetadata>(\"CustomCode\");");
-        source.Should().Contain("builder.WithErrorExample(\"CustomCode\", \"name\");");
+        source.Should().Contain("builder.WithErrorExample(\"CustomCode\", \"name\", null);");
         source.Should().NotContain("builder.WithErrorCodes(\"CustomCode\");");
     }
 

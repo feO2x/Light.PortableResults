@@ -26,4 +26,9 @@ public sealed class PortableValidationOpenApiExampleHintAttribute : Attribute
     /// Gets or sets the optional validation target used in the generated example entry.
     /// </summary>
     public string? Target { get; set; }
+
+    /// <summary>
+    /// Gets or sets the optional validation message used in the generated example entry.
+    /// </summary>
+    public string? Message { get; set; }
 }

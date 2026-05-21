@@ -130,6 +130,27 @@ public sealed class ValidationRuleMetadataAttribute : Attribute
 }
 
 /// <summary>
+/// Describes a compile-time example message template for a validation rule.
+/// </summary>
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+public sealed class ValidationRuleMessageAttribute : Attribute
+{
+    /// <summary>
+    /// Initializes a new instance of <see cref="ValidationRuleMessageAttribute" />.
+    /// </summary>
+    public ValidationRuleMessageAttribute(string template)
+    {
+        ValidationAttributeGuard.EnsureNotNullOrWhiteSpace(template, nameof(template));
+        Template = template;
+    }
+
+    /// <summary>
+    /// Gets the compile-time example message template.
+    /// </summary>
+    public string Template { get; }
+}
+
+/// <summary>
 /// Marks a validation error definition as having a stable documentable error contract.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]

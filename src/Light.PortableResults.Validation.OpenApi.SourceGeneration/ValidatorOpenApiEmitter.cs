@@ -233,18 +233,17 @@ internal static class ValidatorOpenApiEmitter
     {
         foreach (var rule in model.Rules)
         {
-            if (rule.MetadataValues.Any(static metadata => !metadata.HasConstantValue))
-            {
-                continue;
-            }
+            var canEmitMetadata = rule.MetadataValues.All(static metadata => metadata.HasConstantValue);
 
             writer
                .Write("builder.WithErrorExample(")
                .Write(ToStringLiteral(rule.Code))
                .Write(", ")
-               .Write(rule.Target is null ? "null" : ToStringLiteral(rule.Target));
+               .Write(rule.Target is null ? "null" : ToStringLiteral(rule.Target))
+               .Write(", ")
+               .Write(rule.Message is null ? "null" : ToStringLiteral(rule.Message));
 
-            if (rule.MetadataValues.Length > 0)
+            if (canEmitMetadata && rule.MetadataValues.Length > 0)
             {
                 EmitMetadataDictionary(writer.Write(", "), rule.MetadataValues);
             }
@@ -258,6 +257,7 @@ internal static class ValidatorOpenApiEmitter
                          {
                              example.Code,
                              Target = example.Target ?? string.Empty,
+                             Message = example.Message ?? string.Empty,
                              Metadata = string.Join(
                                  "\u001F",
                                  example.MetadataValues.Select(
@@ -274,7 +274,9 @@ internal static class ValidatorOpenApiEmitter
                .Write("builder.WithErrorExample(")
                .Write(ToStringLiteral(example.Code))
                .Write(", ")
-               .Write(example.Target is null ? "null" : ToStringLiteral(example.Target));
+               .Write(example.Target is null ? "null" : ToStringLiteral(example.Target))
+               .Write(", ")
+               .Write(example.Message is null ? "null" : ToStringLiteral(example.Message));
 
             if (example.MetadataValues.Length > 0)
             {

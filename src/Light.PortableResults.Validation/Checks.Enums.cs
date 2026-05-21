@@ -23,6 +23,7 @@ public static partial class Checks
     /// declared members of <typeparamref name="TEnum" /> are considered invalid.
     /// </remarks>
     [ValidationRule(ValidationErrorCodes.Enum)]
+    [ValidationRuleMessage("{displayName} must be a defined enum value")]
     public static Check<TEnum> IsInEnum<TEnum>(this Check<TEnum> check, bool shortCircuitOnError = false)
         where TEnum : struct, Enum
     {
@@ -98,6 +99,7 @@ public static partial class Checks
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.Enum)]
+    [ValidationRuleMessage("{displayName} must be a defined enum value")]
     public static Check<TEnum?> IsInEnum<TEnum>(this Check<TEnum?> check, bool shortCircuitOnError = false)
         where TEnum : struct, Enum
     {
@@ -107,7 +109,7 @@ public static partial class Checks
         }
 
         var value = GetRequiredValue(check.Value, nameof(IsInEnum));
-        if (Enum.IsDefined(typeof(TEnum), value))
+        if (Enum.IsDefined(typeof(TEnum), value!))
         {
             return check;
         }
@@ -157,7 +159,7 @@ public static partial class Checks
         }
 
         var value = GetRequiredValue(check.Value, nameof(IsInEnum));
-        if (Enum.IsDefined(typeof(TEnum), value))
+        if (Enum.IsDefined(typeof(TEnum), value!))
         {
             return check;
         }
@@ -192,6 +194,7 @@ public static partial class Checks
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.EnumName)]
+    [ValidationRuleMessage("{displayName} must be a valid enum name")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.IgnoreCase, nameof(ignoreCase))]
     public static Check<string?> IsEnumName<TEnum>(
         this Check<string?> check,

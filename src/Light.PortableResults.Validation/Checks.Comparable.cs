@@ -31,6 +31,7 @@ public static partial class Checks
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.GreaterThan, ValidationRuleMetadataShape.TypedComparison)]
+    [ValidationRuleMessage("{displayName} must be greater than {comparativeValue}")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.ComparativeValue, nameof(comparativeValue))]
     public static Check<T> IsGreaterThan<T>(
         this Check<T> check,
@@ -137,6 +138,7 @@ public static partial class Checks
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.GreaterThanOrEqualTo, ValidationRuleMetadataShape.TypedComparison)]
+    [ValidationRuleMessage("{displayName} must be greater than or equal to {comparativeValue}")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.ComparativeValue, nameof(comparativeValue))]
     public static Check<T> IsGreaterThanOrEqualTo<T>(
         this Check<T> check,
@@ -243,6 +245,7 @@ public static partial class Checks
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.LessThan, ValidationRuleMetadataShape.TypedComparison)]
+    [ValidationRuleMessage("{displayName} must be less than {comparativeValue}")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.ComparativeValue, nameof(comparativeValue))]
     public static Check<T> IsLessThan<T>(
         this Check<T> check,
@@ -349,6 +352,7 @@ public static partial class Checks
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.LessThanOrEqualTo, ValidationRuleMetadataShape.TypedComparison)]
+    [ValidationRuleMessage("{displayName} must be less than or equal to {comparativeValue}")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.ComparativeValue, nameof(comparativeValue))]
     public static Check<T> IsLessThanOrEqualTo<T>(
         this Check<T> check,
@@ -458,6 +462,7 @@ public static partial class Checks
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.InRange, ValidationRuleMetadataShape.TypedRange)]
+    [ValidationRuleMessage("{displayName} must be between {lowerBoundary} and {upperBoundary}")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.LowerBoundary, nameof(lowerBoundary))]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.UpperBoundary, nameof(upperBoundary))]
     public static Check<T> IsInRange<T>(
@@ -577,6 +582,7 @@ public static partial class Checks
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.NotInRange, ValidationRuleMetadataShape.TypedRange)]
+    [ValidationRuleMessage("{displayName} must not be between {lowerBoundary} and {upperBoundary}")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.LowerBoundary, nameof(lowerBoundary))]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.UpperBoundary, nameof(upperBoundary))]
     public static Check<T> IsNotInRange<T>(
@@ -698,6 +704,7 @@ public static partial class Checks
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
     [ValidationRule(ValidationErrorCodes.ExclusiveRange, ValidationRuleMetadataShape.TypedRange)]
+    [ValidationRuleMessage("{displayName} must be between {lowerBoundary} and {upperBoundary} (exclusive)")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.LowerBoundary, nameof(lowerBoundary))]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.UpperBoundary, nameof(upperBoundary))]
     public static Check<T> IsInExclusiveRange<T>(
