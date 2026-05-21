@@ -13,10 +13,10 @@ This plan extends the example model so generated and manually configured validat
 - [ ] The OpenAPI document transformer uses the supplied example message for both rich validation problem responses and ASP.NET Core-compatible validation problem responses.
 - [ ] The validation rule annotation model can describe a default example-message template for built-in and explicitly annotated custom rules without referencing ASP.NET Core or `Microsoft.OpenApi`.
 - [ ] Built-in validation rules are annotated with default example-message templates that match the framework's default `ValidationErrorTemplates` as closely as possible.
-- [ ] Message-template parsing supports literal braces via `{{` and `}}`.
+- [ ] Message-template parsing supports literal braces via `{{` and `}}`. Placeholder names are case-sensitive, must match the metadata key (or `displayName`) exactly, and disallow inner whitespace (`{ minLength }` is malformed).
 - [ ] The source generator emits per-rule example messages when it can resolve every value needed by the message template at generation time.
 - [ ] The source generator omits the rule-specific example message when required inputs cannot be resolved statically, allowing the OpenAPI transformer to apply its centralized fallback message.
-- [ ] The source generator reports Roslyn warning diagnostics for malformed message templates, including placeholders that cannot bind to `displayName` or to metadata declared by the annotated rule.
+- [ ] The source generator reports two distinct Roslyn warning diagnostics for message-template annotation problems: one for unknown placeholders (a name that is neither `displayName` nor a metadata key declared by the rule) and one for malformed brace sequences (unmatched `{` or `}`).
 - [ ] Explicit OpenAPI example hints can supply a message for opaque or custom validation paths.
 - [ ] Generated source remains deterministic, NativeAOT-safe, reflection-free, and independent of consumer implicit usings, global usings, aliases, and local using directives.
 - [ ] Automated tests are written for builder APIs, document transformation, source-generator output, inferred built-in rule messages, explicit hint messages, fallback behavior, and non-constant message omission.
@@ -49,7 +49,7 @@ builder.WithErrorExample(
     metadata: null);
 ```
 
-Callers that do not have a specific message pass `message: null`. All existing repository call sites should be updated in the same change set.
+Callers that do not have a specific message pass `message: null`. The builder methods keep `message` and `metadata` as optional parameters with `null` defaults so hand-written calls such as `WithErrorExample("Code", target: "x", message: "…")` remain readable; only the parameter order changes. All existing repository call sites should be updated in the same change set.
 
 The OpenAPI document transformer should use:
 
@@ -70,13 +70,18 @@ Add source-generator-facing message metadata to `Light.PortableResults.Validatio
 The supported placeholders should be deliberately small:
 
 - `{displayName}` for the inferred or explicit display name.
-- Metadata placeholders such as `{minLength}`, `{maxLength}`, `{lowerBoundary}`, `{upperBoundary}`, and `{comparativeValue}` for values already modeled with `[ValidationRuleMetadata]`.
+- Metadata placeholders such as `{minLength}`, `{maxLength}`, `{lowerBoundary}`, `{upperBoundary}`, and `{comparativeValue}` for values already modeled with `[ValidationRuleMetadata]`. The exact placeholder names must match the string values of the corresponding `ValidationErrorMetadataKeys` constants verbatim; if a constant value differs from the spelling used here, the template should use the constant's value. Placeholder matching is case-sensitive.
 
 The attribute must use source-generator-friendly constructor shapes only. A single string template is sufficient for this iteration. Do not introduce delegates, resource lookups, arbitrary object graphs, or references to OpenAPI types.
 
-Template parsing should support literal braces by escaping them as doubled braces: `{{` emits `{`, and `}}` emits `}`. A single unmatched `{` or `}` is a malformed template.
+Template parsing should support literal braces by escaping them as doubled braces: `{{` emits `{`, and `}}` emits `}`. A single unmatched `{` or `}` is a malformed template. Inside a placeholder, only the bare identifier is permitted: leading or trailing whitespace, format specifiers, and alignment syntax are not supported and should be treated as malformed.
 
-The generator should validate templates against the annotated rule method. A placeholder is valid only when it is `displayName` or when it matches a metadata key declared by `[ValidationRuleMetadata]` on the same method. Unknown placeholders and malformed brace sequences are annotation/configuration issues and should produce Roslyn warning diagnostics at the rule or template attribute location. The warning should suppress only the rule-specific message emission for affected rule calls; schema and non-message example generation can continue. This is different from a valid placeholder whose call-site value is not a compile-time constant; that case is not malformed and should only suppress the rule-specific example message for that particular call site.
+The generator should validate templates against the annotated rule method. A placeholder is valid only when it is `displayName` or when it matches a metadata key declared by `[ValidationRuleMetadata]` on the same method. Two distinct Roslyn warning diagnostics are emitted at the rule or template attribute location:
+
+- One for unknown placeholders — a name that is neither `displayName` nor a metadata key declared by the rule.
+- One for malformed brace sequences — unmatched `{` or `}`, or placeholders containing anything other than a bare identifier.
+
+Both warnings suppress only the rule-specific message emission for affected rule calls; schema and non-message example generation continue. This is different from a valid placeholder whose call-site value is not a compile-time constant; that case is not malformed and should only suppress the rule-specific example message for that particular call site without raising a diagnostic.
 
 Built-in check methods should be annotated with templates that mirror the default `ValidationErrorTemplates`:
 
@@ -94,6 +99,8 @@ public static Check<T> IsInRange<T>(...)
 
 For rules whose runtime default message depends on formatting that is hard to represent statically, prefer a conservative template that matches the normal case. If a rule cannot be represented without misleading users, omit the rule-message annotation and let the example fall back to `"Validation failed."`.
 
+Built-in rule coverage guidance: annotate every built-in check whose default `ValidationErrorTemplates` entry can be reproduced statically with the available placeholders. This includes at least the no-metadata templates (`NotEmpty`, `Empty`), the comparable-value templates (`EqualTo`, `NotEqualTo`, `GreaterThan`, `GreaterThanOrEqualTo`, `LessThan`, `LessThanOrEqualTo`) using `{comparativeValue}`, the typed-range templates (`InRange`, `NotInRange`) using `{lowerBoundary}` and `{upperBoundary}`, and the length-based templates (`MinLength`, `MaxLength`, `LengthInRange`) including the trailing `" characters long"` segment from `DisplayNameWithParameter`/`DisplayNameWithRange`. Implementers should walk through `ValidationErrorTemplates` and annotate each entry whose shape can be expressed without runtime formatting; skip any whose default depends on locale-sensitive formatting or runtime-only state.
+
 ### Display Name Inference
 
 The generator already infers the JSON target for simple `context.Check(dto.SomeProperty)` calls. It should also determine the example display name used by message templates.
@@ -105,6 +112,8 @@ Use this precedence:
 3. No display name, which means no generated message for that example.
 
 This intentionally differs from fully executing runtime validation. It gives useful examples for the common source-generator-supported shape while avoiding a fake message for expressions whose target cannot be inferred.
+
+Falling back to the normalized JSON target means generated messages read with the camelCase property name (for example, `"firstName must not be empty"`). At runtime, the validator typically substitutes the unnormalized property identifier or an application-configured friendly name, so generated text will deliberately differ. This is acceptable because the typical consumer is a web API where the JSON name is the most accurate identifier for documentation, and because the documentation already states that generated messages are representative defaults.
 
 The generator should not instantiate `ValidationContext`, `ValidationErrorDefinition`, `ValidationErrorTemplates`, or validators to compute messages. Doing so would break the current architecture: analyzers do not reference runtime assemblies normally, generated contracts stay NativeAOT-safe, and the generator remains a pure static analysis pass.
 
@@ -192,7 +201,8 @@ Add source-generation tests for:
 - built-in range messages such as `InRange` and `LengthInRange`;
 - explicit constant `displayName`;
 - non-constant metadata values causing message omission while preserving code, target, and metadata schema generation;
-- invalid template placeholders producing Roslyn diagnostics;
+- unknown template placeholders producing the unknown-placeholder Roslyn diagnostic;
+- malformed brace sequences (unmatched `{`/`}`, whitespace or format specifiers inside placeholders) producing the malformed-template Roslyn diagnostic;
 - escaped literal braces in message templates;
 - explicit `PortableValidationOpenApiExampleHintAttribute.Message`;
 - annotated custom rule messages using metadata placeholders.
