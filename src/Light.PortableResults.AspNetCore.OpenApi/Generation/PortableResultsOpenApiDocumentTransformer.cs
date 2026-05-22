@@ -206,22 +206,39 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         int statusCode
     )
     {
-        var errorAttribute = attributes
-           .OfType<PortableOpenApiErrorResponseAttributeBase>()
-           .FirstOrDefault(static attribute => attribute.ErrorExamples is { Length: > 0 });
-        if (errorAttribute is null)
+        // Every error marker that contributes to this slot may carry its own examples. The slot already
+        // forbids two markers of the same kind (see ApplyResponseMetadataAsync), so each contributing kind
+        // gets a distinct, stably named example instead of letting attribute ordering pick a single winner.
+        Dictionary<string, IOpenApiExample>? examples = null;
+        foreach (var attribute in attributes)
         {
-            return;
+            if (attribute is not PortableOpenApiErrorResponseAttributeBase { ErrorExamples.Length: > 0 } errorAttribute)
+            {
+                continue;
+            }
+
+            examples ??= new Dictionary<string, IOpenApiExample>(StringComparer.Ordinal);
+            var (exampleKey, summary) = ResolveExampleIdentity(errorAttribute);
+            examples[exampleKey] = new OpenApiExample
+            {
+                Summary = summary,
+                Value = CreateResponseExample(errorAttribute, statusCode)
+            };
         }
 
-        mediaType.Examples = new Dictionary<string, IOpenApiExample>(StringComparer.Ordinal)
+        if (examples is not null)
         {
-            ["ValidationProblem"] = new OpenApiExample
-            {
-                Summary = "Validation problem",
-                Value = CreateResponseExample(errorAttribute, statusCode)
-            }
-        };
+            mediaType.Examples = examples;
+        }
+    }
+
+    private static (string Key, string Summary) ResolveExampleIdentity(
+        PortableOpenApiErrorResponseAttributeBase attribute
+    )
+    {
+        return attribute.Kind == PortableOpenApiResponseKind.ValidationProblem ?
+            ("ValidationProblem", "Validation problem") :
+            ("Problem", "Problem");
     }
 
     private JsonObject CreateResponseExample(
@@ -229,12 +246,13 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         int statusCode
     )
     {
+        var category = ResolveExampleCategory(attribute, statusCode);
         var example = new JsonObject
         {
-            ["type"] = ErrorCategory.Validation.GetTypeUri(),
-            ["title"] = ErrorCategory.Validation.GetTitle(),
+            ["type"] = category.GetTypeUri(),
+            ["title"] = category.GetTitle(),
             ["status"] = statusCode,
-            ["detail"] = ErrorCategory.Validation.GetDetail()
+            ["detail"] = category.GetDetail()
         };
 
         if (attribute is ProducesPortableValidationProblemAttribute validationAttribute &&
@@ -244,10 +262,27 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         }
         else
         {
-            AddRichErrorExample(example, attribute.ErrorExamples!);
+            AddRichErrorExample(example, attribute.ErrorExamples!, category);
         }
 
         return example;
+    }
+
+    private static ErrorCategory ResolveExampleCategory(
+        PortableOpenApiErrorResponseAttributeBase attribute,
+        int statusCode
+    )
+    {
+        // Validation problems are always documented with Bad Request semantics, while generic problems
+        // derive their category from the documented status code so the example envelope is not mislabeled.
+        if (attribute.Kind == PortableOpenApiResponseKind.ValidationProblem)
+        {
+            return ErrorCategory.Validation;
+        }
+
+        return Enum.IsDefined(typeof(ErrorCategory), statusCode) ?
+            (ErrorCategory) statusCode :
+            ErrorCategory.InternalError;
     }
 
     private ValidationProblemSerializationFormat ResolveValidationProblemFormat(
@@ -261,7 +296,8 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
 
     private static void AddRichErrorExample(
         JsonObject example,
-        IReadOnlyList<PortableOpenApiErrorExampleEntry> entries
+        IReadOnlyList<PortableOpenApiErrorExampleEntry> entries,
+        ErrorCategory category
     )
     {
         var errors = new JsonArray();
@@ -272,7 +308,7 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
                 ["message"] = entry.Message ?? DefaultValidationExampleMessage,
                 ["code"] = entry.Code,
                 ["target"] = entry.Target,
-                ["category"] = ErrorCategory.Validation.ToString()
+                ["category"] = category.ToString()
             };
             AddMetadata(error, entry.Metadata);
             errors.Add((JsonNode) error);
