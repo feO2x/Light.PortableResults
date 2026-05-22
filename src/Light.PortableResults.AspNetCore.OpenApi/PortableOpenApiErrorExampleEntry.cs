@@ -72,11 +72,19 @@ public sealed class PortableOpenApiErrorExampleEntry : IEquatable<PortableOpenAp
         hashCode.Add(Message, StringComparer.Ordinal);
         if (Metadata is not null)
         {
+            // Equals treats Metadata as an unordered set of key/value pairs, so the hash code must
+            // be independent of the dictionary's enumeration order. Combine each pair's hash with a
+            // commutative XOR aggregate before folding it into the HashCode.
+            var metadataHash = 0;
             foreach (var (key, value) in Metadata)
             {
-                hashCode.Add(key, StringComparer.Ordinal);
-                hashCode.Add(value);
+                metadataHash ^= HashCode.Combine(
+                    StringComparer.Ordinal.GetHashCode(key),
+                    value?.GetHashCode() ?? 0
+                );
             }
+
+            hashCode.Add(metadataHash);
         }
 
         return hashCode.ToHashCode();

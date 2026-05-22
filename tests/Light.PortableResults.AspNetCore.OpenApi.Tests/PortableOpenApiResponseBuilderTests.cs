@@ -94,6 +94,27 @@ public sealed class PortableOpenApiResponseBuilderTests
     }
 
     [Fact]
+    public void ErrorExampleEntries_ShouldHashMetadataOrderIndependently()
+    {
+        var metadata = new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["minLength"] = 3,
+            ["maxLength"] = 10,
+        };
+        var reorderedMetadata = new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["maxLength"] = 10,
+            ["minLength"] = 3,
+        };
+
+        var first = new PortableOpenApiErrorExampleEntry("Length", "name", "invalid length", metadata);
+        var reordered = new PortableOpenApiErrorExampleEntry("Length", "name", "invalid length", reorderedMetadata);
+
+        first.Should().Be(reordered);
+        first.GetHashCode().Should().Be(reordered.GetHashCode());
+    }
+
+    [Fact]
     public void ProducesPortableValidationProblem_ShouldAccumulateMessageAwareExamples()
     {
         var metadata = new Dictionary<string, object?>(StringComparer.Ordinal) { ["minLength"] = 3 };
