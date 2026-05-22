@@ -10,7 +10,7 @@
       - Built-in OpenAPI metadata contracts for Light.PortableResults.Validation error codes.
       - Opt-in registration extension for the global PortableResults OpenAPI contract registry.
       - Typed comparison and range helper metadata contracts for endpoint-specific narrowing.
-      - Opt-in source generator for deriving Minimal API validation OpenAPI metadata from synchronous validators.
+      - Opt-in source generator for deriving Minimal API and MVC validation OpenAPI metadata from synchronous validators.
       - Native AOT compatible.
     </PackageReleaseNotes>
   </PropertyGroup>

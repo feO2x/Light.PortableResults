@@ -13,8 +13,12 @@ public sealed class PortableValidationProblemOpenApiBuilder
 {
     private readonly ProducesPortableValidationProblemAttribute _attribute;
 
-    internal PortableValidationProblemOpenApiBuilder(ProducesPortableValidationProblemAttribute attribute) =>
-        _attribute = attribute;
+    /// <summary>
+    /// Initializes a new instance of <see cref="PortableValidationProblemOpenApiBuilder" />.
+    /// </summary>
+    /// <param name="attribute">The validation problem attribute to configure.</param>
+    public PortableValidationProblemOpenApiBuilder(ProducesPortableValidationProblemAttribute attribute) =>
+        _attribute = attribute ?? throw new ArgumentNullException(nameof(attribute));
 
     /// <summary>
     /// Narrows the top-level metadata schema to <typeparamref name="TMetadata" />.

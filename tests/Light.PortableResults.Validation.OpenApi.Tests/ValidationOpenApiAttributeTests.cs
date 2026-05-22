@@ -1,5 +1,7 @@
 using System;
 using FluentAssertions;
+using Light.PortableResults.AspNetCore.OpenApi;
+using Light.PortableResults.Http.Writing;
 using Xunit;
 
 namespace Light.PortableResults.Validation.OpenApi.Tests;
@@ -18,6 +20,29 @@ public sealed class ValidationOpenApiAttributeTests
         var attribute = new GeneratePortableValidationOpenApiAttribute { AllowUnknownErrorCodes = true };
 
         attribute.AllowUnknownErrorCodes.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ProducesPortableValidationProblemFor_ShouldApplyGeneratedContract()
+    {
+        var attribute = new ProducesPortableValidationProblemForAttribute<AttributeContractValidator>(
+            422,
+            "application/json"
+        )
+        {
+            Format = ValidationProblemSerializationFormat.AspNetCoreCompatible
+        };
+
+        attribute.StatusCode.Should().Be(422);
+        attribute.ContentType.Should().Be("application/json");
+        attribute.TopLevelMetadataType.Should().Be(typeof(MetadataSample));
+        attribute.ErrorCodes.Should().Equal("NotEmpty");
+        attribute.InlineErrorMetadataCodes.Should().Equal("Custom");
+        attribute.InlineErrorMetadataContracts.Should().HaveCount(1);
+        attribute.ErrorExamples.Should().ContainSingle().Which.Code.Should().Be("NotEmpty");
+        attribute.AllowUnknownErrorCodes.Should().BeTrue();
+        attribute.HasFormatOverride.Should().BeTrue();
+        attribute.Format.Should().Be(ValidationProblemSerializationFormat.AspNetCoreCompatible);
     }
 
     [Fact]
@@ -199,4 +224,17 @@ public sealed class ValidationOpenApiAttributeTests
 
     // ReSharper disable once ClassNeverInstantiated.Local -- only used as a metadata type argument
     private sealed class MetadataSample;
+
+    private sealed class AttributeContractValidator : IPortableValidationOpenApiContract
+    {
+        public static void ConfigurePortableValidationOpenApi(PortableValidationProblemOpenApiBuilder builder)
+        {
+            builder
+               .WithMetadata<MetadataSample>()
+               .WithErrorCodes("NotEmpty")
+               .WithErrorMetadata<MetadataSample>("Custom")
+               .WithErrorExample("NotEmpty", "name", "name must not be empty")
+               .AllowUnknownErrorCodes();
+        }
+    }
 }

@@ -1433,7 +1433,7 @@ Comparison and range codes are polymorphic at the global code level, so the vali
 
 ### Validation OpenAPI source generation
 
-`Light.PortableResults.Validation.OpenApi` also includes an opt-in source generator for Minimal API validation responses. Mark a synchronous validator with `[GeneratePortableValidationOpenApi]`, make it `partial`, and use `ProducesPortableValidationProblemFor<TValidator>(...)` on the endpoint:
+`Light.PortableResults.Validation.OpenApi` also includes an opt-in source generator for validation responses. Mark a synchronous validator with `[GeneratePortableValidationOpenApi]`, make it `partial`, and apply the generated contract from Minimal API endpoints or MVC actions:
 
 ```csharp
 using Light.PortableResults.Validation;
@@ -1459,9 +1459,23 @@ app.MapPut("/api/movieRatings", AddMovieRating)
    .ProducesPortableValidationProblemFor<AddMovieRatingValidator>(
         configure: x => x.UseFormat(ValidationProblemSerializationFormat.Rich)
     );
+
+[ApiController]
+[Route("api/movieRatings")]
+public sealed class MovieRatingsController : ControllerBase
+{
+    [HttpPut]
+    [ProducesPortableValidationProblemFor<AddMovieRatingValidator>(
+        Format = ValidationProblemSerializationFormat.Rich
+    )]
+    public IActionResult Put(MovieRatingDto dto)
+    {
+        // ...
+    }
+}
 ```
 
-The generated contract calls the same builder APIs you would write by hand, then the endpoint's `configure` callback runs afterward. This means you can still set the validation format, add manual metadata contracts, or call `AllowUnknownErrorCodes()` for errors that are outside the validator's documentable rules.
+The generated contract calls the same builder APIs you would write by hand. For Minimal APIs, the endpoint's `configure` callback runs afterward, so you can still set the validation format, add manual metadata contracts, or call `AllowUnknownErrorCodes()` for errors that are outside the validator's documentable rules. For MVC, named attribute properties such as `Format`, `TopLevelMetadataType`, and `AllowUnknownErrorCodes` can override the generated response metadata after the attribute constructor runs. Array properties such as `ErrorCodes`, `InlineErrorMetadataCodes`, and `ErrorExamples` replace the generated values when set on the MVC attribute; prefer validator hints for endpoint-local additions until an explicitly additive MVC attribute API exists.
 
 The generator analyzes top-level `context.Check(...).Rule(...)` chains in synchronous `Validator<T>` and `Validator<TSource, TValidated>` implementations. It supports built-in annotated rules, assignments that consume a checked value, explicit error hints via `[PortableValidationOpenApiErrorHint]`, and user-defined check methods annotated with `[ValidationRule]` plus optional `[ValidationErrorContract]` metadata definitions. Checks inside `if`, `switch`, loops, lambdas, local functions, `try`, or `using` blocks are skipped with a warning; lift the check to a top-level statement or add explicit hints when those errors must appear in the OpenAPI schema.
 
