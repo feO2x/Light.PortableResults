@@ -39,6 +39,28 @@ internal static class ValidationOpenApiDocumentTestUtilities
         return app;
     }
 
+    internal static WebApplication CreateMvcApp(
+        Action<ErrorMetadataContractsBuilder> configureContracts,
+        Action<IMvcBuilder>? configureMvc = null,
+        Action<OpenApiOptions>? configureOpenApi = null
+    )
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+        builder.Services.AddPortableResultHttpWriteOptions();
+        builder.Services.AddPortableResultsOpenApi(configureContracts);
+        builder.Services.Configure<PortableResultsHttpWriteOptions>(
+            options => options.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich
+        );
+        var mvc = builder.Services.AddControllers();
+        configureMvc?.Invoke(mvc);
+        builder.Services.AddOpenApi(options => configureOpenApi?.Invoke(options));
+
+        var app = builder.Build();
+        app.MapControllers();
+        return app;
+    }
+
     internal static async Task<OpenApiDocument> GetOpenApiDocumentAsync(WebApplication app)
     {
         await app.StartAsync(TestContext.Current.CancellationToken);

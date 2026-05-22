@@ -8,14 +8,14 @@ This plan adds an MVC attribute-based adapter that applies the generated validat
 
 ## Acceptance Criteria
 
-- [ ] MVC actions can document source-generated validation OpenAPI metadata with an attribute such as `[ProducesPortableValidationProblemFor<TValidator>]`.
-- [ ] The new MVC attribute reuses `IPortableValidationOpenApiContract` and `PortableValidationProblemOpenApiBuilder` instead of introducing reflection, runtime validator instantiation, or MVC-specific generated source.
-- [ ] The new MVC attribute ships from `Light.PortableResults.Validation.OpenApi` together with the existing source-generator APIs, without adding an OpenAPI dependency to `Light.PortableResults.AspNetCore.Mvc`.
-- [ ] Existing Minimal API source-generation behavior remains unchanged.
-- [ ] The attribute supports the same response-slot basics as `[ProducesPortableValidationProblem]`: status code, content type, validation problem format override, top-level metadata type, and `AllowUnknownErrorCodes`.
-- [ ] Generated schema narrowing, inline metadata contracts, typed validation helper contracts, and response examples appear in MVC OpenAPI documents the same way they appear for Minimal APIs.
-- [ ] Documentation is updated to describe both Minimal API and MVC source-generation usage, including the attribute-specific limitation around additive endpoint-local customization.
-- [ ] Automated tests are written.
+- [x] MVC actions can document source-generated validation OpenAPI metadata with an attribute such as `[ProducesPortableValidationProblemFor<TValidator>]`.
+- [x] The new MVC attribute reuses `IPortableValidationOpenApiContract` and `PortableValidationProblemOpenApiBuilder` instead of introducing reflection, runtime validator instantiation, or MVC-specific generated source.
+- [x] The new MVC attribute ships from `Light.PortableResults.Validation.OpenApi` together with the existing source-generator APIs, without adding an OpenAPI dependency to `Light.PortableResults.AspNetCore.Mvc`.
+- [x] Existing Minimal API source-generation behavior remains unchanged.
+- [x] The attribute supports the same response-slot basics as `[ProducesPortableValidationProblem]`: status code, content type, validation problem format override, top-level metadata type, and `AllowUnknownErrorCodes`.
+- [x] Generated schema narrowing, inline metadata contracts, typed validation helper contracts, and response examples appear in MVC OpenAPI documents the same way they appear for Minimal APIs.
+- [x] Documentation is updated to describe both Minimal API and MVC source-generation usage, including the attribute-specific limitation around additive endpoint-local customization.
+- [x] Automated tests are written.
 
 ## Technical Details
 
