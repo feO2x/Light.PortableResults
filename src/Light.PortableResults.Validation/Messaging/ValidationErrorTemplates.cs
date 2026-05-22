@@ -41,10 +41,10 @@ public sealed partial record ValidationErrorTemplates
     private static readonly IComparableValidationErrorMessageTemplate DefaultLessThanOrEqualToTemplate =
         new DisplayNameWithComparable(" must be less than or equal to ");
 
-    private static readonly IRangeValidationErrorMessageTemplate DefaultIsInBetweenTemplate =
+    private static readonly IRangeValidationErrorMessageTemplate DefaultIsInRangeTemplate =
         new DisplayNameWithRange(" must be between ", " and ");
 
-    private static readonly IRangeValidationErrorMessageTemplate DefaultNotInBetweenTemplate =
+    private static readonly IRangeValidationErrorMessageTemplate DefaultNotInRangeTemplate =
         new DisplayNameWithRange(" must not be between ", " and ");
 
     private static readonly IRangeValidationErrorMessageTemplate DefaultExclusiveRangeTemplate =
@@ -126,8 +126,8 @@ public sealed partial record ValidationErrorTemplates
         GreaterThanOrEqualTo = original.GreaterThanOrEqualTo;
         LessThan = original.LessThan;
         LessThanOrEqualTo = original.LessThanOrEqualTo;
-        IsInBetween = original.IsInBetween;
-        NotInBetween = original.NotInBetween;
+        IsInRange = original.IsInRange;
+        NotInRange = original.NotInRange;
         ExclusiveRange = original.ExclusiveRange;
         MinLength = original.MinLength;
         MaxLength = original.MaxLength;
@@ -281,20 +281,20 @@ public sealed partial record ValidationErrorTemplates
     /// <summary>
     /// Gets the template for inclusive-range validation failures.
     /// </summary>
-    public IRangeValidationErrorMessageTemplate IsInBetween
+    public IRangeValidationErrorMessageTemplate IsInRange
     {
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));
-    } = DefaultIsInBetweenTemplate;
+    } = DefaultIsInRangeTemplate;
 
     /// <summary>
     /// Gets the template for outside-range validation failures.
     /// </summary>
-    public IRangeValidationErrorMessageTemplate NotInBetween
+    public IRangeValidationErrorMessageTemplate NotInRange
     {
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));
-    } = DefaultNotInBetweenTemplate;
+    } = DefaultNotInRangeTemplate;
 
     /// <summary>
     /// Gets the template for exclusive-range validation failures.

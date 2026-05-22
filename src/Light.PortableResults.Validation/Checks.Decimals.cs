@@ -33,6 +33,10 @@ public static partial class Checks
     /// Thrown when <paramref name="precision" /> is less than 1, <paramref name="scale" /> is negative,
     /// or <paramref name="scale" /> exceeds <paramref name="precision" />.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.PrecisionScale)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.ExpectedPrecision, nameof(precision))]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.ExpectedScale, nameof(scale))]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.IgnoreTrailingZeros, nameof(ignoreTrailingZeros))]
     public static Check<decimal> HasPrecisionAndScale(
         this Check<decimal> check,
         int precision,
@@ -162,6 +166,10 @@ public static partial class Checks
     /// Thrown when the checked nullable decimal has no value. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.PrecisionScale)]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.ExpectedPrecision, nameof(precision))]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.ExpectedScale, nameof(scale))]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.IgnoreTrailingZeros, nameof(ignoreTrailingZeros))]
     public static Check<decimal?> HasPrecisionAndScale(
         this Check<decimal?> check,
         int precision,

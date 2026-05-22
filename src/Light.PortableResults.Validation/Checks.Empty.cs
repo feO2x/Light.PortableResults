@@ -24,6 +24,8 @@ public static partial class Checks
     /// Both <see langword="null" /> and <see cref="string.Empty" /> pass without error. If whitespace
     /// should also be rejected, use <see cref="IsNotNullOrWhiteSpace(Check{string}, bool)" /> instead.
     /// </remarks>
+    [ValidationRule(ValidationErrorCodes.Empty)]
+    [ValidationRuleMessage("{displayName} must be empty")]
     public static Check<string?> IsEmpty(this Check<string?> check, bool shortCircuitOnError = false) =>
         check.IsShortCircuited || string.IsNullOrEmpty(check.Value) ?
             check :
@@ -84,6 +86,8 @@ public static partial class Checks
     /// strings pass without error; use
     /// <see cref="IsNotNullOrWhiteSpace(Check{string}, bool)" /> to also reject whitespace.
     /// </remarks>
+    [ValidationRule(ValidationErrorCodes.NotEmpty)]
+    [ValidationRuleMessage("{displayName} must not be empty")]
     public static Check<string?> IsNotEmpty(this Check<string?> check, bool shortCircuitOnError = false) =>
         check.IsShortCircuited || !string.IsNullOrEmpty(check.Value) ?
             check :
@@ -139,6 +143,8 @@ public static partial class Checks
     /// assertions in the chain are skipped; defaults to <see langword="false" />.
     /// </param>
     /// <returns>The current check for fluent chaining.</returns>
+    [ValidationRule(ValidationErrorCodes.Empty)]
+    [ValidationRuleMessage("{displayName} must be empty")]
     public static Check<Guid> IsEmpty(this Check<Guid> check, bool shortCircuitOnError = false) =>
         check.IsShortCircuited || check.Value == Guid.Empty ?
             check :
@@ -189,6 +195,8 @@ public static partial class Checks
     /// assertions in the chain are skipped; defaults to <see langword="false" />.
     /// </param>
     /// <returns>The current check for fluent chaining.</returns>
+    [ValidationRule(ValidationErrorCodes.NotEmpty)]
+    [ValidationRuleMessage("{displayName} must not be empty")]
     public static Check<Guid> IsNotEmpty(this Check<Guid> check, bool shortCircuitOnError = false) =>
         check.IsShortCircuited || check.Value != Guid.Empty ?
             check :
@@ -243,6 +251,8 @@ public static partial class Checks
     /// <remarks>
     /// A <see langword="null" /> collection is treated as empty and passes without error.
     /// </remarks>
+    [ValidationRule(ValidationErrorCodes.Empty)]
+    [ValidationRuleMessage("{displayName} must be empty")]
     public static Check<TCollection> IsEmpty<TCollection>(
         this Check<TCollection> check,
         bool shortCircuitOnError = false
@@ -328,6 +338,8 @@ public static partial class Checks
     /// <remarks>
     /// A <see langword="null" /> collection triggers a validation error (treated as absent/empty).
     /// </remarks>
+    [ValidationRule(ValidationErrorCodes.NotEmpty)]
+    [ValidationRuleMessage("{displayName} must not be empty")]
     public static Check<TCollection> IsNotEmpty<TCollection>(
         this Check<TCollection> check,
         bool shortCircuitOnError = false
@@ -410,6 +422,8 @@ public static partial class Checks
     /// assertions in the chain are skipped; defaults to <see langword="false" />.
     /// </param>
     /// <returns>The current check for fluent chaining.</returns>
+    [ValidationRule(ValidationErrorCodes.Empty)]
+    [ValidationRuleMessage("{displayName} must be empty")]
     public static Check<ImmutableArray<TItem>> IsEmpty<TItem>(
         this Check<ImmutableArray<TItem>> check,
         bool shortCircuitOnError = false
@@ -465,6 +479,8 @@ public static partial class Checks
     /// assertions in the chain are skipped; defaults to <see langword="false" />.
     /// </param>
     /// <returns>The current check for fluent chaining.</returns>
+    [ValidationRule(ValidationErrorCodes.NotEmpty)]
+    [ValidationRuleMessage("{displayName} must not be empty")]
     public static Check<ImmutableArray<TItem>> IsNotEmpty<TItem>(
         this Check<ImmutableArray<TItem>> check,
         bool shortCircuitOnError = false

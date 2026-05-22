@@ -19,6 +19,8 @@ public static partial class Checks
     /// <see cref="InvalidOperationException" /> otherwise.
     /// </param>
     /// <returns>The current check for fluent chaining.</returns>
+    [ValidationRule(ValidationErrorCodes.NotNull)]
+    [ValidationRuleMessage("{displayName} must not be null")]
     public static Check<T> IsNotNull<T>(this Check<T> check, bool shortCircuitOnError = true) =>
         check.IsShortCircuited || !check.IsValueNull ?
             check :
@@ -72,6 +74,8 @@ public static partial class Checks
     /// follow <c>IsNull</c> typically expect a <see langword="null" /> value.
     /// </param>
     /// <returns>The current check for fluent chaining.</returns>
+    [ValidationRule(ValidationErrorCodes.Null)]
+    [ValidationRuleMessage("{displayName} must be null")]
     public static Check<T> IsNull<T>(this Check<T> check, bool shortCircuitOnError = true)
     {
         if (check.IsShortCircuited || check.IsValueNull)

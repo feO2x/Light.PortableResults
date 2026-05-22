@@ -284,7 +284,7 @@ public sealed class CheckOverloadCoverageTests
 
         context
            .Check(1, target: "inRange", displayName: "In range")
-           .IsInBetween(2, 3, new ErrorOverrides { Code = "InRangeCustom" });
+           .IsInRange(2, 3, new ErrorOverrides { Code = "InRangeCustom" });
 
         context.Errors.Should().ContainSingle(error => error.Target == "inRange" && error.Code == "InRangeCustom");
     }
@@ -294,7 +294,7 @@ public sealed class CheckOverloadCoverageTests
     {
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
-        context.Check(2, target: "notInRange", displayName: "Not in range").IsNotInBetween(1, 3);
+        context.Check(2, target: "notInRange", displayName: "Not in range").IsNotInRange(1, 3);
 
         context.Errors.Should().ContainSingle(error => error.Target == "notInRange" && error.Code == "NotInRange");
     }
@@ -414,7 +414,7 @@ public sealed class CheckOverloadCoverageTests
     {
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
-        context.Check(1, target: "inRangeDefault", displayName: "In range default").IsInBetween(2, 3);
+        context.Check(1, target: "inRangeDefault", displayName: "In range default").IsInRange(2, 3);
 
         context.Errors.Should().ContainSingle(error => error.Target == "inRangeDefault" && error.Code == "InRange");
     }
@@ -426,7 +426,7 @@ public sealed class CheckOverloadCoverageTests
 
         context
            .Check(2, target: "notInRangeOverride", displayName: "Not in range override")
-           .IsNotInBetween(1, 3, new ErrorOverrides { Code = "NotInRangeOverride" });
+           .IsNotInRange(1, 3, new ErrorOverrides { Code = "NotInRangeOverride" });
 
         context.Errors.Should().ContainSingle(
             error => error.Target == "notInRangeOverride" && error.Code == "NotInRangeOverride"
@@ -928,7 +928,7 @@ public sealed class CheckOverloadCoverageTests
         context.Check("user@example.com", target: "email", displayName: "Email").IsEmail();
 
         context.Check(3, target: "greaterThan", displayName: "Greater than").IsGreaterThan(2);
-        context.Check(3, target: "inRange", displayName: "In range").IsInBetween(1, 5);
+        context.Check(3, target: "inRange", displayName: "In range").IsInRange(1, 5);
         context.Check<string?>("", target: "emptyString", displayName: "Empty string").IsEmpty();
         context
            .Check<IEnumerable<int>>([], target: "emptyCollection", displayName: "Empty collection")
@@ -1030,7 +1030,7 @@ public sealed class CheckOverloadCoverageTests
         context
            .Check(2, target: "lessThanOrEqualOverride", displayName: "Less than or equal override")
            .IsLessThanOrEqualTo(2, new ErrorOverrides { Code = "Unused" });
-        context.Check(2, target: "notIn", displayName: "Not in").IsNotInBetween(3, 5);
+        context.Check(2, target: "notIn", displayName: "Not in").IsNotInRange(3, 5);
         context.Check(3, target: "exclusiveRange", displayName: "Exclusive range").IsInExclusiveRange(2, 4);
 
         context
@@ -1107,10 +1107,10 @@ public sealed class CheckOverloadCoverageTests
 
         context
            .Check(5, target: "inRangeOverride", displayName: "In range override")
-           .IsInBetween(1, 5, new ErrorOverrides { Code = "Unused" });
+           .IsInRange(1, 5, new ErrorOverrides { Code = "Unused" });
         context
            .Check(0, target: "notInRangeOverride", displayName: "Not in range override")
-           .IsNotInBetween(1, 5, new ErrorOverrides { Code = "Unused" });
+           .IsNotInRange(1, 5, new ErrorOverrides { Code = "Unused" });
         context
            .Check(3, target: "exclusiveRangeOverride", displayName: "Exclusive range override")
            .IsInExclusiveRange(1, 5, new ErrorOverrides { Code = "Unused" });

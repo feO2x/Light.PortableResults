@@ -20,6 +20,9 @@ public static partial class Checks
     /// </param>
     /// <returns>The current check for fluent chaining.</returns>
     /// <remarks>Uses <see cref="EqualityComparer{T}.Default" /> for the comparison.</remarks>
+    [ValidationRule(ValidationErrorCodes.EqualTo, ValidationRuleMetadataShape.TypedComparison)]
+    [ValidationRuleMessage("{displayName} must be equal to {comparativeValue}")]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.ComparativeValue, nameof(comparativeValue))]
     public static Check<T> IsEqualTo<T>(
         this Check<T> check,
         T comparativeValue,
@@ -159,6 +162,9 @@ public static partial class Checks
     /// </param>
     /// <returns>The current check for fluent chaining.</returns>
     /// <remarks>Uses <see cref="EqualityComparer{T}.Default" /> for the comparison.</remarks>
+    [ValidationRule(ValidationErrorCodes.NotEqualTo, ValidationRuleMetadataShape.TypedComparison)]
+    [ValidationRuleMessage("{displayName} must not be equal to {comparativeValue}")]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.ComparativeValue, nameof(comparativeValue))]
     public static Check<T> IsNotEqualTo<T>(
         this Check<T> check,
         T comparativeValue,

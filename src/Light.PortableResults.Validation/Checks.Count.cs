@@ -28,6 +28,9 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.Count)]
+    [ValidationRuleMessage("{displayName} must contain exactly {expectedCount} item(s)")]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.ExpectedCount, nameof(expectedCount))]
     public static Check<string?> HasCount(
         this Check<string?> check,
         int expectedCount,
@@ -120,6 +123,9 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.MinCount)]
+    [ValidationRuleMessage("{displayName} must contain at least {minCount} item(s)")]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.MinCount, nameof(minCount))]
     public static Check<string?> HasMinCount(
         this Check<string?> check,
         int minCount,
@@ -212,6 +218,9 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.MaxCount)]
+    [ValidationRuleMessage("{displayName} must contain at most {maxCount} item(s)")]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.MaxCount, nameof(maxCount))]
     public static Check<string?> HasMaxCount(
         this Check<string?> check,
         int maxCount,
@@ -304,6 +313,9 @@ public static partial class Checks
     /// Thrown when the checked collection is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.Count)]
+    [ValidationRuleMessage("{displayName} must contain exactly {expectedCount} item(s)")]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.ExpectedCount, nameof(expectedCount))]
     public static Check<TCollection> HasCount<TCollection>(
         this Check<TCollection> check,
         int expectedCount,
@@ -398,6 +410,9 @@ public static partial class Checks
     /// Thrown when the checked collection is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.MinCount)]
+    [ValidationRuleMessage("{displayName} must contain at least {minCount} item(s)")]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.MinCount, nameof(minCount))]
     public static Check<TCollection> HasMinCount<TCollection>(
         this Check<TCollection> check,
         int minCount,
@@ -492,6 +507,9 @@ public static partial class Checks
     /// Thrown when the checked collection is <see langword="null" />. Guard against this by calling
     /// <see cref="IsNotNull{T}(Check{T}, bool)" /> before this assertion.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.MaxCount)]
+    [ValidationRuleMessage("{displayName} must contain at most {maxCount} item(s)")]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.MaxCount, nameof(maxCount))]
     public static Check<TCollection> HasMaxCount<TCollection>(
         this Check<TCollection> check,
         int maxCount,
@@ -582,6 +600,9 @@ public static partial class Checks
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when <paramref name="expectedCount" /> is negative.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.Count)]
+    [ValidationRuleMessage("{displayName} must contain exactly {expectedCount} item(s)")]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.ExpectedCount, nameof(expectedCount))]
     public static Check<ImmutableArray<TItem>> HasCount<TItem>(
         this Check<ImmutableArray<TItem>> check,
         int expectedCount,
@@ -654,6 +675,9 @@ public static partial class Checks
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when <paramref name="minCount" /> is negative.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.MinCount)]
+    [ValidationRuleMessage("{displayName} must contain at least {minCount} item(s)")]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.MinCount, nameof(minCount))]
     public static Check<ImmutableArray<TItem>> HasMinCount<TItem>(
         this Check<ImmutableArray<TItem>> check,
         int minCount,
@@ -726,6 +750,9 @@ public static partial class Checks
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when <paramref name="maxCount" /> is negative.
     /// </exception>
+    [ValidationRule(ValidationErrorCodes.MaxCount)]
+    [ValidationRuleMessage("{displayName} must contain at most {maxCount} item(s)")]
+    [ValidationRuleMetadata(ValidationErrorMetadataKeys.MaxCount, nameof(maxCount))]
     public static Check<ImmutableArray<TItem>> HasMaxCount<TItem>(
         this Check<ImmutableArray<TItem>> check,
         int maxCount,

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 using Microsoft.OpenApi;
 
@@ -38,6 +39,23 @@ public sealed class PortableProblemOpenApiBuilder
     public PortableProblemOpenApiBuilder WithErrorCodes(params string[] codes)
     {
         _attribute.ErrorCodes = PortableOpenApiBuilderUtilities.AppendStrings(_attribute.ErrorCodes, codes);
+        return this;
+    }
+
+    /// <summary>
+    /// Adds an error entry that should appear in the response-level OpenAPI example for this endpoint.
+    /// </summary>
+    public PortableProblemOpenApiBuilder WithErrorExample(
+        string code,
+        string? target,
+        string? message = null,
+        IReadOnlyDictionary<string, object?>? metadata = null
+    )
+    {
+        _attribute.ErrorExamples = PortableOpenApiBuilderUtilities.AppendExamples(
+            _attribute.ErrorExamples,
+            new PortableOpenApiErrorExampleEntry(code, target, message, metadata)
+        );
         return this;
     }
 

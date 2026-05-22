@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Light.PortableResults.AspNetCore.MinimalApis;
@@ -478,6 +479,139 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
     }
 
     [Fact]
+    public async Task Transformer_ShouldUseConfiguredMessagesInRichValidationExamples()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/validation/message-rich", static () => TypedResults.Problem())
+                   .WithName("MessageRich")
+                   .ProducesPortableValidationProblem(
+                        configure: builder => builder
+                           .UseFormat(ValidationProblemSerializationFormat.Rich)
+                           .WithErrorExample("NotEmpty", "name", "name must not be empty")
+                           .WithErrorExample("Unknown", "description")
+                    );
+            }
+        );
+
+        var body = GetValidationProblemExample(
+            await GetOpenApiDocumentAsync(app),
+            "/minimal/validation/message-rich"
+        );
+        var errors = body["errors"].Should().BeOfType<JsonArray>().Subject;
+
+        errors[0]!["message"]!.ToString().Should().Be("name must not be empty");
+        errors[1]!["message"]!.ToString().Should().Be("Validation failed.");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldUseConfiguredMessagesInAspNetCoreCompatibleValidationExamples()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/validation/message-aspnet", static () => TypedResults.Problem())
+                   .WithName("MessageAspNet")
+                   .ProducesPortableValidationProblem(
+                        configure: builder => builder
+                           .UseFormat(ValidationProblemSerializationFormat.AspNetCoreCompatible)
+                           .WithErrorExample("NotEmpty", "name", "name must not be empty")
+                           .WithErrorExample("Unknown", "name")
+                    );
+            }
+        );
+
+        var body = GetValidationProblemExample(
+            await GetOpenApiDocumentAsync(app),
+            "/minimal/validation/message-aspnet"
+        );
+        var messages = body["errors"]!["name"].Should().BeOfType<JsonArray>().Subject;
+
+        messages.Select(static message => message!.ToString())
+           .Should()
+           .Equal("name must not be empty", "Validation failed.");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldEmitDistinctExamplesPerErrorKind_WhenMarkersShareResponseSlot()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/union-examples", static () => TypedResults.Problem())
+                   .WithName("UnionExamples")
+                   .ProducesPortableProblem(
+                        StatusCodes.Status400BadRequest,
+                        configure: builder => builder.WithErrorExample("Movie/Gone", target: null, "the movie is gone")
+                    )
+                   .ProducesPortableValidationProblem(
+                        configure: builder => builder
+                           .UseFormat(ValidationProblemSerializationFormat.Rich)
+                           .WithErrorExample("NotEmpty", "name", "name must not be empty")
+                    );
+            }
+        );
+
+        var response = GetResponse(
+            await GetOpenApiDocumentAsync(app),
+            "/minimal/problems/union-examples",
+            HttpMethod.Get,
+            StatusCodes.Status400BadRequest
+        );
+        var mediaType = response.Content!["application/problem+json"];
+
+        // Both contributing markers must surface their own example instead of one being dropped by ordering.
+        mediaType.Examples.Should().ContainKeys("Problem", "ValidationProblem");
+
+        var problemExample = ((OpenApiExample) mediaType.Examples!["Problem"]).Value
+           .Should().BeOfType<JsonObject>().Subject;
+        problemExample["title"]!.ToString().Should().Be("Bad Request");
+        var problemErrors = problemExample["errors"].Should().BeOfType<JsonArray>().Subject;
+        problemErrors[0]!["message"]!.ToString().Should().Be("the movie is gone");
+
+        var validationExample = ((OpenApiExample) mediaType.Examples["ValidationProblem"]).Value
+           .Should().BeOfType<JsonObject>().Subject;
+        var validationErrors = validationExample["errors"].Should().BeOfType<JsonArray>().Subject;
+        validationErrors[0]!["message"]!.ToString().Should().Be("name must not be empty");
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldDeriveProblemExampleCategoryFromStatusCode()
+    {
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/conflict-example", static () => TypedResults.Problem())
+                   .WithName("ConflictExample")
+                   .ProducesPortableProblem(
+                        StatusCodes.Status409Conflict,
+                        configure: builder => builder.WithErrorExample("VersionMismatch", target: null, "version mismatch")
+                    );
+            }
+        );
+
+        var response = GetResponse(
+            await GetOpenApiDocumentAsync(app),
+            "/minimal/problems/conflict-example",
+            HttpMethod.Get,
+            StatusCodes.Status409Conflict
+        );
+        var example = ((OpenApiExample) response.Content!["application/problem+json"].Examples!["Problem"]).Value
+           .Should().BeOfType<JsonObject>().Subject;
+
+        // A generic problem must not be mislabeled with validation semantics.
+        example["title"]!.ToString().Should().Be("Conflict");
+        example["status"]!.GetValue<int>().Should().Be(StatusCodes.Status409Conflict);
+        var errors = example["errors"].Should().BeOfType<JsonArray>().Subject;
+        errors[0]!["category"]!.ToString().Should().Be(nameof(ErrorCategory.Conflict));
+    }
+
+    [Fact]
     public async Task Transformer_ShouldMaterializeReferencedResponsesBeforeWritingContent()
     {
         await using var app = CreateMinimalApiApp(
@@ -868,6 +1002,14 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         var pathItem = document.Paths[path];
         var operation = pathItem.Operations![httpMethod];
         return (OpenApiResponse) operation.Responses![statusCode.ToString(CultureInfo.InvariantCulture)];
+    }
+
+    private static JsonObject GetValidationProblemExample(OpenApiDocument document, string path)
+    {
+        var response = GetResponse(document, path, HttpMethod.Get, StatusCodes.Status400BadRequest);
+        var mediaType = response.Content!["application/problem+json"];
+        var example = (OpenApiExample) mediaType.Examples!["ValidationProblem"];
+        return example.Value.Should().BeOfType<JsonObject>().Subject;
     }
 
     private static OpenApiSchema GetSchemaComponent(OpenApiDocument document, string schemaId)

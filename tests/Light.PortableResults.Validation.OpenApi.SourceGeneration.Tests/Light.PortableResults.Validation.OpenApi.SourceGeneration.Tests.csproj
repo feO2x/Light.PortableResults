@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Light.PortableResults.AspNetCore.OpenApi\Light.PortableResults.AspNetCore.OpenApi.csproj" />
+    <ProjectReference Include="..\..\src\Light.PortableResults.Validation\Light.PortableResults.Validation.csproj" />
+    <ProjectReference Include="..\..\src\Light.PortableResults.Validation.OpenApi\Light.PortableResults.Validation.OpenApi.csproj" />
+    <ProjectReference Include="..\..\src\Light.PortableResults.Validation.OpenApi.SourceGeneration\Light.PortableResults.Validation.OpenApi.SourceGeneration.csproj" />
+  </ItemGroup>
+
+</Project>

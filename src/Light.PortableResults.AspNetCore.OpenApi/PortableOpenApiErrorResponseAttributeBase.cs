@@ -39,4 +39,9 @@ public abstract class PortableOpenApiErrorResponseAttributeBase : PortableOpenAp
     /// <see cref="InlineErrorMetadataCodes" />.
     /// </summary>
     public ErrorMetadataContract[]? InlineErrorMetadataContracts { get; set; }
+
+    /// <summary>
+    /// Gets or sets example error entries that should be composed into the documented response example.
+    /// </summary>
+    public PortableOpenApiErrorExampleEntry[]? ErrorExamples { get; set; }
 }

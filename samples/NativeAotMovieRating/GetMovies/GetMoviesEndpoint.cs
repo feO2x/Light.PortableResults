@@ -49,7 +49,7 @@ public static class GetMoviesEndpoint
         // parameters. This code might seem a little verbose, but you can easily put it in a static method and
         // call it from any endpoint implementing pagination.
         var validationContext = validationContextFactory.CreateValidationContext();
-        validationContext.Check(take).IsInBetween(1, 40);
+        validationContext.Check(take).IsInRange(1, 40);
         if (lastKnownMovieId.HasValue)
         {
             validationContext.Check(lastKnownMovieId.Value, target: nameof(lastKnownMovieId)).IsNotEmpty(
