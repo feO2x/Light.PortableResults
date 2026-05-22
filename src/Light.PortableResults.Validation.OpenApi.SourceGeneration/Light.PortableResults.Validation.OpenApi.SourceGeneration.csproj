@@ -7,6 +7,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <Description>Source generator for Light.PortableResults.Validation OpenAPI metadata.</Description>
     <NoWarn>$(NoWarn);RS1036;RS2008</NoWarn>
   </PropertyGroup>

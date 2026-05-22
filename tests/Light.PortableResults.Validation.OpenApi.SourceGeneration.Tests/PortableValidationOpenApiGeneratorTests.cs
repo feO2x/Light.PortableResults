@@ -570,6 +570,295 @@ public sealed class PortableValidationOpenApiGeneratorTests
            .Contain(["LPRSG0010", "LPRSG0011"]);
     }
 
+    [Fact]
+    public void Generator_ShouldReportDiagnosticForGenericValidator()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.OpenApi;
+
+            [GeneratePortableValidationOpenApi]
+            public sealed partial class GenericValidator<T> : Validator<string>
+            {
+                public GenericValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValidatedValue<string> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    string value
+                ) => checkpoint.ToValidatedValue(value);
+            }
+            """
+        );
+
+        result.Diagnostics.Select(static diagnostic => diagnostic.Id).Should().Contain("LPRSG0002");
+        result.GeneratedSources.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Generator_ShouldReportDiagnosticForNestedValidator()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.OpenApi;
+
+            public partial class Outer
+            {
+                [GeneratePortableValidationOpenApi]
+                public sealed partial class NestedValidator : Validator<string>
+                {
+                    public NestedValidator(IValidationContextFactory validationContextFactory)
+                        : base(validationContextFactory) { }
+
+                    protected override ValidatedValue<string> PerformValidation(
+                        ValidationContext context,
+                        ValidationCheckpoint checkpoint,
+                        string value
+                    ) => checkpoint.ToValidatedValue(value);
+                }
+            }
+            """
+        );
+
+        result.Diagnostics.Select(static diagnostic => diagnostic.Id).Should().Contain("LPRSG0002");
+        result.GeneratedSources.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Generator_ShouldReportDiagnosticsForCustomBaseClassWithoutLocalPerformValidation()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.OpenApi;
+
+            public abstract class CustomBaseValidator : Validator<string>
+            {
+                protected CustomBaseValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValidatedValue<string> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    string value
+                ) => checkpoint.ToValidatedValue(value);
+            }
+
+            [GeneratePortableValidationOpenApi]
+            public sealed partial class DerivedValidator : CustomBaseValidator
+            {
+                public DerivedValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+            }
+            """
+        );
+
+        result.Diagnostics.Select(static diagnostic => diagnostic.Id)
+           .Should()
+           .Contain(["LPRSG0002", "LPRSG0004"]);
+        result.GeneratedSources.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Generator_ShouldReportDiagnosticForAsyncValidator()
+    {
+        var result = RunGenerator(
+            """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.OpenApi;
+
+            [GeneratePortableValidationOpenApi]
+            public sealed partial class AsyncOnlyValidator : AsyncValidator<string>
+            {
+                public AsyncOnlyValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValueTask<ValidatedValue<string>> PerformValidationAsync(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    string value,
+                    CancellationToken cancellationToken
+                ) => new (checkpoint.ToValidatedValue(value));
+            }
+            """
+        );
+
+        result.Diagnostics.Select(static diagnostic => diagnostic.Id).Should().Contain("LPRSG0003");
+        result.GeneratedSources.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Generator_ShouldReportInfoWhenNoDocumentableRulesAreFound()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.OpenApi;
+
+            [GeneratePortableValidationOpenApi]
+            public sealed partial class EmptyValidator : Validator<string>
+            {
+                public EmptyValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValidatedValue<string> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    string value
+                ) => checkpoint.ToValidatedValue(value);
+            }
+            """
+        );
+
+        result.Diagnostics.Select(static diagnostic => diagnostic.Id).Should().Contain("LPRSG0008");
+    }
+
+    [Fact]
+    public void Generator_ShouldEmitAllowUnknownErrorCodesAndSuppressNoRulesDiagnostic()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.OpenApi;
+
+            [GeneratePortableValidationOpenApi(AllowUnknownErrorCodes = true)]
+            public sealed partial class AllowUnknownValidator : Validator<string>
+            {
+                public AllowUnknownValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValidatedValue<string> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    string value
+                ) => checkpoint.ToValidatedValue(value);
+            }
+            """
+        );
+
+        result.Diagnostics.Select(static diagnostic => diagnostic.Id).Should().NotContain("LPRSG0008");
+        result.GeneratedSources.Single().Should().Contain("builder.AllowUnknownErrorCodes();");
+    }
+
+    [Fact]
+    public void Generator_ShouldReportDiagnosticWhenRuleMetadataBindsToMissingParameter()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.Definitions;
+            using Light.PortableResults.Validation.OpenApi;
+
+            [GeneratePortableValidationOpenApi]
+            public sealed partial class MissingParameterValidator : Validator<int>
+            {
+                public MissingParameterValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValidatedValue<int> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    int value
+                )
+                {
+                    context.Check(value).HasMissingMetadataParameter(3);
+                    return checkpoint.ToValidatedValue(value);
+                }
+            }
+
+            public static class MissingParameterChecks
+            {
+                [ValidationRule("BadMetadata")]
+                [ValidationRuleMetadata("key", "doesNotExist")]
+                public static Check<int> HasMissingMetadataParameter(this Check<int> check, int divisor) => check;
+            }
+            """
+        );
+
+        result.Diagnostics.Select(static diagnostic => diagnostic.Id).Should().Contain("LPRSG0007");
+    }
+
+    [Fact]
+    public void Generator_ShouldReportDiagnosticWhenErrorContractCodeDoesNotMatchRule()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.Definitions;
+            using Light.PortableResults.Validation.Messaging;
+            using Light.PortableResults.Validation.OpenApi;
+
+            [GeneratePortableValidationOpenApi]
+            public sealed partial class ContractMismatchValidator : Validator<int>
+            {
+                public ContractMismatchValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValidatedValue<int> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    int value
+                )
+                {
+                    context.Check(value).HasMismatchedContract(3);
+                    return checkpoint.ToValidatedValue(value);
+                }
+            }
+
+            public static class ContractMismatchChecks
+            {
+                [ValidationRule("RuleCode", ErrorDefinitionType = typeof(MismatchDefinition))]
+                public static Check<int> HasMismatchedContract(this Check<int> check, int divisor) => check;
+            }
+
+            [ValidationErrorContract("DifferentCode")]
+            public sealed class MismatchDefinition : ValidationErrorDefinition
+            {
+                public override ValidationErrorMessage ProvideMessage<T>(
+                    in ValidationErrorMessageContext<T> context
+                ) => new("mismatch");
+            }
+            """
+        );
+
+        result.Diagnostics.Select(static diagnostic => diagnostic.Id).Should().Contain("LPRSG0009");
+    }
+
+    [Fact]
+    public void Generator_ShouldWarnWhenExampleMetadataKeyIsNotDeclaredBySchema()
+    {
+        var result = RunGenerator(
+            """
+            using Light.PortableResults.Validation;
+            using Light.PortableResults.Validation.OpenApi;
+
+            [GeneratePortableValidationOpenApi]
+            [PortableValidationOpenApiErrorHint("Code")]
+            [PortableValidationOpenApiErrorMetadataProperty("Code", "lowerBoundary", typeof(int))]
+            [PortableValidationOpenApiExampleHint("Code", Target = "field")]
+            [PortableValidationOpenApiExampleMetadata("Code", "unknownKey", 1)]
+            public sealed partial class ExampleSchemaMismatchValidator : Validator<string>
+            {
+                public ExampleSchemaMismatchValidator(IValidationContextFactory validationContextFactory)
+                    : base(validationContextFactory) { }
+
+                protected override ValidatedValue<string> PerformValidation(
+                    ValidationContext context,
+                    ValidationCheckpoint checkpoint,
+                    string value
+                ) => checkpoint.ToValidatedValue(value);
+            }
+            """
+        );
+
+        result.Diagnostics.Select(static diagnostic => diagnostic.Id).Should().Contain("LPRSG0012");
+    }
+
     private static GeneratorRunResult RunGenerator(string source)
     {
         var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview);
@@ -611,7 +900,7 @@ public sealed class PortableValidationOpenApiGeneratorTests
         AddAssembly(references, typeof(PortableOpenApiSchemaTypeMapper).Assembly);
         AddAssembly(references, typeof(OpenApiSchema).Assembly);
         AddAssembly(references, typeof(PortableValidationOpenApiGenerator).Assembly);
-        return references.Select(static path => MetadataReference.CreateFromFile(path)).ToArray();
+        return references.Select(static path => MetadataReference.CreateFromFile(path)).ToArray<MetadataReference>();
     }
 
     private static void AddAssembly(ISet<string> references, Assembly assembly)

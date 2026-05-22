@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Light.PortableResults.Validation.OpenApi.SourceGeneration;
 
-internal static class ValidatorOpenApiEmitter
+public static class ValidatorOpenApiEmitter
 {
     public static string Emit(ValidatorModel model)
     {

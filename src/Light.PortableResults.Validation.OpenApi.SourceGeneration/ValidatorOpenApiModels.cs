@@ -97,7 +97,7 @@ public sealed class ValidatorOpenApiAnalysis : IEquatable<ValidatorOpenApiAnalys
     }
 }
 
-internal sealed class ValidatorModel
+public sealed class ValidatorModel
 {
     public ValidatorModel(
         string metadataName,
@@ -133,7 +133,7 @@ internal sealed class ValidatorModel
     public ImmutableArray<ExampleHintModel> Examples { get; }
 }
 
-internal sealed class RuleCallModel
+public sealed class RuleCallModel
 {
     public RuleCallModel(
         string code,
@@ -163,7 +163,7 @@ internal sealed class RuleCallModel
     public ImmutableArray<MetadataSchemaPropertyModel> MetadataSchemaProperties { get; }
 }
 
-internal sealed class MetadataValueModel
+public sealed class MetadataValueModel
 {
     public MetadataValueModel(string key, object? value, bool hasConstantValue, string typeName)
     {
@@ -179,7 +179,7 @@ internal sealed class MetadataValueModel
     public string TypeName { get; }
 }
 
-internal sealed class MetadataSchemaPropertyModel
+public sealed class MetadataSchemaPropertyModel
 {
     public MetadataSchemaPropertyModel(string key, string typeName)
     {
@@ -191,7 +191,7 @@ internal sealed class MetadataSchemaPropertyModel
     public string TypeName { get; }
 }
 
-internal sealed class ErrorHintModel
+public sealed class ErrorHintModel
 {
     public ErrorHintModel(
         string code,
@@ -209,7 +209,7 @@ internal sealed class ErrorHintModel
     public ImmutableArray<MetadataSchemaPropertyModel> MetadataSchemaProperties { get; }
 }
 
-internal sealed class ExampleHintModel
+public sealed class ExampleHintModel
 {
     public ExampleHintModel(
         string code,
@@ -230,14 +230,14 @@ internal sealed class ExampleHintModel
     public ImmutableArray<MetadataValueModel> MetadataValues { get; }
 }
 
-internal enum RuleMetadataShape
+public enum RuleMetadataShape
 {
     Registered = 0,
     TypedComparison = 1,
     TypedRange = 2
 }
 
-internal sealed class RuleSchemaKeyComparer : IEqualityComparer<RuleCallModel>
+public sealed class RuleSchemaKeyComparer : IEqualityComparer<RuleCallModel>
 {
     public static RuleSchemaKeyComparer Instance { get; } = new ();
 
@@ -271,7 +271,7 @@ internal sealed class RuleSchemaKeyComparer : IEqualityComparer<RuleCallModel>
     }
 }
 
-internal sealed class InlineSchemaRuleComparer : IEqualityComparer<RuleCallModel>
+public sealed class InlineSchemaRuleComparer : IEqualityComparer<RuleCallModel>
 {
     public static InlineSchemaRuleComparer Instance { get; } = new ();
 

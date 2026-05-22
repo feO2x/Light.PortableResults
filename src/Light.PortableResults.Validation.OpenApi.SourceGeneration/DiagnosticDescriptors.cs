@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Light.PortableResults.Validation.OpenApi.SourceGeneration;
 
-internal static class DiagnosticDescriptors
+public static class DiagnosticDescriptors
 {
     private const string Category = "Light.PortableResults.Validation.OpenApi.SourceGeneration";
 
