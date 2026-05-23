@@ -255,6 +255,8 @@ if (result.Metadata?.TryGetString("requestId", out var requestId) == true)
 }
 ```
 
+<a id="validation-quick-start"></a>
+
 ## 🛡️ Validation Quick Start
 
 Instead of constructing `Error` instances manually, reference `Light.PortableResults.Validation` and write a typed validator:
@@ -529,6 +531,8 @@ else
     }
 }
 ```
+
+<a id="cloudevents-quick-start"></a>
 
 ## ☁️ CloudEvents Quick Start
 
@@ -1216,6 +1220,8 @@ app.MapPut("/api/movieRatings", handler)
         configure: x => x.WithErrorCodes("VersionMismatch")
     );
 ```
+
+<a id="configuration-reference"></a>
 
 ## ⚙️ Configuration Reference
 
