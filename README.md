@@ -1,24 +1,24 @@
 # Light.PortableResults
 
-*A high-performant, enterprise-grade .NET library implementing the Result Pattern where each result is serializable and deserializable. Comes with integrations for ASP.NET Core Minimal APIs and MVC, `HttpResponseMessage`, and CloudEvents JSON format, as well as a validation framework.*
+*The Result Pattern for .NET that travels. Every `Result<T>` serializes reliably over HTTP (RFC-9457), CloudEvents, and back — with a validation framework that is at least 5x faster and uses less than 9% of the memory of FluentValidation.*
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/blob/main/LICENSE)
 [![NuGet](https://img.shields.io/badge/NuGet-0.6.0-blue.svg?style=for-the-badge)](https://www.nuget.org/packages?q=Light.PortableResults)
 [![Documentation](https://img.shields.io/badge/Docs-Changelog-yellowgreen.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/releases)
 
+Most Result Pattern libraries stop at the application boundary. Light.PortableResults does not: a `Result<T>` can be written as an RFC-9457 Problem Details response, published as a CloudEvents JSON message, read back on the other side, and arrive as a fully-typed `Result<T>` — without losing errors, metadata, or structure. If you also need validation, the built-in framework lets you write FluentValidation-style rules with a fraction of the allocations.
+
 ## ✨ Key Features
 
-- 🧱 **Clear Result Pattern** — `Result` / `Result<T>` is either a success value or one or more structured errors. No exceptions for expected failures.
-- 📝 **Rich, machine-readable errors** — every `Error` carries a human-readable `Message`, stable `Code`, input `Target`, and `Category` — ready for API contracts and frontend mapping.
-- 🗂️ **Serialization-safe metadata** — metadata uses a dedicated JSON-like type system instead of `Dictionary<string, object>`, so results serialize reliably across any protocol.
-- 🔁 **Full functional operator suite** — `Map`, `Bind`, `Match`, `Ensure`, `Tap`, `Switch`, and their `Async` variants let you build clean, chainable pipelines.
-- ☁️ **Cloud-Native** — Light.PortableResults contains System.Text.Json serialization support for HTTP responses, including RFC-9457 Problem Details compatibility, and CloudEvents Spec 1.0 JSON payloads for asynchronous messaging. Full round-trip included.
-- 🧩 **ASP.NET Core ready** — Minimal APIs and MVC packages translate `Result` and `Result<T>` directly to `IResult` / `IActionResult` with automatic HTTP status mapping and RFC-9457 Problem Details support.
-- 🛡️ **Validation framework** — Light.PortableResults.Validation allows you to easily validate DTOs and any values. Use transforming validators to write efficient Anti-Corruption Layers. At least 5x faster than FluentValidation 12.1.1 while having less than 9% of FluentValidation's memory footprint.
-- 🛠️ **Microsoft.Extensions.Configuration**: validate options with your custom `Validator<T>` implementations.
-- ⚡ **Allocation-minimal by design** — pooled buffers, struct-friendly internals, smart caching, and fast paths keep GC pressure near zero even at high throughput.
-- 🧊 **.NET Native AOT** — The base, validation, and Minimal APIs packages are designed to work seamlessly with .NET Native AOT, ensuring minimal runtime overhead and efficient memory usage.
-- 🌐 **Microsoft.AspNetCore.OpenAPI Integration** - WritevValidators and create automatic OpenAPI schemas and examples via Source Generation.
+- **Clear Result Pattern** — `Result` / `Result<T>` is either a success value or one or more structured errors. No exceptions for expected failures.
+- **Rich, machine-readable errors** — every `Error` carries a human-readable `Message`, stable `Code`, input `Target`, and `Category` — ready for API contracts and frontend mapping.
+- **Serialization-safe metadata** — metadata uses a dedicated JSON-like type system instead of `Dictionary<string, object>`, so results serialize reliably across any protocol.
+- **Full functional operator suite** — `Map`, `Bind`, `Match`, `Ensure`, `Tap`, `Switch`, and their `Async` variants let you build clean, chainable pipelines.
+- **Cloud-native round-trip** — write results as RFC-9457 HTTP responses or CloudEvents Spec 1.0 JSON payloads, and deserialize them back on any consumer.
+- **ASP.NET Core ready** — Minimal APIs and MVC packages translate `Result` and `Result<T>` directly to `IResult` / `IActionResult` with automatic HTTP status mapping.
+- **High-performance validation** — at least 5x faster than FluentValidation 12.1.1 and less than 9% of its memory footprint. Compose validators, map DTOs to domain objects, and share state — all with full async support.
+- **Microsoft.AspNetCore.OpenAPI integration** — write validators and generate accurate OpenAPI schemas and examples via source generation.
+- **.NET Native AOT** — the base, validation, and Minimal APIs packages are compatible with .NET Native AOT.
 
 ## 📦 Installation
 
@@ -36,13 +36,13 @@ Validation context, checks, and synchronous/asynchronous validators:
 dotnet add package Light.PortableResults.Validation
 ```
 
-ASP.NET Core Minimal APIs integration with support for Dependency Injection and `IResult`:
+ASP.NET Core Minimal APIs integration:
 
 ```bash
 dotnet add package Light.PortableResults.AspNetCore.MinimalApis
 ```
 
-ASP.NET Core MVC integration with support for Dependency Injection and `IActionResult`:
+ASP.NET Core MVC integration:
 
 ```bash
 dotnet add package Light.PortableResults.AspNetCore.Mvc
@@ -62,36 +62,41 @@ dotnet add package Light.PortableResults.Validation.OpenApi
 
 If you only need the Result Pattern itself, `Light.PortableResults` is the most lightweight dependency.
 
+## When to Use Result vs. Exceptions
+
+Use `Result` / `Result<T>` for **expected business outcomes**:
+
+- validation failed
+- resource not found
+- user is not authorized
+- domain rule was violated
+
+Use **exceptions** for truly unexpected failures:
+
+- database/network outage
+- misconfiguration
+- programming bugs and invariant violations (detected via guard clauses)
+
+This keeps exceptions exceptional and business outcomes explicit.
+
 ## 🤓 Basic Usage
 
 If you are new to the Result Pattern, think of it like this:
 
 - A method can either succeed or fail.
-- Instead of throwing exceptions for expected failures (validation, not found, conflicts), the method returns a value that explicitly describes the outcome.
-- Callers must handle both paths on purpose, which makes Control Flow easier to read and test.
-
-This is covered by the following types in Light.PortableResults:
-
-- `Result<T>` means: either a success value of type `T`, or one or more errors.
-- `Result` (non-generic) means: success/failure without a return value (corresponds to `void`).
-- Each `Error` can carry machine-readable details such as `Code`, `Target`, `Category`, and `Metadata`.
-
-You can then build business logic around these types:
+- Instead of throwing exceptions for expected failures, the method returns a value that explicitly describes the outcome.
+- Callers must handle both paths on purpose, which makes control flow easier to read and test.
 
 ```csharp
 using Light.PortableResults;
 
-// Use Result<T> or Result as response types in your methods
 static Result<int> ParsePositiveInteger(string input)
 {
     if (int.TryParse(input, out var value) && value > 0)
     {
-        // If everything is fine, then use Result<T>.Ok() to return a success value
         return Result<int>.Ok(value);
     }
 
-    // If an error occurred, use Result<T>.Fail() to indicate an issue.
-    // Here we create a single error, but you can also return multiple errors.
     return Result<int>.Fail(new Error
     {
         Message = "Value must be a positive integer",
@@ -102,11 +107,11 @@ static Result<int> ParsePositiveInteger(string input)
 }
 ```
 
-You can then examine results in two ways: with implicit if-else Control Flow...
+Examine the result with an if-else...
 
 ```csharp
 var input = Console.ReadLine();
-Result<int> result = ParsePositiveInteger();
+Result<int> result = ParsePositiveInteger(input);
 
 if (result.IsValid)
 {
@@ -124,7 +129,6 @@ else
 ```csharp
 using Light.PortableResults.FunctionalExtensions;
 
-var input = Console.ReadLine();
 string message = ParsePositiveInteger(input).Match(
     onSuccess: value => $"Success: {value}",
     onError: errors => $"Error {errors.First.Code}: {errors.First.Message}"
@@ -132,23 +136,80 @@ string message = ParsePositiveInteger(input).Match(
 Console.WriteLine(message);
 ```
 
-See [Functional Operators](#functional-operators) for more details on the available operators.
+Use the non-generic `Result` for command-style operations that do not return a value:
 
-> The core idea is that you avoid throwing exceptions as part of the contract between a method and its caller. Instead, you return a `Result<T>` or `Result` instance that explicitly indicates success or failure.
+```csharp
+static Result DeleteUser(Guid id)
+{
+    if (id == Guid.Empty)
+    {
+        return Result.Fail(new Error
+        {
+            Message = "User id must not be empty",
+            Code = "user.invalid_id",
+            Target = "id",
+            Category = ErrorCategory.Validation
+        });
+    }
+
+    return Result.Ok();
+}
+```
+
+### Designing useful error payloads
+
+Consistent error shapes make APIs and message consumers easier to evolve. As a rule of thumb:
+
+- `Message`: human-readable explanation
+- `Code`: stable machine-readable identifier (great for frontend/API contracts)
+- `Target`: which input field, header, or value failed
+- `Category`: determines transport mapping (for example, HTTP status code)
+- `Metadata`: additional context (for example, boundary values or comparative amounts)
+
+`Error.Exception` can be set for local diagnostics, but it is never serialized and is never exposed to calling processes.
+
+## 🔁 Functional Operators
+
+| Category                | Operators                                  | What they are used for                                                         |
+|-------------------------|--------------------------------------------|--------------------------------------------------------------------------------|
+| Transform success value | `Map`, `Bind`                              | Convert successful values or chain operations that already return `Result<T>`. |
+| Transform errors        | `MapError`                                 | Normalize or translate errors (for example domain → transport layer).          |
+| Add validation rules    | `Ensure`, `FailIf`                         | Keep fluent pipelines while adding business or guard conditions.               |
+| Handle outcomes         | `Match`, `MatchFirst`, `Else`              | Turn a result into a value or fallback without manually branching every time.  |
+| Side effects            | `Tap`, `TapError`, `Switch`, `SwitchFirst` | Perform logging, metrics, or notifications on success or failure paths.        |
+
+All operators provide async variants with the `Async` suffix (for example `BindAsync`, `MatchAsync`, `TapErrorAsync`).
+
+```csharp
+using Light.PortableResults;
+using Light.PortableResults.FunctionalExtensions;
+
+Result<string> message = GetUser(userId)
+    .Ensure(user => user.IsActive, new Error
+    {
+        Message = "User is not active",
+        Code = "user.inactive",
+        Category = ErrorCategory.Forbidden
+    })
+    .Map(user => user.Email)
+    .Match(
+        onSuccess: email => $"User email: {email}",
+        onError: errors => $"Failed: {errors.First.Message}"
+    );
+```
 
 ## ℹ️ Metadata
 
-In Light.PortableResults, metadata is not just a `Dictionary<string, object>` as with many other Result Pattern implementations. Instead, it uses a type system pretty similar to JSON which allows each result instance to be serialized and deserialized.
+Metadata is not a `Dictionary<string, object>`. Instead it uses a dedicated JSON-like type system so every result serializes and deserializes correctly across any protocol — HTTP, CloudEvents, or otherwise.
 
-Metadata can be attached to `Result<T>/Result` instances as well as to `Error` instances.
+Metadata can be attached to `Result<T>` / `Result` instances as well as to individual `Error` instances.
 
 ```csharp
 using Light.PortableResults;
 using Light.PortableResults.Metadata;
 
-// Create metadata using primitive types (bool, long, double, string, decimal)
-// or nested objects and arrays. MetadataObject uses implicit conversions
-// from these types for easy construction.
+// MetadataObject uses implicit conversions from bool, long, double, string, decimal,
+// nested objects, and arrays.
 var metadata = MetadataObject.Create(
     ("requestId", "550e8400-e29b-41d4-a716-446655440000"),
     ("timestamp", DateTimeOffset.UtcNow.ToUnixTimeSeconds()),
@@ -156,13 +217,12 @@ var metadata = MetadataObject.Create(
     ("attemptCount", 3)
 );
 
-// Attach metadata to a successful result
 Result<Order> result = Result<Order>.Ok(
     new Order { Id = Guid.NewGuid(), Total = 99.99m },
     metadata
 );
 
-// Or attach metadata to an error for additional context
+// Attach metadata to an error for additional context
 var error = new Error
 {
     Message = "Order exceeds account limit",
@@ -176,18 +236,20 @@ var error = new Error
     )
 };
 
-// Access metadata from a result or error
+// Read metadata from a result
 if (result.Metadata?.TryGetString("requestId", out var requestId) == true)
 {
     Console.WriteLine($"Request: {requestId}");
 }
 ```
 
-## 🛫️ Validation Quick Start
+## 🛡️ Validation Quick Start
 
-Instead of creating `Error` instances manually, you can reference the `Light.PortableResults.Validation` package and use its rich assertions and support for validators, similar to FluentValidation. Here is an example:
+Instead of constructing `Error` instances manually, reference `Light.PortableResults.Validation` and write a typed validator:
 
 ```csharp
+using Light.PortableResults.Validation;
+
 public sealed record MovieRatingDto
 {
     public required Guid Id { get; init; }
@@ -199,43 +261,33 @@ public sealed record MovieRatingDto
 
 public sealed class MovieRatingValidator : Validator<MovieRatingDto>
 {
-    // Inject any service you need for validation into the constructor.
-    // The IValidationContextFactory is used to obtain a ValidationContext instance
-    // and must always be injected.
     public MovieRatingValidator(IValidationContextFactory validationContextFactory)
         : base(validationContextFactory) { }
 
     protected override ValidatedValue<MovieRatingDto> PerformValidation(
-        ValidationContext context, // Collects errors during validation
-        ValidationCheckpoint checkpoint, // Used to determine if errors occurred in this method
-        MovieRatingDto dto // The value to validate
+        ValidationContext context,
+        ValidationCheckpoint checkpoint,
+        MovieRatingDto dto
     )
     {
-        // Use the ValidationContext.Check method to create Check<T> instances.
-        // These offer various extension methods which attach errors to the context
-        // if validation fails. The Check call will also smartly obtain a value for
-        // Error.Target depending on your argument (CallerArgumentExpression).
         context.Check(dto.Id).IsNotEmpty();
         context.Check(dto.MovieId).IsNotEmpty();
 
-        // Instead of only examining values, ValidationContext.Check normalizes values.
-        // By default, strings are processed in the following way:
-        // - Null -> Empty string (avoids NullReferenceException)
-        // - Not-Null -> Trimmed string
-        // You can write these normalized string values back to ensure safe processing
-        // after validation finished. See ValidationContextOptions.ValueNormalizer.
+        // Check() normalizes strings by default (null → "", non-null → trimmed).
+        // Assign the return value back to persist the normalized string.
         dto.Comment = context.Check(dto.Comment).HasLengthIn(10, 1000);
         dto.UserName = context.Check(dto.UserName).IsNotNullOrWhiteSpace();
 
         context.Check(dto.Rating).IsInRange(1, 5);
 
-        // Use the checkpoint to determine if validation errors were attached to
-        // to the ValidationContext during this method call. The checkpoint will
-        // automatically return a corresponding ValidatedValue<T> instance for you.
         return checkpoint.ToValidatedValue(dto);
     }
 }
+```
 
+Call the validator from a service using `CheckForErrors` to avoid the `if (!result.IsValid)` ceremony:
+
+```csharp
 public sealed class AddMovieRatingService
 {
     private readonly MovieRatingValidator _validator;
@@ -252,52 +304,96 @@ public sealed class AddMovieRatingService
             return Result<MovieRating>.Fail(errorResult.Errors);
         }
 
-        // Do something useful with the validated DTO. In the end
-        // a MovieRating domain object is created and returned.
         var movieRating = new MovieRating(...);
         return Result<MovieRating>.Ok(movieRating);
     }
 }
 ```
 
-Light.PortableResults is significantly faster and leaner than FluentValidation — see the [benchmark results](#composing-validators) in Validation In Depth.
+Register validators as singletons when they have no scoped dependencies — they are stateless by design:
+
+```csharp
+services
+    .AddValidationForPortableResults()
+    .AddSingleton<MovieRatingValidator>();
+```
 
 See [Validation In Depth](#-validation-in-depth) for composing validators, async validation, domain object mapping, sharing state between validators, custom assertions, and configuration options.
 
+## ⚡ Performance
+
+Light.PortableResults Validation is significantly faster and leaner than FluentValidation. All benchmarks ran on:
+
+```
+BenchmarkDotNet v0.15.8, macOS Tahoe 26.4 (25E246) [Darwin 25.4.0]
+Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
+.NET SDK 10.0.103
+  [Host]     : .NET 10.0.5 (10.0.5, 10.0.526.15411), Arm64 RyuJIT armv8.0-a
+  DefaultJob : .NET 10.0.5 (10.0.5, 10.0.526.15411), Arm64 RyuJIT armv8.0-a
+```
+
+### Flat DTO — valid (no errors)
+
+| Method                            | Mean        | Ratio | Allocated | Alloc Ratio |
+|---------------------------------- |------------:|------:|----------:|------------:|
+| FluentValidationScopedOrTransient | 1,324.57 ns |  1.00 |    6984 B |        1.00 |
+| FluentValidationSingleton         |   105.84 ns |  0.08 |     632 B |        0.09 |
+| LightPortableResults              |    50.49 ns |  0.04 |     104 B |        0.01 |
+
+### Flat DTO — invalid (all three properties fail)
+
+| Method                            | Mean       | Ratio | Allocated | Alloc Ratio |
+|---------------------------------- |-----------:|------:|----------:|------------:|
+| FluentValidationScopedOrTransient | 3,145.2 ns |  1.00 |   14672 B |        1.00 |
+| FluentValidationSingleton         | 1,793.6 ns |  0.57 |    8320 B |        0.57 |
+| LightPortableResults              |   289.6 ns |  0.09 |     688 B |        0.05 |
+
+### Complex DTO — valid (one nested object, two nested collections, no errors)
+
+| Method                            | Mean       | Ratio | Allocated | Alloc Ratio |
+|---------------------------------- |-----------:|------:|----------:|------------:|
+| FluentValidationScopedOrTransient | 8,318.7 ns |  1.00 |  33.94 KB |        1.00 |
+| FluentValidationSingleton         | 1,685.9 ns |  0.20 |   5.77 KB |        0.17 |
+| LightPortableResults              |   742.2 ns |  0.09 |   1.27 KB |        0.04 |
+
+### Complex DTO — invalid (nine errors overall)
+
+| Method                            |      Mean | Ratio | Allocated | Alloc Ratio |
+|-----------------------------------|----------:|------:|----------:|------------:|
+| FluentValidationScopedOrTransient | 13.985 μs |  1.00 |  53.45 KB |        1.00 |
+| FluentValidationSingleton         |  6.755 μs |  0.48 |  25.47 KB |        0.48 |
+| LightPortableResults              |  1.507 μs |  0.11 |   1.99 KB |        0.04 |
+
+See the `benchmarks/Benchmarks` project for the full benchmark source.
+
 ## 🚀 HTTP Quick Start
 
-Given the classes in the previous Validation Quick Start section, you can easily integrate Light.PortableResults into ASP.NET Core.
+Given the classes from the Validation Quick Start above, integrate with ASP.NET Core in a few lines.
 
 ### Minimal APIs
 
 ```csharp
 using Light.PortableResults;
 using Light.PortableResults.AspNetCore.MinimalApis;
+using Light.PortableResults.Http.Writing;
 
 var builder = WebApplication.CreateBuilder(args);
-builder
-   .Services
-   .AddPortableResultsForMinimalApis()
-   .AddValidationForPortableResults()
-   .Configure<PortableResultsHttpWriteOptions>(
-       // We highly recommend using the Rich serialization format for HTTP responses.
-       // If you do not adjust this value, the default value of
-       // ValidationProblemSerializationFormat.AspNetCoreCompatible is used which
-       // writes the Problem Details errors in the same way as ASP.NET Core does.
-       x => x.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich
+builder.Services
+    .AddPortableResultsForMinimalApis()
+    .AddValidationForPortableResults()
+    .Configure<PortableResultsHttpWriteOptions>(
+        // Rich format is recommended — it serializes errors with full Code/Target/Category/Metadata.
+        x => x.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich
     )
-   .AddSingleton<MovieRatingValidator>() // Register validators as singletons by default
-   .AddScoped<AddMovieRatingService>();
+    .AddSingleton<MovieRatingValidator>()
+    .AddScoped<AddMovieRatingService>();
 
 var app = builder.Build();
 
 app.MapPut("/api/movieRatings", async (MovieRatingDto dto, AddMovieRatingService service) =>
 {
-	var result = await service.AddMovieRatingAsync(dto);
-    // Any Result<T>/Result instance can be easily converted to
-    // Minimal API's IResult. Under the covers, we use an
-    // optimized LightResult<T>/LightResult type.
-	return result.ToMinimalApiResult();
+    var result = await service.AddMovieRatingAsync(dto);
+    return result.ToMinimalApiResult();
 });
 
 app.Run();
@@ -310,8 +406,7 @@ using Light.PortableResults;
 using Light.PortableResults.AspNetCore.Mvc;
 
 builder.Services.AddControllers();
-builder
-    .Services
+builder.Services
     .AddPortableResultsForMvc()
     .AddValidationForPortableResults()
     .AddSingleton<MovieRatingValidator>()
@@ -322,13 +417,12 @@ app.MapControllers();
 app.Run();
 
 [ApiController]
-[Route("moveRatings")]
+[Route("api/movieRatings")]
 public sealed class AddMovieRatingsController : ControllerBase
 {
-    public AddMovieRatingsController(AddMovieRatingsService service)
-    {
-        _service = service;
-    }
+    private readonly AddMovieRatingService _service;
+
+    public AddMovieRatingsController(AddMovieRatingService service) => _service = service;
 
     [HttpPut]
     public async Task<LightActionResult<MovieRating>> AddMovieRating(AddMovieRatingDto dto)
@@ -339,9 +433,7 @@ public sealed class AddMovieRatingsController : ControllerBase
 }
 ```
 
-### HTTP Response On the Wire
-
-For both examples above (Minimal APIs and MVC), the HTTP response shape is the same.
+### HTTP Responses on the Wire
 
 Successful update (`200 OK`):
 
@@ -400,39 +492,22 @@ Content-Type: application/problem+json
 }
 ```
 
-### Deserializing Result<T> back from HttpResponseMessage
+### Deserializing `Result<T>` from `HttpResponseMessage`
 
 ```csharp
-using System;
-using System.Net.Http;
 using System.Net.Http.Json;
 using Light.PortableResults;
 using Light.PortableResults.Http.Reading;
 
-using var httpClient = new HttpClient
-{
-	BaseAddress = new Uri("https://localhost:5000")
-};
+using var httpClient = new HttpClient { BaseAddress = new Uri("https://localhost:5000") };
 
-var requestDto = new MovieRatingDto
-{
-    Id = Guid.CreateVersion7(),
-    MovieId = matrixMovie.Id,
-    UserName = "Trinity",
-    Comment = "The Answer Is Out There, Neo. It's Looking for You.",
-    Rating = 5
-};
+using var response = await httpClient.PutAsJsonAsync("/api/movieRatings", requestDto);
 
-using var response = await httpClient.PutAsJsonAsync(
-	"/api/movieRatings",
-	requestDto
-);
-
-Result<MovieRatingDto> result = await response.ReadResultAsync<MovieRatingDto>();
+Result<MovieRating> result = await response.ReadResultAsync<MovieRating>();
 
 if (result.IsValid)
 {
-    Console.WriteLine($"Added movie rating");
+    Console.WriteLine($"Added movie rating with id {result.Value.Id}");
 }
 else
 {
@@ -445,45 +520,38 @@ else
 
 ## ☁️ CloudEvents Quick Start
 
-The following example uses `RabbitMQ.Client` to publish and consume a CloudEvents JSON message carrying `Result<UserDto>`.
+Light.PortableResults can serialize a `Result<T>` as a CloudEvents Spec 1.0 JSON payload and deserialize it on any consumer. The key API calls are `result.ToCloudEvent(...)` and `ReadResult<T>()`.
 
 ### Publish to RabbitMQ
 
 ```csharp
-using System;
 using Light.PortableResults;
 using Light.PortableResults.CloudEvents;
 using Light.PortableResults.CloudEvents.Writing;
 using RabbitMQ.Client;
 
-var factory = new ConnectionFactory { HostName = "localhost" };
-await using var connection = await factory.CreateConnectionAsync();
-await using var channel = await connection.CreateChannelAsync();
-
-await channel.QueueDeclareAsync(queue: "users.updated", durable: true, exclusive: false, autoDelete: false);
-
 var result = Result<UserDto>.Ok(new UserDto
 {
-	Id = Guid.Parse("6b8a4dca-779d-4f36-8274-487fe3e86b5a"),
-	Email = "ada@example.com"
+    Id = Guid.Parse("6b8a4dca-779d-4f36-8274-487fe3e86b5a"),
+    Email = "ada@example.com"
 });
 
 byte[] cloudEvent = result.ToCloudEvent(
-	successType: "users.updated",
-	failureType: "users.update.failed",
-	source: "urn:light-portable-results:sample:user-service",
-	subject: "users/6b8a4dca-779d-4f36-8274-487fe3e86b5a"
+    successType: "users.updated",
+    failureType: "users.update.failed",
+    source: "urn:light-portable-results:sample:user-service",
+    subject: "users/6b8a4dca-779d-4f36-8274-487fe3e86b5a"
 );
 
 var properties = new BasicProperties();
 properties.ContentType = CloudEventsConstants.CloudEventsJsonContentType;
 
 await channel.BasicPublishAsync(
-	exchange: "",
-	routingKey: "users.updated",
-	mandatory: false,
-	basicProperties: properties,
-	body: cloudEvent
+    exchange: "",
+    routingKey: "users.updated",
+    mandatory: false,
+    basicProperties: properties,
+    body: cloudEvent
 );
 ```
 
@@ -492,130 +560,33 @@ await channel.BasicPublishAsync(
 ```csharp
 using Light.PortableResults;
 using Light.PortableResults.CloudEvents.Reading;
-using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-var factory = new ConnectionFactory { HostName = "localhost" };
-await using var connection = await factory.CreateConnectionAsync();
-await using var channel = await connection.CreateChannelAsync();
-
-await channel.QueueDeclareAsync(queue: "users.updated", durable: true, exclusive: false, autoDelete: false);
-
-var consumer = new AsyncEventingBasicConsumer(channel);
 consumer.ReceivedAsync += async (_, eventArgs) =>
 {
-	Result<UserDto> result = eventArgs.Body.ReadResult<UserDto>();
+    Result<UserDto> result = eventArgs.Body.ReadResult<UserDto>();
 
-	if (result.IsValid)
-	{
-		Console.WriteLine($"Updated user: {result.Value.Email}");
-	}
-	else
-	{
-		foreach (var error in result.Errors)
-		{
-			Console.WriteLine($"{error.Target}: {error.Message}");
-		}
-	}
+    if (result.IsValid)
+    {
+        Console.WriteLine($"Updated user: {result.Value.Email}");
+    }
+    else
+    {
+        foreach (var error in result.Errors)
+        {
+            Console.WriteLine($"{error.Target}: {error.Message}");
+        }
+    }
 
-	await channel.BasicAckAsync(eventArgs.DeliveryTag, multiple: false);
+    await channel.BasicAckAsync(eventArgs.DeliveryTag, multiple: false);
 };
-
-await channel.BasicConsumeAsync(queue: "users.updated", autoAck: false, consumer: consumer);
 ```
-
-## When to Use Result vs. Exceptions
-
-Use `Result` / `Result<T>` for expected business outcomes:
-
-- validation failed
-- resource not found
-- user is not authorized
-- domain rule was violated
-
-Use exceptions for truly unexpected failures:
-
-- database/network outage
-- misconfiguration
-- programming bugs and invariant violations (detected via Guard Clauses)
-
-This keeps exceptions exceptional and business outcomes explicit.
-
-## Use non-generic `Result` for command-style operations
-
-```csharp
-using Light.PortableResults;
-
-static Result DeleteUser(Guid id)
-{
-	if (id == Guid.Empty)
-	{
-		return Result.Fail(new Error
-		{
-			Message = "User id must not be empty",
-			Code = "user.invalid_id",
-			Target = "id",
-			Category = ErrorCategory.Validation
-		});
-	}
-
-	return Result.Ok();
-}
-```
-
-## Functional Operators
-
-Supported functional operators:
-
-| Category                | Operators                                  | What they are used for                                                         |
-|-------------------------|--------------------------------------------|--------------------------------------------------------------------------------|
-| Transform success value | `Map`, `Bind`                              | Convert successful values or chain operations that already return `Result<T>`. |
-| Transform errors        | `MapError`                                 | Normalize or translate errors (for example domain -> transport layer).         |
-| Add validation rules    | `Ensure`, `FailIf`                         | Keep fluent pipelines while adding business or guard conditions.               |
-| Handle outcomes         | `Match`, `MatchFirst`, `Else`              | Turn a result into a value/fallback without manually branching every time.     |
-| Side effects            | `Tap`, `TapError`, `Switch`, `SwitchFirst` | Perform logging/metrics/notifications on success or failure paths.             |
-
-All operators also provide async variants with the `Async` suffix (for example `BindAsync`, `MatchAsync`, `TapErrorAsync`).
-
-Example pipeline:
-
-```csharp
-using Light.PortableResults;
-using Light.PortableResults.FunctionalExtensions;
-
-Result<string> message = GetUser(userId)
-	.Ensure(user => user.IsActive, new Error
-	{
-		Message = "User is not active",
-		Code = "user.inactive",
-		Category = ErrorCategory.Forbidden
-	})
-	.Map(user => user.Email)
-	.Match(
-		onSuccess: email => $"User email: {email}",
-		onError: errors => $"Failed: {errors.First.Message}"
-	);
-```
-
-## Keep error payloads useful for clients
-
-As a rule of thumb:
-
-- `Message`: human-readable explanation
-- `Code`: stable machine-readable identifier (great for frontend/API contracts)
-- `Target`: which input field/header/value failed
-- `Category`: determines transport mapping (for example, HTTP status)
-- `Metadata`: additional information (for example, header values or comparative values)
-
-Using a consistent error shape early will make your APIs and message consumers easier to evolve.
-
-There is an `Error.Exception` property which you can also set, but it is never serialized and thus never exposed to calling processes.
 
 ## 🔬 Validation In Depth
 
 ### Composing Validators
 
-Use child validators when your DTO contains nested objects or collections that each have their own validation rules. Validators compose by sharing a single `ValidationContext` — errors from all levels accumulate in one pass, and all of them are reported at once.
+Use child validators when your DTO contains nested objects or collections that each have their own validation rules. Validators compose by sharing a single `ValidationContext` — errors from all levels accumulate in one pass.
 
 ```csharp
 public sealed record PurchaseOrderDto
@@ -625,21 +596,6 @@ public sealed record PurchaseOrderDto
     public required ShippingAddressDto ShippingAddress { get; set; }
     public required List<string> Tags { get; set; }
     public required List<OrderItemDto> Items { get; set; }
-}
-
-public sealed record ShippingAddressDto
-{
-    public required string RecipientName { get; set; } = string.Empty;
-    public required string Street { get; set; } = string.Empty;
-    public required string PostalCode { get; set; } = string.Empty;
-    public required string CountryCode { get; set; } = string.Empty;
-}
-
-public sealed record OrderItemDto
-{
-    public required string Sku { get; set; } = string.Empty;
-    public required int Quantity { get; set; }
-    public required decimal UnitPrice { get; set; }
 }
 
 public sealed class PurchaseOrderValidator : Validator<PurchaseOrderDto>
@@ -666,23 +622,14 @@ public sealed class PurchaseOrderValidator : Validator<PurchaseOrderDto>
         context.Check(dto.OrderId).IsNotEmpty();
         dto.CustomerEmail = context.Check(dto.CustomerEmail).IsEmail();
 
-        // ValidateChild delegates to the child validator, including its automatic null check.
-        // If dto.ShippingAddress is null, the child validator produces a validation error
-        // automatically — no explicit IsNotNull() call needed here.
+        // If dto.ShippingAddress is null the child validator emits a null error automatically.
         context.Check(dto.ShippingAddress).ValidateChild(_addressValidator);
 
-        // ValidateItems automatically handles a null collection by emitting the standard
-        // NotNull error via the active AutomaticNullErrorProvider — no explicit IsNotNull()
-        // is needed under default configuration. Guard explicitly only when the provider is
-        // configured to skip automatic null errors (e.g. NoOpAutomaticNullErrorProvider).
-        // The default string normalization already trims whitespace for individual string items,
-        // so no IsNotNullOrWhiteSpace() is needed inside the lambda.
+        // If dto.Tags is null the framework emits a NotNull error automatically.
         context.Check(dto.Tags).ValidateItems(
             static (Check<string> tag) => tag.HasLengthIn(2, 30)
         );
 
-        // ValidateItems with a Validator<TItem> delegates null-item handling to the item
-        // validator's automatic null check, just like ValidateChild does for single objects.
         context.Check(dto.Items).ValidateItems(_itemValidator);
 
         return checkpoint.ToValidatedValue(dto);
@@ -727,11 +674,11 @@ public sealed class OrderItemValidator : Validator<OrderItemDto>
 }
 ```
 
-> **What is a `ValidatedValue<T>`?**
+> **What is `ValidatedValue<T>`?**
 >
-> `ValidatedValue<T>` is the internal handshake type between a validator and its callers within a single validation pipeline run. Especially in composition scenarios, a validator's `PerformValidation` method gets passed a shared `ValidationContext` and errors accumulate in that context. Rather than being surfaced immediately as a `Result<T>`, `ValidatedValue<T>` carries the signal back: either a successfully validated (and potentially normalized) value via `ValidatedValue<T>.Success(value)`, or `ValidatedValue<T>.NoValue` when errors were added. `checkpoint.ToValidatedValue(dto)` chooses the right outcome for you based on whether any errors were added since the checkpoint was created. You can use this method in `Validator<T>` where the return type is not different from the input type. You never need to construct `ValidatedValue<T>` directly except in transforming validators — see [Mapping to Domain Objects](#mapping-to-domain-objects).
+> `ValidatedValue<T>` is the handshake type between a validator and its callers within a single validation pipeline run. Rather than surfacing errors immediately as `Result<T>`, it carries the signal back: either a successfully validated value via `ValidatedValue<T>.Success(value)`, or `ValidatedValue<T>.NoValue` when errors were added. `checkpoint.ToValidatedValue(dto)` chooses the right outcome based on whether any errors were added since the checkpoint was created. You never need to construct `ValidatedValue<T>` directly unless you are writing a transforming validator — see [Mapping to Domain Objects](#mapping-to-domain-objects).
 
-If you don't inject scoped dependencies into them, register all validators as singletons — they should be designed stateless and safe to share:
+Register all validators as singletons when they have no scoped dependencies:
 
 ```csharp
 services
@@ -743,160 +690,26 @@ services
 
 ### Automatic Null Checking
 
-The validation framework handles `null` values automatically so you rarely need an explicit `IsNotNull()` guard. The active `AutomaticNullErrorProvider` (configurable via `ValidationContextOptions`) decides what error to produce; under the default configuration it emits a `NotNull` validation error.
+The validation framework handles `null` values automatically so you rarely need an explicit `IsNotNull()` guard. The active `AutomaticNullErrorProvider` (configurable via `ValidationContextOptions`) decides what error to produce; the default emits a `NotNull` validation error.
 
-- **Validators (`Validator<T>`, `Validator<TSource, TValidated>`, `AsyncValidator<T>`, `AsyncValidator<TSource, TValidated>`)** — when the source value passed to `Validate` / `ValidateAsync` is `null`, the validator adds the automatic null error and returns a failed `Result` without calling `PerformValidation(Async)`. The `isAutomaticNullCheckingEnabled` constructor parameter (default `true`) controls this per validator class.
+- **Validators** — when the source value passed to `Validate` / `ValidateAsync` is `null`, the validator adds the automatic null error and returns a failed `Result` without calling `PerformValidation`. The `isAutomaticNullCheckingEnabled` constructor parameter (default `true`) controls this per validator class.
+- **Child validation (`ValidateChild`, `ValidateChildAsync`)** — when the nested value is `null`, the child validator's null check fires for that target and the parent continues collecting other errors.
+- **Collection item validation (`ValidateItems`, `ValidateItemsAsync`)** — when a `null` collection is passed, the null error is added for the collection target and item validators are skipped. Individual item validators also handle `null` items automatically.
 
-- **Child validation (`ValidateChild`, `ValidateChildAsync`)** — when a nested collection value is `null`, the child validator's own automatic null check fires, adds the error for the child target, and returns `ValidatedValue<T>.NoValue`. The parent continues collecting other errors in the same pass. `Check<T>` instances that are short-circuited are ignored (no automatic null error will be added to the context, `PerformValidation(Async)` will not be called).
-
-- **Collection item validation (`ValidateItems`, `ValidateItemsAsync`)** — when a `null` collection is passed on a non-short-circuited check, the same automatic null-error pipeline runs for the collection target and the method returns `ValidatedValue<...>.NoValue` without invoking any item validators or delegates. Regarding the items in the collection: item validators as well as delegates have automatic null checking of items, too.
-
-Guard explicitly with `IsNotNull()` when `NoOpAutomaticNullErrorProvider` was set on `ValidationContextOptions.AutomaticNullErrorProvider` (which means that automatic null errors are disabled).
+Guard explicitly with `IsNotNull()` only when `NoOpAutomaticNullErrorProvider` is configured (automatic null errors disabled), or when you need to short-circuit further checks:
 
 ```csharp
-// Default configuration — automatic null handling, no explicit guard needed
+// Default configuration — no explicit guard needed
 context.Check(dto.ShippingAddress).ValidateChild(_addressValidator);
 context.Check(dto.Tags).ValidateItems(static (Check<string> tag) => tag.HasLengthIn(2, 30));
 
-// Explicit guard — required when the active provider does not emit automatic null errors,
-// or when you want to short-circuit further checks on null
+// Explicit guard — short-circuits any further checks on this value
 context.Check(dto.Tags).IsNotNull().ValidateItems(static (Check<string> tag) => tag.HasLengthIn(2, 30));
 ```
 
-Short-circuited checks are always a no-op: validation methods return `ValidatedValue<...>.NoValue` immediately without adding any error or invoking validators or delegates.
-
-### Validation Benchmarks
-
-Below are benchmark results comparing Light.PortableResults to FluentValidation using flat and composite DTOs (see the `benchmarks/Benchmarks` project for details). The `PurchaseOrderDto` example above corresponds to the Complex DTO scenario.
-
-All benchmarks were run on the handware and software versions:
-
-```
-BenchmarkDotNet v0.15.8, macOS Tahoe 26.4 (25E246) [Darwin 25.4.0]
-Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
-.NET SDK 10.0.103
-  [Host]     : .NET 10.0.5 (10.0.5, 10.0.526.15411), Arm64 RyuJIT armv8.0-a
-  DefaultJob : .NET 10.0.5 (10.0.5, 10.0.526.15411), Arm64 RyuJIT armv8.0-a
-```
-
-#### Flat DTO Benchmark Setup
-
-```csharp
-public sealed record MovieRatingDto
-{
-    public required Guid Id { get; set; }
-    public required string Comment { get; set; } = string.Empty;
-    public required int Rating { get; set; }
-}
-
-// FluentValidation Validator
-public sealed class FluentValidationMovieRatingDtoValidator : AbstractValidator<MovieRatingDto>
-{
-    public FluentValidationMovieRatingDtoValidator()
-    {
-        RuleFor(x => x.Id).NotEmpty();
-        RuleFor(x => x.Comment).NotEmpty().Length(10, 1000);
-        RuleFor(x => x.Rating).InclusiveBetween(1, 5);
-    }
-}
-
-// Light.PortableResults Validator
-public sealed class LightPortableResultsMovieRatingDtoValidator : Validator<MovieRatingDto>
-{
-    public LightPortableResultsMovieRatingDtoValidator(IValidationContextFactory validationContextFactory)
-        : base(validationContextFactory) { }
-
-    protected override ValidatedValue<MovieRatingDto> PerformValidation(
-        ValidationContext context,
-        ValidationCheckpoint checkpoint,
-        MovieRatingDto dto
-    )
-    {
-        context.Check(dto.Id).IsNotEmpty();
-        dto.Comment = context.Check(dto.Comment).IsNotNullOrWhiteSpace().HasLengthIn(10, 1000);
-        context.Check(dto.Rating).IsInRange(1, 5);
-        return checkpoint.ToValidatedValue(dto);
-    }
-}
-```
-
-The details can be found [here](https://github.com/feO2x/Light.PortableResults/blob/main/benchmarks/Benchmarks/FlatDtoValidationBenchmarks.cs).
-
-#### Valid Flat DTO Benchmarks
-
-No errors on all three properties.
-
-| Method                            | Mean        | Error    | StdDev   | Ratio | Gen0   | Gen1   | Allocated | Alloc Ratio |
-|---------------------------------- |------------:|---------:|---------:|------:|-------:|-------:|----------:|------------:|
-| FluentValidationScopedOrTransient | 1,324.57 ns | 8.570 ns | 7.156 ns |  1.00 | 0.8316 | 0.0076 |    6984 B |        1.00 |
-| FluentValidationSingleton         |   105.84 ns | 0.246 ns | 0.205 ns |  0.08 | 0.0755 | 0.0001 |     632 B |        0.09 |
-| LightPortableResults              |    50.49 ns | 0.091 ns | 0.076 ns |  0.04 | 0.0124 |      - |     104 B |        0.01 |
-
-#### Invalid Flat DTO Benchmarks
-
-All three properties are invalid.
-
-| Method                            | Mean       | Error    | StdDev  | Ratio | Gen0   | Gen1   | Allocated | Alloc Ratio |
-|---------------------------------- |-----------:|---------:|--------:|------:|-------:|-------:|----------:|------------:|
-| FluentValidationScopedOrTransient | 3,145.2 ns | 10.38 ns | 9.71 ns |  1.00 | 1.7509 | 0.0267 |   14672 B |        1.00 |
-| FluentValidationSingleton         | 1,793.6 ns |  3.93 ns | 3.48 ns |  0.57 | 0.9937 | 0.0095 |    8320 B |        0.57 |
-| LightPortableResults              |   289.6 ns |  0.57 ns | 0.51 ns |  0.09 | 0.0820 |      - |     688 B |        0.05 |
-
-#### Complex DTO Benchmark Setup
-
-This is the DTO with one nested object, one nested collection with primitive items (strings), and one nested collection with complex items.
-
-```csharp
-public sealed record PurchaseOrderDto
-{
-    public required Guid OrderId { get; set; }
-    public required string CustomerEmail { get; set; } = string.Empty;
-    public required ShippingAddressDto ShippingAddress { get; set; }
-    public required List<string> Tags { get; set; }
-    public required List<OrderItemDto> Items { get; set; }
-}
-
-public sealed record ShippingAddressDto
-{
-    public required string RecipientName { get; set; } = string.Empty;
-    public required string Street { get; set; } = string.Empty;
-    public required string PostalCode { get; set; } = string.Empty;
-    public required string CountryCode { get; set; } = string.Empty;
-}
-
-public sealed record OrderItemDto
-{
-    public required string Sku { get; set; } = string.Empty;
-    public required int Quantity { get; set; }
-    public required decimal UnitPrice { get; set; }
-}
-```
-
-The details can be found [here](https://github.com/feO2x/Light.PortableResults/blob/main/benchmarks/Benchmarks/ComplexDtoValidationBenchmarks.cs).
-
-#### Valid Complex DTO Benchmarks
-
-No errors in the DTO object graph.
-
-| Method                            | Mean       | Error    | StdDev   | Ratio | Gen0   | Gen1   | Allocated | Alloc Ratio |
-|---------------------------------- |-----------:|---------:|---------:|------:|-------:|-------:|----------:|------------:|
-| FluentValidationScopedOrTransient | 8,318.7 ns | 78.34 ns | 69.45 ns |  1.00 | 4.1504 | 0.1221 |  33.94 KB |        1.00 |
-| FluentValidationSingleton         | 1,685.9 ns |  5.01 ns |  4.69 ns |  0.20 | 0.7057 | 0.0019 |   5.77 KB |        0.17 |
-| LightPortableResults              |   742.2 ns |  7.40 ns |  6.93 ns |  0.09 | 0.1554 |      - |   1.27 KB |        0.04 |
-
-#### Invalid Complex DTO Benchmarks
-
-Nine errors overall in the object graph.
-
-| Method                            |      Mean |     Error |    StdDev | Ratio |   Gen0 |   Gen1 | Allocated | Alloc Ratio |
-|-----------------------------------|----------:|----------:|----------:|------:|-------:|-------:|----------:|------------:|
-| FluentValidationScopedOrTransient | 13.985 μs | 0.0705 μs | 0.0625 μs |  1.00 | 6.5308 | 0.3052 |  53.45 KB |        1.00 |
-| FluentValidationSingleton         |  6.755 μs | 0.0410 μs | 0.0343 μs |  0.48 | 3.1128 | 0.0763 |  25.47 KB |        0.48 |
-| LightPortableResults              |  1.507 μs | 0.0019 μs | 0.0018 μs |  0.11 | 0.2422 |      - |   1.99 KB |        0.04 |
-
 ### Mapping to Domain Objects
 
-Use `Validator<TSource, TValidated>` when validation must also produce a *different* output type — typically a mutable DTO in, an immutable domain object out. This pattern implements an Anti-Corruption Layer: the domain model is never exposed to raw, unvalidated input.
+Use `Validator<TSource, TValidated>` when validation must produce a *different* output type — typically a mutable DTO in, an immutable domain object out. This pattern implements an Anti-Corruption Layer.
 
 ```csharp
 // Mutable DTO received from the API
@@ -921,7 +734,7 @@ public sealed class CreateMovieValidator : Validator<CreateMovieDto, Movie>
     public CreateMovieValidator(IValidationContextFactory validationContextFactory)
         : base(validationContextFactory) { }
 
-    // PerformValidation returns ValidatedValue<Movie>, not ValidatedValue<CreateMovieDto>.
+    // PerformValidation returns ValidatedValue<Movie>.
     // The domain object is only constructed when all checks pass.
     protected override ValidatedValue<Movie> PerformValidation(
         ValidationContext context,
@@ -949,7 +762,7 @@ public sealed class CreateMovieValidator : Validator<CreateMovieDto, Movie>
 }
 ```
 
-The caller receives a `Result<Movie>` — the `CreateMovieDto` type never escapes the validator boundary:
+The caller receives `Result<Movie>` — `CreateMovieDto` never escapes the validator boundary:
 
 ```csharp
 public async Task<Result<Movie>> CreateMovieAsync(CreateMovieDto dto)
@@ -964,8 +777,6 @@ public async Task<Result<Movie>> CreateMovieAsync(CreateMovieDto dto)
     return result;
 }
 ```
-
-> `Validator<T>` (single type parameter) can also normalize field values — as shown in the Quick Start where strings are trimmed and written back. The difference with `Validator<TSource, TValidated>` is purely at the type level: when the validated output must be a structurally different type, use the two-parameter form.
 
 ### Async Validators
 
@@ -991,7 +802,7 @@ public sealed class AddMovieRatingValidator : AsyncValidator<MovieRatingDto>
         CancellationToken cancellationToken
     )
     {
-        // Synchronous checks run first — cheap and allocation-free
+        // Synchronous checks first — cheap and allocation-free
         context.Check(dto.Id).IsNotEmpty();
         context.Check(dto.MovieId).IsNotEmpty();
         dto.UserName = context.Check(dto.UserName).IsNotNullOrWhiteSpace();
@@ -1044,49 +855,34 @@ Register async validators that depend on scoped services as scoped themselves:
 builder.Services
     .AddValidationForPortableResults()
     .AddScoped<IMovieRepository, MovieRepository>()
-    .AddScoped<AddMovieRatingValidator>(); // scoped: depends on a scoped repository
+    .AddScoped<AddMovieRatingValidator>(); // scoped because it depends on a scoped repository
 ```
 
-### Using ValidationContext Directly
+### Using `ValidationContext` Directly
 
-You do not need to write a validator class for every case. Inject `IValidationContextFactory` and use `ValidationContext` directly anywhere inline validation is more practical than a dedicated class.
+You do not need a validator class for every case. Inject `IValidationContextFactory` and use `ValidationContext` directly for inline validation:
 
 ```csharp
-public sealed class MovieSearchService
+public async Task<Result<IReadOnlyList<Movie>>> SearchMoviesAsync(
+    string? query,
+    int page,
+    int pageSize,
+    CancellationToken cancellationToken = default
+)
 {
-    private readonly IValidationContextFactory _contextFactory;
-    private readonly IMovieRepository _movieRepository;
+    var context = _contextFactory.CreateValidationContext();
+    var normalizedQuery = context.Check(query).IsNotNullOrWhiteSpace();
+    context.Check(page).IsGreaterThanOrEqualTo(1);
+    context.Check(pageSize).IsInRange(1, 100);
 
-    public MovieSearchService(
-        IValidationContextFactory contextFactory,
-        IMovieRepository movieRepository
-    )
+    if (context.HasErrors)
     {
-        _contextFactory = contextFactory;
-        _movieRepository = movieRepository;
+        return Result<IReadOnlyList<Movie>>.Fail(context.ToFailureResult().Errors);
     }
 
-    public async Task<Result<IReadOnlyList<Movie>>> SearchMoviesAsync(
-        string? query,
-        int page,
-        int pageSize,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var context = _contextFactory.CreateValidationContext();
-        var normalizedQuery = context.Check(query).IsNotNullOrWhiteSpace();
-        context.Check(page).IsGreaterThanOrEqualTo(1);
-        context.Check(pageSize).IsInRange(1, 100);
-
-        if (context.HasErrors)
-        {
-            return Result<IReadOnlyList<Movie>>.Fail(context.ToFailureResult().Errors);
-        }
-
-        return Result<IReadOnlyList<Movie>>.Ok(
-            await _movieRepository.SearchAsync(normalizedQuery, page, pageSize, cancellationToken)
-        );
-    }
+    return Result<IReadOnlyList<Movie>>.Ok(
+        await _movieRepository.SearchAsync(normalizedQuery, page, pageSize, cancellationToken)
+    );
 }
 ```
 
@@ -1094,7 +890,7 @@ public sealed class MovieSearchService
 
 ### Sharing State Between Validators
 
-When a child validator needs data that was loaded or computed by the parent, use `ValidationContext.SetItem` and `GetRequiredItem` with a typed key. This avoids loading the same data twice and keeps child validators free from infrastructure dependencies.
+When a child validator needs data loaded by the parent, use `ValidationContext.SetItem` and `GetRequiredItem` with a typed key. This avoids loading the same data twice and keeps child validators free from infrastructure dependencies.
 
 ```csharp
 // Define the key once — store it as a static field near the validators that use it
@@ -1103,97 +899,72 @@ public static class MovieConstants
     public static readonly ValidationContextKey<Movie> MovieKey = new("movie");
 }
 
-// Parent async validator loads the movie and shares it via the context
-public sealed class AddMovieRatingValidator : AsyncValidator<MovieRatingDto>
+// Parent loads the movie and stores it in the context
+protected override async ValueTask<ValidatedValue<MovieRatingDto>> PerformValidationAsync(
+    ValidationContext context,
+    ValidationCheckpoint checkpoint,
+    MovieRatingDto dto,
+    CancellationToken cancellationToken
+)
 {
-    private readonly IMovieClient _movieClient;
-    private readonly MovieQuotaValidator _quotaValidator;
+    context.Check(dto.Id).IsNotEmpty();
+    context.Check(dto.MovieId).IsNotEmpty(shortCircuitOnError: true);
+    dto.UserName = context.Check(dto.UserName).IsNotNullOrWhiteSpace();
+    dto.Comment = context.Check(dto.Comment).HasLengthIn(10, 1000);
+    context.Check(dto.Rating).IsInRange(1, 5);
 
-    public AddMovieRatingValidator(
-        IValidationContextFactory validationContextFactory,
-        IMovieClient movieClient,
-        MovieQuotaValidator quotaValidator
-    ) : base(validationContextFactory)
+    if (!checkpoint.HasNewErrors)
     {
-        _movieClient = movieClient;
-        _quotaValidator = quotaValidator;
-    }
-
-    protected override async ValueTask<ValidatedValue<MovieRatingDto>> PerformValidationAsync(
-        ValidationContext context,
-        ValidationCheckpoint checkpoint,
-        MovieRatingDto dto,
-        CancellationToken cancellationToken
-    )
-    {
-        context.Check(dto.Id).IsNotEmpty();
-        context.Check(dto.MovieId).IsNotEmpty(shortCircuitOnError: true);
-        dto.UserName = context.Check(dto.UserName).IsNotNullOrWhiteSpace();
-        dto.Comment = context.Check(dto.Comment).HasLengthIn(10, 1000);
-        context.Check(dto.Rating).IsInRange(1, 5);
-
-        if (!checkpoint.HasNewErrors)
-        {
-            var movie = await movieClient.GetAsync(dto.MovieId, cancellationToken);
-            if (movie is null)
-            {
-                context.Check(dto.MovieId).AddError(new Error
-                {
-                    Message = "The specified movie does not exist",
-                    Code = "movie.notFound",
-                    Target = "movieId",
-                    Category = ErrorCategory.NotFound
-                });
-            }
-            else
-            {
-                // Store the loaded entity so the child validator can access it
-                context.SetItem(MovieConstants.MovieKey, movie);
-                context.Check(dto).ValidateChild(_quotaValidator);
-            }
-        }
-
-        return checkpoint.ToValidatedValue(dto);
-    }
-}
-
-// Child validator retrieves the pre-loaded entity without hitting the database again
-public sealed class MovieQuotaValidator : Validator<MovieRatingDto>
-{
-    public MovieQuotaValidator(IValidationContextFactory validationContextFactory)
-        : base(validationContextFactory) { }
-
-    protected override ValidatedValue<MovieRatingDto> PerformValidation(
-        ValidationContext context,
-        ValidationCheckpoint checkpoint,
-        MovieRatingDto dto
-    )
-    {
-        var movie = context.GetRequiredItem(MovieConstants.MovieKey);
-
-        if (movie.MaxRatingsPerUser > 0 && movie.CurrentRatingCount >= movie.MaxRatingsPerUser)
+        var movie = await _movieClient.GetAsync(dto.MovieId, cancellationToken);
+        if (movie is null)
         {
             context.Check(dto.MovieId).AddError(new Error
             {
-                Message = "Rating quota for this movie has been reached",
-                Code = "movie.quotaExceeded",
+                Message = "The specified movie does not exist",
+                Code = "movie.notFound",
                 Target = "movieId",
-                Category = ErrorCategory.Conflict
+                Category = ErrorCategory.NotFound
             });
         }
-
-        return checkpoint.ToValidatedValue(dto);
+        else
+        {
+            context.SetItem(MovieConstants.MovieKey, movie);
+            context.Check(dto).ValidateChild(_quotaValidator);
+        }
     }
+
+    return checkpoint.ToValidatedValue(dto);
+}
+
+// Child retrieves the pre-loaded entity without touching the database
+protected override ValidatedValue<MovieRatingDto> PerformValidation(
+    ValidationContext context,
+    ValidationCheckpoint checkpoint,
+    MovieRatingDto dto
+)
+{
+    var movie = context.GetRequiredItem(MovieConstants.MovieKey);
+
+    if (movie.MaxRatingsPerUser > 0 && movie.CurrentRatingCount >= movie.MaxRatingsPerUser)
+    {
+        context.Check(dto.MovieId).AddError(new Error
+        {
+            Message = "Rating quota for this movie has been reached",
+            Code = "movie.quotaExceeded",
+            Target = "movieId",
+            Category = ErrorCategory.Conflict
+        });
+    }
+
+    return checkpoint.ToValidatedValue(dto);
 }
 ```
 
-`ValidationContextKey<T>` is a typed key that ensures you cannot accidentally retrieve the wrong type from the context. Use `TryGetItem` instead of `GetRequiredItem` when the item may not have been set.
+`ValidationContextKey<T>` is typed so you cannot accidentally retrieve the wrong type. Use `TryGetItem` instead of `GetRequiredItem` when the item may not have been set.
 
 ### Custom Assertions
 
-For domain-specific rules that do not map to any built-in assertion, you have two options.
-
-**Ad-hoc predicate** — use `Must` for a one-off check with a custom message:
+**Ad-hoc predicate** — use `Must` for a one-off check:
 
 ```csharp
 context.Check(dto.ReleaseYear).Must(
@@ -1201,22 +972,19 @@ context.Check(dto.ReleaseYear).Must(
 );
 ```
 
-**Reusable definition** — for rules used across multiple validators, create a `ValidationErrorDefinition` subclass and expose it as a fluent extension method. This participates in the library's message caching and achieves the same performance as built-in assertions.
+**Reusable definition** — for rules used across multiple validators, create a `ValidationErrorDefinition` subclass and expose it as a fluent extension method. This participates in the library's message caching and has the same performance as built-in assertions.
 
 ```csharp
 using Light.PortableResults.Validation;
 using Light.PortableResults.Validation.Definitions;
 using Light.PortableResults.Validation.Messaging;
 
-// 1. Define the rule — a static singleton so the cache key is stable
 public sealed class MustBeValidMovieYearDefinition : ValidationErrorDefinition
 {
     public static readonly MustBeValidMovieYearDefinition Instance = new();
 
     private MustBeValidMovieYearDefinition() : base(code: "MustBeValidMovieYear") { }
 
-    // IsMessageStable = true tells the framework that the message only depends on
-    // DisplayName and can be cached across calls — no dynamic parameters.
     public override bool IsMessageStable => true;
 
     public override bool TryGetStableMessageProvider(
@@ -1229,10 +997,9 @@ public sealed class MustBeValidMovieYearDefinition : ValidationErrorDefinition
     }
 
     public override ValidationErrorMessage ProvideMessage<T>(in ValidationErrorMessageContext<T> context) =>
-        new ($"{context.DisplayName} must be a valid movie release year (1888 or later, not in the future)");
+        new($"{context.DisplayName} must be a valid movie release year (1888 or later, not in the future)");
 }
 
-// 2. Expose it as a fluent extension method on Check<int>
 public static class MovieValidationExtensions
 {
     public static Check<int> MustBeValidMovieYear(this Check<int> check, bool shortCircuitOnError = false)
@@ -1258,18 +1025,18 @@ context.Check(dto.ReleaseYear).MustBeValidMovieYear();
 
 ### Configuring Validation Behavior
 
-`ValidationContextOptions` controls how a `ValidationContext` behaves. All properties are `init`-only, so the record is immutable once created.
+`ValidationContextOptions` controls how a `ValidationContext` behaves. All properties are `init`-only.
 
-| Property                     | Default                                      | What it controls                                                                                                                                                 |
-|------------------------------|----------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `ValueNormalizer`            | `TrimStringNormalizer.Instance`              | How values are normalized before checks see them. The default trims strings and converts `null` to `""`. Replace with `NoOpValueNormalizer.Instance` to disable. |
-| `TargetNormalizer`           | `ValidationTargets.DefaultNormalizer`        | How caller-expression targets (e.g., `dto.ShippingAddress`) are converted to error target strings.                                                               |
-| `CultureInfo`                | `CultureInfo.InvariantCulture`               | Culture used to format number parameters in error messages. Change for locale-aware output.                                                                      |
-| `AutomaticNullErrorProvider` | `DefaultAutomaticNullErrorProvider.Instance` | Produces the error when a validator receives a null source value. Replace to customize the null error shape.                                                     |
-| `ErrorTemplates`             | `ValidationErrorTemplates.Default`           | The full set of built-in message templates. Replace individual templates to customize wording globally.                                                          |
-| `ErrorDefinitionCache`       | `ValidationErrorDefinitionCache.Default`     | Shared cache for reusable definition instances. The default is a process-wide singleton.                                                                         |
+| Property                     | Default                                      | What it controls                                                                                                                                                  |
+|------------------------------|----------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ValueNormalizer`            | `TrimStringNormalizer.Instance`              | How values are normalized before checks see them. The default trims strings and converts `null` to `""`. Replace with `NoOpValueNormalizer.Instance` to disable.  |
+| `TargetNormalizer`           | `ValidationTargets.DefaultNormalizer`        | How caller-expression targets (e.g. `dto.ShippingAddress`) are converted to error target strings.                                                                 |
+| `CultureInfo`                | `CultureInfo.InvariantCulture`               | Culture used to format number parameters in error messages.                                                                                                       |
+| `AutomaticNullErrorProvider` | `DefaultAutomaticNullErrorProvider.Instance` | Produces the error when a validator receives a null source value.                                                                                                 |
+| `ErrorTemplates`             | `ValidationErrorTemplates.Default`           | The full set of built-in message templates. Replace individual templates to customize wording globally.                                                           |
+| `ErrorDefinitionCache`       | `ValidationErrorDefinitionCache.Default`     | Shared cache for reusable definition instances. The default is a process-wide singleton.                                                                          |
 
-To use custom options in a dependency-injection host, register a customized `IValidationContextFactory` before calling `AddValidationForPortableResults()`:
+Register a customized factory before calling `AddValidationForPortableResults()`:
 
 ```csharp
 using System.Globalization;
@@ -1284,7 +1051,7 @@ builder.Services.AddSingleton<IValidationContextFactory>(
 builder.Services.AddValidationForPortableResults();
 ```
 
-Without a DI host, create the factory directly:
+Without a DI host:
 
 ```csharp
 var factory = DefaultValidationContextFactory.Create(new ValidationContextOptions
@@ -1296,7 +1063,7 @@ var validator = new CreateMovieValidator(factory);
 
 ### Validate `Microsoft.Extensions.Configuration` Options
 
-You can write your custom `Validator<T>` implementations to validate options bound from configuration through `IValidateOptions<T>`. Use the `ValidateWithPortableResults<TOptions, TValidator>()` extension method to integrate with the standard options validation pipeline.
+Use `ValidateWithPortableResults<TOptions, TValidator>()` to integrate your `Validator<T>` implementations with the standard options validation pipeline:
 
 ```csharp
 public sealed class EmailSenderOptions
@@ -1324,20 +1091,18 @@ public sealed class EmailSenderOptionsValidator : Validator<EmailSenderOptions>
     }
 }
 
-IServiceCollection services = new ServiceCollection();
-
 services
     .AddOptions<EmailSenderOptions>()
     .BindConfiguration("EmailSender")
     .ValidateWithPortableResults<EmailSenderOptions, EmailSenderOptionsValidator>()
-    .ValidateOnStart(); // Not required, but usually what you want
+    .ValidateOnStart();
 ```
 
-`ValidateWithPortableResults` integrates with the standard options validation pipeline, supports named options, and forwards the current options name to the `ValidationContext`. Use `ValidationContext.TryGetItem(ConfigurationConstants.OptionsNameKey, out var optionsName);` to access the options name in your validator.
+`ValidateWithPortableResults` supports named options and forwards the current options name to the `ValidationContext`. Use `ValidationContext.TryGetItem(ConfigurationConstants.OptionsNameKey, out var optionsName)` to access it in your validator.
 
-## OpenAPI Support
+## 🌐 OpenAPI Support
 
-OpenAPI support lives in the dedicated `Light.PortableResults.AspNetCore.OpenApi` package. It is opt-in and does not change runtime serialization. `LightResult<T>` / `LightActionResult<T>` still serialize through the JSON writers in `Light.PortableResults`; the OpenAPI package only contributes endpoint metadata plus a document transformer. If you use `Light.PortableResults.Validation`, add `Light.PortableResults.Validation.OpenApi` to opt into the library-owned built-in validation error contracts.
+OpenAPI support lives in the dedicated `Light.PortableResults.AspNetCore.OpenApi` package and is opt-in — it does not change runtime serialization. The package contributes endpoint metadata and a document transformer that understands `LightResult<T>` / `LightActionResult<T>`.
 
 ### Registration
 
@@ -1352,94 +1117,45 @@ builder.Services
        .AddPortableResultsOpenApi(contracts => contracts.RegisterBuiltInValidationErrors());
 ```
 
-Use `AddPortableResultsForMvc()` instead of `AddPortableResultsForMinimalApis()` for MVC applications. OpenAPI support is intentionally separate so applications that never generate OpenAPI documents do not take on the extra dependency.
+Use `AddPortableResultsForMvc()` for MVC applications. `RegisterBuiltInValidationErrors()` registers schemas for all built-in validation error codes from `Light.PortableResults.Validation`.
 
-### Public surface
+### Documenting Endpoints
 
-Minimal APIs expose three helpers in `Light.PortableResults.AspNetCore.OpenApi`:
+Minimal APIs expose three helpers:
 
-- `ProducesPortableSuccessResponse<TValue>(...)`
-- `ProducesPortableProblem(...)`
-- `ProducesPortableValidationProblem(...)`
+- `ProducesPortableSuccessResponse<TValue>(...)` — documents the success response (bare `TValue` or `{ value, metadata }` depending on `MetadataSerializationMode`).
+- `ProducesPortableProblem(...)` — documents a non-validation failure response.
+- `ProducesPortableValidationProblem(...)` — documents a validation failure (400/422), selecting the rich or ASP.NET Core-compatible envelope shape automatically.
 
-MVC exposes three matching attributes:
-
-- `[ProducesPortableSuccessResponse<TValue>]`
-- `[ProducesPortableProblem]`
-- `[ProducesPortableValidationProblem]`
-
-`ProducesPortableSuccessResponse<TValue>` documents both runtime success shapes:
-
-- Under `MetadataSerializationMode.ErrorsOnly`, the documented body is the bare `TValue`.
-- Under `MetadataSerializationMode.Always`, the documented body is `{ value, metadata }`.
-
-Use `UseMetadataSerializationMode(...)` on Minimal APIs or the `MetadataSerializationMode = ...` named argument on the MVC attribute when the endpoint’s documented shape differs from the DI default.
-
-`ProducesPortableValidationProblem(...)` automatically selects the rich or ASP.NET Core-compatible validation envelope from `PortableResultsHttpWriteOptions.ValidationProblemSerializationFormat`. Use `UseFormat(...)` on Minimal APIs or `Format = ...` on the MVC attribute for a per-endpoint override.
-
-PortableResults OpenAPI metadata is authoritative for a given `(status code, content type)` response slot. If another OpenAPI contributor already documented the same slot, the document transformer replaces that media-type schema instead of merging it. Avoid combining `ProducesPortable...` helpers or attributes with ASP.NET Core response-schema helpers for the same response slot unless you want PortableResults to win.
-
-### Documenting metadata
-
-Top-level metadata and per-error-code metadata are caller-owned contracts. The OpenAPI package documents them explicitly; the runtime still writes `MetadataObject`.
-
-`WithErrorCodes(...)`, endpoint-scoped `WithErrorMetadata<TMetadata>(code)`, and the typed validation helpers such as `WithInRangeError<T>()` narrow error items exhaustively by default once you document at least one code. The generated item schema becomes a discriminated `oneOf` over the documented variants with `code` required, so you are asserting that every emitted error item has a non-null `code` and that the code is in the documented set.
-
-If an endpoint can still emit additional codes outside the documented set, opt out explicitly with `AllowUnknownErrorCodes()` on the Minimal API builders or `AllowUnknownErrorCodes = true` on the MVC attributes. In that mode the generated schema falls back to the non-exhaustive `anyOf` shape with the canonical `PortableError` / `PortableValidationErrorDetail` branch preserved for unknown codes.
-
-`AllowUnknownErrorCodes()` does not relax the `code` requirement on narrowed item schemas. If an endpoint can emit code-less errors, do not narrow that endpoint's error items in the first place; use the canonical envelope schema instead.
-
-When top-level metadata or documented error items are narrowed, the generated response envelope is a flattened concrete object schema that copies the canonical problem-details properties and overrides only `errors` / `errorDetails` / `metadata`. This improves Swagger UI and code-generator output without changing the runtime wire format.
-
-For built-in validation errors, reference `Light.PortableResults.Validation.OpenApi` and pass the catalog registration to `AddPortableResultsOpenApi(...)` once:
+MVC exposes matching attributes: `[ProducesPortableSuccessResponse<TValue>]`, `[ProducesPortableProblem]`, and `[ProducesPortableValidationProblem]`.
 
 ```csharp
-using Light.PortableResults.AspNetCore.OpenApi;
-using Light.PortableResults.Validation.OpenApi;
-
-builder.Services.AddPortableResultsOpenApi(
-    contracts => contracts.RegisterBuiltInValidationErrors()
-);
-```
-
-Use `ValidationErrorCodes` when opting endpoints into built-in codes. Codes such as `NotEmpty`, `LengthInRange`, and `Count` reuse global schemas from the built-in catalog:
-
-```csharp
-using Light.PortableResults.Validation;
-using Light.PortableResults.Validation.OpenApi;
-
-app.MapPut("/api/movieRatings", AddMovieRating)
+app.MapPut("/api/movieRatings", async (MovieRatingDto dto, AddMovieRatingService service) =>
+    {
+        var result = await service.AddMovieRatingAsync(dto);
+        return result.ToMinimalApiResult();
+    })
+   .ProducesPortableSuccessResponse<MovieRating>()
    .ProducesPortableValidationProblem(
         configure: x =>
             x.UseFormat(ValidationProblemSerializationFormat.Rich)
              .WithErrorCodes(ValidationErrorCodes.NotEmpty, ValidationErrorCodes.LengthInRange)
              .WithInRangeError<int>()
-    );
+    )
+   .ProducesPortableProblem();
 ```
 
-Use `AllowUnknownErrorCodes()` when the endpoint may emit additional documented-shape errors outside the documented code set, for example when built-in validation codes are documented but a downstream lookup may still add a custom code:
+### Narrowing Error Schemas
+
+`WithErrorCodes(...)`, `WithErrorMetadata<TMetadata>(code)`, and typed helpers like `WithInRangeError<T>()` narrow error items exhaustively once you document at least one code. The generated schema becomes a `oneOf` discriminated by `code`.
+
+If an endpoint can emit additional codes that cannot be enumerated at build time, opt out with `AllowUnknownErrorCodes()` (Minimal APIs) or `AllowUnknownErrorCodes = true` (MVC attributes). The schema then falls back to a non-exhaustive `anyOf` shape while still documenting the known variants.
+
+### Source Generation
+
+Mark a synchronous `Validator<T>` with `[GeneratePortableValidationOpenApi]` and make it `partial` to let the source generator produce an OpenAPI contract automatically from the validator's check calls:
 
 ```csharp
-app.MapGet("/api/movies", GetMovies)
-   .ProducesPortableValidationProblem(
-        configure: x =>
-            x.UseFormat(ValidationProblemSerializationFormat.Rich)
-             .WithErrorCodes(ValidationErrorCodes.NotEmpty)
-             .WithInRangeError<int>()
-             .AllowUnknownErrorCodes()
-    );
-```
-
-Comparison and range codes are polymorphic at the global code level, so the validation bridge also ships typed endpoint helpers: `WithEqualToError<T>()`, `WithNotEqualToError<T>()`, `WithGreaterThanError<T>()`, `WithGreaterThanOrEqualToError<T>()`, `WithLessThanError<T>()`, `WithLessThanOrEqualToError<T>()`, `WithInRangeError<T>()`, `WithNotInRangeError<T>()`, and `WithExclusiveRangeError<T>()`. These helpers use the existing inline metadata path, so an endpoint can document concrete metadata such as integer range boundaries for `IsInRange(1, 5)` while still reusing global schemas for shape-fixed codes.
-
-### Validation OpenAPI source generation
-
-`Light.PortableResults.Validation.OpenApi` also includes an opt-in source generator for validation responses. Mark a synchronous validator with `[GeneratePortableValidationOpenApi]`, make it `partial`, and apply the generated contract from Minimal API endpoints or MVC actions:
-
-```csharp
-using Light.PortableResults.Validation;
-using Light.PortableResults.Validation.OpenApi;
-
 [GeneratePortableValidationOpenApi]
 public sealed partial class AddMovieRatingValidator : Validator<MovieRatingDto>
 {
@@ -1450,7 +1166,7 @@ public sealed partial class AddMovieRatingValidator : Validator<MovieRatingDto>
     )
     {
         context.Check(dto.Id).IsNotEmpty();
-        context.Check(dto.Comment).HasLengthIn(10, 1000);
+        dto.Comment = context.Check(dto.Comment).HasLengthIn(10, 1000);
         context.Check(dto.Rating).IsInRange(1, 5);
         return checkpoint.ToValidatedValue(dto);
     }
@@ -1460,283 +1176,118 @@ app.MapPut("/api/movieRatings", AddMovieRating)
    .ProducesPortableValidationProblemFor<AddMovieRatingValidator>(
         configure: x => x.UseFormat(ValidationProblemSerializationFormat.Rich)
     );
-
-[ApiController]
-[Route("api/movieRatings")]
-public sealed class MovieRatingsController : ControllerBase
-{
-    [HttpPut]
-    [ProducesPortableValidationProblemFor<AddMovieRatingValidator>(
-        Format = ValidationProblemSerializationFormat.Rich
-    )]
-    public IActionResult Put(MovieRatingDto dto)
-    {
-        // ...
-    }
-}
-
-public sealed class MovieRatingsEndpointOpenApiContract : IPortableValidationOpenApiContract
-{
-    public static void ConfigurePortableValidationOpenApi(PortableValidationProblemOpenApiBuilder builder)
-    {
-        builder
-           .UseFormat(ValidationProblemSerializationFormat.Rich)
-           .WithErrorCodes(ValidationErrorCodes.NotNull)
-           .WithErrorMetadata<MovieAlreadyRatedMetadata>("MovieAlreadyRated")
-           .WithErrorExample(
-                "MovieAlreadyRated",
-                "movieId",
-                "movie has already been rated"
-            )
-           .AllowUnknownErrorCodes();
-    }
-}
-
-[ApiController]
-[Route("api/movieRatings")]
-public sealed class MovieRatingsCustomizedController : ControllerBase
-{
-    [HttpPut]
-    [ProducesPortableValidationProblemFor<
-        AddMovieRatingValidator,
-        MovieRatingsEndpointOpenApiContract
-    >(
-        StatusCodes.Status422UnprocessableEntity
-    )]
-    public IActionResult Put(MovieRatingDto dto)
-    {
-        // ...
-    }
-}
 ```
 
-The generated contract calls the same builder APIs you would write by hand. For Minimal APIs, the endpoint's `configure` callback runs afterward, so you can still set the validation format, add manual metadata contracts, or call `AllowUnknownErrorCodes()` for errors that are outside the validator's documentable rules. For MVC, the existing one-generic-parameter attribute remains the simple path when you only need generated metadata plus scalar named-property overrides such as `Format`, `TopLevelMetadataType`, or `AllowUnknownErrorCodes`. When an MVC action needs additive endpoint-local customization, use `ProducesPortableValidationProblemFor<TValidator, TEndpointContract>` and put the extra builder calls into a small `IPortableValidationOpenApiContract` implementation. The validator contract runs first and the endpoint contract runs second, so generated `ErrorCodes`, inline metadata contracts, typed helper contracts, and examples are preserved while endpoint-local additions are appended.
+The generator analyzes top-level `context.Check(...).Rule(...)` chains and produces response schemas and examples when metadata arguments are compile-time constants (e.g. `HasLengthIn(10, 1000)` or `IsInRange(1, 5)`).
 
-The generator analyzes top-level `context.Check(...).Rule(...)` chains in synchronous `Validator<T>` and `Validator<TSource, TValidated>` implementations. It supports built-in annotated rules, assignments that consume a checked value, explicit error hints via `[PortableValidationOpenApiErrorHint]`, and user-defined check methods annotated with `[ValidationRule]` plus optional `[ValidationErrorContract]` metadata definitions. Checks inside `if`, `switch`, loops, lambdas, local functions, `try`, or `using` blocks are skipped with a warning; lift the check to a top-level statement or add explicit hints when those errors must appear in the OpenAPI schema.
-
-When metadata arguments are compile-time constants, such as `HasLengthIn(10, 1000)` or `IsInRange(1, 5)`, the generated contract also contributes a response-level OpenAPI example. Scalar and Swagger UI show these concrete values in the validation problem example body, including representative default messages such as `"comment must be between 10 and 1000 characters long"` and `"rating must be between 1 and 5"`. These messages are documentation examples based on the framework defaults; runtime responses can differ when applications configure validation templates, display names, target normalization, culture, or error overrides. Non-constant metadata arguments still get documented schemas and can still appear as code/target examples, but the generated message and concrete metadata values are omitted for that call site so the OpenAPI transformer uses the generic fallback message. Delegate-based `Must(...)`, `Custom(...)`, `ErrorOverrides`, async validators, source-null errors emitted before `PerformValidation`, child validators, and complex target inference are intentionally outside the first-generation analysis.
-
-Use explicit hints when the validator emits known validation error contracts that the generator cannot infer. For an opaque `Custom(...)` path that only needs a code in the schema, add a code-only hint at the validator or `PerformValidation` method level:
+Use `[PortableValidationOpenApiErrorHint]` to annotate codes the generator cannot infer (for example, from `Must(...)`, `Custom(...)`, or child validators):
 
 ```csharp
 [GeneratePortableValidationOpenApi]
 [PortableValidationOpenApiErrorHint("MovieAlreadyRated")]
-public sealed partial class AddMovieRatingValidator : Validator<MovieRatingDto>
-{
-    // ...
-}
+public sealed partial class AddMovieRatingValidator : Validator<MovieRatingDto> { ... }
 ```
 
-If the opaque path has endpoint-specific metadata, either point to a metadata type or declare the metadata schema inline:
+### Reusable Error Code Contracts
+
+Register per-error-code metadata contracts once in DI, then opt specific endpoints into them:
 
 ```csharp
-[PortableValidationOpenApiErrorHint("MovieAlreadyRated", typeof(MovieAlreadyRatedMetadata))]
-
-[PortableValidationOpenApiErrorHint("RatingTooLow")]
-[PortableValidationOpenApiErrorMetadataProperty("RatingTooLow", "lowerBoundary", typeof(int))]
-[PortableValidationOpenApiErrorMetadataProperty("RatingTooLow", "upperBoundary", typeof(int))]
-```
-
-Hints compose with inferred rules. Matching schema shapes are deduplicated, while conflicting metadata shapes for the same code are reported by the generator because the emitted OpenAPI contract would otherwise be ambiguous. Hinting a code never makes the generated response non-exhaustive and never calls `AllowUnknownErrorCodes()` by itself.
-
-You can also provide response-example entries for opaque paths. An example-only hint documents the code as code-only, so the common case does not need a separate `[PortableValidationOpenApiErrorHint]`. Use `Message` when the opaque path needs exact example text; otherwise the OpenAPI transformer writes `"Validation failed."`. Metadata values are compile-time constants declared with companion attributes:
-
-```csharp
-[PortableValidationOpenApiExampleHint(
-    "RatingTooLow",
-    Target = "rating",
-    Message = "rating must be at least 1"
-)]
-[PortableValidationOpenApiExampleMetadata("RatingTooLow", "lowerBoundary", 1)]
-[PortableValidationOpenApiExampleMetadata("RatingTooLow", "upperBoundary", 5)]
-```
-
-Use `AllowUnknownErrorCodes()` only when the endpoint may emit additional codes that are not enumerable at build time. Explicit hints and `AllowUnknownErrorCodes()` compose: hints document the known contract, and the unknown-code opt-in keeps the generated schema non-exhaustive for the rest. Endpoint-level customization that is not validator-local, such as changing the validation problem format, documenting multiple example targets for the same code, or adding contracts decided outside the validator, still belongs in the endpoint `configure` callback.
-
-Register reusable per-error-code metadata contracts once in DI by passing them to `AddPortableResultsOpenApi(...)`:
-
-```csharp
-using Light.PortableResults.AspNetCore.OpenApi;
-
 builder.Services.AddPortableResultsOpenApi(contracts =>
 {
     contracts.ForCode<VersionMismatchMetadata>("VersionMismatch");
     contracts.ForCode<InsufficientFundsMetadata>("InsufficientFunds");
 });
-```
 
-User-defined codes continue to use the type-based overloads above, or endpoint-scoped `WithErrorMetadata<TMetadata>(code)` when a contract only applies to one operation.
-
-Then opt the relevant codes into each endpoint:
-
-```csharp
-using Light.PortableResults;
-using Light.PortableResults.AspNetCore.MinimalApis;
-using Light.PortableResults.AspNetCore.OpenApi;
-using Light.PortableResults.Http.Writing;
-
-app.MapPut("/api/movieRatings", async (MovieRatingDto dto, AddMovieRatingService service) =>
-    {
-        var result = await service.AddMovieRatingAsync(dto);
-        return result.ToMinimalApiResult();
-    })
-   .ProducesPortableSuccessResponse<MovieRating>(
-        configure: x =>
-            x.WithMetadata<MovieRatingResponseMetadata>()
-             .UseMetadataSerializationMode(MetadataSerializationMode.Always)
-    )
+app.MapPut("/api/movieRatings", handler)
    .ProducesPortableValidationProblem(
-        configure: x =>
-            x.UseFormat(ValidationProblemSerializationFormat.Rich)
-             .WithErrorCodes("VersionMismatch")
-    )
-   .ProducesPortableProblem(
-        statusCode: StatusCodes.Status404NotFound,
-        configure: x =>
-            x.WithMetadata<MovieProblemMetadata>()
-             .WithErrorMetadata<MovieNotFoundMetadata>("MovieNotFound")
-    )
-   .ProducesPortableProblem();
+        configure: x => x.WithErrorCodes("VersionMismatch")
+    );
 ```
 
-The MVC equivalent uses named attribute arguments:
-
-```csharp
-using Light.PortableResults;
-using Light.PortableResults.AspNetCore.Mvc;
-using Light.PortableResults.AspNetCore.OpenApi;
-using Light.PortableResults.Http.Writing;
-using Microsoft.AspNetCore.Mvc;
-
-[ApiController]
-[Route("api/movieRatings")]
-public sealed class AddMovieRatingsController(AddMovieRatingService service) : ControllerBase
-{
-    [HttpPut]
-    [ProducesPortableSuccessResponse<MovieRating>(
-        TopLevelMetadataType = typeof(MovieRatingResponseMetadata),
-        MetadataSerializationMode = MetadataSerializationMode.Always
-    )]
-    [ProducesPortableValidationProblem(
-        Format = ValidationProblemSerializationFormat.Rich,
-        ErrorCodes = new[] { "VersionMismatch" }
-    )]
-    [ProducesPortableProblem(
-        statusCode: StatusCodes.Status404NotFound,
-        TopLevelMetadataType = typeof(MovieProblemMetadata),
-        InlineErrorMetadataCodes = new[] { "MovieNotFound" },
-        InlineErrorMetadataContracts = new[] { ErrorMetadataContract.FromType(typeof(MovieNotFoundMetadata)) }
-    )]
-    [ProducesPortableProblem]
-    public async Task<LightActionResult<MovieRating>> AddMovieRating(AddMovieRatingDto dto)
-    {
-        var result = await service.AddMovieRatingAsync(dto);
-        return result.ToMvcActionResult();
-    }
-}
-```
-
-## ⚙️ Configuration for HTTP and CloudEvents
+## ⚙️ Configuration Reference
 
 ### HTTP write options (`PortableResultsHttpWriteOptions`)
 
 | Option                                 | Default                | Description                                                                                                                                                                                               |
 |----------------------------------------|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `ValidationProblemSerializationFormat` | `AspNetCoreCompatible` | Controls how validation errors are serialized for HTTP 400/422 responses. Defaults to `AspNetCoreCompatible` for backwards-compatibility, we encourage you to use `Rich`.                                 |
+| `ValidationProblemSerializationFormat` | `AspNetCoreCompatible` | Controls how validation errors are serialized for HTTP 400/422 responses. We encourage using `Rich`.                                                                                                      |
 | `MetadataSerializationMode`            | `ErrorsOnly`           | Controls whether metadata is serialized in response bodies (`ErrorsOnly` or `Always`).                                                                                                                    |
 | `CreateProblemDetailsInfo`             | `null`                 | Optional custom factory for generating Problem Details fields (`type`, `title`, `detail`, etc.).                                                                                                          |
-| `FirstErrorCategoryIsLeadingCategory`  | `true`                 | If `true`, the first error category decides the HTTP status code for failures. If `false`, Light.PortableResults checks if all errors have the same category and chooses `Unclassified` when they differ. |
-
-### HTTP read options (`PortableResultsHttpReadOptions`)
-
-| Option | Default | Description |
-| --- | --- | --- |
-| `HeaderParsingService` | `ParseNoHttpHeadersService.Instance` | Controls how HTTP headers are converted into metadata (default: skip all headers). |
-| `MergeStrategy` | `AddOrReplace` | Strategy used when merging metadata with the same key from headers and body. |
-| `PreferSuccessPayload` | `Auto` | How to interpret successful payloads (`Auto`, `BareValue`, `WrappedValue`). |
-| `TreatProblemDetailsAsFailure` | `true` | If `true`, `application/problem+json` is treated as failure even for 2xx status codes. |
-| `SerializerOptions` | `Module.DefaultSerializerOptions` | System.Text.JSON serializer options used for deserialization. |
-
-### CloudEvents write options (`PortableResultsCloudEventsWriteOptions`)
-
-| Option | Default | Description |
-| --- | --- | --- |
-| `Source` | `null` | Default CloudEvents `source` URI reference if not set per call. |
-| `MetadataSerializationMode` | `Always` | Controls whether metadata is serialized into CloudEvents `data`. |
-| `SerializerOptions` | `Module.DefaultSerializerOptions` | System.Text.JSON serializer options used for deserialization. |
-| `ConversionService` | `DefaultCloudEventsAttributeConversionService.Instance` | Converts metadata entries into CloudEvents extension attributes. |
-| `SuccessType` | `null` | Default CloudEvents `type` for successful results. |
-| `FailureType` | `null` | Default CloudEvents `type` for failed results. |
-| `Subject` | `null` | Default CloudEvents `subject`. |
-| `DataSchema` | `null` | Default CloudEvents `dataschema` URI. |
-| `Time` | `null` | Default CloudEvents `time` value (`UTC now` is used when omitted). |
-| `IdResolver` | `null` | Optional function used to generate CloudEvents `id` values. |
-| `ArrayPool` | `ArrayPool<byte>.Shared` | Buffer pool used for CloudEvents serialization. |
-| `PooledArrayInitialCapacity` | `RentedArrayBufferWriter.DefaultInitialCapacity` | Initial buffer size used for pooled serialization, which is 2048 bytes. |
-
-### CloudEvents read options (`PortableResultsCloudEventsReadOptions`)
-
-| Option | Default | Description |
-| --- | --- | --- |
-| `SerializerOptions` | `Module.DefaultSerializerOptions` | System.Text.JSON serializer options used for deserialization. |
-| `PreferSuccessPayload` | `Auto` | How to interpret successful payloads (`Auto`, `BareValue`, `WrappedValue`). |
-| `IsFailureType` | `null` | Optional fallback classifier to decide failure based on CloudEvents `type`. |
-| `ParsingService` | `null` | Optional parser for mapping extension attributes to metadata. |
-| `MergeStrategy` | `AddOrReplace` | Strategy used when merging envelope extension attributes and payload metadata. |
-
-### Configure HTTP behavior
+| `FirstErrorCategoryIsLeadingCategory`  | `true`                 | If `true`, the first error category decides the HTTP status code. If `false`, all errors must share the same category; otherwise `Unclassified` (500) is used.                                            |
 
 ```csharp
-using Light.PortableResults.Http.Writing;
-using Light.PortableResults.SharedJsonSerialization;
-
 builder.Services.Configure<PortableResultsHttpWriteOptions>(options =>
 {
-	options.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich;
-	options.MetadataSerializationMode = MetadataSerializationMode.Always;
-	options.FirstErrorCategoryIsLeadingCategory = false;
+    options.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich;
+    options.MetadataSerializationMode = MetadataSerializationMode.Always;
+    options.FirstErrorCategoryIsLeadingCategory = false;
 });
 ```
 
-```csharp
-using Light.PortableResults.Http.Reading;
-using Light.PortableResults.Http.Reading.Headers;
-using Light.PortableResults.Http.Reading.Json;
+### HTTP read options (`PortableResultsHttpReadOptions`)
 
+| Option                       | Default                              | Description                                                                              |
+|------------------------------|--------------------------------------|------------------------------------------------------------------------------------------|
+| `HeaderParsingService`       | `ParseNoHttpHeadersService.Instance` | Controls how HTTP headers are converted into metadata.                                   |
+| `MergeStrategy`              | `AddOrReplace`                       | Strategy when merging metadata with the same key from headers and body.                  |
+| `PreferSuccessPayload`       | `Auto`                               | How to interpret successful payloads (`Auto`, `BareValue`, `WrappedValue`).              |
+| `TreatProblemDetailsAsFailure` | `true`                             | If `true`, `application/problem+json` is treated as failure even for 2xx status codes.  |
+| `SerializerOptions`          | `Module.DefaultSerializerOptions`    | System.Text.JSON serializer options used for deserialization.                            |
+
+```csharp
 var readOptions = new PortableResultsHttpReadOptions
 {
-	HeaderParsingService = new DefaultHttpHeaderParsingService(new AllHeadersSelectionStrategy()),
-	PreferSuccessPayload = PreferSuccessPayload.Auto,
-	TreatProblemDetailsAsFailure = true
+    HeaderParsingService = new DefaultHttpHeaderParsingService(new AllHeadersSelectionStrategy()),
+    PreferSuccessPayload = PreferSuccessPayload.Auto,
+    TreatProblemDetailsAsFailure = true
 };
 
 Result<UserDto> result = await response.ReadResultAsync<UserDto>(readOptions);
 ```
 
-### Configure CloudEvents behavior
+### CloudEvents write options (`PortableResultsCloudEventsWriteOptions`)
+
+| Option                       | Default                                                   | Description                                                                              |
+|------------------------------|-----------------------------------------------------------|------------------------------------------------------------------------------------------|
+| `Source`                     | `null`                                                    | Default CloudEvents `source` URI if not set per call.                                    |
+| `MetadataSerializationMode`  | `Always`                                                  | Controls whether metadata is serialized into CloudEvents `data`.                         |
+| `SerializerOptions`          | `Module.DefaultSerializerOptions`                         | System.Text.JSON serializer options.                                                     |
+| `ConversionService`          | `DefaultCloudEventsAttributeConversionService.Instance`   | Converts metadata entries into CloudEvents extension attributes.                         |
+| `SuccessType`                | `null`                                                    | Default CloudEvents `type` for successful results.                                       |
+| `FailureType`                | `null`                                                    | Default CloudEvents `type` for failed results.                                           |
+| `Subject`                    | `null`                                                    | Default CloudEvents `subject`.                                                           |
+| `DataSchema`                 | `null`                                                    | Default CloudEvents `dataschema` URI.                                                    |
+| `Time`                       | `null`                                                    | Default `time` value (`UTC now` used when omitted).                                      |
+| `IdResolver`                 | `null`                                                    | Optional function used to generate CloudEvents `id` values.                              |
+| `ArrayPool`                  | `ArrayPool<byte>.Shared`                                  | Buffer pool used for serialization.                                                      |
+| `PooledArrayInitialCapacity` | `RentedArrayBufferWriter.DefaultInitialCapacity` (2048 B) | Initial buffer size for pooled serialization.                                            |
 
 ```csharp
-using Light.PortableResults.CloudEvents.Writing;
-using Light.PortableResults.SharedJsonSerialization;
-
 builder.Services.Configure<PortableResultsCloudEventsWriteOptions>(options =>
 {
-	options.Source = "urn:light-portable-results:sample:user-service";
-	options.SuccessType = "users.updated";
-	options.FailureType = "users.update.failed";
-	options.MetadataSerializationMode = MetadataSerializationMode.Always;
+    options.Source = "urn:light-portable-results:sample:user-service";
+    options.SuccessType = "users.updated";
+    options.FailureType = "users.update.failed";
+    options.MetadataSerializationMode = MetadataSerializationMode.Always;
 });
 ```
 
-```csharp
-using System;
-using Light.PortableResults.CloudEvents.Reading;
-using Light.PortableResults.Http.Reading.Json;
+### CloudEvents read options (`PortableResultsCloudEventsReadOptions`)
 
+| Option               | Default                           | Description                                                                   |
+|----------------------|-----------------------------------|-------------------------------------------------------------------------------|
+| `SerializerOptions`  | `Module.DefaultSerializerOptions` | System.Text.JSON serializer options.                                          |
+| `PreferSuccessPayload` | `Auto`                          | How to interpret successful payloads (`Auto`, `BareValue`, `WrappedValue`).   |
+| `IsFailureType`      | `null`                            | Optional fallback classifier to decide failure based on CloudEvents `type`.   |
+| `ParsingService`     | `null`                            | Optional parser for mapping extension attributes to metadata.                 |
+| `MergeStrategy`      | `AddOrReplace`                    | Strategy when merging extension attributes and payload metadata.              |
+
+```csharp
 var cloudReadOptions = new PortableResultsCloudEventsReadOptions
 {
-	IsFailureType = eventType => eventType.EndsWith(".failed", StringComparison.Ordinal),
-	PreferSuccessPayload = PreferSuccessPayload.Auto
+    IsFailureType = eventType => eventType.EndsWith(".failed", StringComparison.Ordinal),
+    PreferSuccessPayload = PreferSuccessPayload.Auto
 };
 
 Result<UserDto> result = messageBody.ReadResult<UserDto>(cloudReadOptions);
@@ -1744,38 +1295,38 @@ Result<UserDto> result = messageBody.ReadResult<UserDto>(cloudReadOptions);
 
 ### Supported Error Categories
 
-| `ErrorCategory` | HTTP Status Code |
-| --- | --- |
-| `Unclassified` | `500` |
-| `Validation` | `400` |
-| `Unauthorized` | `401` |
-| `PaymentRequired` | `402` |
-| `Forbidden` | `403` |
-| `NotFound` | `404` |
-| `MethodNotAllowed` | `405` |
-| `NotAcceptable` | `406` |
-| `Timeout` | `408` |
-| `Conflict` | `409` |
-| `Gone` | `410` |
-| `LengthRequired` | `411` |
-| `PreconditionFailed` | `412` |
-| `ContentTooLarge` | `413` |
-| `UriTooLong` | `414` |
-| `UnsupportedMediaType` | `415` |
-| `RequestedRangeNotSatisfiable` | `416` |
-| `ExpectationFailed` | `417` |
-| `MisdirectedRequest` | `421` |
-| `UnprocessableContent` | `422` |
-| `Locked` | `423` |
-| `FailedDependency` | `424` |
-| `UpgradeRequired` | `426` |
-| `PreconditionRequired` | `428` |
-| `TooManyRequests` | `429` |
-| `RequestHeaderFieldsTooLarge` | `431` |
-| `UnavailableForLegalReasons` | `451` |
-| `InternalError` | `500` |
-| `NotImplemented` | `501` |
-| `BadGateway` | `502` |
-| `ServiceUnavailable` | `503` |
-| `GatewayTimeout` | `504` |
-| `InsufficientStorage` | `507` |
+| `ErrorCategory`                  | HTTP Status |
+|----------------------------------|-------------|
+| `Unclassified`                   | 500         |
+| `Validation`                     | 400         |
+| `Unauthorized`                   | 401         |
+| `PaymentRequired`                | 402         |
+| `Forbidden`                      | 403         |
+| `NotFound`                       | 404         |
+| `MethodNotAllowed`               | 405         |
+| `NotAcceptable`                  | 406         |
+| `Timeout`                        | 408         |
+| `Conflict`                       | 409         |
+| `Gone`                           | 410         |
+| `LengthRequired`                 | 411         |
+| `PreconditionFailed`             | 412         |
+| `ContentTooLarge`                | 413         |
+| `UriTooLong`                     | 414         |
+| `UnsupportedMediaType`           | 415         |
+| `RequestedRangeNotSatisfiable`   | 416         |
+| `ExpectationFailed`              | 417         |
+| `MisdirectedRequest`             | 421         |
+| `UnprocessableContent`           | 422         |
+| `Locked`                         | 423         |
+| `FailedDependency`               | 424         |
+| `UpgradeRequired`                | 426         |
+| `PreconditionRequired`           | 428         |
+| `TooManyRequests`                | 429         |
+| `RequestHeaderFieldsTooLarge`    | 431         |
+| `UnavailableForLegalReasons`     | 451         |
+| `InternalError`                  | 500         |
+| `NotImplemented`                 | 501         |
+| `BadGateway`                     | 502         |
+| `ServiceUnavailable`             | 503         |
+| `GatewayTimeout`                 | 504         |
+| `InsufficientStorage`            | 507         |
