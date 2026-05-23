@@ -8,6 +8,22 @@
 
 Most Result Pattern libraries stop at the application boundary. Light.PortableResults does not: a `Result<T>` can be written as an RFC-9457 Problem Details response, published as a CloudEvents JSON message, read back on the other side, and arrive as a fully-typed `Result<T>` — without losing errors, metadata, or structure. If you also need validation, the built-in framework lets you write FluentValidation-style rules with a fraction of the allocations.
 
+## Contents
+
+- [Key Features](#-key-features)
+- [Installation](#-installation)
+- [When to Use Result vs. Exceptions](#-when-to-use-result-vs-exceptions)
+- [Basic Usage](#-basic-usage)
+- [Functional Operators](#-functional-operators)
+- [Metadata](#-metadata)
+- [Validation Quick Start](#-validation-quick-start)
+- [Performance](#-performance)
+- [HTTP Quick Start](#-http-quick-start)
+- [CloudEvents Quick Start](#-cloudevents-quick-start)
+- [Validation In Depth](#-validation-in-depth)
+- [OpenAPI Support](#-openapi-support)
+- [Configuration Reference](#-configuration-reference)
+
 ## ✨ Key Features
 
 - **Clear Result Pattern** — `Result` / `Result<T>` is either a success value or one or more structured errors. No exceptions for expected failures.
@@ -62,7 +78,7 @@ dotnet add package Light.PortableResults.Validation.OpenApi
 
 If you only need the Result Pattern itself, `Light.PortableResults` is the most lightweight dependency.
 
-## When to Use Result vs. Exceptions
+## ↔️ When to Use Result vs. Exceptions
 
 Use `Result` / `Result<T>` for **expected business outcomes**:
 
@@ -80,12 +96,6 @@ Use **exceptions** for truly unexpected failures:
 This keeps exceptions exceptional and business outcomes explicit.
 
 ## 🤓 Basic Usage
-
-If you are new to the Result Pattern, think of it like this:
-
-- A method can either succeed or fail.
-- Instead of throwing exceptions for expected failures, the method returns a value that explicitly describes the outcome.
-- Callers must handle both paths on purpose, which makes control flow easier to read and test.
 
 ```csharp
 using Light.PortableResults;
@@ -425,7 +435,7 @@ public sealed class AddMovieRatingsController : ControllerBase
     public AddMovieRatingsController(AddMovieRatingService service) => _service = service;
 
     [HttpPut]
-    public async Task<LightActionResult<MovieRating>> AddMovieRating(AddMovieRatingDto dto)
+    public async Task<LightActionResult<MovieRating>> AddMovieRating(MovieRatingDto dto)
     {
         var result = await _service.AddMovieRatingAsync(dto);
         return result.ToMvcActionResult();
