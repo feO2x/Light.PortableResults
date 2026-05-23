@@ -15,7 +15,7 @@ Most Result Pattern libraries stop at the application boundary. Light.PortableRe
 - [When to Use Result vs. Exceptions](#-when-to-use-result-vs-exceptions)
 - [Basic Usage](#-basic-usage)
 - [Functional Operators](#-functional-operators)
-- [Metadata](#-metadata)
+- [Metadata](#metadata)
 - [Validation Quick Start](#-validation-quick-start)
 - [Performance](#-performance)
 - [HTTP Quick Start](#-http-quick-start)
@@ -207,6 +207,8 @@ Result<string> message = GetUser(userId)
         onError: errors => $"Failed: {errors.First.Message}"
     );
 ```
+
+<a id="metadata"></a>
 
 ## ℹ️ Metadata
 
