@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using FluentAssertions;
 using Light.PortableResults.AspNetCore.OpenApi;
 using Light.PortableResults.Http.Writing;
@@ -40,6 +41,30 @@ public sealed class ValidationOpenApiAttributeTests
         attribute.InlineErrorMetadataCodes.Should().Equal("Custom");
         attribute.InlineErrorMetadataContracts.Should().HaveCount(1);
         attribute.ErrorExamples.Should().ContainSingle().Which.Code.Should().Be("NotEmpty");
+        attribute.AllowUnknownErrorCodes.Should().BeTrue();
+        attribute.HasFormatOverride.Should().BeTrue();
+        attribute.Format.Should().Be(ValidationProblemSerializationFormat.AspNetCoreCompatible);
+    }
+
+    [Fact]
+    public void ProducesPortableValidationProblemForWithEndpointContract_ShouldAppendEndpointContractMetadata()
+    {
+        var attribute =
+            new ProducesPortableValidationProblemForAttribute<
+                AttributeContractWithFormatValidator,
+                AttributeEndpointContract
+            >(422, "application/json");
+
+        attribute.StatusCode.Should().Be(422);
+        attribute.ContentType.Should().Be("application/json");
+        attribute.TopLevelMetadataType.Should().Be(typeof(EndpointMetadataSample));
+        attribute.ErrorCodes.Should().Equal("NotEmpty", "LengthInRange");
+        attribute.InlineErrorMetadataCodes.Should().Equal("Custom", "EndpointCustom", "InRange");
+        attribute.InlineErrorMetadataContracts.Should().HaveCount(3);
+        attribute.ErrorExamples!
+           .Select(static example => example.Code)
+           .Should()
+              .Equal("NotEmpty", "InRange", "LengthInRange");
         attribute.AllowUnknownErrorCodes.Should().BeTrue();
         attribute.HasFormatOverride.Should().BeTrue();
         attribute.Format.Should().Be(ValidationProblemSerializationFormat.AspNetCoreCompatible);
@@ -225,6 +250,12 @@ public sealed class ValidationOpenApiAttributeTests
     // ReSharper disable once ClassNeverInstantiated.Local -- only used as a metadata type argument
     private sealed class MetadataSample;
 
+    // ReSharper disable once ClassNeverInstantiated.Local -- only used as a metadata type argument
+    private sealed class EndpointMetadataSample;
+
+    // ReSharper disable once ClassNeverInstantiated.Local -- only used as a metadata type argument
+    private sealed class EndpointInlineMetadataSample;
+
     private sealed class AttributeContractValidator : IPortableValidationOpenApiContract
     {
         public static void ConfigurePortableValidationOpenApi(PortableValidationProblemOpenApiBuilder builder)
@@ -234,6 +265,38 @@ public sealed class ValidationOpenApiAttributeTests
                .WithErrorCodes("NotEmpty")
                .WithErrorMetadata<MetadataSample>("Custom")
                .WithErrorExample("NotEmpty", "name", "name must not be empty")
+               .AllowUnknownErrorCodes();
+        }
+    }
+
+    private sealed class AttributeContractWithFormatValidator : IPortableValidationOpenApiContract
+    {
+        public static void ConfigurePortableValidationOpenApi(PortableValidationProblemOpenApiBuilder builder)
+        {
+            builder
+               .UseFormat(ValidationProblemSerializationFormat.Rich)
+               .WithMetadata<MetadataSample>()
+               .WithErrorCodes("NotEmpty")
+               .WithErrorMetadata<MetadataSample>("Custom")
+               .WithErrorExample("NotEmpty", "name", "name must not be empty");
+        }
+    }
+
+    private sealed class AttributeEndpointContract : IPortableValidationOpenApiContract
+    {
+        public static void ConfigurePortableValidationOpenApi(PortableValidationProblemOpenApiBuilder builder)
+        {
+            builder
+               .UseFormat(ValidationProblemSerializationFormat.AspNetCoreCompatible)
+               .WithMetadata<EndpointMetadataSample>()
+               .WithErrorCodes("LengthInRange")
+               .WithErrorMetadata<EndpointInlineMetadataSample>("EndpointCustom")
+               .WithInRangeError<int>("rating", 1, 5)
+               .WithErrorExample(
+                    "LengthInRange",
+                    "comment",
+                    "comment must be between 10 and 1000 characters long"
+                )
                .AllowUnknownErrorCodes();
         }
     }

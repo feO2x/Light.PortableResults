@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json.Nodes;
@@ -123,6 +124,148 @@ public sealed class GeneratedValidationOpenApiIntegrationTests
         exampleErrors.ToJsonString().Should().Contain("\"maxLength\":1000");
         exampleErrors.ToJsonString().Should().Contain("\"message\":\"id must not be empty\"");
     }
+
+    [Fact]
+    public async Task MvcTwoContractAttribute_ShouldMatchEquivalentMinimalApiCustomization()
+    {
+        await using var minimalApp = ValidationOpenApiDocumentTestUtilities.CreateApp(
+            contracts => contracts.RegisterBuiltInValidationErrors(),
+            endpoints =>
+            {
+                endpoints
+                   .MapPost("/generated-validation/minimal-customized", static () => Results.BadRequest())
+                   .WithName("GeneratedValidationMinimalCustomized")
+                   .ProducesPortableValidationProblemFor<GeneratedRatingValidator>(
+                        StatusCodes.Status422UnprocessableEntity,
+                        configure: GeneratedValidationMvcEndpointContract.ConfigurePortableValidationOpenApi
+                    );
+            }
+        );
+        await using var mvcApp = ValidationOpenApiDocumentTestUtilities.CreateMvcApp(
+            contracts => contracts.RegisterBuiltInValidationErrors(),
+            controllers => controllers.AddApplicationPart(typeof(GeneratedValidationOpenApiIntegrationTests).Assembly)
+        );
+
+        var minimalDocument = await ValidationOpenApiDocumentTestUtilities.GetOpenApiDocumentAsync(minimalApp);
+        var mvcDocument = await ValidationOpenApiDocumentTestUtilities.GetOpenApiDocumentAsync(mvcApp);
+
+        var minimalEnvelope = GetResponseEnvelope(minimalDocument, "/generated-validation/minimal-customized");
+        var mvcEnvelope = GetResponseEnvelope(mvcDocument, "/generated-validation/mvc-customized");
+        var minimalErrors = GetDocumentedErrorItems(minimalEnvelope);
+        var mvcErrors = GetDocumentedErrorItems(mvcEnvelope);
+
+        minimalEnvelope.Properties.Should().ContainKey("errorDetails");
+        mvcEnvelope.Properties.Should().ContainKey("errorDetails");
+        minimalErrors.AnyOf.Should().NotBeNull();
+        minimalErrors.OneOf.Should().BeNull();
+        mvcErrors.AnyOf.Should().NotBeNull();
+        mvcErrors.OneOf.Should().BeNull();
+
+        NormalizeSchemaIds(GetDocumentedErrorSchemaIds(minimalDocument, "/generated-validation/minimal-customized"))
+           .Should()
+           .BeEquivalentTo(
+                NormalizeSchemaIds(GetDocumentedErrorSchemaIds(mvcDocument, "/generated-validation/mvc-customized"))
+            );
+
+        GetTopLevelMetadataPropertyNames(minimalDocument, "/generated-validation/minimal-customized")
+           .Should()
+           .BeEquivalentTo(GetTopLevelMetadataPropertyNames(mvcDocument, "/generated-validation/mvc-customized"));
+        GetInlineMetadataPropertyNames(
+                minimalDocument,
+                "/generated-validation/minimal-customized",
+                "EndpointCustom"
+            )
+           .Should()
+           .BeEquivalentTo(
+                GetInlineMetadataPropertyNames(mvcDocument, "/generated-validation/mvc-customized", "EndpointCustom")
+            );
+
+        var minimalExample = GetValidationProblemExample(minimalDocument, "/generated-validation/minimal-customized");
+        var mvcExample = GetValidationProblemExample(mvcDocument, "/generated-validation/mvc-customized");
+
+        minimalExample.ToJsonString().Should().Be(mvcExample.ToJsonString());
+        minimalExample.ToJsonString().Should().Contain("\"code\":\"EndpointCustom\"");
+        minimalExample.ToJsonString().Should().Contain("\"reason\":\"customization\"");
+        minimalExample.ToJsonString().Should().Contain("\"code\":\"NotNull\"");
+    }
+
+    private static OpenApiSchema GetResponseEnvelope(OpenApiDocument document, string path)
+    {
+        var response = (OpenApiResponse) document.Paths[path]
+           .Operations![HttpMethod.Post]
+           .Responses![StatusCodes.Status422UnprocessableEntity.ToString()];
+        var schemaReference = (OpenApiSchemaReference) response.Content!["application/problem+json"].Schema!;
+        return ValidationOpenApiDocumentTestUtilities.GetSchemaComponent(
+            document,
+            ValidationOpenApiDocumentTestUtilities.GetSchemaReferenceId(schemaReference)
+        );
+    }
+
+    private static OpenApiSchema GetDocumentedErrorItems(OpenApiSchema envelope)
+    {
+        return (OpenApiSchema) ((OpenApiSchema) envelope.Properties!["errorDetails"]).Items!;
+    }
+
+    private static string[] GetDocumentedErrorSchemaIds(OpenApiDocument document, string path)
+    {
+        var errors = GetDocumentedErrorItems(GetResponseEnvelope(document, path));
+        return errors.AnyOf!
+           .Select(
+                static schema =>
+                    ValidationOpenApiDocumentTestUtilities.GetSchemaReferenceId((OpenApiSchemaReference) schema)
+            )
+           .OrderBy(static schemaId => schemaId, StringComparer.Ordinal)
+           .ToArray();
+    }
+
+    private static string[] NormalizeSchemaIds(IEnumerable<string> schemaIds)
+    {
+        return schemaIds.Select(NormalizeSchemaId).OrderBy(static schemaId => schemaId, StringComparer.Ordinal)
+           .ToArray();
+    }
+
+    private static string NormalizeSchemaId(string schemaId)
+    {
+        if (schemaId.EndsWith("__InRange", StringComparison.Ordinal))
+        {
+            return "EndpointScoped__InRange";
+        }
+
+        if (schemaId.EndsWith("__EndpointCustom", StringComparison.Ordinal))
+        {
+            return "EndpointScoped__EndpointCustom";
+        }
+
+        return schemaId;
+    }
+
+    private static string[] GetTopLevelMetadataPropertyNames(OpenApiDocument document, string path)
+    {
+        var envelope = GetResponseEnvelope(document, path);
+        var metadataReference = envelope.Properties!["metadata"].Should().BeOfType<OpenApiSchemaReference>().Subject;
+        var metadata = ValidationOpenApiDocumentTestUtilities.GetSchemaComponent(
+            document,
+            ValidationOpenApiDocumentTestUtilities.GetSchemaReferenceId(metadataReference)
+        );
+        return metadata.Properties!.Keys.OrderBy(static propertyName => propertyName, StringComparer.Ordinal).ToArray();
+    }
+
+    private static string[] GetInlineMetadataPropertyNames(OpenApiDocument document, string path, string codeSuffix)
+    {
+        var schemaId = GetDocumentedErrorSchemaIds(document, path)
+           .Single(id => id.EndsWith("__" + codeSuffix, StringComparison.Ordinal));
+        var metadata = ValidationOpenApiDocumentTestUtilities.GetSchemaComponent(document, schemaId + "__Metadata");
+        return metadata.Properties!.Keys.OrderBy(static propertyName => propertyName, StringComparer.Ordinal).ToArray();
+    }
+
+    private static JsonObject GetValidationProblemExample(OpenApiDocument document, string path)
+    {
+        var response = (OpenApiResponse) document.Paths[path]
+           .Operations![HttpMethod.Post]
+           .Responses![StatusCodes.Status422UnprocessableEntity.ToString()];
+        var example = (OpenApiExample) response.Content!["application/problem+json"].Examples!["ValidationProblem"];
+        return example.Value.Should().BeOfType<JsonObject>().Subject;
+    }
 }
 
 public sealed class GeneratedRatingDto
@@ -156,6 +299,36 @@ public sealed class GeneratedValidationMvcMetadata
     public string TraceId { get; init; } = string.Empty;
 }
 
+public sealed class GeneratedValidationMvcEndpointMetadata
+{
+    public string TraceId { get; init; } = string.Empty;
+}
+
+public sealed class GeneratedValidationMvcEndpointInlineMetadata
+{
+    public string Reason { get; init; } = string.Empty;
+}
+
+public sealed class GeneratedValidationMvcEndpointContract : IPortableValidationOpenApiContract
+{
+    public static void ConfigurePortableValidationOpenApi(PortableValidationProblemOpenApiBuilder builder)
+    {
+        builder
+           .UseFormat(ValidationProblemSerializationFormat.AspNetCoreCompatible)
+           .WithMetadata<GeneratedValidationMvcEndpointMetadata>()
+           .WithErrorCodes(ValidationErrorCodes.NotNull)
+           .WithErrorMetadata<GeneratedValidationMvcEndpointInlineMetadata>("EndpointCustom")
+           .WithErrorExample(ValidationErrorCodes.NotNull, "comment", "comment must not be null")
+           .WithErrorExample(
+                "EndpointCustom",
+                "comment",
+                "comment has endpoint-local metadata",
+                new Dictionary<string, object?> { ["reason"] = "customization" }
+            )
+           .AllowUnknownErrorCodes();
+    }
+}
+
 [ApiController]
 [Route("generated-validation")]
 public sealed class GeneratedValidationOpenApiController : ControllerBase
@@ -168,6 +341,15 @@ public sealed class GeneratedValidationOpenApiController : ControllerBase
         AllowUnknownErrorCodes = true
     )]
     public IActionResult PostRating()
+    {
+        return Problem();
+    }
+
+    [HttpPost("mvc-customized")]
+    [ProducesPortableValidationProblemFor<GeneratedRatingValidator, GeneratedValidationMvcEndpointContract>(
+        StatusCodes.Status422UnprocessableEntity
+    )]
+    public IActionResult PostCustomizedRating()
     {
         return Problem();
     }
