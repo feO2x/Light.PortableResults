@@ -427,6 +427,8 @@ app.MapPut("/api/movieRatings", async (MovieRatingDto dto, AddMovieRatingService
 app.Run();
 ```
 
+> To auto-generate accurate OpenAPI schemas and examples from your validators, add `Light.PortableResults.AspNetCore.OpenApi`, annotate your validator with `[GeneratePortableValidationOpenApi]`, and replace `.ProducesPortableValidationProblem(...)` with `.ProducesPortableValidationProblemFor<TValidator>(...)` on the endpoint. See [OpenAPI Support](#openapi-support).
+
 ### MVC
 
 ```csharp
@@ -460,6 +462,8 @@ public sealed class AddMovieRatingsController : ControllerBase
     }
 }
 ```
+
+> To auto-generate accurate OpenAPI schemas and examples from your validators, add `Light.PortableResults.AspNetCore.OpenApi`, annotate your validator with `[GeneratePortableValidationOpenApi]`, and replace `[ProducesPortableValidationProblem]` with `[ProducesPortableValidationProblemFor<TValidator>]` on the action. See [OpenAPI Support](#openapi-support).
 
 ### HTTP Responses on the Wire
 
