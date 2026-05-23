@@ -10,19 +10,21 @@ Most Result Pattern libraries stop at the application boundary. Light.PortableRe
 
 ## Contents
 
-- [Key Features](#-key-features)
-- [Installation](#-installation)
-- [When to Use Result vs. Exceptions](#-when-to-use-result-vs-exceptions)
-- [Basic Usage](#-basic-usage)
-- [Functional Operators](#-functional-operators)
+- [Key Features](#key-features)
+- [Installation](#installation)
+- [When to Use Result vs. Exceptions](#when-to-use-result-vs-exceptions)
+- [Basic Usage](#basic-usage)
+- [Functional Operators](#functional-operators)
 - [Metadata](#metadata)
-- [Validation Quick Start](#-validation-quick-start)
-- [Performance](#-performance)
-- [HTTP Quick Start](#-http-quick-start)
-- [CloudEvents Quick Start](#-cloudevents-quick-start)
-- [Validation In Depth](#-validation-in-depth)
-- [OpenAPI Support](#-openapi-support)
-- [Configuration Reference](#-configuration-reference)
+- [Validation Quick Start](#validation-quick-start)
+- [Performance](#performance)
+- [HTTP Quick Start](#http-quick-start)
+- [CloudEvents Quick Start](#cloudevents-quick-start)
+- [Validation In Depth](#validation-in-depth)
+- [OpenAPI Support](#openapi-support)
+- [Configuration Reference](#configuration-reference)
+
+<a id="key-features"></a>
 
 ## ✨ Key Features
 
@@ -35,6 +37,8 @@ Most Result Pattern libraries stop at the application boundary. Light.PortableRe
 - **High-performance validation** — at least 5x faster than FluentValidation 12.1.1 and less than 9% of its memory footprint. Compose validators, map DTOs to domain objects, and share state — all with full async support.
 - **Microsoft.AspNetCore.OpenAPI integration** — write validators and generate accurate OpenAPI schemas and examples via source generation.
 - **.NET Native AOT** — the base, validation, and Minimal APIs packages are compatible with .NET Native AOT.
+
+<a id="installation"></a>
 
 ## 📦 Installation
 
@@ -78,6 +82,8 @@ dotnet add package Light.PortableResults.Validation.OpenApi
 
 If you only need the Result Pattern itself, `Light.PortableResults` is the most lightweight dependency.
 
+<a id="when-to-use-result-vs-exceptions"></a>
+
 ## ↔️ When to Use Result vs. Exceptions
 
 Use `Result` / `Result<T>` for **expected business outcomes**:
@@ -94,6 +100,8 @@ Use **exceptions** for truly unexpected failures:
 - programming bugs and invariant violations (detected via guard clauses)
 
 This keeps exceptions exceptional and business outcomes explicit.
+
+<a id="basic-usage"></a>
 
 ## 🤓 Basic Usage
 
@@ -177,6 +185,8 @@ Consistent error shapes make APIs and message consumers easier to evolve. As a r
 - `Metadata`: additional context (for example, boundary values or comparative amounts)
 
 `Error.Exception` can be set for local diagnostics, but it is never serialized and is never exposed to calling processes.
+
+<a id="functional-operators"></a>
 
 ## 🔁 Functional Operators
 
@@ -332,7 +342,9 @@ services
     .AddSingleton<MovieRatingValidator>();
 ```
 
-See [Validation In Depth](#-validation-in-depth) for composing validators, async validation, domain object mapping, sharing state between validators, custom assertions, and configuration options.
+See [Validation In Depth](#validation-in-depth) for composing validators, async validation, domain object mapping, sharing state between validators, custom assertions, and configuration options.
+
+<a id="performance"></a>
 
 ## ⚡ Performance
 
@@ -379,6 +391,8 @@ Apple M3 Max, 1 CPU, 16 logical and 16 physical cores
 | LightPortableResults              |  1.507 μs |  0.11 |   1.99 KB |        0.04 |
 
 See the `benchmarks/Benchmarks` project for the full benchmark source.
+
+<a id="http-quick-start"></a>
 
 ## 🚀 HTTP Quick Start
 
@@ -597,6 +611,8 @@ consumer.ReceivedAsync += async (_, eventArgs) =>
     await channel.BasicAckAsync(eventArgs.DeliveryTag, multiple: false);
 };
 ```
+
+<a id="validation-in-depth"></a>
 
 ## 🔬 Validation In Depth
 
@@ -1115,6 +1131,8 @@ services
 ```
 
 `ValidateWithPortableResults` supports named options and forwards the current options name to the `ValidationContext`. Use `ValidationContext.TryGetItem(ConfigurationConstants.OptionsNameKey, out var optionsName)` to access it in your validator.
+
+<a id="openapi-support"></a>
 
 ## 🌐 OpenAPI Support
 
