@@ -8,15 +8,15 @@ This plan adds an attribute-friendly additive customization path for MVC while k
 
 ## Acceptance Criteria
 
-- [ ] MVC actions can append endpoint-local validation OpenAPI metadata after the generated validator contract is applied.
-- [ ] MVC supports the same `PortableValidationProblemOpenApiBuilder` customization surface that Minimal APIs support in `ProducesPortableValidationProblemFor<TValidator>(configure: ...)`.
-- [ ] Generated validator metadata remains preserved when MVC endpoint-local metadata adds error codes, inline metadata contracts, typed helper contracts, response examples, format overrides, top-level metadata, or unknown-code behavior.
-- [ ] Existing `[ProducesPortableValidationProblemFor<TValidator>]` behavior remains unchanged.
-- [ ] Existing Minimal API source-generation behavior remains unchanged.
-- [ ] The source generator remains MVC-unaware and continues to emit only `IPortableValidationOpenApiContract`.
-- [ ] No OpenAPI dependency is added to `Light.PortableResults.AspNetCore.Mvc`.
-- [ ] Documentation is updated to describe the MVC customization pattern and remove the limitation around missing additive endpoint-local customization.
-- [ ] Automated tests are written.
+- [x] MVC actions can append endpoint-local validation OpenAPI metadata after the generated validator contract is applied.
+- [x] MVC supports the same `PortableValidationProblemOpenApiBuilder` customization surface that Minimal APIs support in `ProducesPortableValidationProblemFor<TValidator>(configure: ...)`.
+- [x] Generated validator metadata remains preserved when MVC endpoint-local metadata adds error codes, inline metadata contracts, typed helper contracts, response examples, format overrides, top-level metadata, or unknown-code behavior.
+- [x] Existing `[ProducesPortableValidationProblemFor<TValidator>]` behavior remains unchanged.
+- [x] Existing Minimal API source-generation behavior remains unchanged.
+- [x] The source generator remains MVC-unaware and continues to emit only `IPortableValidationOpenApiContract`.
+- [x] No OpenAPI dependency is added to `Light.PortableResults.AspNetCore.Mvc`.
+- [x] Documentation is updated to describe the MVC customization pattern and remove the limitation around missing additive endpoint-local customization.
+- [x] Automated tests are written.
 
 ## Technical Details
 

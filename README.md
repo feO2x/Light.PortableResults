@@ -1473,9 +1473,43 @@ public sealed class MovieRatingsController : ControllerBase
         // ...
     }
 }
+
+public sealed class MovieRatingsEndpointOpenApiContract : IPortableValidationOpenApiContract
+{
+    public static void ConfigurePortableValidationOpenApi(PortableValidationProblemOpenApiBuilder builder)
+    {
+        builder
+           .UseFormat(ValidationProblemSerializationFormat.Rich)
+           .WithErrorCodes(ValidationErrorCodes.NotNull)
+           .WithErrorMetadata<MovieAlreadyRatedMetadata>("MovieAlreadyRated")
+           .WithErrorExample(
+                "MovieAlreadyRated",
+                "movieId",
+                "movie has already been rated"
+            )
+           .AllowUnknownErrorCodes();
+    }
+}
+
+[ApiController]
+[Route("api/movieRatings")]
+public sealed class MovieRatingsCustomizedController : ControllerBase
+{
+    [HttpPut]
+    [ProducesPortableValidationProblemFor<
+        AddMovieRatingValidator,
+        MovieRatingsEndpointOpenApiContract
+    >(
+        StatusCodes.Status422UnprocessableEntity
+    )]
+    public IActionResult Put(MovieRatingDto dto)
+    {
+        // ...
+    }
+}
 ```
 
-The generated contract calls the same builder APIs you would write by hand. For Minimal APIs, the endpoint's `configure` callback runs afterward, so you can still set the validation format, add manual metadata contracts, or call `AllowUnknownErrorCodes()` for errors that are outside the validator's documentable rules. For MVC, named attribute properties such as `Format`, `TopLevelMetadataType`, and `AllowUnknownErrorCodes` can override the generated response metadata after the attribute constructor runs. Array properties such as `ErrorCodes`, `InlineErrorMetadataCodes`, and `ErrorExamples` replace the generated values when set on the MVC attribute; prefer validator hints for endpoint-local additions until an explicitly additive MVC attribute API exists.
+The generated contract calls the same builder APIs you would write by hand. For Minimal APIs, the endpoint's `configure` callback runs afterward, so you can still set the validation format, add manual metadata contracts, or call `AllowUnknownErrorCodes()` for errors that are outside the validator's documentable rules. For MVC, the existing one-generic-parameter attribute remains the simple path when you only need generated metadata plus scalar named-property overrides such as `Format`, `TopLevelMetadataType`, or `AllowUnknownErrorCodes`. When an MVC action needs additive endpoint-local customization, use `ProducesPortableValidationProblemFor<TValidator, TEndpointContract>` and put the extra builder calls into a small `IPortableValidationOpenApiContract` implementation. The validator contract runs first and the endpoint contract runs second, so generated `ErrorCodes`, inline metadata contracts, typed helper contracts, and examples are preserved while endpoint-local additions are appended.
 
 The generator analyzes top-level `context.Check(...).Rule(...)` chains in synchronous `Validator<T>` and `Validator<TSource, TValidated>` implementations. It supports built-in annotated rules, assignments that consume a checked value, explicit error hints via `[PortableValidationOpenApiErrorHint]`, and user-defined check methods annotated with `[ValidationRule]` plus optional `[ValidationErrorContract]` metadata definitions. Checks inside `if`, `switch`, loops, lambdas, local functions, `try`, or `using` blocks are skipped with a warning; lift the check to a top-level statement or add explicit hints when those errors must appear in the OpenAPI schema.
 
