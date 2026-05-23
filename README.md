@@ -1,12 +1,12 @@
 # Light.PortableResults
 
-*The Result Pattern for .NET that travels. Every `Result<T>` serializes reliably over HTTP (RFC-9457), CloudEvents, and back — with a validation framework that is at least 5x faster and uses less than 9% of the memory of FluentValidation.*
+*The Result Pattern for .NET that travels. Every `Result<T>` serializes reliably over HTTP (with RFC-9457 Problem Details support), CloudEvents, and back — with a validation framework that is at least 5x faster and uses less than 9% of the memory of FluentValidation.*
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/blob/main/LICENSE)
 [![NuGet](https://img.shields.io/badge/NuGet-0.6.0-blue.svg?style=for-the-badge)](https://www.nuget.org/packages?q=Light.PortableResults)
 [![Documentation](https://img.shields.io/badge/Docs-Changelog-yellowgreen.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/releases)
 
-Most Result Pattern libraries stop at the application boundary. Light.PortableResults does not: a `Result<T>` can be written as an RFC-9457 Problem Details response, published as a CloudEvents JSON message, read back on the other side, and arrive as a fully-typed `Result<T>` — without losing errors, metadata, or structure. If you also need validation, the built-in framework lets you write FluentValidation-style rules with a fraction of the allocations.
+Most Result Pattern libraries stop at the application boundary. Light.PortableResults does not: a `Result<T>` can be written as an HTTP response (including RFC-9457 Problem Details support), published as a CloudEvents JSON message, read back from both protocols on the other side, and arrive as a fully-typed `Result<T>` — without losing errors, metadata, or structure. If you also need validation, the built-in framework lets you write FluentValidation-style rules with a fraction of the allocations. Plus: Roslyn Source Generators write OpenAPI error schemas and examples for you.
 
 ## Contents
 
@@ -17,7 +17,7 @@ Most Result Pattern libraries stop at the application boundary. Light.PortableRe
 - [Functional Operators](#functional-operators)
 - [Metadata](#metadata)
 - [Validation Quick Start](#validation-quick-start)
-- [Performance](#performance)
+- [Validation Performance](#validation-performance)
 - [HTTP Quick Start](#http-quick-start)
 - [CloudEvents Quick Start](#cloudevents-quick-start)
 - [Validation In Depth](#validation-in-depth)
@@ -34,7 +34,7 @@ Most Result Pattern libraries stop at the application boundary. Light.PortableRe
 - **Full functional operator suite** — `Map`, `Bind`, `Match`, `Ensure`, `Tap`, `Switch`, and their `Async` variants let you build clean, chainable pipelines.
 - **Cloud-native round-trip** — write results as RFC-9457 HTTP responses or CloudEvents Spec 1.0 JSON payloads, and deserialize them back on any consumer.
 - **ASP.NET Core ready** — Minimal APIs and MVC packages translate `Result` and `Result<T>` directly to `IResult` / `IActionResult` with automatic HTTP status mapping.
-- **High-performance validation** — at least 5x faster than FluentValidation 12.1.1 and less than 9% of its memory footprint. Compose validators, map DTOs to domain objects, and share state — all with full async support.
+- **High-performance validation** — at least 5x faster than FluentValidation 12.1.1, using less than 9% of its memory footprint. Compose validators, map DTOs to domain objects, and share state — all with full async support.
 - **Microsoft.AspNetCore.OpenAPI integration** — write validators and generate accurate OpenAPI schemas and examples via source generation.
 - **.NET Native AOT** — the base, validation, and Minimal APIs packages are compatible with .NET Native AOT.
 
@@ -344,9 +344,9 @@ services
 
 See [Validation In Depth](#validation-in-depth) for composing validators, async validation, domain object mapping, sharing state between validators, custom assertions, and configuration options.
 
-<a id="performance"></a>
+<a id="validation-performance"></a>
 
-## ⚡ Performance
+## ⚡ Validation Performance
 
 Light.PortableResults Validation is significantly faster and leaner than FluentValidation. All benchmarks ran on:
 
@@ -427,7 +427,7 @@ app.MapPut("/api/movieRatings", async (MovieRatingDto dto, AddMovieRatingService
 app.Run();
 ```
 
-> To auto-generate accurate OpenAPI schemas and examples from your validators, add `Light.PortableResults.AspNetCore.OpenApi`, annotate your validator with `[GeneratePortableValidationOpenApi]`, and replace `.ProducesPortableValidationProblem(...)` with `.ProducesPortableValidationProblemFor<TValidator>(...)` on the endpoint. See [OpenAPI Support](#openapi-support).
+> To auto-generate accurate OpenAPI schemas and examples from your validators, add `Light.PortableResults.Validation.OpenApi`, annotate your validator with `[GeneratePortableValidationOpenApi]`, and replace `.ProducesPortableValidationProblem(...)` with `.ProducesPortableValidationProblemFor<TValidator>(...)` on the endpoint. See [OpenAPI Support](#openapi-support).
 
 ### MVC
 
@@ -463,7 +463,7 @@ public sealed class AddMovieRatingsController : ControllerBase
 }
 ```
 
-> To auto-generate accurate OpenAPI schemas and examples from your validators, add `Light.PortableResults.AspNetCore.OpenApi`, annotate your validator with `[GeneratePortableValidationOpenApi]`, and replace `[ProducesPortableValidationProblem]` with `[ProducesPortableValidationProblemFor<TValidator>]` on the action. See [OpenAPI Support](#openapi-support).
+> To auto-generate accurate OpenAPI schemas and examples from your validators, add `Light.PortableResults.Validation.OpenApi`, annotate your validator with `[GeneratePortableValidationOpenApi]`, and replace `[ProducesPortableValidationProblem]` with `[ProducesPortableValidationProblemFor<TValidator>]` on the action. See [OpenAPI Support](#openapi-support).
 
 ### HTTP Responses on the Wire
 
