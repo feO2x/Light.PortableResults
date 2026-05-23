@@ -3,7 +3,7 @@
 *A high-performant, enterprise-grade .NET library implementing the Result Pattern where each result is serializable and deserializable. Comes with integrations for ASP.NET Core Minimal APIs and MVC, `HttpResponseMessage`, and CloudEvents JSON format, as well as a validation framework.*
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/blob/main/LICENSE)
-[![NuGet](https://img.shields.io/badge/NuGet-0.5.0-blue.svg?style=for-the-badge)](https://www.nuget.org/packages?q=Light.PortableResults)
+[![NuGet](https://img.shields.io/badge/NuGet-0.6.0-blue.svg?style=for-the-badge)](https://www.nuget.org/packages?q=Light.PortableResults)
 [![Documentation](https://img.shields.io/badge/Docs-Changelog-yellowgreen.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/releases)
 
 ## ✨ Key Features
@@ -18,6 +18,7 @@
 - 🛠️ **Microsoft.Extensions.Configuration**: validate options with your custom `Validator<T>` implementations.
 - ⚡ **Allocation-minimal by design** — pooled buffers, struct-friendly internals, smart caching, and fast paths keep GC pressure near zero even at high throughput.
 - 🧊 **.NET Native AOT** — The base, validation, and Minimal APIs packages are designed to work seamlessly with .NET Native AOT, ensuring minimal runtime overhead and efficient memory usage.
+- 🌐 **Microsoft.AspNetCore.OpenAPI Integration** - WritevValidators and create automatic OpenAPI schemas and examples via Source Generation.
 
 ## 📦 Installation
 

@@ -4,7 +4,7 @@
     <IsAotCompatible>true</IsAotCompatible>
     <Description>Integration package for turning result instances into Minimal API's IResult instances. Compatible with Native AOT. Compatible with RFC 9457 (and RFC 7807) Problem Details responses.</Description>
     <PackageReleaseNotes>
-      Light.PortableResults.AspNetCore.MinimalApis 0.5.0
+      Light.PortableResults.AspNetCore.MinimalApis 0.6.0
       ---------------------------------
 
       - LightResult and LightResult&lt;T> and corresponding extension methods to turn result instances into HTTP success responses or RFC 9457 (and RFC 7807) compatible Problem Details responses.
