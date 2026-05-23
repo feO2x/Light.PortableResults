@@ -396,7 +396,7 @@ See the `benchmarks/Benchmarks` project for the full benchmark source.
 
 ## 🚀 HTTP Quick Start
 
-Given the classes from the Validation Quick Start above, integrate with ASP.NET Core in a few lines.
+Given the classes from the Validation Quick Start above, you can easily integrate Light.PortableResults with ASP.NET Core in a few lines.
 
 ### Minimal APIs
 
@@ -410,7 +410,7 @@ builder.Services
     .AddPortableResultsForMinimalApis()
     .AddValidationForPortableResults()
     .Configure<PortableResultsHttpWriteOptions>(
-        // Rich format is recommended — it serializes errors with full Code/Target/Category/Metadata.
+        // Rich format is recommended — it serializes errors Code/Target/Category/Metadata in one object.
         x => x.ValidationProblemSerializationFormat = ValidationProblemSerializationFormat.Rich
     )
     .AddSingleton<MovieRatingValidator>()
