@@ -22,16 +22,24 @@ jobs:
         run: dotnet restore ./Light.PortableResults.slnx /p:ContinuousIntegrationBuild=true
       - name: Build
         run: dotnet build ./Light.PortableResults.slnx --configuration Release --no-restore /p:ContinuousIntegrationBuild=true
+      # Microsoft.Testing.Platform takes its own arguments after the `--` separator.
+      # --coverage-settings needs an absolute path: each test app runs with its own
+      # output directory as the working directory, so a relative path does not resolve.
       - name: Test
         run: >
           dotnet test ./Light.PortableResults.slnx
           --configuration Release
           --no-build
-          --settings ./coverage.runsettings
+          --
+          --coverage
+          --coverage-settings ${{ github.workspace }}/coverage.runsettings
+          --coverage-output-format cobertura
+      # Each test project writes TestResults/<guid>.cobertura.xml, so the reports are
+      # matched by extension rather than by a fixed file name.
       - name: Merge coverage reports
         run: |
           dotnet tool install --global dotnet-reportgenerator-globaltool
-          reportgenerator -reports:'**/coverage.cobertura.xml' -targetdir:./coverage-merged -reporttypes:Cobertura
+          reportgenerator -reports:'**/*.cobertura.xml' -targetdir:./coverage-merged -reporttypes:Cobertura
       - name: Publish coverage summary
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
@@ -43,7 +51,7 @@ jobs:
           thresholds: '60 85'
       - name: Upload coverage results
         if: always() && github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-results
           path: code-coverage-results.md

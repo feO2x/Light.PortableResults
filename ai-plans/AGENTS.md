@@ -1,13 +1,29 @@
-# AGENTS.md for AI Plans
+# AGENTS.md for AI plans
 
-In this folder, we only keep Markdown files for AI plans. Each file has a four-digit prefix which corresponds to the GitHub issue number.
+*Version 1.1*
+
+This directory contains Markdown plans and plan deviation records, plus this instruction file. These documents follow the [Guided Coding](https://kenny-codes.net/docs/guided-coding/) approach.
+
+File names begin with the four-digit GitHub issue number and a short kebab-case description. When an issue has multiple documents, insert a zero-based sequence after the issue number, for example `0015-0-feature.md`, `0015-1-optimization.md`, and `0015-2-plan-deviations.md`. Do not rename or restructure completed historical plans solely to conform to the current rules.
 
 ## How to Write Plans
 
-1. Each plan consists of exactly the three following elements: a rationale, acceptance criteria, and technical details.
-2. A rationale describes the overarching goal of the plan. Keep this concise, only elaborate when special circumstances require it. Use free text in this section of the plan.
-3. Acceptance criteria is a list of requirements that must be met for the plan to be considered complete. Use check marks `- [ ]` for these in Markdown.
-4. Technical details describes the changes on a technical level. Which classes and members should be extended, which design patterns should be used? How do we ensure performance? Avoid going into too much detail (do not write the finished implementation), but focus on the high-level design and how parts of the codebase are affected. It should give the implementer a clear picture of what needs to be done.
-5. Regarding automated tests: it is usually enough to note that 'automated tests need to be written' as one check mark in the acceptance criteria list. If there are special requirements for the tests, these can be elaborated in the technical details section. But normally, you can simply leave these technical details out if the automated tests can be written in a straightforward way.
-6. When a plan should involve micro benchmarks, these need to be included in the acceptance criteria list and optionally in the technical details section. As with automated tests, if the BenchmarkDotNet benchmarks can be written in a straightforward way, leave out the technical details.
-7. In general, keep the plan concise and to the point. Do not include general knowledge that the implementer should already know.
+1. Every plan starts with a `# Title` and contains exactly three sections, in this order: `## Rationale`, `## Acceptance Criteria`, and `## Technical Details`.
+2. The Rationale briefly describes the problem and the overarching goal of addressing it. Keep it to one or two short paragraphs unless additional context is necessary to understand the change.
+3. Acceptance Criteria contains observable and verifiable outcomes using Markdown task-list items (`- [ ]`). Describe what must be true when the work is complete, not the individual implementation steps.
+4. Technical Details records the important implementation decisions, constraints, affected components, and non-obvious interactions. Include enough information for an implementer to understand the intended design without prescribing the complete implementation. Assume the implementer is a senior software engineer.
+5. Use code examples in Technical Details when they define an important contract more clearly and concisely than prose, such as API signatures, central interfaces, or DTO shapes. Keep them minimal, omit implementation bodies and routine context, and identify them as exact or illustrative when this is not obvious. Avoid step-by-step instructions, exhaustive file lists, and background knowledge expected of a senior software engineer.
+6. When behavior changes, include an acceptance criterion requiring appropriate automated test coverage. Describe specific test cases in Technical Details only when they are not obvious from the acceptance criteria.
+7. Include microbenchmarks only for changes where performance is a relevant risk or requirement. Add them to Acceptance Criteria and describe benchmark scenarios in Technical Details only when those scenarios are not self-evident.
+8. Keep plans concise. Prefer decisions, constraints, and outcomes to explanations of routine implementation work.
+
+Use these rules for follow-up plans, too.
+
+## How to Write Plan Deviation Files
+
+When users find substantial issues in the Guiding Phase and create new plans to fix these, a single plan deviation file sums up the differences from the original plan and its follow-up plans. They do not use the same structure as plans, you can use any format that clearly communicates the differences. Often, a feature-based approach is appropriate.
+
+While the format is flexible, include the following information:
+
+- Reference every plan included in the comparison.
+- Describe what was originally specified, what the codebase actually does, and why the change was made.

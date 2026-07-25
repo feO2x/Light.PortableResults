@@ -17,10 +17,6 @@ In our Directory.Build.props files in this solution, the following rules are def
 - `<TreatWarningsAsErrors>` is enabled in Release builds, so your code changes must not generate warnings.
 - When a type or method is properly encapsulated, make it public. We don't know how callers would like to use this library. When some types are internal, this might make it hard for callers to access these in tests or when making configuration changes. Prefer public APIs over internal ones.
 
-## Production Code Rules
-
-Read ./src/AGENTS.md for details about the production code.
-
 ## Testing Rules
 
 Read ./tests/AGENTS.md for details about how to write tests.

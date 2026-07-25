@@ -49,7 +49,7 @@ PROPS
 
 dotnet add "${CONSUMER_DIR}/light-portable-results-validation-openapi-consumer.csproj" package \
   Light.PortableResults.Validation.OpenApi \
-  --version 0.5.0 \
+  --version 0.6.0 \
   --no-restore
 
 cat > "${CONSUMER_DIR}/Program.cs" <<'CSHARP'

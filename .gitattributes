@@ -1,0 +1,7 @@
+# Verify snapshots are compared byte-for-byte against what the test run produces.
+# Pin them to LF and UTF-8 so a checkout on Windows cannot introduce CRLF and fail the
+# comparison, and so the encoding never depends on the machine's locale.
+*.verified.txt text eol=lf working-tree-encoding=UTF-8
+*.verified.cs text eol=lf working-tree-encoding=UTF-8
+*.verified.json text eol=lf working-tree-encoding=UTF-8
+*.verified.xml text eol=lf working-tree-encoding=UTF-8
