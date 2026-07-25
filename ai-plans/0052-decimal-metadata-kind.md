@@ -40,9 +40,9 @@ Storing decimals as text also loses type information (a decimal is indistinguish
 public enum MetadataKind : byte
 {
     Null = 0, Boolean = 1, Int64 = 2, Double = 3, String = 4, Decimal = 5,
-    // 6-99 are reserved for future primitive kinds
-    Array = 100,
-    Object = 101
+    // 6-199 are reserved for future primitive kinds
+    Array = 200,
+    Object = 201
 }
 ```
 
@@ -86,7 +86,7 @@ The library is pre-1.0 and breaking changes are permitted, but these are silent 
 
 - `TryGetString` no longer returns `true` for decimals.
 - `Kind` for a decimal is no longer `MetadataKind.String`.
-- The numeric values of `MetadataKind.Array` and `MetadataKind.Object` change to `100` and `101`. No code in the solution casts `MetadataKind` to a numeric type and the enum is not exposed by the OpenAPI, Validation, or source-generation packages, so this is invisible today — but any consumer that persisted or transmitted the numeric value is affected.
+- The numeric values of `MetadataKind.Array` and `MetadataKind.Object` change to `200` and `201`. No code in the solution casts `MetadataKind` to a numeric type and the enum is not exposed by the OpenAPI, Validation, or source-generation packages, so this is invisible today — but any consumer that persisted or transmitted the numeric value is affected.
 - Decimal metadata appears as a JSON number rather than a JSON string in serialized bodies.
 - Decimals differing only in trailing zeros now compare equal.
 
