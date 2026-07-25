@@ -12,6 +12,7 @@ Storing decimals as text also loses type information (a decimal is indistinguish
 - [ ] A decimal metadata value is written into JSON bodies as an unquoted JSON number that preserves all significant digits and the original scale.
 - [ ] A `problem+json` body produced by a decimal precision-and-scale validation rule conforms to the OpenAPI document generated for the same endpoint, asserted by an integration test that inspects the raw response body.
 - [ ] `MetadataKind.Decimal` is classified as primitive, so decimals remain valid inside arrays annotated for header serialization and valid as CloudEvents extension attributes.
+- [ ] Every declared `MetadataKind` member is asserted to be classified correctly as primitive or complex by a test that enumerates the enum, so a member declared outside the reserved primitive range fails the build.
 - [ ] `TryGetDecimal` returns the stored value for `MetadataKind.Decimal` without parsing text, and continues to convert from `Int64`, `Double`, and numeric strings.
 - [ ] `TryGetString` returns `false` for a decimal metadata value.
 - [ ] `MetadataValue.ToString()` renders decimals as unquoted invariant-culture numeric text.
@@ -31,9 +32,25 @@ Storing decimals as text also loses type information (a decimal is indistinguish
 
 ### Enum ordering is a hard constraint
 
-`MetadataKindExtensions.IsPrimitive` is implemented as `kind < MetadataKind.Array`. The new member must be inserted as `Decimal = 5` with `Array` and `Object` shifted to `6` and `7`.
+`MetadataKindExtensions.IsPrimitive` is implemented as `kind < MetadataKind.Array`, so membership of the primitive set is decided purely by ordering. Adding `Decimal` after `Object` compiles cleanly and silently classifies decimals as complex values: they would be rejected as CloudEvents extension attributes, rejected inside arrays annotated for header serialization, and would flip `HasOnlyPrimitiveChildren` to `false` on any containing array or object. No compiler diagnostic catches this.
 
-Appending `Decimal = 7` compiles cleanly and silently classifies decimals as complex values: they would be rejected as CloudEvents extension attributes, rejected inside arrays annotated for header serialization, and would flip `HasOnlyPrimitiveChildren` to `false` on any containing array or object. No compiler diagnostic catches this.
+`Decimal` is therefore appended to the primitive block as `5`, and the complex kinds move to a reserved range:
+
+```csharp
+public enum MetadataKind : byte
+{
+    Null = 0, Boolean = 1, Int64 = 2, Double = 3, String = 4, Decimal = 5,
+    // 6-99 are reserved for future primitive kinds
+    Array = 100,
+    Object = 101
+}
+```
+
+The gap exists so that later primitives can be added without renumbering the complex kinds a second time. This is not speculative: CloudEvents defines `Binary`, `URI`, `URI-reference`, and `Timestamp` as attribute types, all of which are currently flattened into `String`. The values are renumbered in this change because `Array` and `Object` move regardless, making the reservation free now and a separate breaking change later. It also settles the numbering before any gRPC mapping can make it wire-visible.
+
+The reserved range must be documented on the enum itself, and `IsPrimitive` must keep the boundary comparison rather than switching to an enumerated list — the comparison is a single instruction on a path used by every array and object construction.
+
+A gap alone does not enforce the invariant. `IsPrimitive` currently has no direct test coverage at all, so the ordering constraint is unguarded. A test must iterate `Enum.GetValues<MetadataKind>()` and assert each member against an explicit expected classification, so that a future member declared on the wrong side of the boundary fails immediately rather than degrading silently.
 
 ### Read side: an explicit non-guarantee
 
@@ -69,7 +86,7 @@ The library is pre-1.0 and breaking changes are permitted, but these are silent 
 
 - `TryGetString` no longer returns `true` for decimals.
 - `Kind` for a decimal is no longer `MetadataKind.String`.
-- The numeric values of `MetadataKind.Array` and `MetadataKind.Object` shift.
+- The numeric values of `MetadataKind.Array` and `MetadataKind.Object` change to `100` and `101`. No code in the solution casts `MetadataKind` to a numeric type and the enum is not exposed by the OpenAPI, Validation, or source-generation packages, so this is invisible today — but any consumer that persisted or transmitted the numeric value is affected.
 - Decimal metadata appears as a JSON number rather than a JSON string in serialized bodies.
 - Decimals differing only in trailing zeros now compare equal.
 
