@@ -1,11 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RunSettings>
+  <!--
+    Code coverage settings for Microsoft.Testing.Platform. See the Test step in
+    .github/workflows/build-and-test.yml for how this file is passed to the runner.
+
+    The path handed to the runner must be absolute: each test app runs with its own
+    output directory as the working directory, so a relative path does not resolve.
+  -->
   <DataCollectionRunSettings>
     <DataCollectors>
-      <DataCollector friendlyName="XPlat Code Coverage">
+      <DataCollector friendlyName="Code Coverage">
         <Configuration>
-          <Format>cobertura</Format>
-          <ExcludeByFile>**/obj/**</ExcludeByFile>
+          <CodeCoverage>
+            <Sources>
+              <Exclude>
+                <!--
+                  Source generated files (System.Text.Json contexts, the OpenAPI XML
+                  comment support, ...) live under obj/. Without this exclusion they
+                  dominate the line counts of the assemblies that use them and drag
+                  total coverage down from 95% to 81%.
+
+                  Source paths are matched as regular expressions, not globs.
+                -->
+                <Source>.*[\\/]obj[\\/].*</Source>
+              </Exclude>
+            </Sources>
+          </CodeCoverage>
         </Configuration>
       </DataCollector>
     </DataCollectors>

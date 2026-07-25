@@ -14,4 +14,8 @@
 ## How to run
 
 - `dotnet test Light.PortableResults.slnx` for regular test runs.
-- `dotnet test Light.PortableResults.slnx -- --coverage --coverage-output-format cobertura` for test coverage metrics.
+- `dotnet test Light.PortableResults.slnx -- --coverage --coverage-settings "$PWD/coverage.runsettings" --coverage-output-format cobertura` for test coverage metrics.
+
+Always pass `--coverage-settings`. It excludes source-generated files under `obj/`, which otherwise dominate the line counts and report the solution at roughly 81% instead of 95%. The path must be absolute, because each test app runs with its own output directory as the working directory.
+
+Each test project writes `TestResults/<guid>.cobertura.xml`. Merge them with `reportgenerator -reports:'**/*.cobertura.xml' -targetdir:./coverage-merged -reporttypes:'Cobertura;TextSummary'`.

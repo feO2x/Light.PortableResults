@@ -6,6 +6,8 @@ obj/
 *.user
 *.suo
 *.cobertura.xml
+TestResults/
+coverage-merged/
 *.received.*
 .DS_Store
 *.lscache
