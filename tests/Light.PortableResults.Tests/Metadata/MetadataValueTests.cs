@@ -626,6 +626,30 @@ public sealed class MetadataValueTests
         decimalValue.Equals(doubleValue).Should().BeFalse();
     }
 
+    // FromDecimal is the only way to create a decimal value, thus a decimal kind without a boxed decimal in the
+    // payload is unreachable through the public API. Equals and ToString still handle it, because the dispatch
+    // sites are the last safety net for a kind that is only half-implemented.
+    [Fact]
+    public void Equals_Decimal_ShouldReturnFalse_ForEmptyPayload()
+    {
+        var wellFormed = MetadataValue.FromDecimal(19.99m);
+        var malformed = MetadataValueTestFactory.CreateWithEmptyPayload(MetadataKind.Decimal);
+
+        wellFormed.Equals(malformed).Should().BeFalse();
+        malformed.Equals(wellFormed).Should().BeFalse();
+        malformed.Equals(malformed).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ToString_Decimal_ShouldThrow_ForEmptyPayload()
+    {
+        var malformed = MetadataValueTestFactory.CreateWithEmptyPayload(MetadataKind.Decimal);
+
+        var act = () => malformed.ToString();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     [Fact]
     public void GetHashCode_Decimal_ShouldReturnConsistentValue()
     {
@@ -667,9 +691,15 @@ public sealed class MetadataValueTests
     // Decimals are stored boxed in the reference slot of the payload precisely so that MetadataValue does not
     // grow: array and object elements are stored inline, thus every additional byte multiplies. This test pins
     // the size to the value it had before MetadataKind.Decimal was introduced.
+    //
+    // The pinned value describes a 64-bit process: the payload holds 8 bytes of primitives plus a pointer-sized
+    // reference slot. On a 32-bit runtime the reference slot shrinks and the expected value is a different one,
+    // so the bitness is asserted first - a failure there means the pin needs a second case, not a new number.
     [Fact]
     public void MetadataValue_ShouldNotExceedItsPinnedSize()
     {
+        Environment.Is64BitProcess.Should().BeTrue("the pinned size describes a 64-bit process");
+
         Unsafe.SizeOf<MetadataValue>().Should().Be(24);
     }
 }

@@ -459,8 +459,12 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
                 StringComparison.Ordinal
             ),
             // decimal.Equals is scale-insensitive, thus 19.50m and 19.5m are equal metadata values,
-            // although the scale is preserved when they are serialized.
-            MetadataKind.Decimal => (decimal) _payload.Reference! == (decimal) other._payload.Reference!,
+            // although the scale is preserved when they are serialized. The reference is matched instead of
+            // being cast so that a payload which does not carry a boxed decimal is unequal like every other
+            // kind that cannot be interpreted, rather than throwing.
+            MetadataKind.Decimal => _payload.Reference is decimal @decimal &&
+                                    other._payload.Reference is decimal otherDecimal &&
+                                    @decimal == otherDecimal,
             MetadataKind.Array => ((MetadataArrayData?) _payload.Reference)?.Equals(
                                       (MetadataArrayData?) other._payload.Reference
                                   ) ??
@@ -528,7 +532,9 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// Returns the string representation of this instance.
     /// </summary>
     /// <returns>The string representation.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the value kind is unknown.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the value kind is unknown or when its payload cannot be interpreted for that kind.
+    /// </exception>
     public override string ToString() =>
         Kind switch
         {
@@ -537,10 +543,13 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
             MetadataKind.Int64 => _payload.Int64.ToString(CultureInfo.InvariantCulture),
             MetadataKind.Double => _payload.Float64.ToString(CultureInfo.InvariantCulture),
             MetadataKind.String => $"\"{_payload.Reference}\"",
-            MetadataKind.Decimal => ((decimal) _payload.Reference!).ToString(CultureInfo.InvariantCulture),
+            // A payload that does not carry a boxed decimal falls through to the arm below instead of throwing
+            // a NullReferenceException or an InvalidCastException, mirroring the other reference-backed kinds.
+            MetadataKind.Decimal when _payload.Reference is decimal @decimal =>
+                @decimal.ToString(CultureInfo.InvariantCulture),
             MetadataKind.Array =>
                 ((MetadataArrayData?) _payload.Reference)?.ToString() ?? MetadataArray.EmptyArrayStringRepresentation,
             MetadataKind.Object => "{...}",
-            _ => throw new InvalidOperationException($"Kind '{Kind}' is unknown")
+            _ => throw new InvalidOperationException($"Kind '{Kind}' is unknown or its payload is invalid")
         };
 }
