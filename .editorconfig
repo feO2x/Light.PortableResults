@@ -2137,3 +2137,10 @@ resharper_with_expression_modifies_all_members_highlighting = warning
 resharper_wrong_indent_size_highlighting = none
 resharper_xunit_xunit_test_with_console_output_highlighting = warning
 resharper_zero_index_from_end_highlighting = warning
+
+# Verify snapshots are written byte-for-byte by the Verify library and compared the same way.
+# Any editor-side reformatting (final newline, trailing whitespace) makes the tests fail.
+# Kept last in this file so it also wins over the [*.cs] section for *.verified.cs snapshots.
+[*.{verified,received}.*]
+insert_final_newline = false
+trim_trailing_whitespace = false
