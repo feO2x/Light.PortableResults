@@ -8,19 +8,19 @@ Storing decimals as text also loses type information (a decimal is indistinguish
 
 ## Acceptance Criteria
 
-- [ ] `MetadataValue.FromDecimal` produces a value whose `Kind` is `MetadataKind.Decimal`.
-- [ ] A decimal metadata value is written into JSON bodies as an unquoted JSON number that preserves all significant digits and the original scale.
-- [ ] A `problem+json` body produced by a comparison or range validation rule on a decimal-typed value conforms to the OpenAPI document generated for the same endpoint, asserted by an integration test that inspects the raw response body.
-- [ ] `MetadataKind.Decimal` is classified as primitive, so decimals remain valid inside arrays annotated for header serialization and valid as CloudEvents extension attributes.
-- [ ] Every declared `MetadataKind` member is asserted to be classified correctly as primitive or complex by a test that enumerates the enum, so a member declared outside the reserved primitive range fails the build.
-- [ ] `TryGetDecimal` returns the stored value for `MetadataKind.Decimal` without parsing text, and continues to convert from `Int64`, `Double`, and numeric strings.
-- [ ] `TryGetString` returns `false` for a decimal metadata value.
-- [ ] `MetadataValue.ToString()` renders decimals as unquoted invariant-culture numeric text.
-- [ ] A decimal metadata value resolves correctly when used as a CloudEvents core string attribute instead of silently becoming `null`.
-- [ ] HTTP header formatting emits decimals without quote characters.
-- [ ] The JSON reader's treatment of numeric tokens is explicitly specified and covered by tests, including the documented cases where a decimal does not read back as `MetadataKind.Decimal`.
-- [ ] A test pins `Unsafe.SizeOf<MetadataValue>()` to the value it has before this plan, so any future change to the payload layout has to be deliberate.
-- [ ] Test code coverage stays above 95%.
+- [x] `MetadataValue.FromDecimal` produces a value whose `Kind` is `MetadataKind.Decimal`.
+- [x] A decimal metadata value is written into JSON bodies as an unquoted JSON number that preserves all significant digits and the original scale.
+- [x] A `problem+json` body produced by a comparison or range validation rule on a decimal-typed value conforms to the OpenAPI document generated for the same endpoint, asserted by an integration test that inspects the raw response body.
+- [x] `MetadataKind.Decimal` is classified as primitive, so decimals remain valid inside arrays annotated for header serialization and valid as CloudEvents extension attributes.
+- [x] Every declared `MetadataKind` member is asserted to be classified correctly as primitive or complex by a test that enumerates the enum, so a member declared outside the reserved primitive range fails the build.
+- [x] `TryGetDecimal` returns the stored value for `MetadataKind.Decimal` without parsing text, and continues to convert from `Int64`, `Double`, and numeric strings.
+- [x] `TryGetString` returns `false` for a decimal metadata value.
+- [x] `MetadataValue.ToString()` renders decimals as unquoted invariant-culture numeric text.
+- [x] A decimal metadata value resolves correctly when used as a CloudEvents core string attribute instead of silently becoming `null`.
+- [x] HTTP header formatting emits decimals without quote characters.
+- [x] The JSON reader's treatment of numeric tokens is explicitly specified and covered by tests, including the documented cases where a decimal does not read back as `MetadataKind.Decimal`.
+- [x] A test pins `Unsafe.SizeOf<MetadataValue>()` to the value it has before this plan, so any future change to the payload layout has to be deliberate.
+- [x] Test code coverage stays above 95%.
 
 ## Technical Details
 

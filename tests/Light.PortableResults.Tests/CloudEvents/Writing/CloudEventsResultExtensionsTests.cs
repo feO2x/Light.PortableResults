@@ -385,6 +385,63 @@ public sealed class CloudEventsResultExtensionsTests
     }
 
     [Fact]
+    public void ToCloudEvent_ShouldResolveCoreStringAttributes_FromDecimalMetadataValues()
+    {
+        var metadata = MetadataObject.Create(
+            (
+                "type",
+                MetadataValue.FromString(
+                    "app.success",
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+                )
+            ),
+            (
+                "source",
+                MetadataValue.FromString(
+                    "urn:test:source",
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+                )
+            ),
+            (
+                "subject",
+                MetadataValue.FromDecimal(19.50m, MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes)
+            )
+        );
+        var result = Result.Ok(metadata);
+
+        var json = result.ToCloudEvent(options: CreateWriteOptions(source: null));
+
+        using var document = JsonDocument.Parse(json);
+
+        document.RootElement.GetProperty("subject").GetString().Should().Be("19.50");
+    }
+
+    [Fact]
+    public void ToCloudEvent_ShouldWriteDecimalExtensionAttribute_AsUnquotedNumber()
+    {
+        var metadata = MetadataObject.Create(
+            (
+                "price",
+                MetadataValue.FromDecimal(19.99m, MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes)
+            )
+        );
+        var result = Result.Ok(metadata);
+
+        var json = result.ToCloudEvent(
+            successType: "app.success",
+            failureType: "app.failure",
+            id: "evt-decimal",
+            options: CreateWriteOptions()
+        );
+
+        using var document = JsonDocument.Parse(json);
+        var price = document.RootElement.GetProperty("price");
+
+        price.ValueKind.Should().Be(JsonValueKind.Number);
+        price.GetDecimal().Should().Be(19.99m);
+    }
+
+    [Fact]
     public void ToCloudEvent_ShouldResolveTimeFromMetadata_WhenProvidedAsExtensionAttribute()
     {
         var expectedTime = new DateTimeOffset(2026, 2, 14, 18, 45, 0, TimeSpan.Zero);

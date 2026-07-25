@@ -1,5 +1,6 @@
 using System;
 using FluentAssertions;
+using Light.PortableResults.CloudEvents.Writing;
 using Light.PortableResults.Metadata;
 using Xunit;
 
@@ -40,11 +41,51 @@ public sealed class MetadataValueAnnotationTests
     }
 
     [Fact]
-    public void FromDecimal_WithAnnotation_SetsAnnotation()
+    public void FromDecimal_WithoutAnnotation_UsesDefaultAnnotation()
     {
         var value = MetadataValue.FromDecimal(123.45m);
 
         value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInBodies);
+    }
+
+    [Fact]
+    public void FromDecimal_WithAnnotation_SetsAnnotation()
+    {
+        var value = MetadataValue.FromDecimal(123.45m, MetadataValueAnnotation.SerializeInHttpHeader);
+
+        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInHttpHeader);
+    }
+
+    // Decimals are primitive, thus they must be accepted in the two places where the primitive classification
+    // is enforced: header-annotated arrays and CloudEvents extension attributes.
+    [Fact]
+    public void FromArray_WithDecimals_AllowsHeaderAnnotation()
+    {
+        var array = MetadataArray.Create(
+            MetadataValue.FromDecimal(9.99m),
+            MetadataValue.FromDecimal(19.99m)
+        );
+
+        array.HasOnlyPrimitiveChildren.Should().BeTrue();
+        var value = MetadataValue.FromArray(array, MetadataValueAnnotation.SerializeInHttpHeader);
+
+        value.Annotation.Should().Be(MetadataValueAnnotation.SerializeInHttpHeader);
+    }
+
+    [Fact]
+    public void FromDecimal_AllowsCloudEventsExtensionAttributeAnnotation()
+    {
+        var value = MetadataValue.FromDecimal(
+            19.99m,
+            MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+        );
+
+        var attribute = DefaultCloudEventsAttributeConversionService.Instance.PrepareCloudEventsAttribute(
+            "price",
+            value
+        );
+
+        attribute.Value.Kind.Should().Be(MetadataKind.Decimal);
     }
 
     [Fact]

@@ -13,7 +13,9 @@ namespace Light.PortableResults.Metadata;
 /// <para>
 /// - <see cref="Reference" /> is at offset 8 to avoid overlapping with the primitives. This separation
 /// is critical: the .NET GC tracks object references, and if Ref overlapped with I64/F64, the GC
-/// could misinterpret a raw integer as a pointer, causing crashes or heap corruption.
+/// could misinterpret a raw integer as a pointer, causing crashes or heap corruption. Besides strings,
+/// arrays, and objects, it also holds boxed decimals - see
+/// <see cref="MetadataValue.FromDecimal" /> for why decimals are not stored inline.
 /// </para>
 /// <para>
 /// Total struct size: 16 bytes (8 for primitives + 8 for reference on 64-bit systems).

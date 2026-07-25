@@ -1,7 +1,17 @@
 namespace Light.PortableResults.Metadata;
 
 /// <summary>
+/// <para>
 /// Discriminates the kind of value stored in a <see cref="MetadataValue" />.
+/// </para>
+/// <para>
+/// The numeric values of the members are a hard constraint:
+/// <see cref="MetadataKindExtensions.IsPrimitive" /> decides membership of the primitive set with a single
+/// comparison against <see cref="Array" />. All primitive kinds must therefore be declared with values below
+/// <see cref="Array" />. The values 6 to 199 are reserved for future primitive kinds (CloudEvents, for example,
+/// defines Binary, URI, URI-reference, and Timestamp attribute types that are currently flattened into
+/// <see cref="String" />), so that adding one of them later does not renumber the complex kinds again.
+/// </para>
 /// </summary>
 public enum MetadataKind : byte
 {
@@ -31,15 +41,23 @@ public enum MetadataKind : byte
     String = 4,
 
     /// <summary>
+    /// The metadata value represents a decimal number with 128 bits. This is considered a primitive value.
+    /// </summary>
+    Decimal = 5,
+
+    // 6 - 199 are reserved for future primitive kinds. Do not declare a primitive kind at 200 or above,
+    // and do not declare a complex kind below 200 - see the remarks on this enum for details.
+
+    /// <summary>
     /// The metadata value represents an array, consisting of other metadata values. This is considered a complex value.
     /// </summary>
-    Array = 5,
+    Array = 200,
 
     /// <summary>
     /// The metadata value represents an object (a key-value store), consisting of other metadata values.
     /// This is considered a complex value.
     /// </summary>
-    Object = 6
+    Object = 201
 }
 
 /// <summary>

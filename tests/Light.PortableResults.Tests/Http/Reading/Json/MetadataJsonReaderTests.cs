@@ -149,6 +149,47 @@ public sealed class MetadataJsonReaderTests
         boolValue.Should().BeFalse();
     }
 
+    // A JSON number carries no discriminator between a decimal and a double, thus the reader deliberately never
+    // produces MetadataKind.Decimal. These tests pin that non-guarantee - decimals do not round-trip as decimals.
+    [Theory]
+    [InlineData("42", MetadataKind.Int64)]
+    [InlineData("-9223372036854775808", MetadataKind.Int64)]
+    [InlineData("3.5", MetadataKind.Double)]
+    [InlineData("19.99", MetadataKind.Double)]
+    [InlineData("1e100", MetadataKind.Double)]
+    public void ReadMetadataValue_ShouldNeverProduceDecimalKind(string json, MetadataKind expectedKind)
+    {
+        var reader = CreateReader(json);
+
+        var value = MetadataJsonReader.ReadMetadataValue(ref reader);
+
+        value.Kind.Should().Be(expectedKind);
+    }
+
+    [Fact]
+    public void ReadMetadataValue_ShouldReadWrittenDecimalAsDouble()
+    {
+        var reader = CreateReader(MetadataValue.FromDecimal(19.99m).ToString());
+
+        var value = MetadataJsonReader.ReadMetadataValue(ref reader);
+
+        value.Kind.Should().Be(MetadataKind.Double);
+        value.TryGetDecimal(out var decimalValue).Should().BeTrue();
+        decimalValue.Should().Be(19.99m);
+    }
+
+    [Fact]
+    public void ReadMetadataValue_ShouldReadWrittenIntegralDecimalAsInt64()
+    {
+        var reader = CreateReader(MetadataValue.FromDecimal(20m).ToString());
+
+        var value = MetadataJsonReader.ReadMetadataValue(ref reader);
+
+        value.Kind.Should().Be(MetadataKind.Int64);
+        value.TryGetDecimal(out var decimalValue).Should().BeTrue();
+        decimalValue.Should().Be(20m);
+    }
+
     [Fact]
     public void ReadMetadataValue_ShouldThrow_OnUnsupportedToken()
     {

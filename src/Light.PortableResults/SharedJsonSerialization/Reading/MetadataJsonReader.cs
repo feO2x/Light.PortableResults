@@ -4,12 +4,26 @@ using Light.PortableResults.Metadata;
 namespace Light.PortableResults.SharedJsonSerialization.Reading;
 
 /// <summary>
+/// <para>
 /// Provides low-level JSON parsing helpers for metadata values.
+/// </para>
+/// <para>
+/// A JSON number carries no discriminator that would tell a decimal from a double, thus the reader
+/// never produces <see cref="MetadataKind.Decimal" />: numbers that fit into a 64-bit integer become
+/// <see cref="MetadataKind.Int64" />, all others become <see cref="MetadataKind.Double" />. Decimals
+/// consequently do not round-trip as decimals - a value written with
+/// <see cref="MetadataValue.FromDecimal" /> reads back as <see cref="MetadataKind.Int64" /> or
+/// <see cref="MetadataKind.Double" />. This is deliberate: preferring decimals would make the resulting
+/// kind depend on the magnitude of the value and would break round-tripping in the opposite direction,
+/// where <see cref="MetadataValue.FromDouble" /> would read back as a decimal.
+/// </para>
 /// </summary>
 public static class MetadataJsonReader
 {
     /// <summary>
-    /// Reads a <see cref="MetadataValue" /> from the current JSON token.
+    /// Reads a <see cref="MetadataValue" /> from the current JSON token. JSON numbers are read as
+    /// <see cref="MetadataKind.Int64" /> or <see cref="MetadataKind.Double" />, never as
+    /// <see cref="MetadataKind.Decimal" /> - see the remarks on <see cref="MetadataJsonReader" />.
     /// </summary>
     /// <param name="reader">The JSON reader.</param>
     /// <param name="annotation">The annotation applied to parsed values.</param>

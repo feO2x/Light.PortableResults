@@ -605,6 +605,13 @@ public static class CloudEventsResultExtensions
             return doubleValue.ToString(CultureInfo.InvariantCulture);
         }
 
+        // TryGetDecimal also converts from Int64 and Double, thus the kind is checked explicitly here to keep
+        // this branch independent of the order of the checks above.
+        if (metadataValue.Kind == MetadataKind.Decimal && metadataValue.TryGetDecimal(out var decimalValue))
+        {
+            return decimalValue.ToString(CultureInfo.InvariantCulture);
+        }
+
         return null;
     }
 

@@ -4,12 +4,16 @@ using Light.PortableResults.Metadata;
 namespace Light.PortableResults.Http.Reading.Json;
 
 /// <summary>
-/// Provides low-level JSON parsing helpers for metadata values.
+/// Provides low-level JSON parsing helpers for metadata values. All members delegate to
+/// <see cref="SharedJsonSerialization.Reading.MetadataJsonReader" /> - see the remarks there for how
+/// JSON numbers are mapped onto <see cref="MetadataKind" />.
 /// </summary>
 public static class MetadataJsonReader
 {
     /// <summary>
-    /// Reads a <see cref="MetadataValue" /> from the current JSON token.
+    /// Reads a <see cref="MetadataValue" /> from the current JSON token. JSON numbers are read as
+    /// <see cref="MetadataKind.Int64" /> or <see cref="MetadataKind.Double" />, never as
+    /// <see cref="MetadataKind.Decimal" />.
     /// </summary>
     /// <param name="reader">The JSON reader.</param>
     /// <param name="annotation">The annotation applied to parsed values.</param>

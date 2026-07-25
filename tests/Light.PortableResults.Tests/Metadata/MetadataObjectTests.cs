@@ -104,12 +104,53 @@ public sealed class MetadataObjectTests
     }
 
     [Fact]
-    public void TryGetDecimal_ShouldParseDecimalString()
+    public void TryGetDecimal_ShouldReturnStoredDecimal()
     {
         var obj = MetadataObject.Create(("price", MetadataValue.FromDecimal(19.99m)));
 
+        obj.TryGetValue("price", out var value).Should().BeTrue();
+        value.Kind.Should().Be(MetadataKind.Decimal);
         obj.TryGetDecimal("price", out var price).Should().BeTrue();
         price.Should().Be(19.99m);
+    }
+
+    [Fact]
+    public void TryGetString_ShouldReturnFalse_ForDecimal()
+    {
+        var obj = MetadataObject.Create(("price", MetadataValue.FromDecimal(19.99m)));
+
+        obj.TryGetString("price", out var price).Should().BeFalse();
+        price.Should().BeNull();
+    }
+
+    // Equals and GetHashCode fail silently for a kind they do not handle, thus decimals are exercised through
+    // object equality and a dictionary lookup here.
+    [Fact]
+    public void ObjectsWithEqualDecimals_ShouldBeEqualAndHashAlike()
+    {
+        var first = MetadataObject.Create(("price", MetadataValue.FromDecimal(19.99m)));
+        var second = MetadataObject.Create(("price", MetadataValue.FromDecimal(19.99m)));
+
+        first.Equals(second).Should().BeTrue();
+        first.GetHashCode().Should().Be(second.GetHashCode());
+    }
+
+    [Fact]
+    public void ObjectsWithDifferentDecimals_ShouldNotBeEqual()
+    {
+        var first = MetadataObject.Create(("price", MetadataValue.FromDecimal(19.99m)));
+        var second = MetadataObject.Create(("price", MetadataValue.FromDecimal(24.99m)));
+
+        first.Equals(second).Should().BeFalse();
+    }
+
+    [Fact]
+    public void DecimalMetadataValue_ShouldBeUsableAsDictionaryKey()
+    {
+        var dictionary = new Dictionary<MetadataValue, string> { [MetadataValue.FromDecimal(19.99m)] = "price" };
+
+        dictionary.TryGetValue(MetadataValue.FromDecimal(19.99m), out var target).Should().BeTrue();
+        target.Should().Be("price");
     }
 
     [Fact]

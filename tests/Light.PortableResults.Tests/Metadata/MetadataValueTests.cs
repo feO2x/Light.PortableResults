@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Runtime.CompilerServices;
 using FluentAssertions;
 using Light.PortableResults.Metadata;
 using Xunit;
@@ -103,23 +105,59 @@ public sealed class MetadataValueTests
     }
 
     [Fact]
-    public void FromDecimal_ShouldStoreAsString()
+    public void FromDecimal_ShouldStoreAsDecimal()
     {
         var input = 123.456m;
         var value = MetadataValue.FromDecimal(input);
 
-        value.Kind.Should().Be(MetadataKind.String);
-        value.TryGetString(out var str).Should().BeTrue();
-        str.Should().Be("123.456");
+        value.Kind.Should().Be(MetadataKind.Decimal);
+        value.TryGetDecimal(out var result).Should().BeTrue();
+        result.Should().Be(input);
     }
 
     [Fact]
-    public void TryGetDecimal_ShouldParseDecimalString()
+    public void FromDecimal_ShouldPreserveScale()
+    {
+        var value = MetadataValue.FromDecimal(19.50m);
+
+        value.TryGetDecimal(out var result).Should().BeTrue();
+        result.ToString(CultureInfo.InvariantCulture).Should().Be("19.50");
+    }
+
+    [Fact]
+    public void TryGetString_ShouldReturnFalse_ForDecimal()
+    {
+        var value = MetadataValue.FromDecimal(99.99m);
+
+        value.TryGetString(out var result).Should().BeFalse();
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public void TryGetDecimal_ShouldReturnStoredValue()
     {
         var value = MetadataValue.FromDecimal(99.99m);
 
         value.TryGetDecimal(out var result).Should().BeTrue();
         result.Should().Be(99.99m);
+    }
+
+    [Fact]
+    public void TryGetDecimal_ShouldParseNumericString()
+    {
+        var value = MetadataValue.FromString("99.99");
+
+        value.TryGetDecimal(out var result).Should().BeTrue();
+        result.Should().Be(99.99m);
+    }
+
+    [Fact]
+    public void TryGetDecimal_ShouldReturnFalse_ForNonNumericString()
+    {
+        var value = MetadataValue.FromString("not a number");
+
+        value.TryGetDecimal(out var result).Should().BeFalse();
+        result.Should().Be(0m);
     }
 
     [Fact]
@@ -195,9 +233,9 @@ public sealed class MetadataValueTests
     {
         MetadataValue value = 123.456m;
 
-        value.Kind.Should().Be(MetadataKind.String);
-        value.TryGetString(out var result).Should().BeTrue();
-        result.Should().Be("123.456");
+        value.Kind.Should().Be(MetadataKind.Decimal);
+        value.TryGetDecimal(out var result).Should().BeTrue();
+        result.Should().Be(123.456m);
     }
 
     [Fact]
@@ -556,5 +594,82 @@ public sealed class MetadataValueTests
 
         value1.Equals(value2).Should().BeTrue();
         value1.Equals(value3).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Equals_Decimals_ShouldCompareByValue()
+    {
+        var value1 = MetadataValue.FromDecimal(19.99m);
+        var value2 = MetadataValue.FromDecimal(19.99m);
+        var value3 = MetadataValue.FromDecimal(24.99m);
+
+        value1.Equals(value2).Should().BeTrue();
+        value1.Equals(value3).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equals_Decimals_ShouldIgnoreScale()
+    {
+        var value1 = MetadataValue.FromDecimal(19.50m);
+        var value2 = MetadataValue.FromDecimal(19.5m);
+
+        value1.Equals(value2).Should().BeTrue();
+        value1.GetHashCode().Should().Be(value2.GetHashCode());
+    }
+
+    [Fact]
+    public void Equals_DecimalAndDouble_ShouldNotBeEqual()
+    {
+        var decimalValue = MetadataValue.FromDecimal(19.5m);
+        var doubleValue = MetadataValue.FromDouble(19.5);
+
+        decimalValue.Equals(doubleValue).Should().BeFalse();
+    }
+
+    [Fact]
+    public void GetHashCode_Decimal_ShouldReturnConsistentValue()
+    {
+        var value1 = MetadataValue.FromDecimal(19.99m);
+        var value2 = MetadataValue.FromDecimal(19.99m);
+
+        value1.GetHashCode().Should().Be(value2.GetHashCode());
+    }
+
+    [Fact]
+    public void ToString_Decimal_ShouldReturnUnquotedNumber()
+    {
+        var value = MetadataValue.FromDecimal(19.50m);
+
+        value.ToString().Should().Be("19.50");
+    }
+
+    [Fact]
+    public void ToString_Decimal_ShouldUseInvariantCulture()
+    {
+        var previousCulture = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+        try
+        {
+            MetadataValue.FromDecimal(1234.56m).ToString().Should().Be("1234.56");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previousCulture;
+        }
+    }
+
+    [Fact]
+    public void Decimal_ShouldBeClassifiedAsPrimitive()
+    {
+        MetadataKind.Decimal.IsPrimitive().Should().BeTrue();
+    }
+
+    // Decimals are stored boxed in the reference slot of the payload precisely so that MetadataValue does not
+    // grow: array and object elements are stored inline, thus every additional byte multiplies. This test pins
+    // the size to the value it had before MetadataKind.Decimal was introduced.
+    [Fact]
+    public void MetadataValue_ShouldNotExceedItsPinnedSize()
+    {
+        Unsafe.SizeOf<MetadataValue>().Should().Be(24);
     }
 }
