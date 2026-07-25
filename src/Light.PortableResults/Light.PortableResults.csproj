@@ -4,11 +4,24 @@
     <PublishAot>false</PublishAot>
     <Description>The Light.PortableResults package implements the core functionality: Results, Errors, Metadata, Functional Extensions, and serialization support for various formats like HTTP and CloudEvents. Compatible with Native AOT. Check out the integration packages Light.PortableResults.AspNetCore.MinimalApis or Light.PortableResults.AspNetCore.Mvc.</Description>
     <PackageReleaseNotes>
-      Light.PortableResults 0.6.0
+      Light.PortableResults 0.7.0
       ---------------------------------
 
       - Contains core functionality: Results, Errors, Metadata, Functional Extensions, and JSON serialization support for HTTP and CloudEvents.
       - Compatible with .NET Native AOT.
+
+      Breaking changes
+      ---------------------------------
+
+      - Decimal metadata values now have the dedicated kind MetadataKind.Decimal instead of MetadataKind.String,
+        and they are serialized as JSON numbers instead of quoted strings. This aligns the response bodies with
+        the generated OpenAPI documents, which have always described decimals as numbers.
+      - MetadataValue.TryGetString no longer returns true for decimal metadata values. Use TryGetDecimal instead.
+      - Decimal metadata values that differ only in trailing zeros (19.50 and 19.5) now compare equal, because
+        equality is delegated to decimal. The scale is still preserved during serialization.
+      - The numeric values of MetadataKind.Array and MetadataKind.Object changed to 200 and 201 so that the
+        values 6 to 199 are reserved for future primitive kinds. This only affects callers that persisted or
+        transmitted the numeric value of MetadataKind.
     </PackageReleaseNotes>
   </PropertyGroup>
 

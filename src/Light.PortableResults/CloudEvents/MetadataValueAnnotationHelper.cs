@@ -39,6 +39,9 @@ public static class MetadataValueAnnotationHelper
             case MetadataKind.String:
                 value.TryGetString(out var stringValue);
                 return MetadataValue.FromString(stringValue, annotation);
+            case MetadataKind.Decimal:
+                value.TryGetDecimal(out var decimalValue);
+                return MetadataValue.FromDecimal(decimalValue, annotation);
             case MetadataKind.Array:
                 value.TryGetArray(out var arrayValue);
                 return MetadataValue.FromArray(WithAnnotation(arrayValue, annotation), annotation);

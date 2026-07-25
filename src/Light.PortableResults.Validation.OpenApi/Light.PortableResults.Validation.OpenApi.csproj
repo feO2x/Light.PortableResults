@@ -4,7 +4,7 @@
     <IsAotCompatible>true</IsAotCompatible>
     <Description>OpenAPI bridge package for Light.PortableResults.Validation. Provides built-in validation error metadata contracts and typed helpers for endpoint-specific validation error narrowing.</Description>
     <PackageReleaseNotes>
-      Light.PortableResults.Validation.OpenApi 0.6.0
+      Light.PortableResults.Validation.OpenApi 0.7.0
       ----------------------------------------
 
       - Built-in OpenAPI metadata contracts for Light.PortableResults.Validation error codes.

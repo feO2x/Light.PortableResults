@@ -1,8 +1,8 @@
 using System;
-using System.Reflection;
 using FluentAssertions;
 using Light.PortableResults.CloudEvents;
 using Light.PortableResults.Metadata;
+using Light.PortableResults.Tests.Metadata;
 using Xunit;
 
 namespace Light.PortableResults.Tests.CloudEvents;
@@ -74,6 +74,21 @@ public sealed class MetadataValueAnnotationHelperTests
     }
 
     [Fact]
+    public void WithAnnotation_ShouldRewriteDecimalValue()
+    {
+        var rewritten = MetadataValueAnnotationHelper.WithAnnotation(
+            MetadataValue.FromDecimal(19.50m, MetadataValueAnnotation.SerializeInHttpResponseBody),
+            MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+        );
+
+        rewritten.Kind.Should().Be(MetadataKind.Decimal);
+        rewritten.TryGetDecimal(out var value).Should().BeTrue();
+        value.Should().Be(19.50m);
+        rewritten.ToString().Should().Be("19.50");
+        rewritten.Annotation.Should().Be(MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes);
+    }
+
+    [Fact]
     public void WithAnnotation_ShouldRewriteNestedArrayAndObjectValues()
     {
         var nestedObject = MetadataObject.Create(("inner", MetadataValue.FromString("value")));
@@ -138,7 +153,7 @@ public sealed class MetadataValueAnnotationHelperTests
     [Fact]
     public void WithAnnotation_WithUnsupportedMetadataKind_ShouldThrowArgumentOutOfRangeException()
     {
-        var invalidValue = CreateMetadataValueWithInvalidKind();
+        var invalidValue = MetadataValueTestFactory.CreateWithUndeclaredKind();
 
         var act = () => MetadataValueAnnotationHelper.WithAnnotation(
             invalidValue,
@@ -149,25 +164,4 @@ public sealed class MetadataValueAnnotationHelperTests
            .Which.ParamName.Should().Be("value");
     }
 
-    private static MetadataValue CreateMetadataValueWithInvalidKind()
-    {
-        var metadataValueType = typeof(MetadataValue);
-        var metadataPayloadType = metadataValueType.Assembly.GetType(
-            "Light.PortableResults.Metadata.MetadataPayload",
-            throwOnError: true
-        )!;
-
-        var constructor = metadataValueType.GetConstructor(
-            BindingFlags.Instance | BindingFlags.NonPublic,
-            binder: null,
-            [typeof(MetadataKind), metadataPayloadType, typeof(MetadataValueAnnotation)],
-            modifiers: null
-        )!;
-
-        var payload = Activator.CreateInstance(metadataPayloadType)!;
-
-        return (MetadataValue) constructor.Invoke(
-            [(MetadataKind) byte.MaxValue, payload, MetadataValue.DefaultAnnotation]
-        );
-    }
 }

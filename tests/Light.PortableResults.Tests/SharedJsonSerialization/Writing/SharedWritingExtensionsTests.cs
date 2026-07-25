@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -116,6 +117,49 @@ public sealed class SharedWritingExtensionsTests
         );
 
         json.Should().Be("{\"metadata\":{\"traceId\":\"abc\"}}");
+    }
+
+    [Theory]
+    [InlineData("19.99", "19.99")]
+    [InlineData("19.50", "19.50")]
+    [InlineData("-0.0001", "-0.0001")]
+    [InlineData("79228162514264337593543950335", "79228162514264337593543950335")]
+    public void WriteMetadataValue_ShouldWriteDecimalAsUnquotedNumber(string input, string expectedJson)
+    {
+        var value = MetadataValue.FromDecimal(decimal.Parse(input, CultureInfo.InvariantCulture));
+
+        var json = Serialize(
+            writer => writer.WriteMetadataValue(value, MetadataValueAnnotation.SerializeInHttpResponseBody)
+        );
+
+        json.Should().Be(expectedJson);
+    }
+
+    [Fact]
+    public void WriteMetadataObject_ShouldWriteDecimalPropertyAsUnquotedNumber()
+    {
+        var metadata = MetadataObject.Create(("comparativeValue", MetadataValue.FromDecimal(19.99m)));
+
+        var json = Serialize(
+            writer => writer.WriteMetadataObject(metadata, MetadataValueAnnotation.SerializeInHttpResponseBody)
+        );
+
+        json.Should().Be("{\"comparativeValue\":19.99}");
+    }
+
+    [Fact]
+    public void WriteMetadataArray_ShouldWriteDecimalElementsAsUnquotedNumbers()
+    {
+        var array = MetadataArray.Create(
+            MetadataValue.FromDecimal(9.99m),
+            MetadataValue.FromDecimal(99.90m)
+        );
+
+        var json = Serialize(
+            writer => writer.WriteMetadataArray(array, MetadataValueAnnotation.SerializeInHttpResponseBody)
+        );
+
+        json.Should().Be("[9.99,99.90]");
     }
 
     [Fact]

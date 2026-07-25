@@ -50,6 +50,20 @@ public sealed class DefaultHttpHeaderConversionServiceTests
         header.Value.ToString().Should().Be("42");
     }
 
+    [Fact]
+    public void PrepareHttpHeader_ShouldFormatDecimalWithoutQuotes()
+    {
+        var service = new DefaultHttpHeaderConversionService(
+            new Dictionary<string, HttpHeaderConverter>().ToFrozenDictionary()
+        );
+
+        var header = service.PrepareHttpHeader("price", MetadataValue.FromDecimal(19.50m));
+
+        header.Key.Should().Be("price");
+        header.Value.ToString().Should().Be("19.50");
+        header.Value.ToString().Should().NotContain("\"");
+    }
+
     private sealed class TraceIdConverter : HttpHeaderConverter
     {
         public TraceIdConverter() : base(["traceId"]) { }

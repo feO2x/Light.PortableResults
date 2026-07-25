@@ -3,7 +3,7 @@
 *The Result Pattern for .NET that travels. Every `Result<T>` serializes reliably over HTTP (with RFC-9457 Problem Details support), CloudEvents, and back — with a validation framework that is at least 5x faster and uses less than 9% of the memory of FluentValidation.*
 
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/blob/main/LICENSE)
-[![NuGet](https://img.shields.io/badge/NuGet-0.6.0-blue.svg?style=for-the-badge)](https://www.nuget.org/packages?q=Light.PortableResults)
+[![NuGet](https://img.shields.io/badge/NuGet-0.7.0-blue.svg?style=for-the-badge)](https://www.nuget.org/packages?q=Light.PortableResults)
 [![Documentation](https://img.shields.io/badge/Docs-Changelog-yellowgreen.svg?style=for-the-badge)](https://github.com/feO2x/Light.PortableResults/releases)
 
 Most Result Pattern libraries stop at the application boundary. Light.PortableResults does not: a `Result<T>` can be written as an HTTP response (including RFC-9457 Problem Details support), published as a CloudEvents JSON message, read back from both protocols on the other side, and arrive as a fully-typed `Result<T>` — without losing errors, metadata, or structure. If you also need validation, the built-in framework lets you write FluentValidation-style rules with a fraction of the allocations. Plus: Roslyn Source Generators write OpenAPI error schemas and examples for you.

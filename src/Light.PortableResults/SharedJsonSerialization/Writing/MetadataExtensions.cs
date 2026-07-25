@@ -74,6 +74,10 @@ public static class MetadataExtensions
                 value.TryGetString(out var stringMetadataValue);
                 writer.WriteStringValue(stringMetadataValue);
                 break;
+            case MetadataKind.Decimal:
+                value.TryGetDecimal(out var decimalMetadataValue);
+                writer.WriteNumberValue(decimalMetadataValue);
+                break;
             case MetadataKind.Array:
                 value.TryGetArray(out var arrayMetadataValue);
                 writer.WriteMetadataArray(arrayMetadataValue, requiredAnnotation);

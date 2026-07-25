@@ -5,7 +5,7 @@ namespace Light.PortableResults.Metadata;
 
 /// <summary>
 /// Represents a JSON-compatible metadata value. This is a discriminated union
-/// that can hold null, boolean, int64, double, string, array, or object values.
+/// that can hold null, boolean, int64, double, string, decimal, array, or object values.
 /// </summary>
 public readonly struct MetadataValue : IEquatable<MetadataValue>
 {
@@ -111,7 +111,14 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         value is null ? Null : new MetadataValue(MetadataKind.String, new MetadataPayload(value), annotation);
 
     /// <summary>
+    /// <para>
     /// Creates a <see cref="MetadataValue" /> from a decimal value.
+    /// </para>
+    /// <para>
+    /// The decimal is boxed and stored in the reference slot of the payload. Storing it inline would push the
+    /// reference slot to offset 16 and grow every <see cref="MetadataValue" /> - including the ones stored inline
+    /// in arrays and objects - by 8 bytes.
+    /// </para>
     /// </summary>
     /// <param name="value">The decimal value.</param>
     /// <param name="annotation">The serialization annotation.</param>
@@ -119,11 +126,8 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     public static MetadataValue FromDecimal(
         decimal value,
         MetadataValueAnnotation annotation = DefaultAnnotation
-    )
-    {
-        var @string = value.ToString(CultureInfo.InvariantCulture);
-        return new MetadataValue(MetadataKind.String, new MetadataPayload(@string), annotation);
-    }
+    ) =>
+        new (MetadataKind.Decimal, new MetadataPayload((object) value), annotation);
 
     /// <summary>
     /// Creates a <see cref="MetadataValue" /> from a <see cref="MetadataArray" />.
@@ -347,7 +351,8 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     }
 
     /// <summary>
-    /// Attempts to get a decimal value.
+    /// Attempts to get a decimal value. Besides <see cref="MetadataKind.Decimal" />, this method also converts
+    /// from <see cref="MetadataKind.Int64" />, <see cref="MetadataKind.Double" />, and numeric strings.
     /// </summary>
     /// <param name="value">When this method returns, contains the decimal value if present.</param>
     /// <returns><see langword="true" /> if the value can be represented as a decimal; otherwise, <see langword="false" />.</returns>
@@ -355,6 +360,9 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     {
         switch (Kind)
         {
+            case MetadataKind.Decimal when _payload.Reference is decimal @decimal:
+                value = @decimal;
+                return true;
             case MetadataKind.String when _payload.Reference is string @string:
                 return decimal.TryParse(@string, NumberStyles.Number, CultureInfo.InvariantCulture, out value);
             case MetadataKind.Double:
@@ -450,6 +458,13 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
                 (string?) other._payload.Reference,
                 StringComparison.Ordinal
             ),
+            // decimal.Equals is scale-insensitive, thus 19.50m and 19.5m are equal metadata values,
+            // although the scale is preserved when they are serialized. The reference is matched instead of
+            // being cast so that a payload which does not carry a boxed decimal is unequal like every other
+            // kind that cannot be interpreted, rather than throwing.
+            MetadataKind.Decimal => _payload.Reference is decimal @decimal &&
+                                    other._payload.Reference is decimal otherDecimal &&
+                                    @decimal == otherDecimal,
             MetadataKind.Array => ((MetadataArrayData?) _payload.Reference)?.Equals(
                                       (MetadataArrayData?) other._payload.Reference
                                   ) ??
@@ -487,7 +502,9 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
             case MetadataKind.Double:
                 hashCodeBuilder.Add(_payload.Float64);
                 break;
-            case MetadataKind.String or MetadataKind.Array or MetadataKind.Object:
+            // decimal.GetHashCode is scale-insensitive and consistent with decimal.Equals, thus boxed decimals
+            // can be hashed through the reference like the other reference-backed kinds.
+            case MetadataKind.String or MetadataKind.Decimal or MetadataKind.Array or MetadataKind.Object:
                 hashCodeBuilder.Add(_payload.Reference?.GetHashCode() ?? 0);
                 break;
         }
@@ -515,7 +532,9 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// Returns the string representation of this instance.
     /// </summary>
     /// <returns>The string representation.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the value kind is unknown.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the value kind is unknown or when its payload cannot be interpreted for that kind.
+    /// </exception>
     public override string ToString() =>
         Kind switch
         {
@@ -524,9 +543,13 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
             MetadataKind.Int64 => _payload.Int64.ToString(CultureInfo.InvariantCulture),
             MetadataKind.Double => _payload.Float64.ToString(CultureInfo.InvariantCulture),
             MetadataKind.String => $"\"{_payload.Reference}\"",
+            // A payload that does not carry a boxed decimal falls through to the arm below instead of throwing
+            // a NullReferenceException or an InvalidCastException, mirroring the other reference-backed kinds.
+            MetadataKind.Decimal when _payload.Reference is decimal @decimal =>
+                @decimal.ToString(CultureInfo.InvariantCulture),
             MetadataKind.Array =>
                 ((MetadataArrayData?) _payload.Reference)?.ToString() ?? MetadataArray.EmptyArrayStringRepresentation,
             MetadataKind.Object => "{...}",
-            _ => throw new InvalidOperationException($"Kind '{Kind}' is unknown")
+            _ => throw new InvalidOperationException($"Kind '{Kind}' is unknown or its payload is invalid")
         };
 }
