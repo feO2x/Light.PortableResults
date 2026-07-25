@@ -2,7 +2,7 @@
 
 ## Rationale
 
-`MetadataValue.FromDecimal` converts its input to invariant text and stores `MetadataKind.String`. Decimals therefore serialize into JSON bodies as quoted strings, while `PortableOpenApiSchemaTypeMapper` maps `decimal` to `JsonSchemaType.Number` and `PortableResultsOpenApiDocumentTransformer` emits decimal examples as unquoted numbers. The published contract and the runtime payload disagree. The mismatch is reachable through the built-in validation error definitions, which route every `TypeCode.Decimal` parameter through `FromDecimal`, so any decimal precision-and-scale rule produces a `problem+json` body that violates the OpenAPI document generated for the same endpoint.
+`MetadataValue.FromDecimal` converts its input to invariant text and stores `MetadataKind.String`. Decimals therefore serialize into JSON bodies as quoted strings, while `PortableOpenApiSchemaTypeMapper` maps `decimal` to `JsonSchemaType.Number` and `PortableResultsOpenApiDocumentTransformer` emits decimal examples as unquoted numbers. The published contract and the runtime payload disagree. The mismatch is reachable through the built-in validation error definitions: `CreateMetadataValue<T>` routes every `TypeCode.Decimal` parameter through `FromDecimal`, and it backs the `ComparativeValue`, `LowerBoundary`, and `UpperBoundary` metadata keys. Any comparison or range check on a decimal-typed value — `IsGreaterThan(19.99m)`, `IsInRange(9.99m, 99.99m)` — therefore produces a `problem+json` body that violates the OpenAPI document generated for the same endpoint.
 
 Storing decimals as text also loses type information (a decimal is indistinguishable from a numeric-looking string), forces `TryGetDecimal` to run `decimal.TryParse` on every call, and allocates more than necessary. This plan introduces a dedicated `MetadataKind.Decimal` backed by a boxed `decimal`.
 
@@ -10,7 +10,7 @@ Storing decimals as text also loses type information (a decimal is indistinguish
 
 - [ ] `MetadataValue.FromDecimal` produces a value whose `Kind` is `MetadataKind.Decimal`.
 - [ ] A decimal metadata value is written into JSON bodies as an unquoted JSON number that preserves all significant digits and the original scale.
-- [ ] A `problem+json` body produced by a decimal precision-and-scale validation rule conforms to the OpenAPI document generated for the same endpoint, asserted by an integration test that inspects the raw response body.
+- [ ] A `problem+json` body produced by a comparison or range validation rule on a decimal-typed value conforms to the OpenAPI document generated for the same endpoint, asserted by an integration test that inspects the raw response body.
 - [ ] `MetadataKind.Decimal` is classified as primitive, so decimals remain valid inside arrays annotated for header serialization and valid as CloudEvents extension attributes.
 - [ ] Every declared `MetadataKind` member is asserted to be classified correctly as primitive or complex by a test that enumerates the enum, so a member declared outside the reserved primitive range fails the build.
 - [ ] `TryGetDecimal` returns the stored value for `MetadataKind.Decimal` without parsing text, and continues to convert from `Int64`, `Double`, and numeric strings.
@@ -19,7 +19,7 @@ Storing decimals as text also loses type information (a decimal is indistinguish
 - [ ] A decimal metadata value resolves correctly when used as a CloudEvents core string attribute instead of silently becoming `null`.
 - [ ] HTTP header formatting emits decimals without quote characters.
 - [ ] The JSON reader's treatment of numeric tokens is explicitly specified and covered by tests, including the documented cases where a decimal does not read back as `MetadataKind.Decimal`.
-- [ ] `Unsafe.SizeOf<MetadataValue>()` is unchanged from before this plan, asserted by a test that pins the current value.
+- [ ] A test pins `Unsafe.SizeOf<MetadataValue>()` to the value it has before this plan, so any future change to the payload layout has to be deliberate.
 - [ ] Test code coverage stays above 95%.
 
 ## Technical Details
@@ -63,14 +63,20 @@ The default is chosen. Preferring `Decimal` unconditionally would make the resul
 
 This plan therefore improves **outbound** fidelity. It deliberately does not claim that a decimal round-trips as a decimal; that limitation is inherent to untyped numeric wire formats and is the same constraint recorded for HTTP headers in `0051`. Acceptance criteria must not assert round-trip symmetry for decimals.
 
-### Affected components
+### Affected components: there is no compile-time safety net
 
-Only two exhaustive `MetadataKind` switches exist outside the `Metadata` folder, and both fail to compile without a new branch:
+Every site that dispatches on `MetadataKind` has a `default` arm or a silent fall-through, so **adding the enum member breaks nothing at compile time**. A partial implementation ships silent data corruption rather than a build error. Each of these must be updated deliberately:
 
-- `SharedJsonSerialization/Writing/MetadataExtensions.WriteMetadataValue` — write via `WriteNumberValue(decimal)`.
-- `CloudEvents/MetadataValueAnnotationHelper`.
+| Site | Behaviour if left unhandled | Detected |
+| --- | --- | --- |
+| `SharedJsonSerialization/Writing/MetadataExtensions.WriteMetadataValue` | `default:` writes `WriteNullValue()` — a decimal serializes as JSON `null` | Silent |
+| `MetadataValue.Equals` | `_ => false` — a decimal never equals another decimal | Silent |
+| `MetadataValue.GetHashCode` | no `default` and no case — every decimal hashes to the kind alone | Silent |
+| `CloudEventsResultExtensions.GetStringAttribute` | `if`-chain falls through to `null` — a decimal-valued `subject`, `type`, or `source` becomes `null` | Silent |
+| `CloudEvents/MetadataValueAnnotationHelper.WithAnnotation` | `default:` throws `ArgumentOutOfRangeException` | Runtime |
+| `MetadataValue.ToString()` | `_ =>` throws `InvalidOperationException` | Runtime |
 
-The dangerous case is `CloudEventsResultExtensions.GetStringAttribute`, which is an `if`-chain over `TryGetString`/`TryGetBoolean`/`TryGetInt64`/`TryGetDouble` falling through to `null`. Today a decimal is caught by the `TryGetString` branch. After this change it falls through and a decimal-valued `subject`, `type`, or `source` silently becomes `null` instead of resolving or throwing. This is a behavioural regression the compiler will not surface.
+Two of these are worse than the defect being fixed. `WriteNullValue()` replaces a quoted string with `null`, losing the value entirely. `Equals` returning `false` alongside a kind-only hash breaks `MetadataObject` and dictionary lookups for decimals without any error surfacing.
 
 Everything else reaches decimals through `IsPrimitive` or the `TryGet*` accessors and needs no change.
 
@@ -98,7 +104,9 @@ This plan should land before `0051-http-header-value-formatting`. That plan's ki
 
 `MetadataValueTests.FromDecimal_ShouldStoreAsString` inverts and must be renamed alongside its assertions. `MetadataObjectTests` and `MetadataValueAnnotationTests` also construct decimal values and need review.
 
-Beyond the unit-level kind matrix, the criterion that carries the actual defect is the OpenAPI conformance test: trigger a decimal precision-and-scale validation failure through an integration test app and assert that the raw `problem+json` body contains an unquoted number for the precision and scale metadata.
+Because no dispatch site fails to compile, the kind matrix must be exercised explicitly for every site in the table above rather than relying on the build. Equality and hashing in particular need a test that puts decimals into a `MetadataObject` and reads them back, since the failure there is silent in both directions.
+
+Beyond the unit-level matrix, the criterion that carries the actual defect is the OpenAPI conformance test: trigger a comparison or range validation failure on a decimal-typed value through an integration test app and assert that the raw `problem+json` body carries an unquoted number for the `ComparativeValue` or boundary metadata.
 
 ### Out of scope
 
