@@ -28,8 +28,3 @@ Read ./ai-plans/AGENTS.md for details on how to write plans.
 ## Here is Your Space
 
 If you encounter something worth noting while you are working on this code base, write it down here in this section. Once you are finished, I will discuss it with you, and we can decide where to put your notes.
-
-### Notes from plan 0052 (decimal metadata kind)
-
-- Solution-wide line coverage sits right on the 95% threshold (94.8% before this plan, 95.0% after). The margin comes from `Light.PortableResults.AspNetCore.MinimalApis` (87.6%), `Light.PortableResults.AspNetCore.Mvc` (87.9%), and `Light.PortableResults.Validation.OpenApi.SourceGeneration` (87%), while the core package is at 96.2%. Any future plan whose acceptance criteria include the 95% gate will be paying off that debt rather than covering its own code. Worth deciding whether the gate should be per-assembly.
-- `MetadataValueTestFactory` (in `Light.PortableResults.Tests/Metadata`) builds a `MetadataValue` with an undeclared `MetadataKind` via reflection on the private constructor. It is the only way to reach the fallback arms of the kind dispatch sites. If the constructor signature changes, that helper and `UndeclaredMetadataKindFallbackTests` break.
