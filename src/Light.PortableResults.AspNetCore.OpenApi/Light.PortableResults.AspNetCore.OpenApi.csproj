@@ -4,7 +4,7 @@
     <IsAotCompatible>true</IsAotCompatible>
     <Description>Opt-in OpenAPI integration package for Light.PortableResults ASP.NET Core applications. Provides a library-authored schema catalog, endpoint metadata attributes, Minimal API helpers, and a document transformer.</Description>
     <PackageReleaseNotes>
-      Light.PortableResults.AspNetCore.OpenApi 0.6.0
+      Light.PortableResults.AspNetCore.OpenApi 0.7.0
       -------------------------------------
 
       - Opt-in OpenAPI integration via IServiceCollection.AddPortableResultsOpenApi.

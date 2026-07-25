@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Description>Integration package for turning result instances into MVC's IActionResult instances. Compatible with RFC 9457 (and RFC 7807) Problem Details responses.</Description>
     <PackageReleaseNotes>
-      Light.PortableResults.AspNetCore.MVC 0.6.0
+      Light.PortableResults.AspNetCore.MVC 0.7.0
       ---------------------------------
 
       - LightActionResult and LightActionResult&lt;T> and corresponding extension methods to turn result instances into HTTP success responses or RFC 9457 (and RFC 7807) compatible Problem Details responses.
