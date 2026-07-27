@@ -1,9 +1,17 @@
 using Microsoft.Extensions.DependencyInjection;
+using NativeAotMovieRating.DatabaseAccess;
 
 namespace NativeAotMovieRating.GetMovies;
 
 public static class GetMoviesModule
 {
-    public static IServiceCollection AddGetMoviesModule(this IServiceCollection services) =>
-        services.AddScoped<IGetMoviesSession, InMemoryGetMoviesSession>();
+    public static IServiceCollection AddGetMoviesModule(
+        this IServiceCollection services,
+        DatabaseProvider provider
+    ) =>
+        provider switch
+        {
+            DatabaseProvider.InMemory => services.AddScoped<IGetMoviesSession, InMemoryGetMoviesSession>(),
+            _ => services.AddScoped<IGetMoviesSession, EfGetMoviesSession>()
+        };
 }

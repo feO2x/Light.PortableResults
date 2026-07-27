@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Light.SharedCore.DatabaseAccessAbstractions;
-using NativeAotMovieRating.InMemoryDatabaseAccess;
+using NativeAotMovieRating.DatabaseAccess;
 
 namespace NativeAotMovieRating.NewMovie;
 

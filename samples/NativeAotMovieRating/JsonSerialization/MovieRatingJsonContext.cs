@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Light.PortableResults.Http.Writing;
 using NativeAotMovieRating.GetMovies;
-using NativeAotMovieRating.InMemoryDatabaseAccess;
+using NativeAotMovieRating.DatabaseAccess;
 using NativeAotMovieRating.NewMovie;
 using NativeAotMovieRating.NewMovieRating;
 

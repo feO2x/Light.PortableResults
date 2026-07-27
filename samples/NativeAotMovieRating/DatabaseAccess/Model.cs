@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Light.SharedCore.Entities;
 
-namespace NativeAotMovieRating.InMemoryDatabaseAccess;
+namespace NativeAotMovieRating.DatabaseAccess;
 
 public sealed class Movie : GuidEntity
 {

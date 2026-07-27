@@ -10,11 +10,11 @@ http://localhost:5000/docs
 ### Get Movies (first page)
 http://localhost:5000/api/movies
 
-### Get Movies (second page)
-http://localhost:5000/api/movies?lastKnownMovieId=a3e54564-85c1-4d6f-9721-50798c5d30f4
+### Get Movies (second page - keyset continues after "Coco", the 20th movie by title)
+http://localhost:5000/api/movies?lastKnownMovieId=85754775-a8f8-86c7-c83c-0f5e7e732e96
 
-### Get Movies (third page)
-http://localhost:5000/api/movies?lastKnownMovieId=30d849a8-9b6c-7f6f-1f6d-439a849d64c1
+### Get Movies (third page - keyset continues after "Interstellar", the 40th movie by title)
+http://localhost:5000/api/movies?lastKnownMovieId=64c93d64-c25f-4e7b-8b33-317a5a90e5b5
 
 ### Get Movies (invalid parameters)
 http://localhost:5000/api/movies?lastKnownMovieId=00000000-0000-0000-0000-000000000000&take=-1

@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Light.PortableResults;
-using NativeAotMovieRating.InMemoryDatabaseAccess;
+using NativeAotMovieRating.DatabaseAccess;
 using Serilog;
 
 namespace NativeAotMovieRating.NewMovie;

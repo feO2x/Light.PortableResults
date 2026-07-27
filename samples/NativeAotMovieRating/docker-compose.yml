@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: movie-rating-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: movierating
+      POSTGRES_USER: movierating
+      POSTGRES_PASSWORD: dev-password
+    ports:
+      - "5432:5432"
+    volumes:
+      # PostgreSQL 18+ images expect a single mount at /var/lib/postgresql and place the
+      # major-version-specific data directory underneath it themselves.
+      - movie-rating-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U movierating -d movierating"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  movie-rating-postgres-data:

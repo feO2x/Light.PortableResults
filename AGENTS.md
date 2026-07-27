@@ -28,3 +28,6 @@ Read ./ai-plans/AGENTS.md for details on how to write plans.
 ## Here is Your Space
 
 If you encounter something worth noting while you are working on this code base, write it down here in this section. Once you are finished, I will discuss it with you, and we can decide where to put your notes.
+
+- The NativeAotMovieRating sample now overrides `Microsoft.CodeAnalysis.CSharp` to 5.0.0 via `VersionOverride`. `Microsoft.EntityFrameworkCore.Design` needs that version at runtime for `dotnet ef`, while the central version stays at 4.14.0 because the source generator project has to build against it. Disabling `CentralPackageTransitivePinningEnabled` for the sample also works but silently downgrades `Microsoft.OpenApi` to a version with a known advisory, so the targeted override is the safer lever.
+- The `packages.lock.json` files of AspNetCore.MinimalApis, AspNetCore.OpenApi and Validation.OpenApi were stale: they still recorded `Light.PortableResults 0.6.0` although `Directory.Build.props` is at 0.7.0. Restoring refreshed them. Worth checking whether CI should fail on that drift, since `RestoreLockedMode` is only enabled for `ContinuousIntegrationBuild`.

@@ -1,11 +1,15 @@
 using System;
 using System.Collections.Generic;
 
-namespace NativeAotMovieRating.InMemoryDatabaseAccess;
+namespace NativeAotMovieRating.DatabaseAccess;
 
-public sealed class InMemoryMovieDatabase
+/// <summary>
+/// Provides the movies that both the in-memory store and the PostgreSQL seeder start out with.
+/// Each call returns a fresh object graph so that the two providers never share entity instances.
+/// </summary>
+public static class MovieSeedData
 {
-    public List<Movie> Movies { get; } =
+    public static List<Movie> CreateMovies() =>
     [
         new ()
         {

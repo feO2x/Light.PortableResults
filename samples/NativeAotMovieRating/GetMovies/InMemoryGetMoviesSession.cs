@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NativeAotMovieRating.InMemoryDatabaseAccess;
+using NativeAotMovieRating.DatabaseAccess;
 
 namespace NativeAotMovieRating.GetMovies;
 
@@ -22,19 +22,23 @@ public sealed class InMemoryGetMoviesSession : IGetMoviesSession
     )
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return lastKnownMovieId.HasValue ?
-            Task.FromResult(GetRangeAfterMovieId(lastKnownMovieId.Value, take)) :
-            Task.FromResult<List<Movie>?>(_database.Movies.Take(take).ToList());
-    }
 
-    private List<Movie>? GetRangeAfterMovieId(Guid lastKnownMovieId, int take)
-    {
-        var index = _database.Movies.FindIndex(x => x.Id == lastKnownMovieId);
-        if (index == -1)
-            return null;
+        // The same sort order as the PostgreSQL session so that both implementations honor the
+        // same contract - callers must be able to swap them without noticing.
+        var orderedMovies = _database
+           .Movies
+           .OrderBy(movie => movie.Title, StringComparer.Ordinal)
+           .ThenBy(movie => movie.Id)
+           .ToList();
 
-        var remaining = _database.Movies.Count - (index + 1);
-        var count = Math.Min(take, remaining);
-        return _database.Movies.GetRange(index + 1, count);
+        if (!lastKnownMovieId.HasValue)
+        {
+            return Task.FromResult<List<Movie>?>(orderedMovies.Take(take).ToList());
+        }
+
+        var index = orderedMovies.FindIndex(movie => movie.Id == lastKnownMovieId.Value);
+        return Task.FromResult(
+            index == -1 ? null : orderedMovies.Skip(index + 1).Take(take).ToList()
+        );
     }
 }

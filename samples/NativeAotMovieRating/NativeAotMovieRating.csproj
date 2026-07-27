@@ -24,6 +24,18 @@
   <ItemGroup>
     <PackageReference Include="Light.SharedCore" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <!--
+      Microsoft.EntityFrameworkCore.Design needs Microsoft.CodeAnalysis.CSharp 5.0.0 at runtime,
+      while the centrally managed version is the 4.14.0 that the source generator project builds
+      against. Overriding it for this sample only keeps the dotnet-ef tooling working without
+      touching the version the generator targets.
+    -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="5.0.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Scalar.AspNetCore" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" />

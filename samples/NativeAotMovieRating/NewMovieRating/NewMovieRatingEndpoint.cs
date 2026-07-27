@@ -6,7 +6,7 @@ using Light.PortableResults.Http.Writing;
 using Light.PortableResults.Validation.OpenApi;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using NativeAotMovieRating.InMemoryDatabaseAccess;
+using NativeAotMovieRating.DatabaseAccess;
 
 namespace NativeAotMovieRating.NewMovieRating;
 
