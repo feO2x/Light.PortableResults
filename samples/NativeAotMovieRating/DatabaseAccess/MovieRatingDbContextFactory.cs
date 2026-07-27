@@ -21,7 +21,7 @@ public sealed class MovieRatingDbContextFactory : IDesignTimeDbContextFactory<Mo
            .Build();
 
         var optionsBuilder = new DbContextOptionsBuilder<MovieRatingDbContext>();
-        optionsBuilder.UseNpgsql(configuration.GetMovieRatingConnectionString());
+        optionsBuilder.UseNpgsql(configuration.GetPostgresConnectionString());
         return new MovieRatingDbContext(optionsBuilder.Options);
     }
 }

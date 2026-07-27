@@ -20,5 +20,52 @@ services:
       retries: 10
       start_period: 10s
 
+  mongo:
+    image: mongo:8
+    container_name: movie-rating-mongo
+    restart: unless-stopped
+    # MongoDB only offers transactions on a replica set, so even this single node runs as one.
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - movie-rating-mongo-data:/data/db
+    healthcheck:
+      # Only reports healthy once the replica set has elected its primary, which is what
+      # transactions need. That happens after mongo-init below has run.
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  mongo-init:
+    image: mongo:8
+    container_name: movie-rating-mongo-init
+    restart: "no"
+    depends_on:
+      - mongo
+    # The member has to advertise itself as localhost:27017: the service runs on the host machine
+    # and reaches mongod through the published port, so it must be able to resolve whatever host
+    # the primary reports back during replica set discovery.
+    entrypoint:
+      - bash
+      - -c
+      - |
+        until mongosh --host mongo --quiet --eval 'db.adminCommand({ ping: 1 })' > /dev/null 2>&1; do
+          echo "Waiting for mongod to accept connections"
+          sleep 1
+        done
+        mongosh --host mongo --quiet --eval '
+          try {
+            rs.status();
+            print("Replica set rs0 is already initiated");
+          } catch (error) {
+            rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "localhost:27017" }] });
+            print("Replica set rs0 initiated");
+          }
+        '
+
 volumes:
   movie-rating-postgres-data:
+  movie-rating-mongo-data:

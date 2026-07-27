@@ -17,6 +17,7 @@ public static class NewMovieRatingModule
     private static IServiceCollection AddSession(this IServiceCollection services, DatabaseProvider provider) =>
         provider switch
         {
+            DatabaseProvider.MongoDb => services.AddScoped<INewMovieRatingSession, MongoNewMovieRatingSession>(),
             DatabaseProvider.InMemory => services.AddScoped<INewMovieRatingSession, InMemoryNewMovieRatingSession>(),
             _ => services.AddScoped<INewMovieRatingSession, EfNewMovieRatingSession>()
         };

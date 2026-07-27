@@ -11,6 +11,7 @@ public static class GetMoviesModule
     ) =>
         provider switch
         {
+            DatabaseProvider.MongoDb => services.AddScoped<IGetMoviesSession, MongoGetMoviesSession>(),
             DatabaseProvider.InMemory => services.AddScoped<IGetMoviesSession, InMemoryGetMoviesSession>(),
             _ => services.AddScoped<IGetMoviesSession, EfGetMoviesSession>()
         };

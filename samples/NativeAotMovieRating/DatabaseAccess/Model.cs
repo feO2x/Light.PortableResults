@@ -7,7 +7,10 @@ namespace NativeAotMovieRating.DatabaseAccess;
 public sealed class Movie : GuidEntity
 {
     public required string Title { get; set; } = string.Empty;
-    public List<MovieRating> Ratings { get; } = [];
+
+    // The setter exists for the MongoDB driver: it has no change tracker and needs a way to
+    // populate the embedded ratings when it materializes a movie document.
+    public List<MovieRating> Ratings { get; init; } = [];
 }
 
 public sealed class MovieRating : GuidEntity
