@@ -16,11 +16,19 @@ public static class PortableOpenApiSchemaTypeMapper
     /// <para>Recognized types and their schemas:</para>
     /// <list type="table">
     ///   <item>
-    ///     <term><c>int</c>, <c>short</c>, <c>long</c>, <c>byte</c>, <c>sbyte</c>, <c>uint</c>, <c>ushort</c>, <c>ulong</c></term>
+    ///     <term><c>int</c>, <c>short</c>, <c>long</c>, <c>byte</c>, <c>sbyte</c>, <c>uint</c>, <c>ushort</c></term>
     ///     <description><c>{ type: integer }</c></description>
     ///   </item>
     ///   <item>
-    ///     <term><c>float</c>, <c>double</c>, <c>decimal</c></term>
+    ///     <term><c>ulong</c></term>
+    ///     <description><c>{ type: string, format: uint64 }</c></description>
+    ///   </item>
+    ///   <item>
+    ///     <term><c>float</c></term>
+    ///     <description><c>{ type: number, format: float }</c></description>
+    ///   </item>
+    ///   <item>
+    ///     <term><c>double</c>, <c>decimal</c></term>
     ///     <description><c>{ type: number }</c></description>
     ///   </item>
     ///   <item>
@@ -32,6 +40,10 @@ public static class PortableOpenApiSchemaTypeMapper
     ///     <description><c>{ type: string }</c></description>
     ///   </item>
     ///   <item>
+    ///     <term><c>char</c></term>
+    ///     <description><c>{ type: string, format: char }</c></description>
+    ///   </item>
+    ///   <item>
     ///     <term><c>DateTime</c>, <c>DateTimeOffset</c></term>
     ///     <description><c>{ type: string, format: date-time }</c></description>
     ///   </item>
@@ -40,12 +52,20 @@ public static class PortableOpenApiSchemaTypeMapper
     ///     <description><c>{ type: string, format: date }</c></description>
     ///   </item>
     ///   <item>
-    ///     <term><c>TimeOnly</c>, <c>TimeSpan</c></term>
+    ///     <term><c>TimeOnly</c></term>
     ///     <description><c>{ type: string, format: time }</c></description>
+    ///   </item>
+    ///   <item>
+    ///     <term><c>TimeSpan</c></term>
+    ///     <description><c>{ type: string, format: duration }</c></description>
     ///   </item>
     ///   <item>
     ///     <term><c>Guid</c></term>
     ///     <description><c>{ type: string, format: uuid }</c></description>
+    ///   </item>
+    ///   <item>
+    ///     <term><c>Uri</c></term>
+    ///     <description><c>{ type: string, format: uri-reference }</c></description>
     ///   </item>
     /// </list>
     /// <para>
@@ -66,12 +86,22 @@ public static class PortableOpenApiSchemaTypeMapper
 
         if (type == typeof(int) || type == typeof(short) || type == typeof(long) ||
             type == typeof(byte) || type == typeof(sbyte) ||
-            type == typeof(uint) || type == typeof(ushort) || type == typeof(ulong))
+            type == typeof(uint) || type == typeof(ushort))
         {
             return new OpenApiSchema { Type = JsonSchemaType.Integer };
         }
 
-        if (type == typeof(float) || type == typeof(double) || type == typeof(decimal))
+        if (type == typeof(ulong))
+        {
+            return new OpenApiSchema { Type = JsonSchemaType.String, Format = "uint64" };
+        }
+
+        if (type == typeof(float))
+        {
+            return new OpenApiSchema { Type = JsonSchemaType.Number, Format = "float" };
+        }
+
+        if (type == typeof(double) || type == typeof(decimal))
         {
             return new OpenApiSchema { Type = JsonSchemaType.Number };
         }
@@ -86,6 +116,11 @@ public static class PortableOpenApiSchemaTypeMapper
             return new OpenApiSchema { Type = JsonSchemaType.String };
         }
 
+        if (type == typeof(char))
+        {
+            return new OpenApiSchema { Type = JsonSchemaType.String, Format = "char" };
+        }
+
         if (type == typeof(DateTime) || type == typeof(DateTimeOffset))
         {
             return new OpenApiSchema { Type = JsonSchemaType.String, Format = "date-time" };
@@ -96,14 +131,24 @@ public static class PortableOpenApiSchemaTypeMapper
             return new OpenApiSchema { Type = JsonSchemaType.String, Format = "date" };
         }
 
-        if (type == typeof(TimeOnly) || type == typeof(TimeSpan))
+        if (type == typeof(TimeOnly))
         {
             return new OpenApiSchema { Type = JsonSchemaType.String, Format = "time" };
+        }
+
+        if (type == typeof(TimeSpan))
+        {
+            return new OpenApiSchema { Type = JsonSchemaType.String, Format = "duration" };
         }
 
         if (type == typeof(Guid))
         {
             return new OpenApiSchema { Type = JsonSchemaType.String, Format = "uuid" };
+        }
+
+        if (type == typeof(Uri))
+        {
+            return new OpenApiSchema { Type = JsonSchemaType.String, Format = "uri-reference" };
         }
 
         return new OpenApiSchema();

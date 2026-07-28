@@ -22,15 +22,34 @@ internal static class MetadataValueTestFactory
             "Light.PortableResults.Metadata.MetadataPayload",
             throwOnError: true
         )!;
+        var payload = Activator.CreateInstance(metadataPayloadType)!;
+        return Create(kind, metadataValueType, metadataPayloadType, payload);
+    }
 
+    public static MetadataValue CreateWithInt64Payload(MetadataKind kind, long value)
+    {
+        var metadataValueType = typeof(MetadataValue);
+        var metadataPayloadType = metadataValueType.Assembly.GetType(
+            "Light.PortableResults.Metadata.MetadataPayload",
+            throwOnError: true
+        )!;
+        var payload = Activator.CreateInstance(metadataPayloadType, [value])!;
+        return Create(kind, metadataValueType, metadataPayloadType, payload);
+    }
+
+    private static MetadataValue Create(
+        MetadataKind kind,
+        Type metadataValueType,
+        Type metadataPayloadType,
+        object payload
+    )
+    {
         var constructor = metadataValueType.GetConstructor(
             BindingFlags.Instance | BindingFlags.NonPublic,
             binder: null,
             [typeof(MetadataKind), metadataPayloadType, typeof(MetadataValueAnnotation)],
             modifiers: null
         )!;
-
-        var payload = Activator.CreateInstance(metadataPayloadType)!;
 
         return (MetadataValue) constructor.Invoke([kind, payload, MetadataValue.DefaultAnnotation]);
     }

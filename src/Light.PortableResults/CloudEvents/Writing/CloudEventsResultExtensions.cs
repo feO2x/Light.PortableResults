@@ -585,35 +585,7 @@ public static class CloudEventsResultExtensions
             return null;
         }
 
-        if (metadataValue.TryGetString(out var stringValue))
-        {
-            return stringValue;
-        }
-
-        if (metadataValue.TryGetBoolean(out var boolValue))
-        {
-            return boolValue ? "true" : "false";
-        }
-
-        if (metadataValue.TryGetInt64(out var int64Value))
-        {
-            return int64Value.ToString(CultureInfo.InvariantCulture);
-        }
-
-        if (metadataValue.TryGetDouble(out var doubleValue))
-        {
-            return doubleValue.ToString(CultureInfo.InvariantCulture);
-        }
-
-        // TryGetDecimal also converts from Int64, Double, and numeric strings. The checks above are all strict
-        // kind checks and cannot be reached by a decimal, thus the position of this branch does not matter today
-        // - but the kind is checked explicitly so that it cannot swallow those values if it is ever moved up.
-        if (metadataValue.Kind == MetadataKind.Decimal && metadataValue.TryGetDecimal(out var decimalValue))
-        {
-            return decimalValue.ToString(CultureInfo.InvariantCulture);
-        }
-
-        return null;
+        return metadataValue.Kind.IsPrimitive() ? metadataValue.ToCanonicalString() : null;
     }
 
     private static DateTimeOffset? GetDateTimeOffsetAttribute(MetadataObject? attributes, string attributeName)

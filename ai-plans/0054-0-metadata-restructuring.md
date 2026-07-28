@@ -8,21 +8,21 @@ This plan extends the primitive range that `0052` reserved with kinds for the co
 
 ## Acceptance Criteria
 
-- [ ] `MetadataKind` declares the kinds of the vocabulary table as values 6–15; `Array` and `Object` keep 200 and 201; the expected classifications in the existing enum test are updated.
-- [ ] `Unsafe.SizeOf<MetadataValue>()` remains 24.
-- [ ] Each kind has a factory method, an implicit conversion where the BCL type allows one, and a typed `TryGet*` accessor that returns the exact stored value without text parsing. `ulong.MaxValue` survives construction, serialization, and reading without precision loss.
-- [ ] Each `TryGet*` additionally converts from `MetadataKind.String` when the string holds the kind's canonical encoding and rejects any other text, so consumers work identically on in-process and wire-degraded values without accepting input the writers never produce.
-- [ ] Every kind serializes into JSON bodies using the encoding in the vocabulary table; in particular `TimeOnly` preserves seconds, `TimeSpan` emits an ISO 8601 duration, `0.1f` emits `0.1`, and a whole-number `Double` or `Single` emits a trailing `.0` (`5.0`, not `5`).
-- [ ] Generated OpenAPI schemas and examples match the JSON encoding of every kind, asserted against the vocabulary table: `ulong` is a string, `TimeSpan` is `format: duration` rather than `time`, and `char` and `Uri` no longer degrade to a schema without a type.
-- [ ] HTTP header values, CloudEvents core string attributes, and validation error message text use the same canonical encodings: header output is unquoted for every primitive kind including plain strings, and a value of any primitive kind resolves as a core string attribute.
-- [ ] The JSON shape of a kind (`Null`, `Boolean`, `Number`, `String`, `Array`, `Object`) is publicly derivable from `MetadataKind` alone.
-- [ ] Every `switch` over `MetadataKind` inside `MetadataValue` lists all members without a discard arm, so declaring a new member fails the Release build (CS8509 with `TreatWarningsAsErrors`) until every switch is updated.
-- [ ] `MetadataValueAnnotationHelper.WithAnnotation` preserves the value of every kind; annotation constraints for arrays and objects are still enforced.
-- [ ] Equality and hashing cover all kinds: values of different kinds are never equal, boxed kinds compare by value, `Uri` values compare by ordinal `OriginalString`, `Annotation` stays excluded, and a test stores every kind in a `MetadataObject` and reads it back by key.
-- [ ] Serialized output for all previously existing kinds is byte-identical to today, apart from the trailing `.0` for whole-number doubles.
-- [ ] `CreateMetadataValue` routes the ten BCL types of the vocabulary table to the typed factories; the `problem+json` OpenAPI conformance test from `0052` passes unchanged, and an equivalent test covers a `DateTime` or `TimeSpan` boundary.
-- [ ] The core project builds for `netstandard2.0` and `net10.0` in Release with warnings as errors, and the only public API difference between the targets is the `DateOnly`/`TimeOnly` factories and accessors.
-- [ ] Test code coverage stays above 95%.
+- [x] `MetadataKind` declares the kinds of the vocabulary table as values 6–15; `Array` and `Object` keep 200 and 201; the expected classifications in the existing enum test are updated.
+- [x] `Unsafe.SizeOf<MetadataValue>()` remains 24.
+- [x] Each kind has a factory method, an implicit conversion where the BCL type allows one, and a typed `TryGet*` accessor that returns the exact stored value without text parsing. `ulong.MaxValue` survives construction, serialization, and reading without precision loss.
+- [x] Each `TryGet*` additionally converts from `MetadataKind.String` when the string holds the kind's canonical encoding and rejects any other text, so consumers work identically on in-process and wire-degraded values without accepting input the writers never produce.
+- [x] Every kind serializes into JSON bodies using the encoding in the vocabulary table; in particular `TimeOnly` preserves seconds, `TimeSpan` emits an ISO 8601 duration, `0.1f` emits `0.1`, and a whole-number `Double` or `Single` emits a trailing `.0` (`5.0`, not `5`).
+- [x] Generated OpenAPI schemas and examples match the JSON encoding of every kind, asserted against the vocabulary table: `ulong` is a string, `TimeSpan` is `format: duration` rather than `time`, and `char` and `Uri` no longer degrade to a schema without a type.
+- [x] HTTP header values, CloudEvents core string attributes, and validation error message text use the same canonical encodings: header output is unquoted for every primitive kind including plain strings, and a value of any primitive kind resolves as a core string attribute.
+- [x] The JSON shape of a kind (`Null`, `Boolean`, `Number`, `String`, `Array`, `Object`) is publicly derivable from `MetadataKind` alone.
+- [x] Every `switch` over `MetadataKind` inside `MetadataValue` lists all members without a discard arm, so declaring a new member fails the Release build (CS8509 with `TreatWarningsAsErrors`) until every switch is updated.
+- [x] `MetadataValueAnnotationHelper.WithAnnotation` preserves the value of every kind; annotation constraints for arrays and objects are still enforced.
+- [x] Equality and hashing cover all kinds: values of different kinds are never equal, boxed kinds compare by value, `Uri` values compare by ordinal `OriginalString`, `Annotation` stays excluded, and a test stores every kind in a `MetadataObject` and reads it back by key.
+- [x] Serialized output for all previously existing kinds is byte-identical to today, apart from the trailing `.0` for whole-number doubles.
+- [x] `CreateMetadataValue` routes the ten BCL types of the vocabulary table to the typed factories; the `problem+json` OpenAPI conformance test from `0052` passes unchanged, and an equivalent test covers a `DateTime` or `TimeSpan` boundary.
+- [x] The core project builds for `netstandard2.0` and `net10.0` in Release with warnings as errors, and the only public API difference between the targets is the `DateOnly`/`TimeOnly` factories and accessors.
+- [x] Test code coverage stays above 95%.
 
 ## Technical Details
 

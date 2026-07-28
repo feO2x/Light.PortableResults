@@ -190,6 +190,15 @@ public sealed class ValidatorOpenApiEmitterTests
             MetadataValue("m", 3.5M),
             MetadataValue("nothing", null),
             MetadataValue("fallback", Guid.Empty),
+            MetadataValue("dateTime", new DateTime(638891343300000000L, DateTimeKind.Utc)),
+            MetadataValue(
+                "dateTimeOffset",
+                new DateTimeOffset(638891343300000000L, TimeSpan.FromHours(2))
+            ),
+            MetadataValue("dateOnly", DateOnly.FromDayNumber(739822)),
+            MetadataValue("timeOnly", new TimeOnly(495300000000L)),
+            MetadataValue("timeSpan", TimeSpan.FromSeconds(5)),
+            MetadataValue("uri", new Uri("https://example.com/items/42")),
             MetadataValue("escapes", "a\\b\"c\nd\te\rfg\0h\ai\bj\fk\vl'm")
         );
         var model = ModelWithRules(
@@ -214,7 +223,21 @@ public sealed class ValidatorOpenApiEmitterTests
         source.Should().Contain("[\"d\"] = 2.5D");
         source.Should().Contain("[\"m\"] = 3.5M");
         source.Should().Contain("[\"nothing\"] = null");
-        source.Should().Contain("[\"fallback\"] = \"00000000-0000-0000-0000-000000000000\"");
+        source.Should().Contain(
+            "[\"fallback\"] = global::System.Guid.ParseExact(\"00000000-0000-0000-0000-000000000000\", \"D\")"
+        );
+        source.Should().Contain(
+            "[\"dateTime\"] = new global::System.DateTime(638891343300000000L, global::System.DateTimeKind.Utc)"
+        );
+        source.Should().Contain(
+            "[\"dateTimeOffset\"] = new global::System.DateTimeOffset(638891343300000000L, global::System.TimeSpan.FromTicks(72000000000L))"
+        );
+        source.Should().Contain("[\"dateOnly\"] = global::System.DateOnly.FromDayNumber(739822)");
+        source.Should().Contain("[\"timeOnly\"] = new global::System.TimeOnly(495300000000L)");
+        source.Should().Contain("[\"timeSpan\"] = global::System.TimeSpan.FromTicks(50000000L)");
+        source.Should().Contain(
+            "[\"uri\"] = new global::System.Uri(\"https://example.com/items/42\", global::System.UriKind.RelativeOrAbsolute)"
+        );
         source.Should()
            .Contain("[\"escapes\"] = \"a\\\\b\\\"c\\nd\\te\\rf\\u0001g\\0h\\ai\\bj\\fk\\vl\\'m\"");
     }

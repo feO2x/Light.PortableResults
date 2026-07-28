@@ -1,4 +1,5 @@
 using System;
+using Light.PortableResults.Metadata;
 
 namespace Light.PortableResults.Validation.Messaging;
 
@@ -21,9 +22,60 @@ public static class ValidationErrorMessageFormatting
             return string.Empty;
         }
 
+        if (TryFormatCanonical(value, out var canonicalValue))
+        {
+            return canonicalValue;
+        }
+
         var culture = context.Options.CultureInfo;
         return value is IFormattable formattable ?
             formattable.ToString(null, culture) :
             value.ToString() ?? string.Empty;
+    }
+
+    private static bool TryFormatCanonical<T>(T value, out string formattedValue)
+    {
+        MetadataValue metadataValue;
+        switch (value)
+        {
+            case ulong uint64:
+                metadataValue = MetadataValue.FromUInt64(uint64);
+                break;
+            case float single:
+                metadataValue = MetadataValue.FromSingle(single);
+                break;
+            case char character:
+                metadataValue = MetadataValue.FromChar(character);
+                break;
+            case DateTime dateTime:
+                metadataValue = MetadataValue.FromDateTime(dateTime);
+                break;
+            case DateTimeOffset dateTimeOffset:
+                metadataValue = MetadataValue.FromDateTimeOffset(dateTimeOffset);
+                break;
+#if NET10_0_OR_GREATER
+            case DateOnly dateOnly:
+                metadataValue = MetadataValue.FromDateOnly(dateOnly);
+                break;
+            case TimeOnly timeOnly:
+                metadataValue = MetadataValue.FromTimeOnly(timeOnly);
+                break;
+#endif
+            case TimeSpan timeSpan:
+                metadataValue = MetadataValue.FromTimeSpan(timeSpan);
+                break;
+            case Guid guid:
+                metadataValue = MetadataValue.FromGuid(guid);
+                break;
+            case Uri uri:
+                metadataValue = MetadataValue.FromUri(uri);
+                break;
+            default:
+                formattedValue = string.Empty;
+                return false;
+        }
+
+        formattedValue = metadataValue.ToCanonicalString();
+        return true;
     }
 }

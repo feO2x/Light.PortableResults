@@ -11,7 +11,7 @@ public sealed class MetadataKindTests
     // MetadataKindExtensions.IsPrimitive decides membership of the primitive set purely by ordering
     // (kind < MetadataKind.Array). A new member declared on the wrong side of that boundary compiles cleanly
     // and silently changes behavior, thus every declared member is pinned here - both its numeric value, which
-    // keeps the range 6 - 199 reserved for future primitive kinds and is visible to callers that persisted or
+    // keeps the range 16 - 199 reserved for future primitive kinds and is visible to callers that persisted or
     // transmitted it, and its classification.
     private static readonly Dictionary<MetadataKind, (byte Value, bool IsPrimitive)> ExpectedMembers = new ()
     {
@@ -21,6 +21,16 @@ public sealed class MetadataKindTests
         [MetadataKind.Double] = (3, true),
         [MetadataKind.String] = (4, true),
         [MetadataKind.Decimal] = (5, true),
+        [MetadataKind.UInt64] = (6, true),
+        [MetadataKind.Single] = (7, true),
+        [MetadataKind.Char] = (8, true),
+        [MetadataKind.DateTime] = (9, true),
+        [MetadataKind.DateTimeOffset] = (10, true),
+        [MetadataKind.DateOnly] = (11, true),
+        [MetadataKind.TimeOnly] = (12, true),
+        [MetadataKind.TimeSpan] = (13, true),
+        [MetadataKind.Guid] = (14, true),
+        [MetadataKind.Uri] = (15, true),
         [MetadataKind.Array] = (200, false),
         [MetadataKind.Object] = (201, false)
     };
@@ -61,5 +71,32 @@ public sealed class MetadataKindTests
                     kind
                 );
         }
+    }
+
+    [Theory]
+    [InlineData(MetadataKind.Null, MetadataJsonShape.Null)]
+    [InlineData(MetadataKind.Boolean, MetadataJsonShape.Boolean)]
+    [InlineData(MetadataKind.Int64, MetadataJsonShape.Number)]
+    [InlineData(MetadataKind.Double, MetadataJsonShape.Number)]
+    [InlineData(MetadataKind.String, MetadataJsonShape.String)]
+    [InlineData(MetadataKind.Decimal, MetadataJsonShape.Number)]
+    [InlineData(MetadataKind.UInt64, MetadataJsonShape.String)]
+    [InlineData(MetadataKind.Single, MetadataJsonShape.Number)]
+    [InlineData(MetadataKind.Char, MetadataJsonShape.String)]
+    [InlineData(MetadataKind.DateTime, MetadataJsonShape.String)]
+    [InlineData(MetadataKind.DateTimeOffset, MetadataJsonShape.String)]
+    [InlineData(MetadataKind.DateOnly, MetadataJsonShape.String)]
+    [InlineData(MetadataKind.TimeOnly, MetadataJsonShape.String)]
+    [InlineData(MetadataKind.TimeSpan, MetadataJsonShape.String)]
+    [InlineData(MetadataKind.Guid, MetadataJsonShape.String)]
+    [InlineData(MetadataKind.Uri, MetadataJsonShape.String)]
+    [InlineData(MetadataKind.Array, MetadataJsonShape.Array)]
+    [InlineData(MetadataKind.Object, MetadataJsonShape.Object)]
+    public void EveryDeclaredKindShouldHaveTheExpectedJsonShape(
+        MetadataKind kind,
+        MetadataJsonShape expectedShape
+    )
+    {
+        kind.GetJsonShape().Should().Be(expectedShape);
     }
 }

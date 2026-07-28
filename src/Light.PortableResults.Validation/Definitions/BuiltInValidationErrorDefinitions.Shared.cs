@@ -86,17 +86,51 @@ public static partial class BuiltInValidationErrorDefinitions
             case TypeCode.Int64:
                 return MetadataValue.FromInt64((long) (object) value);
             case TypeCode.UInt64:
-                return MetadataValue.FromString(((ulong) (object) value).ToString(CultureInfo.InvariantCulture));
+                return MetadataValue.FromUInt64((ulong) (object) value);
             case TypeCode.Single:
-                return MetadataValue.FromDouble((float) (object) value);
+                return MetadataValue.FromSingle((float) (object) value);
             case TypeCode.Double:
                 return MetadataValue.FromDouble((double) (object) value);
             case TypeCode.Decimal:
                 return MetadataValue.FromDecimal((decimal) (object) value);
             case TypeCode.Char:
-                return MetadataValue.FromString(((char) (object) value).ToString());
+                return MetadataValue.FromChar((char) (object) value);
             case TypeCode.String:
                 return MetadataValue.FromString((string?) (object?) value);
+            case TypeCode.DateTime:
+                return MetadataValue.FromDateTime((DateTime) (object) value);
+        }
+
+        if (value is DateTimeOffset dateTimeOffset)
+        {
+            return MetadataValue.FromDateTimeOffset(dateTimeOffset);
+        }
+
+#if NET10_0_OR_GREATER
+        if (value is DateOnly dateOnly)
+        {
+            return MetadataValue.FromDateOnly(dateOnly);
+        }
+
+        if (value is TimeOnly timeOnly)
+        {
+            return MetadataValue.FromTimeOnly(timeOnly);
+        }
+#endif
+
+        if (value is TimeSpan timeSpan)
+        {
+            return MetadataValue.FromTimeSpan(timeSpan);
+        }
+
+        if (value is Guid guid)
+        {
+            return MetadataValue.FromGuid(guid);
+        }
+
+        if (value is Uri uri)
+        {
+            return MetadataValue.FromUri(uri);
         }
 
         if (value is MetadataObject metadataObject)

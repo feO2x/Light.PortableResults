@@ -10,6 +10,8 @@
       - Opt-in OpenAPI integration via IServiceCollection.AddPortableResultsOpenApi.
       - Three public OpenAPI helpers, three public attributes, and a global error-metadata registry.
       - Native AOT compatible OpenAPI support without schema-only CLR surrogate types.
+      - Scalar metadata schemas and examples now match the typed metadata vocabulary, including string-encoded
+        UInt64, float, char, duration, and URI-reference formats.
     </PackageReleaseNotes>
   </PropertyGroup>
 

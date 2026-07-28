@@ -417,6 +417,72 @@ public sealed class CloudEventsResultExtensionsTests
     }
 
     [Fact]
+    public void ToCloudEvent_ShouldResolveCoreStringAttributeFromEveryPrimitiveKind()
+    {
+        var annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        var values = new (MetadataValue Value, string Expected)[]
+        {
+            (MetadataValue.FromNull(annotation), "null"),
+            (MetadataValue.FromBoolean(true, annotation), "true"),
+            (MetadataValue.FromInt64(42, annotation), "42"),
+            (MetadataValue.FromDouble(5, annotation), "5.0"),
+            (MetadataValue.FromString("plain text", annotation), "plain text"),
+            (MetadataValue.FromDecimal(19.50m, annotation), "19.50"),
+            (MetadataValue.FromUInt64(ulong.MaxValue, annotation), "18446744073709551615"),
+            (MetadataValue.FromSingle(0.1f, annotation), "0.1"),
+            (MetadataValue.FromChar('x', annotation), "x"),
+            (
+                MetadataValue.FromDateTime(
+                    new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Utc),
+                    annotation
+                ),
+                "2026-07-26T13:45:30Z"
+            ),
+            (
+                MetadataValue.FromDateTimeOffset(
+                    new DateTimeOffset(2026, 7, 26, 13, 45, 30, TimeSpan.FromHours(2)),
+                    annotation
+                ),
+                "2026-07-26T13:45:30+02:00"
+            ),
+            (MetadataValue.FromDateOnly(new DateOnly(2026, 7, 26), annotation), "2026-07-26"),
+            (MetadataValue.FromTimeOnly(new TimeOnly(13, 45, 30), annotation), "13:45:30"),
+            (MetadataValue.FromTimeSpan(TimeSpan.FromSeconds(5), annotation), "PT5S"),
+            (
+                MetadataValue.FromGuid(
+                    new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890"),
+                    annotation
+                ),
+                "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+            ),
+            (
+                MetadataValue.FromUri(new Uri("https://example.com/items/42"), annotation),
+                "https://example.com/items/42"
+            )
+        };
+
+        foreach (var (value, expected) in values)
+        {
+            var metadata = MetadataObject.Create(
+                (
+                    "type",
+                    MetadataValue.FromString("app.success", annotation)
+                ),
+                (
+                    "source",
+                    MetadataValue.FromString("urn:test:source", annotation)
+                ),
+                ("subject", value)
+            );
+
+            var json = Result.Ok(metadata).ToCloudEvent(options: CreateWriteOptions(source: null));
+
+            using var document = JsonDocument.Parse(json);
+            document.RootElement.GetProperty("subject").GetString().Should().Be(expected);
+        }
+    }
+
+    [Fact]
     public void ToCloudEvent_ShouldWriteDecimalExtensionAttribute_AsUnquotedNumber()
     {
         var metadata = MetadataObject.Create(

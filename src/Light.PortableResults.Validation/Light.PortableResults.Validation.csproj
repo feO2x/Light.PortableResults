@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="PublishAot">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework />
+    <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
     <PublishAot>false</PublishAot>
     <Description>Framework-agnostic validation foundations for Light.PortableResults, including validation contexts, low-allocation checks, validator base classes, and validated value pipelines.</Description>
     <PackageReleaseNotes>
@@ -11,6 +12,9 @@
       - Supports validation errors that integrate with Light.PortableResults HTTP and messaging transports.
       - Validate your Microsoft.Extensions.Configuration options with Validator&lt;T>.
       - Compatible with .NET Native AOT.
+      - Built-in comparison and range metadata now preserves the typed scalar vocabulary and its canonical
+        validation-message encodings.
+      - Adds a net10.0 asset so DateOnly and TimeOnly validation boundaries retain their dedicated metadata kinds.
     </PackageReleaseNotes>
   </PropertyGroup>
 

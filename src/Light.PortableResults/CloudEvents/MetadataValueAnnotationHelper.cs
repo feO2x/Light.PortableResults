@@ -23,34 +23,22 @@ public static class MetadataValueAnnotationHelper
     /// </exception>
     public static MetadataValue WithAnnotation(MetadataValue value, MetadataValueAnnotation annotation)
     {
-        switch (value.Kind)
+        switch (value.JsonShape)
         {
-            case MetadataKind.Null:
-                return MetadataValue.FromNull(annotation);
-            case MetadataKind.Boolean:
-                value.TryGetBoolean(out var boolValue);
-                return MetadataValue.FromBoolean(boolValue, annotation);
-            case MetadataKind.Int64:
-                value.TryGetInt64(out var int64Value);
-                return MetadataValue.FromInt64(int64Value, annotation);
-            case MetadataKind.Double:
-                value.TryGetDouble(out var doubleValue);
-                return MetadataValue.FromDouble(doubleValue, annotation);
-            case MetadataKind.String:
-                value.TryGetString(out var stringValue);
-                return MetadataValue.FromString(stringValue, annotation);
-            case MetadataKind.Decimal:
-                value.TryGetDecimal(out var decimalValue);
-                return MetadataValue.FromDecimal(decimalValue, annotation);
-            case MetadataKind.Array:
+            case MetadataJsonShape.Array:
                 value.TryGetArray(out var arrayValue);
                 return MetadataValue.FromArray(WithAnnotation(arrayValue, annotation), annotation);
-            case MetadataKind.Object:
+            case MetadataJsonShape.Object:
                 value.TryGetObject(out var objectValue);
                 return MetadataValue.FromObject(WithAnnotation(objectValue, annotation), annotation);
-            default:
-                throw new ArgumentOutOfRangeException(nameof(value), value.Kind, "Unsupported metadata kind.");
+            case MetadataJsonShape.Null:
+            case MetadataJsonShape.Boolean:
+            case MetadataJsonShape.Number:
+            case MetadataJsonShape.String:
+                return value.WithAnnotation(annotation);
         }
+
+        throw new ArgumentOutOfRangeException(nameof(value), value.Kind, "Unsupported metadata kind.");
     }
 
     /// <summary>
