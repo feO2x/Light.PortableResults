@@ -1,6 +1,5 @@
 namespace Light.PortableResults.Metadata;
 
-#pragma warning disable CS8524
 /// <summary>
 /// Describes the JSON shape of a metadata kind.
 /// </summary>
