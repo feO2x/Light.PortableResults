@@ -13,6 +13,11 @@
 > reversal and the RFC 3339 trade-off it carries are argued in the Vocabulary notes; read those before
 > re-tightening the factory.
 >
+> **Zero-offset designators.** `TryGetDateTimeOffset` originally accepted only the exact text its own writer
+> produces, which rejected every `Z`-suffixed RFC 3339 timestamp - the form a wire-degraded value almost always
+> arrives in, and the one this library's own `DateTime` kind emits. The relaxation and the limit placed on it
+> are recorded in Accessors and equality.
+>
 > **Number writing.** The `Number` arm originally routed all four numeric kinds through the canonical text and
 > `WriteRawValue`, costing a string allocation and a JSON validation pass per value on `Int64` and `Decimal`,
 > where the writer's own formatting is byte-identical and allocation-free. The kind list guarding that arm was
@@ -114,6 +119,7 @@ Strictness is part of that contract, because the framework defaults are too perm
 - `Uri` accepts `UriKind.Absolute` only. `UriKind.RelativeOrAbsolute` succeeds for nearly any text, which would make `TryGetUri` return `true` for `"hello world"` and turn the accessor into a footgun for callers that probe kinds in sequence.
 - Date and time kinds parse the exact canonical format with the invariant culture and `DateTimeStyles.RoundtripKind` — never `DateTime.Parse`, which accepts `07/26/2026 13:45:30` and would resurrect inside the accessors the ambiguity this plan removes from the writers.
 - `TryGetDateTime` accepts both `DateTime` encodings (with and without the `Z`) and rejects text carrying a numeric offset. That text is the `DateTimeOffset` encoding, and resolving it into a `DateTime` would make the result depend on the reading machine's time zone.
+- `TryGetDateTimeOffset` accepts both zero-offset designators, `+00:00` and `Z`, although the writer only ever produces the former. Strictly matching the writer would defeat the purpose of the lenient path here: `Z` is what RFC 3339 emitters produce almost everywhere, including this library's own `DateTime` kind, so it is the form a degraded value most often arrives in. Text without any offset stays rejected — it is not a point in time, and resolving it against the reader's local offset would make the same text mean different instants on different hosts.
 
 Equality stays strict — kind plus payload, `Annotation` excluded. `FromGuid(g)` is not equal to `FromString(g.ToString())`; round-trip fidelity is `0054-1`'s job, not `Equals`'. Boxed kinds unbox and compare by value with the same defensive `is` pattern as the `Decimal` arm. `Uri` is a reference rather than a boxed value and must not use `Uri.Equals`, which ignores the fragment and compares hosts case-insensitively: two URIs that serialize differently would compare equal. It compares and hashes its `OriginalString` ordinally, which is exactly what is written to the wire.
 

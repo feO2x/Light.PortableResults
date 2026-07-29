@@ -523,7 +523,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
             return true;
         }
 
-        value = default;
+        value = '\0';
         return false;
     }
 
@@ -556,7 +556,12 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         return false;
     }
 
-    /// <summary>Attempts to get a date-time offset or parse its canonical RFC 3339 encoding.</summary>
+    /// <summary>
+    /// Attempts to get a date-time offset or parse its RFC 3339 encoding. Both designators for a zero offset
+    /// are accepted - the canonical <c>+00:00</c> that this library writes and the <c>Z</c> that RFC 3339
+    /// emitters commonly produce - so a value degraded to a string on the wire still reads back. Text without
+    /// any offset is rejected, because it is not a point in time.
+    /// </summary>
     public bool TryGetDateTimeOffset(out DateTimeOffset value)
     {
         if (Kind == MetadataKind.DateTimeOffset && _payload.Reference is DateTimeOffset dateTimeOffset)
@@ -572,7 +577,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
                 DateTimeStyles.RoundtripKind,
                 out value
             ) &&
-            string.Equals(FormatDateTimeOffset(value), text, StringComparison.Ordinal))
+            IsCanonicalDateTimeOffsetText(value, text))
         {
             return true;
         }
@@ -580,6 +585,15 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         value = default;
         return false;
     }
+
+    private static bool IsCanonicalDateTimeOffsetText(DateTimeOffset value, string text) =>
+        string.Equals(FormatDateTimeOffset(value), text, StringComparison.Ordinal) ||
+        // A zero offset is also written as "Z" by RFC 3339 emitters everywhere, including this library's own
+        // DateTime kind, so it is accepted although the DateTimeOffset writer never produces it. Text without
+        // any designator is still rejected: it parses against the reading machine's local offset and matches
+        // neither form.
+        (value.Offset == TimeSpan.Zero &&
+         string.Equals(FormatDateTime(value.UtcDateTime), text, StringComparison.Ordinal));
 
 #if NET10_0_OR_GREATER
     /// <summary>Attempts to get a date or parse its canonical RFC 3339 full-date encoding.</summary>
@@ -675,7 +689,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
             }
         }
 
-        value = default;
+        value = TimeSpan.Zero;
         return false;
     }
 
@@ -695,7 +709,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
             return true;
         }
 
-        value = default;
+        value = Guid.Empty;
         return false;
     }
 

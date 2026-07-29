@@ -176,6 +176,27 @@ public sealed class TypedMetadataValueTests
         MetadataValue.FromDateTime(value).ToCanonicalString().Should().Be(text);
     }
 
+    [Theory]
+    [InlineData("2026-07-26T11:45:30+00:00")]
+    [InlineData("2026-07-26T11:45:30Z")]
+    public void DateTimeOffsetAccessorShouldAcceptBothZeroOffsetDesignators(string text)
+    {
+        // Only "+00:00" is written by this library, but "Z" is what RFC 3339 emitters produce almost
+        // everywhere, so a value degraded to a string on the wire has to read back either way.
+        MetadataValue.FromString(text).TryGetDateTimeOffset(out var value).Should().BeTrue();
+
+        value.Should().Be(OffsetDateTime);
+        value.Offset.Should().Be(TimeSpan.Zero);
+    }
+
+    [Fact]
+    public void DateTimeOffsetAccessorShouldRejectTextWithoutAnOffset()
+    {
+        // Without an offset this is not a point in time. Accepting it would resolve against the reading
+        // machine's local offset, so the same text would mean different instants on different hosts.
+        MetadataValue.FromString("2026-07-26T13:45:30").TryGetDateTimeOffset(out _).Should().BeFalse();
+    }
+
     [Fact]
     public void DateTimeAccessorShouldRejectTextCarryingANumericOffset()
     {
@@ -214,10 +235,6 @@ public sealed class TypedMetadataValueTests
            .Should()
            .BeTrue();
         dateTimeOffset.Should().Be(OffsetDateTime);
-        MetadataValue.FromString("2026-07-26T11:45:30Z")
-           .TryGetDateTimeOffset(out _)
-           .Should()
-           .BeFalse();
 
         MetadataValue.FromString("2026-07-26").TryGetDateOnly(out var dateOnly).Should().BeTrue();
         dateOnly.Should().Be(new DateOnly(2026, 7, 26));
