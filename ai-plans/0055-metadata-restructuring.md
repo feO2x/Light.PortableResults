@@ -1,35 +1,5 @@
 # Typed Metadata Kinds
 
-> **AMENDED** after implementation, during the review of branch `54-metadatakind-restructuring`. The decisions
-> recorded below were revised because they specified behavior that turned out to be wrong. Remaining review
-> findings are not yet reflected here.
->
-> **`DateTime` and `DateTimeKind.Unspecified`.** `FromDateTime` originally threw for `Unspecified`. Combined
-> with the criterion routing the ten BCL types to the typed factories, that turned the kind of every
-> `new DateTime(...)` literal into an exception in `CreateMetadataValue`, `ValidationErrorMessageFormatting`,
-> and OpenAPI example generation - a validation comparison against an `Unspecified` boundary threw instead of
-> producing a validation error. Changed: the `DateTime` row of the vocabulary table, its notes in Vocabulary,
-> the `TryGetDateTime` strictness rule in Accessors and equality, and one added acceptance criterion. The
-> reversal and the RFC 3339 trade-off it carries are argued in the Vocabulary notes; read those before
-> re-tightening the factory.
->
-> **Zero-offset designators.** `TryGetDateTimeOffset` originally accepted only the exact text its own writer
-> produces, which rejected every `Z`-suffixed RFC 3339 timestamp - the form a wire-degraded value almost always
-> arrives in, and the one this library's own `DateTime` kind emits. The relaxation and the limit placed on it
-> are recorded in Accessors and equality.
->
-> **Number writing.** The `Number` arm originally routed all four numeric kinds through the canonical text and
-> `WriteRawValue`, costing a string allocation and a JSON validation pass per value on `Int64` and `Decimal`,
-> where the writer's own formatting is byte-identical and allocation-free. The kind list guarding that arm was
-> also the last dispatch in the chain that was not compiler-checked. Both are addressed by the two new bullets
-> in Dispatch safety and the `MetadataNumberEncoding` classification they introduce.
->
-> **CloudEvents core string attributes and `Null`.** The criterion below originally required a value of *any*
-> primitive kind to resolve as a core string attribute. `Null` is a primitive kind whose canonical text is
-> `"null"`, so the letter of that criterion made an explicitly null attribute resolve to the four-character
-> string - a `source` of `"null"` passed the required-attribute check and shipped an invalid event. The
-> criterion now excludes `Null`, restoring the pre-plan behavior of treating it as absent.
-
 ## Rationale
 
 `MetadataKind` covers only the JSON-shaped types. Every other .NET value reaches metadata through the `IFormattable` fallback in `BuiltInValidationErrorDefinitions.CreateMetadataValue`, producing non-interoperable text: a `DateTime` boundary emits `07/26/2026 13:45:30` instead of RFC 3339, a `TimeSpan` emits `00:00:05` instead of an ISO 8601 duration, and a `TimeOnly` silently drops seconds. These values appear in `problem+json` bodies, so the published OpenAPI contract disagrees with the runtime payload. In-process consumers are equally underserved: a `Guid` or `DateTimeOffset` stored as text costs an allocation on write and a parse on every read, in a library whose primary claim is low allocation.
@@ -44,14 +14,13 @@ This plan extends the primitive range that `0052` reserved with kinds for the co
 - [x] Each `TryGet*` additionally converts from `MetadataKind.String` when the string holds the kind's canonical encoding and rejects any other text, so consumers work identically on in-process and wire-degraded values without accepting input the writers never produce.
 - [x] Every kind serializes into JSON bodies using the encoding in the vocabulary table; in particular `TimeOnly` preserves seconds, `TimeSpan` emits an ISO 8601 duration, `0.1f` emits `0.1`, and a whole-number `Double` or `Single` emits a trailing `.0` (`5.0`, not `5`).
 - [x] Generated OpenAPI schemas and examples match the JSON encoding of every kind, asserted against the vocabulary table: `ulong` is a string, `TimeSpan` is `format: duration` rather than `time`, and `char` and `Uri` no longer degrade to a schema without a type.
-- [x] HTTP header values, CloudEvents core string attributes, and validation error message text use the same canonical encodings: header output is unquoted for every primitive kind including plain strings, and a value of any primitive kind except `Null` resolves as a core string attribute. `Null` resolves to no attribute at all, as it did before this plan.
+- [x] HTTP header values, CloudEvents core string attributes, and validation error message text use the same canonical encodings: header output is unquoted for every primitive kind including plain strings, and a value of any primitive kind resolves as a core string attribute.
 - [x] The JSON shape of a kind (`Null`, `Boolean`, `Number`, `String`, `Array`, `Object`) is publicly derivable from `MetadataKind` alone.
 - [x] Every `switch` over `MetadataKind` inside `MetadataValue` lists all members without a discard arm, so declaring a new member fails the Release build (CS8509 with `TreatWarningsAsErrors`) until every switch is updated.
 - [x] `MetadataValueAnnotationHelper.WithAnnotation` preserves the value of every kind; annotation constraints for arrays and objects are still enforced.
 - [x] Equality and hashing cover all kinds: values of different kinds are never equal, boxed kinds compare by value, `Uri` values compare by ordinal `OriginalString`, `Annotation` stays excluded, and a test stores every kind in a `MetadataObject` and reads it back by key.
 - [x] Serialized output for all previously existing kinds is byte-identical to today, apart from the trailing `.0` for whole-number doubles.
 - [x] `CreateMetadataValue` routes the ten BCL types of the vocabulary table to the typed factories; the `problem+json` OpenAPI conformance test from `0052` passes unchanged, and an equivalent test covers a `DateTime` or `TimeSpan` boundary.
-- [x] A `DateTime` of any `DateTimeKind` reaches metadata without throwing, keeps its kind through storage and reading, and renders through one encoding at every site. A validation comparison against a `DateTimeKind.Unspecified` boundary produces a validation error, never an exception.
 - [x] The core project builds for `netstandard2.0` and `net10.0` in Release with warnings as errors, and the only public API difference between the targets is the `DateOnly`/`TimeOnly` factories and accessors.
 - [x] Test code coverage stays above 95%.
 
@@ -70,7 +39,7 @@ Members are named after their `System.*` type, as the existing ones are (`Int64`
 | `UInt64` = 6 | `ulong` | inline | decimal digits as JSON **string** | `string`, `uint64` |
 | `Single` = 7 | `float` | inline, widened `double` | shortest round-trippable number | `number`, `float` |
 | `Char` = 8 | `char` | inline | single-character string | `string`, `char` |
-| `DateTime` = 9 | `DateTime` | inline `ToBinary()` | RFC 3339 date-time with `Z`, or ISO 8601 local time without a designator when the kind is `Unspecified` | `string`, `date-time` |
+| `DateTime` = 9 | `DateTime` | inline UTC ticks | RFC 3339 date-time, `Z` suffix | `string`, `date-time` |
 | `DateTimeOffset` = 10 | `DateTimeOffset` | boxed | RFC 3339 date-time with offset | `string`, `date-time` |
 | `DateOnly` = 11 | `DateOnly` | inline day number | RFC 3339 full-date | `string`, `date` |
 | `TimeOnly` = 12 | `TimeOnly` | inline ticks | RFC 3339 full-time | `string`, `time` |
@@ -84,9 +53,7 @@ The schema column is normative: `PortableOpenApiSchemaTypeMapper` and the source
 - `Uri` maps to `uri-reference` rather than `uri` because the schema is per CLR type while absoluteness is a per-value property.
 - `Single` is widened with a plain `(double)` cast at construction and narrowed back with `(float)` before formatting; the float → double → float round trip is lossless, so `0.1f` still emits `0.1` at no construction cost. The consequence is that `TryGetDouble` on a `Single` yields the widened value (`0.10000000149011612` for `0.1f`), not the double nearest `0.1`.
 - The existing `Double` kind gains a canonical rule shared with `Single`: when the shortest round-trippable text contains neither a fraction nor an exponent, `.0` is appended (via an integral check and `WriteRawValue`), so a bare `Double` token never reads back as `Int64`. `Decimal` is deliberately excluded from this rule: `5m` has scale 0 and must keep emitting `5`.
-- `DateTime` and `DateTimeOffset` are separate kinds because the common UTC case then stores inline and avoids the boxing an offset requires. `FromDateTime` converts `Local` to UTC — a local wall clock is meaningless once it leaves the process — and accepts `DateTimeKind.Unspecified` as it is. Rejecting `Unspecified` is not an option: it is what every `new DateTime(...)` literal and every zone-less `DateTime.Parse` produces, so it is the common case for a validation boundary, and throwing turns a validation failure into an exception in `CreateMetadataValue`, `ValidationErrorMessageFormatting`, and OpenAPI example generation alike.
-- Because the kind must survive, the payload stores `DateTime.ToBinary()` rather than raw ticks: it packs the kind into the two spare high bits of the tick count, in the same `Int64` slot and with no loss (for `Utc` and `Unspecified` it is a bit-exact copy of the internal state). Only `Utc` and `Unspecified` are ever stored, so decoding is deterministic; `FromBinary` resolves a `Local` payload against the reading machine's time zone, so a `Local` result is treated as a corrupt payload alongside the out-of-range case.
-- An `Unspecified` value renders without a designator (`2026-07-26T13:45:30`). That is valid ISO 8601 local time but **not** RFC 3339, which makes the offset mandatory, so it does not satisfy the `format: date-time` that the schema mapper emits for `System.DateTime`. This is accepted deliberately: the alternative is inventing a `Z` the caller never asserted, which is exactly the silent-wrong-data failure mode this plan exists to remove. The one encoding is used everywhere — JSON bodies, headers, CloudEvents attributes, message text, OpenAPI examples — so the document never disagrees with the payload. Steering callers toward `Utc` at API boundaries belongs in an analyzer diagnostic, not a runtime throw.
+- `DateTime` and `DateTimeOffset` are separate kinds because the common UTC case then stores inline ticks and avoids the boxing an offset requires. `FromDateTime` converts `Local` to UTC and throws for `DateTimeKind.Unspecified`.
 - `DateTimeOffset` boxes like `Decimal` — see `MetadataValue.FromDecimal` for the rationale. `FromUri(null)` returns `Null`, mirroring `FromString`.
 
 ### Payload storage
@@ -101,9 +68,7 @@ While editing the struct, replace `record struct` with a plain `readonly struct`
 
 `0052` documented that adding a kind breaks nothing at compile time and corrupts silently. This plan removes that hazard structurally:
 
-- **Derived shape:** `GetJsonShape()` is an extension method on `MetadataKind` next to `IsPrimitive`, implemented as an exhaustive switch expression. The shape is a function of the kind alone, and the callers that need it most — the schema mapper, the header conversion service — hold a kind rather than a value; `MetadataValue` exposes a forwarding property. A lookup table is deliberately not used: it would map an unlisted kind to shape `0` silently, which is the failure mode this section exists to remove, and the switch is what the JIT turns into a jump table anyway. The JSON writers switch on the six shapes.
-- **Derived number encoding:** the `Number` arm needs to know which primitive overload to write a value with, which the shape alone does not say. `GetNumberEncoding()` sits next to `GetJsonShape()` as a second exhaustive switch expression over `MetadataKind`, returning `Int64`/`Double`/`Single`/`Decimal` or `None`. Re-deriving the shape inside the arm would be circular, and a `switch` *statement* over the kind in the writer would compile silently, so the classification has to be a value-returning switch to be checked at all — the enum is what buys the diagnostic. Both classifications then fail the Release build together when a kind is added, and a test pins them against each other so a `Number` shape without an encoding cannot ship.
-- **Native number writing:** only `Double` and `Single` take the canonical-text `WriteRawValue` path, because only they carry the trailing `.0`. `Int64` and `Decimal` use `Utf8JsonWriter`'s own number formatting, which is byte-identical and allocation-free; routing them through the formatter costs a string allocation and a validation pass per value on the most common metadata kind in the library. The raw path skips input validation: the text comes from our own formatter and non-finite values are rejected at construction.
+- **Derived shape:** `GetJsonShape()` is an extension method on `MetadataKind` next to `IsPrimitive`, implemented as an exhaustive switch expression. The shape is a function of the kind alone, and the callers that need it most — the schema mapper, the header conversion service — hold a kind rather than a value; `MetadataValue` exposes a forwarding property. A lookup table is deliberately not used: it would map an unlisted kind to shape `0` silently, which is the failure mode this section exists to remove, and the switch is what the JIT turns into a jump table anyway. The JSON writers switch on the six shapes; the `Number` arm dispatches over `Int64`/`Double`/`Single`/`Decimal` only.
 - **One formatter:** a single canonical-text method (with a `TryFormat`-style span overload) is the only place that knows how string-shaped kinds render. JSON string values, `DefaultHttpHeaderConversionService`'s fallback (currently `ToString()`, which wrongly quotes strings), and `GetStringAttribute` all call it, replacing the latter's special-cased decimal branch. Adding a kind touches this one site instead of eight. `ToString()` becomes debug-only output.
 - **Payload-preserving constructor:** `WithAnnotation`'s per-kind switch exists only because no constructor copies an existing payload. An internal `MetadataValue(Kind, payload, annotation)` path reduces the primitive case to one line; `Array`/`Object` still recurse to rewrite children and revalidate annotation constraints.
 - **Exhaustive switches:** the remaining kind switches (`Equals`, `GetHashCode`, `ToString`, the formatter) become switch expressions listing every member with no discard arm.
@@ -118,8 +83,6 @@ Strictness is part of that contract, because the framework defaults are too perm
 
 - `Uri` accepts `UriKind.Absolute` only. `UriKind.RelativeOrAbsolute` succeeds for nearly any text, which would make `TryGetUri` return `true` for `"hello world"` and turn the accessor into a footgun for callers that probe kinds in sequence.
 - Date and time kinds parse the exact canonical format with the invariant culture and `DateTimeStyles.RoundtripKind` — never `DateTime.Parse`, which accepts `07/26/2026 13:45:30` and would resurrect inside the accessors the ambiguity this plan removes from the writers.
-- `TryGetDateTime` accepts both `DateTime` encodings (with and without the `Z`) and rejects text carrying a numeric offset. That text is the `DateTimeOffset` encoding, and resolving it into a `DateTime` would make the result depend on the reading machine's time zone.
-- `TryGetDateTimeOffset` accepts both zero-offset designators, `+00:00` and `Z`, although the writer only ever produces the former. Strictly matching the writer would defeat the purpose of the lenient path here: `Z` is what RFC 3339 emitters produce almost everywhere, including this library's own `DateTime` kind, so it is the form a degraded value most often arrives in. Text without any offset stays rejected — it is not a point in time, and resolving it against the reader's local offset would make the same text mean different instants on different hosts.
 
 Equality stays strict — kind plus payload, `Annotation` excluded. `FromGuid(g)` is not equal to `FromString(g.ToString())`; round-trip fidelity is `0054-1`'s job, not `Equals`'. Boxed kinds unbox and compare by value with the same defensive `is` pattern as the `Decimal` arm. `Uri` is a reference rather than a boxed value and must not use `Uri.Equals`, which ignores the fragment and compares hosts case-insensitively: two URIs that serialize differently would compare equal. It compares and hashes its `OriginalString` ordinally, which is exactly what is written to the wire.
 
