@@ -272,6 +272,37 @@ public sealed class TypedMetadataValueTests
         }
     }
 
+    // Int64 and Decimal are written through the writer's own number formatting while Double and Single go
+    // through the canonical text so that whole numbers keep their trailing ".0". These are the values where
+    // the two paths could diverge - exponent forms, negative zero, and the extremes of each range.
+    [Fact]
+    public void NumericKindsShouldSerializeIdenticallyAcrossTheirRange()
+    {
+        var values = new (MetadataValue Value, string Json)[]
+        {
+            (MetadataValue.FromInt64(0), "0"),
+            (MetadataValue.FromInt64(long.MinValue), "-9223372036854775808"),
+            (MetadataValue.FromInt64(long.MaxValue), "9223372036854775807"),
+            (MetadataValue.FromDecimal(19.50m), "19.50"),
+            (MetadataValue.FromDecimal(-0.0m), "0.0"),
+            (MetadataValue.FromDecimal(0.0000000001m), "0.0000000001"),
+            (MetadataValue.FromDecimal(decimal.MaxValue), "79228162514264337593543950335"),
+            (MetadataValue.FromDecimal(decimal.MinValue), "-79228162514264337593543950335"),
+            (MetadataValue.FromDouble(0.1), "0.1"),
+            (MetadataValue.FromDouble(-0.0), "-0.0"),
+            (MetadataValue.FromDouble(1e21), "1E+21"),
+            (MetadataValue.FromDouble(5e-324), "5E-324"),
+            (MetadataValue.FromDouble(double.MaxValue), "1.7976931348623157E+308"),
+            (MetadataValue.FromSingle(1e20f), "1E+20"),
+            (MetadataValue.FromSingle(float.Epsilon), "1E-45")
+        };
+
+        foreach (var (value, expectedJson) in values)
+        {
+            Serialize(value).Should().Be(expectedJson, "the {0} number encoding is normative", value.Kind);
+        }
+    }
+
     [Fact]
     public void SingleShouldWidenToDoubleWithoutChangingItsOwnAccessor()
     {

@@ -1,8 +1,8 @@
 # Typed Metadata Kinds
 
-> **AMENDED** after implementation, during the review of branch `54-metadatakind-restructuring`. Two decisions
-> below were reversed because they specified behavior that turned out to be wrong. Remaining review findings
-> are not yet reflected here.
+> **AMENDED** after implementation, during the review of branch `54-metadatakind-restructuring`. The decisions
+> recorded below were revised because they specified behavior that turned out to be wrong. Remaining review
+> findings are not yet reflected here.
 >
 > **`DateTime` and `DateTimeKind.Unspecified`.** `FromDateTime` originally threw for `Unspecified`. Combined
 > with the criterion routing the ten BCL types to the typed factories, that turned the kind of every
@@ -12,6 +12,12 @@
 > the `TryGetDateTime` strictness rule in Accessors and equality, and one added acceptance criterion. The
 > reversal and the RFC 3339 trade-off it carries are argued in the Vocabulary notes; read those before
 > re-tightening the factory.
+>
+> **Number writing.** The `Number` arm originally routed all four numeric kinds through the canonical text and
+> `WriteRawValue`, costing a string allocation and a JSON validation pass per value on `Int64` and `Decimal`,
+> where the writer's own formatting is byte-identical and allocation-free. The kind list guarding that arm was
+> also the last dispatch in the chain that was not compiler-checked. Both are addressed by the two new bullets
+> in Dispatch safety and the `MetadataNumberEncoding` classification they introduce.
 >
 > **CloudEvents core string attributes and `Null`.** The criterion below originally required a value of *any*
 > primitive kind to resolve as a core string attribute. `Null` is a primitive kind whose canonical text is
@@ -90,7 +96,9 @@ While editing the struct, replace `record struct` with a plain `readonly struct`
 
 `0052` documented that adding a kind breaks nothing at compile time and corrupts silently. This plan removes that hazard structurally:
 
-- **Derived shape:** `GetJsonShape()` is an extension method on `MetadataKind` next to `IsPrimitive`, implemented as an exhaustive switch expression. The shape is a function of the kind alone, and the callers that need it most — the schema mapper, the header conversion service — hold a kind rather than a value; `MetadataValue` exposes a forwarding property. A lookup table is deliberately not used: it would map an unlisted kind to shape `0` silently, which is the failure mode this section exists to remove, and the switch is what the JIT turns into a jump table anyway. The JSON writers switch on the six shapes; the `Number` arm dispatches over `Int64`/`Double`/`Single`/`Decimal` only.
+- **Derived shape:** `GetJsonShape()` is an extension method on `MetadataKind` next to `IsPrimitive`, implemented as an exhaustive switch expression. The shape is a function of the kind alone, and the callers that need it most — the schema mapper, the header conversion service — hold a kind rather than a value; `MetadataValue` exposes a forwarding property. A lookup table is deliberately not used: it would map an unlisted kind to shape `0` silently, which is the failure mode this section exists to remove, and the switch is what the JIT turns into a jump table anyway. The JSON writers switch on the six shapes.
+- **Derived number encoding:** the `Number` arm needs to know which primitive overload to write a value with, which the shape alone does not say. `GetNumberEncoding()` sits next to `GetJsonShape()` as a second exhaustive switch expression over `MetadataKind`, returning `Int64`/`Double`/`Single`/`Decimal` or `None`. Re-deriving the shape inside the arm would be circular, and a `switch` *statement* over the kind in the writer would compile silently, so the classification has to be a value-returning switch to be checked at all — the enum is what buys the diagnostic. Both classifications then fail the Release build together when a kind is added, and a test pins them against each other so a `Number` shape without an encoding cannot ship.
+- **Native number writing:** only `Double` and `Single` take the canonical-text `WriteRawValue` path, because only they carry the trailing `.0`. `Int64` and `Decimal` use `Utf8JsonWriter`'s own number formatting, which is byte-identical and allocation-free; routing them through the formatter costs a string allocation and a validation pass per value on the most common metadata kind in the library. The raw path skips input validation: the text comes from our own formatter and non-finite values are rejected at construction.
 - **One formatter:** a single canonical-text method (with a `TryFormat`-style span overload) is the only place that knows how string-shaped kinds render. JSON string values, `DefaultHttpHeaderConversionService`'s fallback (currently `ToString()`, which wrongly quotes strings), and `GetStringAttribute` all call it, replacing the latter's special-cased decimal branch. Adding a kind touches this one site instead of eight. `ToString()` becomes debug-only output.
 - **Payload-preserving constructor:** `WithAnnotation`'s per-kind switch exists only because no constructor copies an existing payload. An internal `MetadataValue(Kind, payload, annotation)` path reduces the primitive case to one line; `Array`/`Object` still recurse to rewrite children and revalidate annotation constraints.
 - **Exhaustive switches:** the remaining kind switches (`Equals`, `GetHashCode`, `ToString`, the formatter) become switch expressions listing every member with no discard arm.

@@ -99,4 +99,36 @@ public sealed class MetadataKindTests
     {
         kind.GetJsonShape().Should().Be(expectedShape);
     }
+
+    // Every kind with the Number shape must name the primitive it is written from, and no other kind may.
+    // A mismatch between the two classifications would reach the JSON writer as an unwritable number.
+    [Theory]
+    [InlineData(MetadataKind.Null, MetadataNumberEncoding.None)]
+    [InlineData(MetadataKind.Boolean, MetadataNumberEncoding.None)]
+    [InlineData(MetadataKind.Int64, MetadataNumberEncoding.Int64)]
+    [InlineData(MetadataKind.Double, MetadataNumberEncoding.Double)]
+    [InlineData(MetadataKind.String, MetadataNumberEncoding.None)]
+    [InlineData(MetadataKind.Decimal, MetadataNumberEncoding.Decimal)]
+    [InlineData(MetadataKind.UInt64, MetadataNumberEncoding.None)]
+    [InlineData(MetadataKind.Single, MetadataNumberEncoding.Single)]
+    [InlineData(MetadataKind.Char, MetadataNumberEncoding.None)]
+    [InlineData(MetadataKind.DateTime, MetadataNumberEncoding.None)]
+    [InlineData(MetadataKind.DateTimeOffset, MetadataNumberEncoding.None)]
+    [InlineData(MetadataKind.DateOnly, MetadataNumberEncoding.None)]
+    [InlineData(MetadataKind.TimeOnly, MetadataNumberEncoding.None)]
+    [InlineData(MetadataKind.TimeSpan, MetadataNumberEncoding.None)]
+    [InlineData(MetadataKind.Guid, MetadataNumberEncoding.None)]
+    [InlineData(MetadataKind.Uri, MetadataNumberEncoding.None)]
+    [InlineData(MetadataKind.Array, MetadataNumberEncoding.None)]
+    [InlineData(MetadataKind.Object, MetadataNumberEncoding.None)]
+    public void EveryDeclaredKindShouldHaveTheExpectedNumberEncoding(
+        MetadataKind kind,
+        MetadataNumberEncoding expectedEncoding
+    )
+    {
+        kind.GetNumberEncoding().Should().Be(expectedEncoding);
+
+        var hasNumberShape = kind.GetJsonShape() == MetadataJsonShape.Number;
+        (expectedEncoding != MetadataNumberEncoding.None).Should().Be(hasNumberShape);
+    }
 }

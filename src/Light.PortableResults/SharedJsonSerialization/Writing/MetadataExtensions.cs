@@ -81,19 +81,31 @@ public static class MetadataExtensions
 
     private static void WriteNumberValue(Utf8JsonWriter writer, MetadataValue value)
     {
-        if (value.Kind is not MetadataKind.Int64 and
-            not MetadataKind.Double and
-            not MetadataKind.Decimal and
-            not MetadataKind.Single)
+        switch (value.Kind.GetNumberEncoding())
         {
-            throw CreateNonNumericKindException(value.Kind);
+            case MetadataNumberEncoding.Int64:
+                value.TryGetInt64(out var int64MetadataValue);
+                writer.WriteNumberValue(int64MetadataValue);
+                return;
+            case MetadataNumberEncoding.Decimal:
+                value.TryGetDecimal(out var decimalMetadataValue);
+                writer.WriteNumberValue(decimalMetadataValue);
+                return;
+            case MetadataNumberEncoding.Double:
+            case MetadataNumberEncoding.Single:
+                // These are the only kinds whose JSON text is not what the writer's own number formatting
+                // produces: a whole-number Double or Single carries a trailing ".0" so that it does not read
+                // back as an Int64. The canonical text is therefore built and written raw. Validation is
+                // skipped because the text comes from our own formatter and non-finite values are rejected at
+                // construction, so it is always a well-formed JSON number.
+                writer.WriteRawValue(value.ToCanonicalString(), skipInputValidation: true);
+                return;
+            case MetadataNumberEncoding.None:
+                throw new InvalidOperationException(
+                    $"Metadata kind '{value.Kind}' does not have a JSON number shape."
+                );
         }
-
-        writer.WriteRawValue(value.ToCanonicalString());
     }
-
-    private static InvalidOperationException CreateNonNumericKindException(MetadataKind kind) =>
-        new ($"Metadata kind '{kind}' does not have a JSON number shape.");
 
     /// <summary>
     /// Writes the JSON representation for the specified metadata array.
