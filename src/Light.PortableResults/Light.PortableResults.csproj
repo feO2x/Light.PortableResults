@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="PublishAot">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework />
+    <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
     <PublishAot>false</PublishAot>
     <Description>The Light.PortableResults package implements the core functionality: Results, Errors, Metadata, Functional Extensions, and serialization support for various formats like HTTP and CloudEvents. Compatible with Native AOT. Check out the integration packages Light.PortableResults.AspNetCore.MinimalApis or Light.PortableResults.AspNetCore.Mvc.</Description>
     <PackageReleaseNotes>
@@ -9,10 +10,18 @@
 
       - Contains core functionality: Results, Errors, Metadata, Functional Extensions, and JSON serialization support for HTTP and CloudEvents.
       - Compatible with .NET Native AOT.
+      - Adds native metadata kinds for UInt64, Single, Char, DateTime, DateTimeOffset, DateOnly, TimeOnly,
+        TimeSpan, Guid, and Uri, with canonical JSON, HTTP header, and CloudEvents string encodings.
+      - Adds a net10.0 asset with DateOnly and TimeOnly metadata APIs while retaining netstandard2.0.
 
       Breaking changes
       ---------------------------------
 
+      - Values of the ten newly typed BCL metadata types no longer flatten to MetadataKind.String.
+        Their JSON representations now use the canonical encoding of their dedicated kind.
+      - Whole-number Double and Single metadata values serialize with a trailing .0.
+      - Default HTTP header conversion no longer surrounds string metadata values with quotes.
+      - Float metadata values now use MetadataKind.Single rather than MetadataKind.Double.
       - Decimal metadata values now have the dedicated kind MetadataKind.Decimal instead of MetadataKind.String,
         and they are serialized as JSON numbers instead of quoted strings. This aligns the response bodies with
         the generated OpenAPI documents, which have always described decimals as numbers.
@@ -20,7 +29,7 @@
       - Decimal metadata values that differ only in trailing zeros (19.50 and 19.5) now compare equal, because
         equality is delegated to decimal. The scale is still preserved during serialization.
       - The numeric values of MetadataKind.Array and MetadataKind.Object changed to 200 and 201 so that the
-        values 6 to 199 are reserved for future primitive kinds. This only affects callers that persisted or
+        values 16 to 199 are reserved for future primitive kinds. This only affects callers that persisted or
         transmitted the numeric value of MetadataKind.
     </PackageReleaseNotes>
   </PropertyGroup>

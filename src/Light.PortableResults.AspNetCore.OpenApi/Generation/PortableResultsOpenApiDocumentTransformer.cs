@@ -11,6 +11,7 @@ using Light.PortableResults.AspNetCore.OpenApi.ErrorContracts;
 using Light.PortableResults.AspNetCore.OpenApi.Schemas;
 using Light.PortableResults.Http;
 using Light.PortableResults.Http.Writing;
+using Light.PortableResults.Metadata;
 using Light.PortableResults.SharedJsonSerialization;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.OpenApi;
@@ -256,7 +257,8 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         };
 
         if (attribute is ProducesPortableValidationProblemAttribute validationAttribute &&
-            ResolveValidationProblemFormat(validationAttribute) == ValidationProblemSerializationFormat.AspNetCoreCompatible)
+            ResolveValidationProblemFormat(validationAttribute) ==
+            ValidationProblemSerializationFormat.AspNetCoreCompatible)
         {
             AddAspNetCoreCompatibleValidationExample(example, validationAttribute.ErrorExamples!);
         }
@@ -382,28 +384,47 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
 
     private static JsonNode? CreateJsonValue(object? value)
     {
-        return value switch
+        var metadataValue = value switch
         {
-            null => null,
-            string stringValue => JsonValue.Create(stringValue),
-            bool boolValue => JsonValue.Create(boolValue),
-            byte byteValue => JsonValue.Create(byteValue),
-            sbyte sbyteValue => JsonValue.Create(sbyteValue),
-            short shortValue => JsonValue.Create(shortValue),
-            ushort ushortValue => JsonValue.Create(ushortValue),
-            int intValue => JsonValue.Create(intValue),
-            uint uintValue => JsonValue.Create(uintValue),
-            long longValue => JsonValue.Create(longValue),
-            ulong ulongValue => JsonValue.Create(ulongValue),
-            float floatValue => JsonValue.Create(floatValue),
-            double doubleValue => JsonValue.Create(doubleValue),
-            decimal decimalValue => JsonValue.Create(decimalValue),
-            DateTime dateTimeValue => JsonValue.Create(dateTimeValue),
-            DateTimeOffset dateTimeOffsetValue => JsonValue.Create(dateTimeOffsetValue),
-            Guid guidValue => JsonValue.Create(guidValue),
-            Enum enumValue => JsonValue.Create(Convert.ToInt64(enumValue, CultureInfo.InvariantCulture)),
-            _ => JsonValue.Create(value.ToString())
+            null => MetadataValue.Null,
+            string stringValue => MetadataValue.FromString(stringValue),
+            bool boolValue => MetadataValue.FromBoolean(boolValue),
+            byte byteValue => MetadataValue.FromInt64(byteValue),
+            sbyte sbyteValue => MetadataValue.FromInt64(sbyteValue),
+            short shortValue => MetadataValue.FromInt64(shortValue),
+            ushort ushortValue => MetadataValue.FromInt64(ushortValue),
+            int intValue => MetadataValue.FromInt64(intValue),
+            uint uintValue => MetadataValue.FromInt64(uintValue),
+            long longValue => MetadataValue.FromInt64(longValue),
+            ulong ulongValue => MetadataValue.FromUInt64(ulongValue),
+            float floatValue => MetadataValue.FromSingle(floatValue),
+            double doubleValue => MetadataValue.FromDouble(doubleValue),
+            decimal decimalValue => MetadataValue.FromDecimal(decimalValue),
+            char charValue => MetadataValue.FromChar(charValue),
+            DateTime dateTimeValue => MetadataValue.FromDateTime(dateTimeValue),
+            DateTimeOffset dateTimeOffsetValue => MetadataValue.FromDateTimeOffset(dateTimeOffsetValue),
+            DateOnly dateOnlyValue => MetadataValue.FromDateOnly(dateOnlyValue),
+            TimeOnly timeOnlyValue => MetadataValue.FromTimeOnly(timeOnlyValue),
+            TimeSpan timeSpanValue => MetadataValue.FromTimeSpan(timeSpanValue),
+            Guid guidValue => MetadataValue.FromGuid(guidValue),
+            Uri uriValue => MetadataValue.FromUri(uriValue),
+            Enum enumValue => MetadataValue.FromInt64(Convert.ToInt64(enumValue, CultureInfo.InvariantCulture)),
+            _ => MetadataValue.FromString(value.ToString())
         };
+
+#pragma warning disable CS8524 // Unnamed enum values intentionally throw SwitchExpressionException.
+        return metadataValue.JsonShape switch
+        {
+            MetadataJsonShape.Null => null,
+            MetadataJsonShape.Boolean => JsonValue.Create(
+                metadataValue.TryGetBoolean(out var booleanValue) && booleanValue
+            ),
+            MetadataJsonShape.Number => JsonNode.Parse(metadataValue.ToCanonicalString()),
+            MetadataJsonShape.String => JsonValue.Create(metadataValue.ToCanonicalString()),
+            MetadataJsonShape.Array => throw new InvalidOperationException("OpenAPI metadata examples must be scalar."),
+            MetadataJsonShape.Object => throw new InvalidOperationException("OpenAPI metadata examples must be scalar.")
+        };
+#pragma warning restore CS8524
     }
 
     private async Task<IOpenApiSchema> CreateContributingSchemaAsync(
@@ -692,7 +713,9 @@ public sealed class PortableResultsOpenApiDocumentTransformer : IOpenApiDocument
         {
             var fallbackSchema = PortableResultsOpenApiSchemas.CreateSchemaReference(document, itemBaseSchemaId);
             var anyOfSchemas = new List<IOpenApiSchema>(documentedVariants.Count + 1);
-            anyOfSchemas.AddRange(documentedVariants.Select(static variant => (IOpenApiSchema) variant.SchemaReference));
+            anyOfSchemas.AddRange(
+                documentedVariants.Select(static variant => (IOpenApiSchema) variant.SchemaReference)
+            );
             anyOfSchemas.Add(fallbackSchema);
 
             return new OpenApiSchema

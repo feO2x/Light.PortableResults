@@ -1,4 +1,4 @@
-using System;
+using System.Runtime.CompilerServices;
 using FluentAssertions;
 using Light.PortableResults.CloudEvents;
 using Light.PortableResults.Metadata;
@@ -151,7 +151,7 @@ public sealed class MetadataValueAnnotationHelperTests
     }
 
     [Fact]
-    public void WithAnnotation_WithUnsupportedMetadataKind_ShouldThrowArgumentOutOfRangeException()
+    public void WithAnnotation_WithUnsupportedMetadataKind_ShouldThrowSwitchExpressionException()
     {
         var invalidValue = MetadataValueTestFactory.CreateWithUndeclaredKind();
 
@@ -160,8 +160,7 @@ public sealed class MetadataValueAnnotationHelperTests
             MetadataValueAnnotation.SerializeInCloudEventsData
         );
 
-        act.Should().Throw<ArgumentOutOfRangeException>()
-           .Which.ParamName.Should().Be("value");
+        act.Should().Throw<SwitchExpressionException>();
     }
 
 }

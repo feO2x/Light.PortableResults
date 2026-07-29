@@ -590,7 +590,11 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
                    .WithName("ConflictExample")
                    .ProducesPortableProblem(
                         StatusCodes.Status409Conflict,
-                        configure: builder => builder.WithErrorExample("VersionMismatch", target: null, "version mismatch")
+                        configure: builder => builder.WithErrorExample(
+                            "VersionMismatch",
+                            target: null,
+                            "version mismatch"
+                        )
                     );
             }
         );
@@ -609,6 +613,93 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         example["status"]!.GetValue<int>().Should().Be(StatusCodes.Status409Conflict);
         var errors = example["errors"].Should().BeOfType<JsonArray>().Subject;
         errors[0]!["category"]!.ToString().Should().Be(nameof(ErrorCategory.Conflict));
+    }
+
+    [Fact]
+    public async Task Transformer_ShouldEncodeExampleMetadataAccordingToTheTypedVocabulary()
+    {
+        var guid = new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
+        await using var app = CreateMinimalApiApp(
+            configureEndpoints: webApplication =>
+            {
+                webApplication
+                   .MapGet("/minimal/problems/vocabulary-example", static () => TypedResults.Problem())
+                   .WithName("VocabularyExample")
+                   .ProducesPortableProblem(
+                        StatusCodes.Status400BadRequest,
+                        configure: builder => builder.WithErrorExample(
+                            "Vocabulary",
+                            target: null,
+                            message: null,
+                            new Dictionary<string, object?>(StringComparer.Ordinal)
+                            {
+                                ["uint64"] = ulong.MaxValue,
+                                ["single"] = 0.1f,
+                                ["double"] = 5.0,
+                                ["char"] = 'x',
+                                ["dateTime"] = new DateTime(
+                                    2026,
+                                    7,
+                                    26,
+                                    13,
+                                    45,
+                                    30,
+                                    DateTimeKind.Utc
+                                ),
+                                ["dateTimeUnspecified"] = new DateTime(
+                                    2026,
+                                    7,
+                                    26,
+                                    13,
+                                    45,
+                                    30,
+                                    DateTimeKind.Unspecified
+                                ),
+                                ["dateTimeOffset"] = new DateTimeOffset(
+                                    2026,
+                                    7,
+                                    26,
+                                    13,
+                                    45,
+                                    30,
+                                    TimeSpan.FromHours(2)
+                                ),
+                                ["dateOnly"] = new DateOnly(2026, 7, 26),
+                                ["timeOnly"] = new TimeOnly(13, 45, 30),
+                                ["timeSpan"] = TimeSpan.FromSeconds(5),
+                                ["guid"] = guid,
+                                ["uri"] = new Uri("https://example.com/items/42")
+                            }
+                        )
+                    );
+            }
+        );
+
+        var response = GetResponse(
+            await GetOpenApiDocumentAsync(app),
+            "/minimal/problems/vocabulary-example",
+            HttpMethod.Get,
+            StatusCodes.Status400BadRequest
+        );
+        var example = ((OpenApiExample) response.Content!["application/problem+json"].Examples!["Problem"]).Value
+           .Should()
+           .BeOfType<JsonObject>()
+           .Subject;
+        var metadata = example["errors"]![0]!["metadata"].Should().BeOfType<JsonObject>().Subject;
+
+        metadata["uint64"]!.GetValue<string>().Should().Be(ulong.MaxValue.ToString(CultureInfo.InvariantCulture));
+        metadata["single"]!.ToJsonString().Should().Be("0.1");
+        metadata["double"]!.ToJsonString().Should().Be("5.0");
+        metadata["char"]!.GetValue<string>().Should().Be("x");
+        metadata["dateTime"]!.GetValue<string>().Should().Be("2026-07-26T13:45:30Z");
+        // No UTC designator: the example carries no zone because the caller never chose one.
+        metadata["dateTimeUnspecified"]!.GetValue<string>().Should().Be("2026-07-26T13:45:30");
+        metadata["dateTimeOffset"]!.GetValue<string>().Should().Be("2026-07-26T13:45:30+02:00");
+        metadata["dateOnly"]!.GetValue<string>().Should().Be("2026-07-26");
+        metadata["timeOnly"]!.GetValue<string>().Should().Be("13:45:30");
+        metadata["timeSpan"]!.GetValue<string>().Should().Be("PT5S");
+        metadata["guid"]!.GetValue<string>().Should().Be(guid.ToString("D"));
+        metadata["uri"]!.GetValue<string>().Should().Be("https://example.com/items/42");
     }
 
     [Fact]

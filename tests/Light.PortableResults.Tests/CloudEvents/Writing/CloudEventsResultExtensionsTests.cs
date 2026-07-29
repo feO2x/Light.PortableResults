@@ -417,6 +417,124 @@ public sealed class CloudEventsResultExtensionsTests
     }
 
     [Fact]
+    public void ToCloudEvent_ShouldResolveCoreStringAttributeFromEveryPrimitiveKind()
+    {
+        const MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        // Null is deliberately absent here - it resolves to no attribute at all, see the dedicated test below.
+        var values = new (MetadataValue Value, string Expected)[]
+        {
+            (MetadataValue.FromBoolean(true, annotation), "true"),
+            (MetadataValue.FromInt64(42, annotation), "42"),
+            (MetadataValue.FromDouble(5, annotation), "5.0"),
+            (MetadataValue.FromString("plain text", annotation), "plain text"),
+            (MetadataValue.FromDecimal(19.50m, annotation), "19.50"),
+            (MetadataValue.FromUInt64(ulong.MaxValue, annotation), "18446744073709551615"),
+            (MetadataValue.FromSingle(0.1f, annotation), "0.1"),
+            (MetadataValue.FromChar('x', annotation), "x"),
+            (
+                MetadataValue.FromDateTime(
+                    new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Utc),
+                    annotation
+                ),
+                "2026-07-26T13:45:30Z"
+            ),
+            (
+                MetadataValue.FromDateTimeOffset(
+                    new DateTimeOffset(2026, 7, 26, 13, 45, 30, TimeSpan.FromHours(2)),
+                    annotation
+                ),
+                "2026-07-26T13:45:30+02:00"
+            ),
+            (MetadataValue.FromDateOnly(new DateOnly(2026, 7, 26), annotation), "2026-07-26"),
+            (MetadataValue.FromTimeOnly(new TimeOnly(13, 45, 30), annotation), "13:45:30"),
+            (MetadataValue.FromTimeSpan(TimeSpan.FromSeconds(5), annotation), "PT5S"),
+            (
+                MetadataValue.FromGuid(
+                    new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890"),
+                    annotation
+                ),
+                "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+            ),
+            (
+                MetadataValue.FromUri(new Uri("https://example.com/items/42"), annotation),
+                "https://example.com/items/42"
+            )
+        };
+
+        foreach (var (value, expected) in values)
+        {
+            var metadata = MetadataObject.Create(
+                (
+                    "type",
+                    MetadataValue.FromString("app.success", annotation)
+                ),
+                (
+                    "source",
+                    MetadataValue.FromString("urn:test:source", annotation)
+                ),
+                ("subject", value)
+            );
+
+            var json = Result.Ok(metadata).ToCloudEvent(options: CreateWriteOptions(source: null));
+
+            using var document = JsonDocument.Parse(json);
+            document.RootElement.GetProperty("subject").GetString().Should().Be(expected);
+        }
+    }
+
+    [Fact]
+    public void ToCloudEvent_ShouldTreatNullCoreAttribute_AsAbsent()
+    {
+        const MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        var metadata = MetadataObject.Create(
+            ("type", MetadataValue.FromString("app.success", annotation)),
+            ("source", MetadataValue.FromString("urn:test:source", annotation)),
+            ("subject", MetadataValue.FromNull(annotation)),
+            ("dataschema", MetadataValue.FromNull(annotation))
+        );
+
+        var json = Result.Ok(metadata).ToCloudEvent(options: CreateWriteOptions(source: null));
+
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+        root.TryGetProperty("subject", out _).Should().BeFalse();
+        root.TryGetProperty("dataschema", out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ToCloudEvent_ShouldFallBackToDefaultSource_WhenSourceAttributeIsNull()
+    {
+        const MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        var metadata = MetadataObject.Create(
+            ("type", MetadataValue.FromString("app.success", annotation)),
+            ("source", MetadataValue.FromNull(annotation))
+        );
+
+        var json = Result.Ok(metadata).ToCloudEvent(options: CreateWriteOptions());
+
+        using var document = JsonDocument.Parse(json);
+        document.RootElement.GetProperty("source").GetString().Should().Be("urn:test:source");
+    }
+
+    [Fact]
+    public void ToCloudEvent_ShouldFallBackToCurrentTimestamp_WhenTimeAttributeIsNull()
+    {
+        const MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        var before = DateTimeOffset.UtcNow;
+        var metadata = MetadataObject.Create(
+            ("type", MetadataValue.FromString("app.success", annotation)),
+            ("source", MetadataValue.FromString("urn:test:source", annotation)),
+            ("time", MetadataValue.FromNull(annotation))
+        );
+
+        var json = Result.Ok(metadata).ToCloudEvent(options: CreateWriteOptions(source: null));
+
+        using var document = JsonDocument.Parse(json);
+        var time = DateTimeOffset.Parse(document.RootElement.GetProperty("time").GetString()!);
+        time.Should().BeOnOrAfter(before);
+    }
+
+    [Fact]
     public void ToCloudEvent_ShouldWriteDecimalExtensionAttribute_AsUnquotedNumber()
     {
         var metadata = MetadataObject.Create(
@@ -523,6 +641,33 @@ public sealed class CloudEventsResultExtensionsTests
         var act = () => result.ToCloudEvent(options: CreateWriteOptions(source: null));
 
         act.Should().Throw<ArgumentException>().Where(exception => exception.ParamName == "time");
+    }
+
+    [Fact]
+    public void ToCloudEvent_ShouldThrow_WhenTimeMetadataHasNoUtcOffset()
+    {
+        // The canonical text of a DateTimeKind.Unspecified value carries no designator. Resolving it against
+        // the serializing machine's time zone would make the same metadata produce different instants on
+        // different hosts, so it is rejected with a pointer towards UTC.
+        const MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        var metadata = MetadataObject.Create(
+            ("type", MetadataValue.FromString("app.success", annotation)),
+            ("source", MetadataValue.FromString("urn:test:source", annotation)),
+            (
+                "time",
+                MetadataValue.FromDateTime(
+                    new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Unspecified),
+                    annotation
+                )
+            )
+        );
+        var result = Result.Ok(metadata);
+
+        var act = () => result.ToCloudEvent(options: CreateWriteOptions(source: null));
+
+        act.Should().Throw<ArgumentException>()
+           .Where(exception => exception.ParamName == "time")
+           .WithMessage("*without a UTC offset*DateTimeKind.Utc*");
     }
 
     [Fact]

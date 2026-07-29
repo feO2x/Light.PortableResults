@@ -585,35 +585,13 @@ public static class CloudEventsResultExtensions
             return null;
         }
 
-        if (metadataValue.TryGetString(out var stringValue))
-        {
-            return stringValue;
-        }
-
-        if (metadataValue.TryGetBoolean(out var boolValue))
-        {
-            return boolValue ? "true" : "false";
-        }
-
-        if (metadataValue.TryGetInt64(out var int64Value))
-        {
-            return int64Value.ToString(CultureInfo.InvariantCulture);
-        }
-
-        if (metadataValue.TryGetDouble(out var doubleValue))
-        {
-            return doubleValue.ToString(CultureInfo.InvariantCulture);
-        }
-
-        // TryGetDecimal also converts from Int64, Double, and numeric strings. The checks above are all strict
-        // kind checks and cannot be reached by a decimal, thus the position of this branch does not matter today
-        // - but the kind is checked explicitly so that it cannot swallow those values if it is ever moved up.
-        if (metadataValue.Kind == MetadataKind.Decimal && metadataValue.TryGetDecimal(out var decimalValue))
-        {
-            return decimalValue.ToString(CultureInfo.InvariantCulture);
-        }
-
-        return null;
+        // Null is a primitive kind whose canonical text is "null", so it must be excluded explicitly. Rendering
+        // it would turn an absent attribute into the four-character string "null": a 'source' of "null" passes
+        // the required-attribute check and ships an invalid event, and a 'time' of "null" fails RFC 3339
+        // parsing instead of falling back to the current timestamp.
+        return !metadataValue.IsNull && metadataValue.Kind.IsPrimitive() ?
+            metadataValue.ToCanonicalString() :
+            null;
     }
 
     private static DateTimeOffset? GetDateTimeOffsetAttribute(MetadataObject? attributes, string attributeName)
@@ -633,6 +611,26 @@ public static class CloudEventsResultExtensions
         {
             throw new ArgumentException(
                 $"CloudEvents attribute '{attributeName}' has an invalid RFC 3339 timestamp value.",
+                attributeName
+            );
+        }
+
+        // A timestamp without a UTC designator - the canonical text of a DateTimeKind.Unspecified value -
+        // would be resolved against the local time zone of whichever machine serializes the event, so the
+        // same metadata would produce different instants on different hosts. RFC 3339 makes the offset
+        // mandatory, thus such a value is rejected instead of being silently localized.
+        if (DateTime.TryParse(
+                stringValue,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out var dateTime
+            ) &&
+            dateTime.Kind == DateTimeKind.Unspecified)
+        {
+            throw new ArgumentException(
+                $"CloudEvents attribute '{attributeName}' has a timestamp without a UTC offset. " +
+                "Use a DateTimeOffset or a DateTime with DateTimeKind.Utc so that the event time does not " +
+                "depend on the time zone of the machine that serializes the event.",
                 attributeName
             );
         }

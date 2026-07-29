@@ -1,7 +1,7 @@
 ﻿{
   Status: 200 OK,
   Headers: {
-    X-TraceId: "trace-43"
+    X-TraceId: trace-43
   },
   Content: {
     Headers: {

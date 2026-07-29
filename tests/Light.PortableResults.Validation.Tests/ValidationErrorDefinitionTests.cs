@@ -177,8 +177,8 @@ public sealed class ValidationErrorDefinitionTests
         var inRange = BuiltInValidationErrorDefinitions.IsInRange(6UL, 7UL);
         inRange.Metadata.Should().Be(
             MetadataObject.Create(
-                (ValidationErrorMetadataKeys.LowerBoundary, "6"),
-                (ValidationErrorMetadataKeys.UpperBoundary, "7")
+                (ValidationErrorMetadataKeys.LowerBoundary, MetadataValue.FromUInt64(6)),
+                (ValidationErrorMetadataKeys.UpperBoundary, MetadataValue.FromUInt64(7))
             )
         );
     }
@@ -189,8 +189,8 @@ public sealed class ValidationErrorDefinitionTests
         var notInRange = BuiltInValidationErrorDefinitions.IsNotInRange('A', 'Z');
         notInRange.Metadata.Should().Be(
             MetadataObject.Create(
-                (ValidationErrorMetadataKeys.LowerBoundary, "A"),
-                (ValidationErrorMetadataKeys.UpperBoundary, "Z")
+                (ValidationErrorMetadataKeys.LowerBoundary, MetadataValue.FromChar('A')),
+                (ValidationErrorMetadataKeys.UpperBoundary, MetadataValue.FromChar('Z'))
             )
         );
     }
@@ -286,9 +286,7 @@ public sealed class ValidationErrorDefinitionTests
     {
         var date = new DateTime(2024, 12, 24, 10, 30, 00, DateTimeKind.Utc);
         BuiltInValidationErrorDefinitions.EqualTo(date).Metadata.Should().Be(
-            MetadataObject.Create(
-                (ValidationErrorMetadataKeys.ComparativeValue, date.ToString(null, CultureInfo.InvariantCulture))
-            )
+            MetadataObject.Create((ValidationErrorMetadataKeys.ComparativeValue, MetadataValue.FromDateTime(date)))
         );
     }
 

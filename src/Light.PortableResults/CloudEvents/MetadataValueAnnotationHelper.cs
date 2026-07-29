@@ -1,4 +1,3 @@
-using System;
 using Light.PortableResults.Metadata;
 
 namespace Light.PortableResults.CloudEvents;
@@ -18,38 +17,27 @@ public static class MetadataValueAnnotationHelper
     /// A new <see cref="MetadataValue" /> containing the same payload as <paramref name="value" />
     /// with <paramref name="annotation" /> applied.
     /// </returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="value" /> has an unsupported <see cref="MetadataKind" />.
+    /// <exception cref="System.ArgumentException">
+    /// Thrown when <paramref name="annotation" /> cannot be applied to an array or object value.
+    /// </exception>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown as a <c>SwitchExpressionException</c> when <paramref name="value" /> has an undeclared
+    /// <see cref="MetadataKind" />.
     /// </exception>
     public static MetadataValue WithAnnotation(MetadataValue value, MetadataValueAnnotation annotation)
     {
-        switch (value.Kind)
+        // JsonShape throws SwitchExpressionException for an undeclared kind, so the default arm only ever
+        // sees the four primitive shapes.
+        switch (value.JsonShape)
         {
-            case MetadataKind.Null:
-                return MetadataValue.FromNull(annotation);
-            case MetadataKind.Boolean:
-                value.TryGetBoolean(out var boolValue);
-                return MetadataValue.FromBoolean(boolValue, annotation);
-            case MetadataKind.Int64:
-                value.TryGetInt64(out var int64Value);
-                return MetadataValue.FromInt64(int64Value, annotation);
-            case MetadataKind.Double:
-                value.TryGetDouble(out var doubleValue);
-                return MetadataValue.FromDouble(doubleValue, annotation);
-            case MetadataKind.String:
-                value.TryGetString(out var stringValue);
-                return MetadataValue.FromString(stringValue, annotation);
-            case MetadataKind.Decimal:
-                value.TryGetDecimal(out var decimalValue);
-                return MetadataValue.FromDecimal(decimalValue, annotation);
-            case MetadataKind.Array:
+            case MetadataJsonShape.Array:
                 value.TryGetArray(out var arrayValue);
                 return MetadataValue.FromArray(WithAnnotation(arrayValue, annotation), annotation);
-            case MetadataKind.Object:
+            case MetadataJsonShape.Object:
                 value.TryGetObject(out var objectValue);
                 return MetadataValue.FromObject(WithAnnotation(objectValue, annotation), annotation);
             default:
-                throw new ArgumentOutOfRangeException(nameof(value), value.Kind, "Unsupported metadata kind.");
+                return value.WithAnnotation(annotation);
         }
     }
 
@@ -63,8 +51,12 @@ public static class MetadataValueAnnotationHelper
     /// A rewritten <see cref="MetadataObject" /> with all contained values using
     /// <paramref name="annotation" />.
     /// </returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when one of the contained values has an unsupported <see cref="MetadataKind" />.
+    /// <exception cref="System.ArgumentException">
+    /// Thrown when <paramref name="annotation" /> cannot be applied to a contained array or object value.
+    /// </exception>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown as a <c>SwitchExpressionException</c> when one of the contained values has an undeclared
+    /// <see cref="MetadataKind" />.
     /// </exception>
     public static MetadataObject WithAnnotation(MetadataObject metadataObject, MetadataValueAnnotation annotation)
     {

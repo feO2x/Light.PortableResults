@@ -64,6 +64,51 @@ public sealed class DefaultHttpHeaderConversionServiceTests
         header.Value.ToString().Should().NotContain("\"");
     }
 
+    [Fact]
+    public void PrepareHttpHeader_ShouldUseCanonicalUnquotedTextForEveryPrimitiveKind()
+    {
+        var service = new DefaultHttpHeaderConversionService(
+            new Dictionary<string, HttpHeaderConverter>().ToFrozenDictionary()
+        );
+        var values = new (MetadataValue Value, string Expected)[]
+        {
+            (MetadataValue.Null, "null"),
+            (MetadataValue.FromBoolean(true), "true"),
+            (MetadataValue.FromInt64(42), "42"),
+            (MetadataValue.FromDouble(5), "5.0"),
+            (MetadataValue.FromString("plain text"), "plain text"),
+            (MetadataValue.FromDecimal(19.50m), "19.50"),
+            (MetadataValue.FromUInt64(ulong.MaxValue), "18446744073709551615"),
+            (MetadataValue.FromSingle(0.1f), "0.1"),
+            (MetadataValue.FromChar('x'), "x"),
+            (
+                MetadataValue.FromDateTime(new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Utc)),
+                "2026-07-26T13:45:30Z"
+            ),
+            (
+                MetadataValue.FromDateTimeOffset(
+                    new DateTimeOffset(2026, 7, 26, 13, 45, 30, TimeSpan.FromHours(2))
+                ),
+                "2026-07-26T13:45:30+02:00"
+            ),
+            (MetadataValue.FromDateOnly(new DateOnly(2026, 7, 26)), "2026-07-26"),
+            (MetadataValue.FromTimeOnly(new TimeOnly(13, 45, 30)), "13:45:30"),
+            (MetadataValue.FromTimeSpan(TimeSpan.FromSeconds(5)), "PT5S"),
+            (
+                MetadataValue.FromGuid(new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890")),
+                "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+            ),
+            (MetadataValue.FromUri(new Uri("https://example.com/items/42")), "https://example.com/items/42")
+        };
+
+        foreach (var (value, expected) in values)
+        {
+            var header = service.PrepareHttpHeader("value", value);
+
+            header.Value.ToString().Should().Be(expected, "the {0} header encoding is canonical", value.Kind);
+        }
+    }
+
     private sealed class TraceIdConverter : HttpHeaderConverter
     {
         public TraceIdConverter() : base(["traceId"]) { }

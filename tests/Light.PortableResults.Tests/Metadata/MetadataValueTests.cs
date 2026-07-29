@@ -213,9 +213,9 @@ public sealed class MetadataValueTests
     {
         MetadataValue value = 3.14f;
 
-        value.Kind.Should().Be(MetadataKind.Double);
+        value.Kind.Should().Be(MetadataKind.Single);
         value.TryGetDouble(out var result).Should().BeTrue();
-        result.Should().BeApproximately(3.14, 0.001);
+        result.Should().Be((double) 3.14f);
     }
 
     [Fact]
@@ -472,7 +472,7 @@ public sealed class MetadataValueTests
     {
         var value = MetadataValue.FromInt64(42);
 
-        value.Equals(null).Should().BeFalse();
+        value.Equals((object?) null).Should().BeFalse();
     }
 
     [Fact]

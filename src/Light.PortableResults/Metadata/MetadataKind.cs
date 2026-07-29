@@ -8,9 +8,8 @@ namespace Light.PortableResults.Metadata;
 /// The numeric values of the members are a hard constraint:
 /// <see cref="MetadataKindExtensions.IsPrimitive" /> decides membership of the primitive set with a single
 /// comparison against <see cref="Array" />. All primitive kinds must therefore be declared with values below
-/// <see cref="Array" />. The values 6 to 199 are reserved for future primitive kinds (CloudEvents, for example,
-/// defines Binary, URI, URI-reference, and Timestamp attribute types that are currently flattened into
-/// <see cref="String" />), so that adding one of them later does not renumber the complex kinds again.
+/// <see cref="Array" />. Values 16 to 199 are reserved for future primitive kinds, so that adding one of them
+/// later does not renumber the complex kinds again.
 /// </para>
 /// </summary>
 public enum MetadataKind : byte
@@ -45,7 +44,57 @@ public enum MetadataKind : byte
     /// </summary>
     Decimal = 5,
 
-    // 6 - 199 are reserved for future primitive kinds. Do not declare a primitive kind at 200 or above,
+    /// <summary>
+    /// The metadata value represents an unsigned integer number with 64 bits. This is considered a primitive value.
+    /// </summary>
+    UInt64 = 6,
+
+    /// <summary>
+    /// The metadata value represents a floating-point number with 32 bits. This is considered a primitive value.
+    /// </summary>
+    Single = 7,
+
+    /// <summary>
+    /// The metadata value represents a UTF-16 character. This is considered a primitive value.
+    /// </summary>
+    Char = 8,
+
+    /// <summary>
+    /// The metadata value represents a UTC date and time. This is considered a primitive value.
+    /// </summary>
+    DateTime = 9,
+
+    /// <summary>
+    /// The metadata value represents a date and time with an offset. This is considered a primitive value.
+    /// </summary>
+    DateTimeOffset = 10,
+
+    /// <summary>
+    /// The metadata value represents a date without a time. This is considered a primitive value.
+    /// </summary>
+    DateOnly = 11,
+
+    /// <summary>
+    /// The metadata value represents a time without a date. This is considered a primitive value.
+    /// </summary>
+    TimeOnly = 12,
+
+    /// <summary>
+    /// The metadata value represents a duration. This is considered a primitive value.
+    /// </summary>
+    TimeSpan = 13,
+
+    /// <summary>
+    /// The metadata value represents a globally unique identifier. This is considered a primitive value.
+    /// </summary>
+    Guid = 14,
+
+    /// <summary>
+    /// The metadata value represents a URI reference. This is considered a primitive value.
+    /// </summary>
+    Uri = 15,
+
+    // 16 - 199 are reserved for future primitive kinds. Do not declare a primitive kind at 200 or above,
     // and do not declare a complex kind below 200 - see the remarks on this enum for details.
 
     /// <summary>
@@ -58,17 +107,4 @@ public enum MetadataKind : byte
     /// This is considered a complex value.
     /// </summary>
     Object = 201
-}
-
-/// <summary>
-/// Provides extension methods for <see cref="MetadataKind" />.
-/// </summary>
-public static class MetadataKindExtensions
-{
-    /// <summary>
-    /// Gets the value indicating whether the specified kind represents a primitive value.
-    /// </summary>
-    /// <param name="kind">The metadata kind.</param>
-    /// <returns><see langword="true" /> if the kind is primitive; otherwise, <see langword="false" />.</returns>
-    public static bool IsPrimitive(this MetadataKind kind) => kind < MetadataKind.Array;
 }

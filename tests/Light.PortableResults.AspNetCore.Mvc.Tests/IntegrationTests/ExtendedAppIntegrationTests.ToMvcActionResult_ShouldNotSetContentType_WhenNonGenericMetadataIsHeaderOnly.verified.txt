@@ -2,7 +2,7 @@
   Response: {
     Status: 200 OK,
     Headers: {
-      X-TraceId: "trace-42"
+      X-TraceId: trace-42
     }
   },
   Request: http://localhost/api/extended/non-generic-header-only-metadata

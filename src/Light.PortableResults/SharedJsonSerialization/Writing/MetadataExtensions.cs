@@ -53,42 +53,57 @@ public static class MetadataExtensions
             throw new ArgumentNullException(nameof(writer));
         }
 
-        switch (value.Kind)
+        switch (value.JsonShape)
         {
-            case MetadataKind.Null:
+            case MetadataJsonShape.Null:
                 writer.WriteNullValue();
                 break;
-            case MetadataKind.Boolean:
+            case MetadataJsonShape.Boolean:
                 value.TryGetBoolean(out var booleanMetadataValue);
                 writer.WriteBooleanValue(booleanMetadataValue);
                 break;
-            case MetadataKind.Int64:
-                value.TryGetInt64(out var int64MetadataValue);
-                writer.WriteNumberValue(int64MetadataValue);
+            case MetadataJsonShape.Number:
+                WriteNumberValue(writer, value);
                 break;
-            case MetadataKind.Double:
-                value.TryGetDouble(out var doubleMetadataValue);
-                writer.WriteNumberValue(doubleMetadataValue);
+            case MetadataJsonShape.String:
+                writer.WriteStringValue(value.ToCanonicalString());
                 break;
-            case MetadataKind.String:
-                value.TryGetString(out var stringMetadataValue);
-                writer.WriteStringValue(stringMetadataValue);
-                break;
-            case MetadataKind.Decimal:
-                value.TryGetDecimal(out var decimalMetadataValue);
-                writer.WriteNumberValue(decimalMetadataValue);
-                break;
-            case MetadataKind.Array:
+            case MetadataJsonShape.Array:
                 value.TryGetArray(out var arrayMetadataValue);
                 writer.WriteMetadataArray(arrayMetadataValue, requiredAnnotation);
                 break;
-            case MetadataKind.Object:
+            case MetadataJsonShape.Object:
                 value.TryGetObject(out var objectMetadataValue);
                 writer.WriteMetadataObject(objectMetadataValue, requiredAnnotation);
                 break;
-            default:
-                writer.WriteNullValue();
-                break;
+        }
+    }
+
+    private static void WriteNumberValue(Utf8JsonWriter writer, MetadataValue value)
+    {
+        switch (value.Kind.GetNumberEncoding())
+        {
+            case MetadataNumberEncoding.Int64:
+                value.TryGetInt64(out var int64MetadataValue);
+                writer.WriteNumberValue(int64MetadataValue);
+                return;
+            case MetadataNumberEncoding.Decimal:
+                value.TryGetDecimal(out var decimalMetadataValue);
+                writer.WriteNumberValue(decimalMetadataValue);
+                return;
+            case MetadataNumberEncoding.Double:
+            case MetadataNumberEncoding.Single:
+                // These are the only kinds whose JSON text is not what the writer's own number formatting
+                // produces: a whole-number Double or Single carries a trailing ".0" so that it does not read
+                // back as an Int64. The canonical text is therefore built and written raw. Validation is
+                // skipped because the text comes from our own formatter and non-finite values are rejected at
+                // construction, so it is always a well-formed JSON number.
+                writer.WriteRawValue(value.ToCanonicalString(), skipInputValidation: true);
+                return;
+            case MetadataNumberEncoding.None:
+                throw new InvalidOperationException(
+                    $"Metadata kind '{value.Kind}' does not have a JSON number shape."
+                );
         }
     }
 

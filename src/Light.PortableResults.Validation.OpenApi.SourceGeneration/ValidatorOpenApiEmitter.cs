@@ -82,7 +82,7 @@ public static class ValidatorOpenApiEmitter
                                        hint.MetadataSchemaProperties.Length == 0
                     )
                    .Select(static hint => hint.Code)
-           )
+            )
            .Concat(
                 model.Examples
                    .Where(example => !schemaCodes.Contains(example.Code))
@@ -261,7 +261,8 @@ public static class ValidatorOpenApiEmitter
                              Metadata = string.Join(
                                  "\u001F",
                                  example.MetadataValues.Select(
-                                     static metadata => metadata.Key + "=" + (metadata.Value?.ToString() ?? string.Empty)
+                                     static metadata =>
+                                         metadata.Key + "=" + (metadata.Value?.ToString() ?? string.Empty)
                                  )
                              )
                          }
@@ -329,6 +330,7 @@ public static class ValidatorOpenApiEmitter
         };
 
     private static string ToLiteral(object? value) =>
+        TryCreateDateOnlyOrTimeOnlyLiteral(value) ??
         value switch
         {
             null => "null",
@@ -346,8 +348,59 @@ public static class ValidatorOpenApiEmitter
             float floatValue => floatValue.ToString("R", CultureInfo.InvariantCulture) + "F",
             double doubleValue => doubleValue.ToString("R", CultureInfo.InvariantCulture) + "D",
             decimal decimalValue => decimalValue.ToString(CultureInfo.InvariantCulture) + "M",
+            DateTime dateTimeValue =>
+                "new global::System.DateTime(" +
+                dateTimeValue.Ticks.ToString(CultureInfo.InvariantCulture) +
+                "L, global::System.DateTimeKind." +
+                dateTimeValue.Kind +
+                ")",
+            DateTimeOffset dateTimeOffsetValue =>
+                "new global::System.DateTimeOffset(" +
+                dateTimeOffsetValue.Ticks.ToString(CultureInfo.InvariantCulture) +
+                "L, global::System.TimeSpan.FromTicks(" +
+                dateTimeOffsetValue.Offset.Ticks.ToString(CultureInfo.InvariantCulture) +
+                "L))",
+            TimeSpan timeSpanValue =>
+                "global::System.TimeSpan.FromTicks(" +
+                timeSpanValue.Ticks.ToString(CultureInfo.InvariantCulture) +
+                "L)",
+            Guid guidValue =>
+                "global::System.Guid.ParseExact(" +
+                ToStringLiteral(guidValue.ToString("D")) +
+                ", \"D\")",
+            Uri uriValue =>
+                "new global::System.Uri(" +
+                ToStringLiteral(uriValue.OriginalString) +
+                ", global::System.UriKind.RelativeOrAbsolute)",
             _ => ToStringLiteral(value.ToString() ?? string.Empty)
         };
+
+    private static string? TryCreateDateOnlyOrTimeOnlyLiteral(object? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        var type = value.GetType();
+        if (string.Equals(type.FullName, "System.DateOnly", StringComparison.Ordinal))
+        {
+            var dayNumber = (int) type.GetProperty("DayNumber")!.GetValue(value, index: null)!;
+            return "global::System.DateOnly.FromDayNumber(" +
+                   dayNumber.ToString(CultureInfo.InvariantCulture) +
+                   ")";
+        }
+
+        if (string.Equals(type.FullName, "System.TimeOnly", StringComparison.Ordinal))
+        {
+            var ticks = (long) type.GetProperty("Ticks")!.GetValue(value, index: null)!;
+            return "new global::System.TimeOnly(" +
+                   ticks.ToString(CultureInfo.InvariantCulture) +
+                   "L)";
+        }
+
+        return null;
+    }
 
     private static string ToStringLiteral(string value)
     {
