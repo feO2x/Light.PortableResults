@@ -248,6 +248,9 @@ public sealed class TypedMetadataValueTests
         timeSpan.Should().Be(TimeSpan.FromSeconds(5));
         MetadataValue.FromString("00:00:05").TryGetTimeSpan(out _).Should().BeFalse();
         MetadataValue.FromString("not a duration").TryGetTimeSpan(out _).Should().BeFalse();
+        // A well-formed duration exceeding the TimeSpan range makes XmlConvert.ToTimeSpan throw
+        // OverflowException rather than FormatException - it must not escape the accessor.
+        MetadataValue.FromString("P10675200D").TryGetTimeSpan(out _).Should().BeFalse();
 
         MetadataValue.FromString(GuidValue.ToString("D")).TryGetGuid(out var guid).Should().BeTrue();
         guid.Should().Be(GuidValue);

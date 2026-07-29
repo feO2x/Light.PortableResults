@@ -683,7 +683,9 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
                     return true;
                 }
             }
-            catch (FormatException)
+            // ToTimeSpan throws FormatException for malformed text, but a well-formed duration that exceeds
+            // the TimeSpan range (such as "P10675200D") surfaces as OverflowException instead.
+            catch (Exception exception) when (exception is FormatException or OverflowException)
             {
                 // The common false path returns below.
             }

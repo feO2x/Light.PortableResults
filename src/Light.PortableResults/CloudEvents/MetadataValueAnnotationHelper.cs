@@ -1,4 +1,3 @@
-using System;
 using Light.PortableResults.Metadata;
 
 namespace Light.PortableResults.CloudEvents;
@@ -18,11 +17,17 @@ public static class MetadataValueAnnotationHelper
     /// A new <see cref="MetadataValue" /> containing the same payload as <paramref name="value" />
     /// with <paramref name="annotation" /> applied.
     /// </returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="value" /> has an unsupported <see cref="MetadataKind" />.
+    /// <exception cref="System.ArgumentException">
+    /// Thrown when <paramref name="annotation" /> cannot be applied to an array or object value.
+    /// </exception>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown as a <c>SwitchExpressionException</c> when <paramref name="value" /> has an undeclared
+    /// <see cref="MetadataKind" />.
     /// </exception>
     public static MetadataValue WithAnnotation(MetadataValue value, MetadataValueAnnotation annotation)
     {
+        // JsonShape throws SwitchExpressionException for an undeclared kind, so the default arm only ever
+        // sees the four primitive shapes.
         switch (value.JsonShape)
         {
             case MetadataJsonShape.Array:
@@ -31,14 +36,9 @@ public static class MetadataValueAnnotationHelper
             case MetadataJsonShape.Object:
                 value.TryGetObject(out var objectValue);
                 return MetadataValue.FromObject(WithAnnotation(objectValue, annotation), annotation);
-            case MetadataJsonShape.Null:
-            case MetadataJsonShape.Boolean:
-            case MetadataJsonShape.Number:
-            case MetadataJsonShape.String:
+            default:
                 return value.WithAnnotation(annotation);
         }
-
-        throw new ArgumentOutOfRangeException(nameof(value), value.Kind, "Unsupported metadata kind.");
     }
 
     /// <summary>
@@ -51,8 +51,12 @@ public static class MetadataValueAnnotationHelper
     /// A rewritten <see cref="MetadataObject" /> with all contained values using
     /// <paramref name="annotation" />.
     /// </returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when one of the contained values has an unsupported <see cref="MetadataKind" />.
+    /// <exception cref="System.ArgumentException">
+    /// Thrown when <paramref name="annotation" /> cannot be applied to a contained array or object value.
+    /// </exception>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown as a <c>SwitchExpressionException</c> when one of the contained values has an undeclared
+    /// <see cref="MetadataKind" />.
     /// </exception>
     public static MetadataObject WithAnnotation(MetadataObject metadataObject, MetadataValueAnnotation annotation)
     {
