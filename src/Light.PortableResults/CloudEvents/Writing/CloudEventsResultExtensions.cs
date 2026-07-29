@@ -585,7 +585,13 @@ public static class CloudEventsResultExtensions
             return null;
         }
 
-        return metadataValue.Kind.IsPrimitive() ? metadataValue.ToCanonicalString() : null;
+        // Null is a primitive kind whose canonical text is "null", so it must be excluded explicitly. Rendering
+        // it would turn an absent attribute into the four-character string "null": a 'source' of "null" passes
+        // the required-attribute check and ships an invalid event, and a 'time' of "null" fails RFC 3339
+        // parsing instead of falling back to the current timestamp.
+        return !metadataValue.IsNull && metadataValue.Kind.IsPrimitive() ?
+            metadataValue.ToCanonicalString() :
+            null;
     }
 
     private static DateTimeOffset? GetDateTimeOffsetAttribute(MetadataObject? attributes, string attributeName)

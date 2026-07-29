@@ -1,14 +1,23 @@
 # Typed Metadata Kinds
 
-> AMENDED after implementation, during the review of branch `54-metadatakind-restructuring`.
-`FromDateTime` originally threw for `DateTimeKind.Unspecified`. Combined with the criterion routing the ten
-BCL types to the typed factories, that turned the kind of every `new DateTime(...)` literal into an exception
-in `CreateMetadataValue`, `ValidationErrorMessageFormatting`, and OpenAPI example generation - a validation
-comparison against an `Unspecified` boundary threw instead of producing a validation error.
-Changed sections: the `DateTime` row of the vocabulary table, its notes in Vocabulary, the `TryGetDateTime`
-strictness rule in Accessors and equality, and one added acceptance criterion. Everything else is original.
-The reversal and the RFC 3339 trade-off it carries are argued in the Vocabulary notes; read those before
-re-tightening the factory. Remaining review findings are not yet reflected here.
+> **AMENDED** after implementation, during the review of branch `54-metadatakind-restructuring`. Two decisions
+> below were reversed because they specified behavior that turned out to be wrong. Remaining review findings
+> are not yet reflected here.
+>
+> **`DateTime` and `DateTimeKind.Unspecified`.** `FromDateTime` originally threw for `Unspecified`. Combined
+> with the criterion routing the ten BCL types to the typed factories, that turned the kind of every
+> `new DateTime(...)` literal into an exception in `CreateMetadataValue`, `ValidationErrorMessageFormatting`,
+> and OpenAPI example generation - a validation comparison against an `Unspecified` boundary threw instead of
+> producing a validation error. Changed: the `DateTime` row of the vocabulary table, its notes in Vocabulary,
+> the `TryGetDateTime` strictness rule in Accessors and equality, and one added acceptance criterion. The
+> reversal and the RFC 3339 trade-off it carries are argued in the Vocabulary notes; read those before
+> re-tightening the factory.
+>
+> **CloudEvents core string attributes and `Null`.** The criterion below originally required a value of *any*
+> primitive kind to resolve as a core string attribute. `Null` is a primitive kind whose canonical text is
+> `"null"`, so the letter of that criterion made an explicitly null attribute resolve to the four-character
+> string - a `source` of `"null"` passed the required-attribute check and shipped an invalid event. The
+> criterion now excludes `Null`, restoring the pre-plan behavior of treating it as absent.
 
 ## Rationale
 
@@ -24,7 +33,7 @@ This plan extends the primitive range that `0052` reserved with kinds for the co
 - [x] Each `TryGet*` additionally converts from `MetadataKind.String` when the string holds the kind's canonical encoding and rejects any other text, so consumers work identically on in-process and wire-degraded values without accepting input the writers never produce.
 - [x] Every kind serializes into JSON bodies using the encoding in the vocabulary table; in particular `TimeOnly` preserves seconds, `TimeSpan` emits an ISO 8601 duration, `0.1f` emits `0.1`, and a whole-number `Double` or `Single` emits a trailing `.0` (`5.0`, not `5`).
 - [x] Generated OpenAPI schemas and examples match the JSON encoding of every kind, asserted against the vocabulary table: `ulong` is a string, `TimeSpan` is `format: duration` rather than `time`, and `char` and `Uri` no longer degrade to a schema without a type.
-- [x] HTTP header values, CloudEvents core string attributes, and validation error message text use the same canonical encodings: header output is unquoted for every primitive kind including plain strings, and a value of any primitive kind resolves as a core string attribute.
+- [x] HTTP header values, CloudEvents core string attributes, and validation error message text use the same canonical encodings: header output is unquoted for every primitive kind including plain strings, and a value of any primitive kind except `Null` resolves as a core string attribute. `Null` resolves to no attribute at all, as it did before this plan.
 - [x] The JSON shape of a kind (`Null`, `Boolean`, `Number`, `String`, `Array`, `Object`) is publicly derivable from `MetadataKind` alone.
 - [x] Every `switch` over `MetadataKind` inside `MetadataValue` lists all members without a discard arm, so declaring a new member fails the Release build (CS8509 with `TreatWarningsAsErrors`) until every switch is updated.
 - [x] `MetadataValueAnnotationHelper.WithAnnotation` preserves the value of every kind; annotation constraints for arrays and objects are still enforced.

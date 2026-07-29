@@ -419,10 +419,10 @@ public sealed class CloudEventsResultExtensionsTests
     [Fact]
     public void ToCloudEvent_ShouldResolveCoreStringAttributeFromEveryPrimitiveKind()
     {
-        var annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        const MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        // Null is deliberately absent here - it resolves to no attribute at all, see the dedicated test below.
         var values = new (MetadataValue Value, string Expected)[]
         {
-            (MetadataValue.FromNull(annotation), "null"),
             (MetadataValue.FromBoolean(true, annotation), "true"),
             (MetadataValue.FromInt64(42, annotation), "42"),
             (MetadataValue.FromDouble(5, annotation), "5.0"),
@@ -480,6 +480,58 @@ public sealed class CloudEventsResultExtensionsTests
             using var document = JsonDocument.Parse(json);
             document.RootElement.GetProperty("subject").GetString().Should().Be(expected);
         }
+    }
+
+    [Fact]
+    public void ToCloudEvent_ShouldTreatNullCoreAttribute_AsAbsent()
+    {
+        const MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        var metadata = MetadataObject.Create(
+            ("type", MetadataValue.FromString("app.success", annotation)),
+            ("source", MetadataValue.FromString("urn:test:source", annotation)),
+            ("subject", MetadataValue.FromNull(annotation)),
+            ("dataschema", MetadataValue.FromNull(annotation))
+        );
+
+        var json = Result.Ok(metadata).ToCloudEvent(options: CreateWriteOptions(source: null));
+
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+        root.TryGetProperty("subject", out _).Should().BeFalse();
+        root.TryGetProperty("dataschema", out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public void ToCloudEvent_ShouldFallBackToDefaultSource_WhenSourceAttributeIsNull()
+    {
+        const MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        var metadata = MetadataObject.Create(
+            ("type", MetadataValue.FromString("app.success", annotation)),
+            ("source", MetadataValue.FromNull(annotation))
+        );
+
+        var json = Result.Ok(metadata).ToCloudEvent(options: CreateWriteOptions());
+
+        using var document = JsonDocument.Parse(json);
+        document.RootElement.GetProperty("source").GetString().Should().Be("urn:test:source");
+    }
+
+    [Fact]
+    public void ToCloudEvent_ShouldFallBackToCurrentTimestamp_WhenTimeAttributeIsNull()
+    {
+        const MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        var before = DateTimeOffset.UtcNow;
+        var metadata = MetadataObject.Create(
+            ("type", MetadataValue.FromString("app.success", annotation)),
+            ("source", MetadataValue.FromString("urn:test:source", annotation)),
+            ("time", MetadataValue.FromNull(annotation))
+        );
+
+        var json = Result.Ok(metadata).ToCloudEvent(options: CreateWriteOptions(source: null));
+
+        using var document = JsonDocument.Parse(json);
+        var time = DateTimeOffset.Parse(document.RootElement.GetProperty("time").GetString()!);
+        time.Should().BeOnOrAfter(before);
     }
 
     [Fact]
