@@ -148,23 +148,30 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         new (MetadataKind.Char, new MetadataPayload(value), annotation);
 
     /// <summary>
-    /// Creates a metadata value from a date and time. Local values are converted to UTC.
+    /// <para>
+    /// Creates a metadata value from a date and time.
+    /// </para>
+    /// <para>
+    /// <see cref="DateTimeKind.Local" /> values are converted to UTC, because a local wall clock is meaningless
+    /// once it leaves the process. <see cref="DateTimeKind.Unspecified" /> values are stored as they are and
+    /// render without a UTC designator: they carry no zone, and inventing one would assert an instant the caller
+    /// never chose. Such a value is valid ISO 8601 but not RFC 3339 - see the remarks on
+    /// <see cref="ToCanonicalString" />.
+    /// </para>
     /// </summary>
-    /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="value" /> has <see cref="DateTimeKind.Unspecified" />.
-    /// </exception>
     public static MetadataValue FromDateTime(
         DateTime value,
         MetadataValueAnnotation annotation = DefaultAnnotation
     )
     {
-        if (value.Kind == DateTimeKind.Unspecified)
-        {
-            throw new ArgumentException("A metadata DateTime must specify either Local or Utc kind.", nameof(value));
-        }
-
-        var utcValue = value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
-        return new MetadataValue(MetadataKind.DateTime, new MetadataPayload(utcValue.Ticks), annotation);
+        // ToBinary packs the kind into the two spare high bits of the tick count, so the Utc/Unspecified
+        // distinction survives in the same 8-byte Int64 slot that raw ticks used to occupy.
+        var storedValue = value.Kind == DateTimeKind.Local ? value.ToUniversalTime() : value;
+        return new MetadataValue(
+            MetadataKind.DateTime,
+            new MetadataPayload(storedValue.ToBinary()),
+            annotation
+        );
     }
 
     /// <summary>
@@ -520,21 +527,16 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         return false;
     }
 
-    /// <summary>Attempts to get a UTC date-time or parse its canonical RFC 3339 encoding.</summary>
+    /// <summary>
+    /// Attempts to get a UTC or unspecified date-time, or parse its canonical encoding. Text carrying a numeric
+    /// UTC offset is rejected: that is the encoding of <see cref="MetadataKind.DateTimeOffset" />, and resolving
+    /// it here would depend on the local time zone of the reading machine.
+    /// </summary>
     public bool TryGetDateTime(out DateTime value)
     {
         if (Kind == MetadataKind.DateTime)
         {
-            try
-            {
-                value = new DateTime(_payload.Int64, DateTimeKind.Utc);
-                return true;
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                value = default;
-                return false;
-            }
+            return TryReadStoredDateTime(_payload.Int64, out value);
         }
 
         if (TryGetRawString(out var text) &&
@@ -544,7 +546,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
                 DateTimeStyles.RoundtripKind,
                 out value
             ) &&
-            value.Kind == DateTimeKind.Utc &&
+            value.Kind != DateTimeKind.Local &&
             string.Equals(FormatDateTime(value), text, StringComparison.Ordinal))
         {
             return true;
@@ -762,6 +764,13 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// <summary>
     /// Returns the canonical text encoding of a primitive metadata value.
     /// </summary>
+    /// <remarks>
+    /// A <see cref="MetadataKind.DateTime" /> holding a <see cref="DateTimeKind.Unspecified" /> value is encoded
+    /// without a UTC designator, for example <c>2026-07-26T13:45:30</c>. That form is valid ISO 8601 local time
+    /// but not RFC 3339, which makes the offset mandatory, so it does not satisfy the OpenAPI
+    /// <c>format: date-time</c> that this library generates for <see cref="System.DateTime" />. Prefer
+    /// <see cref="DateTimeKind.Utc" /> or <see cref="System.DateTimeOffset" /> at API boundaries.
+    /// </remarks>
     /// <exception cref="InvalidOperationException">
     /// Thrown for an array, object, or malformed payload.
     /// </exception>
@@ -974,17 +983,34 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
             value + ".0" :
             value;
 
-    private static string FormatStoredDateTime(long ticks)
+    private static bool TryReadStoredDateTime(long binaryValue, out DateTime value)
     {
         try
         {
-            return FormatDateTime(new DateTime(ticks, DateTimeKind.Utc));
+            var storedValue = DateTime.FromBinary(binaryValue);
+
+            // FromBinary resolves a Local payload against the time zone of the reading machine. FromDateTime
+            // never stores one, so seeing it here means the payload is corrupt rather than merely out of range.
+            if (storedValue.Kind == DateTimeKind.Local)
+            {
+                value = default;
+                return false;
+            }
+
+            value = storedValue;
+            return true;
         }
-        catch (ArgumentOutOfRangeException exception)
+        catch (ArgumentException)
         {
-            throw new InvalidOperationException("The DateTime metadata payload is invalid.", exception);
+            value = default;
+            return false;
         }
     }
+
+    private static string FormatStoredDateTime(long binaryValue) =>
+        TryReadStoredDateTime(binaryValue, out var value) ?
+            FormatDateTime(value) :
+            throw new InvalidOperationException("The DateTime metadata payload is invalid.");
 
     private static string FormatDateTime(DateTime value) =>
         value.ToString(DateTimeFormat, CultureInfo.InvariantCulture);

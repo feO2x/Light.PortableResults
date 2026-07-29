@@ -590,7 +590,11 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
                    .WithName("ConflictExample")
                    .ProducesPortableProblem(
                         StatusCodes.Status409Conflict,
-                        configure: builder => builder.WithErrorExample("VersionMismatch", target: null, "version mismatch")
+                        configure: builder => builder.WithErrorExample(
+                            "VersionMismatch",
+                            target: null,
+                            "version mismatch"
+                        )
                     );
             }
         );
@@ -642,6 +646,15 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
                                     30,
                                     DateTimeKind.Utc
                                 ),
+                                ["dateTimeUnspecified"] = new DateTime(
+                                    2026,
+                                    7,
+                                    26,
+                                    13,
+                                    45,
+                                    30,
+                                    DateTimeKind.Unspecified
+                                ),
                                 ["dateTimeOffset"] = new DateTimeOffset(
                                     2026,
                                     7,
@@ -679,6 +692,8 @@ public sealed class PortableResultsOpenApiDocumentTransformerTests
         metadata["double"]!.ToJsonString().Should().Be("5.0");
         metadata["char"]!.GetValue<string>().Should().Be("x");
         metadata["dateTime"]!.GetValue<string>().Should().Be("2026-07-26T13:45:30Z");
+        // No UTC designator: the example carries no zone because the caller never chose one.
+        metadata["dateTimeUnspecified"]!.GetValue<string>().Should().Be("2026-07-26T13:45:30");
         metadata["dateTimeOffset"]!.GetValue<string>().Should().Be("2026-07-26T13:45:30+02:00");
         metadata["dateOnly"]!.GetValue<string>().Should().Be("2026-07-26");
         metadata["timeOnly"]!.GetValue<string>().Should().Be("13:45:30");

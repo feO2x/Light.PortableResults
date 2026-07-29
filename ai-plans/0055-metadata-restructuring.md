@@ -1,5 +1,15 @@
 # Typed Metadata Kinds
 
+> AMENDED after implementation, during the review of branch `54-metadatakind-restructuring`.
+`FromDateTime` originally threw for `DateTimeKind.Unspecified`. Combined with the criterion routing the ten
+BCL types to the typed factories, that turned the kind of every `new DateTime(...)` literal into an exception
+in `CreateMetadataValue`, `ValidationErrorMessageFormatting`, and OpenAPI example generation - a validation
+comparison against an `Unspecified` boundary threw instead of producing a validation error.
+Changed sections: the `DateTime` row of the vocabulary table, its notes in Vocabulary, the `TryGetDateTime`
+strictness rule in Accessors and equality, and one added acceptance criterion. Everything else is original.
+The reversal and the RFC 3339 trade-off it carries are argued in the Vocabulary notes; read those before
+re-tightening the factory. Remaining review findings are not yet reflected here.
+
 ## Rationale
 
 `MetadataKind` covers only the JSON-shaped types. Every other .NET value reaches metadata through the `IFormattable` fallback in `BuiltInValidationErrorDefinitions.CreateMetadataValue`, producing non-interoperable text: a `DateTime` boundary emits `07/26/2026 13:45:30` instead of RFC 3339, a `TimeSpan` emits `00:00:05` instead of an ISO 8601 duration, and a `TimeOnly` silently drops seconds. These values appear in `problem+json` bodies, so the published OpenAPI contract disagrees with the runtime payload. In-process consumers are equally underserved: a `Guid` or `DateTimeOffset` stored as text costs an allocation on write and a parse on every read, in a library whose primary claim is low allocation.
@@ -21,6 +31,7 @@ This plan extends the primitive range that `0052` reserved with kinds for the co
 - [x] Equality and hashing cover all kinds: values of different kinds are never equal, boxed kinds compare by value, `Uri` values compare by ordinal `OriginalString`, `Annotation` stays excluded, and a test stores every kind in a `MetadataObject` and reads it back by key.
 - [x] Serialized output for all previously existing kinds is byte-identical to today, apart from the trailing `.0` for whole-number doubles.
 - [x] `CreateMetadataValue` routes the ten BCL types of the vocabulary table to the typed factories; the `problem+json` OpenAPI conformance test from `0052` passes unchanged, and an equivalent test covers a `DateTime` or `TimeSpan` boundary.
+- [x] A `DateTime` of any `DateTimeKind` reaches metadata without throwing, keeps its kind through storage and reading, and renders through one encoding at every site. A validation comparison against a `DateTimeKind.Unspecified` boundary produces a validation error, never an exception.
 - [x] The core project builds for `netstandard2.0` and `net10.0` in Release with warnings as errors, and the only public API difference between the targets is the `DateOnly`/`TimeOnly` factories and accessors.
 - [x] Test code coverage stays above 95%.
 
@@ -39,7 +50,7 @@ Members are named after their `System.*` type, as the existing ones are (`Int64`
 | `UInt64` = 6 | `ulong` | inline | decimal digits as JSON **string** | `string`, `uint64` |
 | `Single` = 7 | `float` | inline, widened `double` | shortest round-trippable number | `number`, `float` |
 | `Char` = 8 | `char` | inline | single-character string | `string`, `char` |
-| `DateTime` = 9 | `DateTime` | inline UTC ticks | RFC 3339 date-time, `Z` suffix | `string`, `date-time` |
+| `DateTime` = 9 | `DateTime` | inline `ToBinary()` | RFC 3339 date-time with `Z`, or ISO 8601 local time without a designator when the kind is `Unspecified` | `string`, `date-time` |
 | `DateTimeOffset` = 10 | `DateTimeOffset` | boxed | RFC 3339 date-time with offset | `string`, `date-time` |
 | `DateOnly` = 11 | `DateOnly` | inline day number | RFC 3339 full-date | `string`, `date` |
 | `TimeOnly` = 12 | `TimeOnly` | inline ticks | RFC 3339 full-time | `string`, `time` |
@@ -53,7 +64,9 @@ The schema column is normative: `PortableOpenApiSchemaTypeMapper` and the source
 - `Uri` maps to `uri-reference` rather than `uri` because the schema is per CLR type while absoluteness is a per-value property.
 - `Single` is widened with a plain `(double)` cast at construction and narrowed back with `(float)` before formatting; the float → double → float round trip is lossless, so `0.1f` still emits `0.1` at no construction cost. The consequence is that `TryGetDouble` on a `Single` yields the widened value (`0.10000000149011612` for `0.1f`), not the double nearest `0.1`.
 - The existing `Double` kind gains a canonical rule shared with `Single`: when the shortest round-trippable text contains neither a fraction nor an exponent, `.0` is appended (via an integral check and `WriteRawValue`), so a bare `Double` token never reads back as `Int64`. `Decimal` is deliberately excluded from this rule: `5m` has scale 0 and must keep emitting `5`.
-- `DateTime` and `DateTimeOffset` are separate kinds because the common UTC case then stores inline ticks and avoids the boxing an offset requires. `FromDateTime` converts `Local` to UTC and throws for `DateTimeKind.Unspecified`.
+- `DateTime` and `DateTimeOffset` are separate kinds because the common UTC case then stores inline and avoids the boxing an offset requires. `FromDateTime` converts `Local` to UTC — a local wall clock is meaningless once it leaves the process — and accepts `DateTimeKind.Unspecified` as it is. Rejecting `Unspecified` is not an option: it is what every `new DateTime(...)` literal and every zone-less `DateTime.Parse` produces, so it is the common case for a validation boundary, and throwing turns a validation failure into an exception in `CreateMetadataValue`, `ValidationErrorMessageFormatting`, and OpenAPI example generation alike.
+- Because the kind must survive, the payload stores `DateTime.ToBinary()` rather than raw ticks: it packs the kind into the two spare high bits of the tick count, in the same `Int64` slot and with no loss (for `Utc` and `Unspecified` it is a bit-exact copy of the internal state). Only `Utc` and `Unspecified` are ever stored, so decoding is deterministic; `FromBinary` resolves a `Local` payload against the reading machine's time zone, so a `Local` result is treated as a corrupt payload alongside the out-of-range case.
+- An `Unspecified` value renders without a designator (`2026-07-26T13:45:30`). That is valid ISO 8601 local time but **not** RFC 3339, which makes the offset mandatory, so it does not satisfy the `format: date-time` that the schema mapper emits for `System.DateTime`. This is accepted deliberately: the alternative is inventing a `Z` the caller never asserted, which is exactly the silent-wrong-data failure mode this plan exists to remove. The one encoding is used everywhere — JSON bodies, headers, CloudEvents attributes, message text, OpenAPI examples — so the document never disagrees with the payload. Steering callers toward `Utc` at API boundaries belongs in an analyzer diagnostic, not a runtime throw.
 - `DateTimeOffset` boxes like `Decimal` — see `MetadataValue.FromDecimal` for the rationale. `FromUri(null)` returns `Null`, mirroring `FromString`.
 
 ### Payload storage
@@ -83,6 +96,7 @@ Strictness is part of that contract, because the framework defaults are too perm
 
 - `Uri` accepts `UriKind.Absolute` only. `UriKind.RelativeOrAbsolute` succeeds for nearly any text, which would make `TryGetUri` return `true` for `"hello world"` and turn the accessor into a footgun for callers that probe kinds in sequence.
 - Date and time kinds parse the exact canonical format with the invariant culture and `DateTimeStyles.RoundtripKind` — never `DateTime.Parse`, which accepts `07/26/2026 13:45:30` and would resurrect inside the accessors the ambiguity this plan removes from the writers.
+- `TryGetDateTime` accepts both `DateTime` encodings (with and without the `Z`) and rejects text carrying a numeric offset. That text is the `DateTimeOffset` encoding, and resolving it into a `DateTime` would make the result depend on the reading machine's time zone.
 
 Equality stays strict — kind plus payload, `Annotation` excluded. `FromGuid(g)` is not equal to `FromString(g.ToString())`; round-trip fidelity is `0054-1`'s job, not `Equals`'. Boxed kinds unbox and compare by value with the same defensive `is` pattern as the `Decimal` arm. `Uri` is a reference rather than a boxed value and must not use `Uri.Equals`, which ignores the fragment and compares hosts case-insensitively: two URIs that serialize differently would compare equal. It compares and hashes its `OriginalString` ordinally, which is exactly what is written to the wire.
 

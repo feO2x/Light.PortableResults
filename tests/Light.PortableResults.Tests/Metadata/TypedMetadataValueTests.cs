@@ -14,6 +14,7 @@ namespace Light.PortableResults.Tests.Metadata;
 public sealed class TypedMetadataValueTests
 {
     private static readonly DateTime UtcDateTime = new (2026, 7, 26, 13, 45, 30, DateTimeKind.Utc);
+
     private static readonly DateTimeOffset OffsetDateTime = new (
         2026,
         7,
@@ -23,6 +24,7 @@ public sealed class TypedMetadataValueTests
         30,
         TimeSpan.FromHours(2)
     );
+
     private static readonly Guid GuidValue = new ("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
     private static readonly Uri UriValue = new ("https://example.com/items/42?view=full#summary");
 
@@ -124,7 +126,7 @@ public sealed class TypedMetadataValueTests
     }
 
     [Fact]
-    public void DateTimeFactoryShouldNormalizeLocalAndRejectUnspecifiedValues()
+    public void DateTimeFactoryShouldNormalizeLocalValuesToUtc()
     {
         var local = new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Local);
 
@@ -133,12 +135,53 @@ public sealed class TypedMetadataValueTests
         value.TryGetDateTime(out var stored).Should().BeTrue();
         stored.Should().Be(local.ToUniversalTime());
         stored.Kind.Should().Be(DateTimeKind.Utc);
+        value.ToCanonicalString().Should().EndWith("Z");
+    }
 
-        var act = () => MetadataValue.FromDateTime(
+    [Fact]
+    public void DateTimeFactoryShouldPreserveUnspecifiedValuesWithoutADesignator()
+    {
+        var unspecified = new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Unspecified);
+
+        var value = MetadataValue.FromDateTime(unspecified);
+
+        value.Kind.Should().Be(MetadataKind.DateTime);
+        value.TryGetDateTime(out var stored).Should().BeTrue();
+        stored.Should().Be(unspecified);
+        stored.Kind.Should().Be(DateTimeKind.Unspecified);
+        value.ToCanonicalString().Should().Be("2026-07-26T13:45:30");
+        Serialize(value).Should().Be("\"2026-07-26T13:45:30\"");
+    }
+
+    [Fact]
+    public void UnspecifiedAndUtcDateTimesWithTheSameWallClockShouldNotBeEqual()
+    {
+        var unspecified = MetadataValue.FromDateTime(
             new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Unspecified)
         );
+        var utc = MetadataValue.FromDateTime(new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Utc));
 
-        act.Should().Throw<ArgumentException>().WithParameterName("value");
+        unspecified.Should().NotBe(utc);
+        unspecified.ToCanonicalString().Should().NotBe(utc.ToCanonicalString());
+    }
+
+    [Theory]
+    [InlineData("2026-07-26T13:45:30", DateTimeKind.Unspecified)]
+    [InlineData("2026-07-26T13:45:30Z", DateTimeKind.Utc)]
+    public void DateTimeAccessorShouldAcceptBothCanonicalStringEncodings(string text, DateTimeKind expectedKind)
+    {
+        MetadataValue.FromString(text).TryGetDateTime(out var value).Should().BeTrue();
+
+        value.Kind.Should().Be(expectedKind);
+        MetadataValue.FromDateTime(value).ToCanonicalString().Should().Be(text);
+    }
+
+    [Fact]
+    public void DateTimeAccessorShouldRejectTextCarryingANumericOffset()
+    {
+        // This is the DateTimeOffset encoding. Resolving it into a DateTime would depend on the time zone of
+        // whichever machine happens to read the value.
+        MetadataValue.FromString("2026-07-26T13:45:30+02:00").TryGetDateTime(out _).Should().BeFalse();
     }
 
     [Fact]
@@ -238,7 +281,7 @@ public sealed class TypedMetadataValueTests
         value.TryGetDouble(out var @double).Should().BeTrue();
 
         single.Should().Be(0.1f);
-        @double.Should().Be((double) 0.1f);
+        @double.Should().Be(0.1f);
         @double.Should().NotBe(0.1);
     }
 
@@ -318,18 +361,24 @@ public sealed class TypedMetadataValueTests
     public void MalformedInlineTemporalPayloadsShouldBeRejected()
     {
         var dateTime = MetadataValueTestFactory.CreateWithInt64Payload(MetadataKind.DateTime, long.MaxValue);
+        // DateTime.FromBinary does not throw for this one - it decodes into a Local value, which FromDateTime
+        // never stores and whose rendering would depend on the reading machine's time zone.
+        var localDateTime = MetadataValueTestFactory.CreateWithInt64Payload(MetadataKind.DateTime, -1L);
         var dateOnly = MetadataValueTestFactory.CreateWithInt64Payload(MetadataKind.DateOnly, long.MaxValue);
         var timeOnly = MetadataValueTestFactory.CreateWithInt64Payload(MetadataKind.TimeOnly, long.MaxValue);
 
         dateTime.TryGetDateTime(out _).Should().BeFalse();
+        localDateTime.TryGetDateTime(out _).Should().BeFalse();
         dateOnly.TryGetDateOnly(out _).Should().BeFalse();
         timeOnly.TryGetTimeOnly(out _).Should().BeFalse();
 
         var dateTimeFormatAct = () => dateTime.ToCanonicalString();
+        var localDateTimeFormatAct = () => localDateTime.ToCanonicalString();
         var dateOnlyFormatAct = () => dateOnly.ToCanonicalString();
         var timeOnlyFormatAct = () => timeOnly.ToCanonicalString();
 
         dateTimeFormatAct.Should().Throw<InvalidOperationException>();
+        localDateTimeFormatAct.Should().Throw<InvalidOperationException>();
         dateOnlyFormatAct.Should().Throw<InvalidOperationException>();
         timeOnlyFormatAct.Should().Throw<InvalidOperationException>();
     }
@@ -354,6 +403,9 @@ public sealed class TypedMetadataValueTests
             ["single"] = MetadataValue.FromSingle(0.1f),
             ["char"] = MetadataValue.FromChar('x'),
             ["dateTime"] = MetadataValue.FromDateTime(UtcDateTime),
+            ["dateTimeUnspecified"] = MetadataValue.FromDateTime(
+                new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Unspecified)
+            ),
             ["dateTimeOffset"] = MetadataValue.FromDateTimeOffset(OffsetDateTime),
             ["dateOnly"] = MetadataValue.FromDateOnly(new DateOnly(2026, 7, 26)),
             ["timeOnly"] = MetadataValue.FromTimeOnly(new TimeOnly(13, 45, 30)),

@@ -16,6 +16,10 @@ public sealed class TypedMetadataRoutingTests
         AssertKind(0.1f, MetadataKind.Single);
         AssertKind('x', MetadataKind.Char);
         AssertKind(new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Utc), MetadataKind.DateTime);
+        // DateTimeKind.Unspecified is what every `new DateTime(...)` literal produces, so it is the common case
+        // for a validation boundary rather than an edge case.
+        AssertKind(new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Unspecified), MetadataKind.DateTime);
+        AssertKind(new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Local), MetadataKind.DateTime);
         AssertKind(
             new DateTimeOffset(2026, 7, 26, 13, 45, 30, TimeSpan.FromHours(2)),
             MetadataKind.DateTimeOffset
@@ -78,6 +82,39 @@ public sealed class TypedMetadataRoutingTests
             new Uri("https://example.com/items/42"),
             context
         ).Should().Be("https://example.com/items/42");
+    }
+
+    [Fact]
+    public void ComparisonAgainstAnUnspecifiedDateTimeShouldProduceAnErrorRatherThanThrow()
+    {
+        var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
+
+        context
+           .Check(new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Unspecified), target: "when")
+           .IsGreaterThan(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Unspecified));
+
+        var error = context.Errors.Should().ContainSingle().Subject;
+        error.Message.Should().Be("when must be greater than 2026-01-01T00:00:00");
+        error.Metadata!.Value[ValidationErrorMetadataKeys.ComparativeValue]
+           .ToCanonicalString()
+           .Should()
+           .Be("2026-01-01T00:00:00");
+    }
+
+    [Fact]
+    public void ValidationMessagesShouldNotInventAZoneForUnspecifiedDateTimes()
+    {
+        var context = new ReadOnlyValidationContext(
+            new ValidationState(new ValidationContextOptions()),
+            string.Empty
+        );
+
+        ValidationErrorMessageFormatting
+           .FormatParameter(
+                new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Unspecified),
+                context
+            )
+           .Should().Be("2026-07-26T13:45:30");
     }
 
     private static void AssertKind<T>(T value, MetadataKind expectedKind)
