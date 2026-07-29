@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using FluentAssertions;
 using Light.PortableResults.Metadata;
 using Light.PortableResults.Validation.Definitions;
@@ -42,6 +43,49 @@ public sealed class TypedMetadataRoutingTests
         );
 
         ValidationErrorMessageFormatting.FormatParameter(value, context).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(0.1, "0.1")]
+    [InlineData(5.0, "5.0")]
+    public void ValidationMessagesShouldUseCanonicalDoubleEncoding(double value, string expected)
+    {
+        var context = new ReadOnlyValidationContext(
+            new ValidationState(new ValidationContextOptions()),
+            string.Empty
+        );
+
+        ValidationErrorMessageFormatting.FormatParameter(value, context).Should().Be(expected);
+    }
+
+    [Fact]
+    public void ValidationMessagesShouldNotApplyTheContextCultureToFloatingPointValues()
+    {
+        // Before this rule, a Double boundary rendered "0,5" under de-DE while a Single rendered "0.1" -
+        // the same message mixed culture-specific and canonical numeric text.
+        var context = new ReadOnlyValidationContext(
+            new ValidationState(new ValidationContextOptions { CultureInfo = new CultureInfo("de-DE") }),
+            string.Empty
+        );
+
+        ValidationErrorMessageFormatting.FormatParameter(0.5, context).Should().Be("0.5");
+        ValidationErrorMessageFormatting.FormatParameter(0.5f, context).Should().Be("0.5");
+    }
+
+    [Fact]
+    public void NonFiniteFloatingPointValuesShouldFallBackToCultureFormatting()
+    {
+        // NaN and Infinity have no metadata kind - the factories reject them - so they must not reach the
+        // canonical path.
+        var context = new ReadOnlyValidationContext(
+            new ValidationState(new ValidationContextOptions()),
+            string.Empty
+        );
+
+        ValidationErrorMessageFormatting.FormatParameter(double.NaN, context).Should().Be("NaN");
+        ValidationErrorMessageFormatting.FormatParameter(float.NaN, context).Should().Be("NaN");
+        ValidationErrorMessageFormatting.FormatParameter(double.PositiveInfinity, context).Should().Be("Infinity");
+        ValidationErrorMessageFormatting.FormatParameter(float.NegativeInfinity, context).Should().Be("-Infinity");
     }
 
     [Fact]

@@ -615,6 +615,26 @@ public static class CloudEventsResultExtensions
             );
         }
 
+        // A timestamp without a UTC designator - the canonical text of a DateTimeKind.Unspecified value -
+        // would be resolved against the local time zone of whichever machine serializes the event, so the
+        // same metadata would produce different instants on different hosts. RFC 3339 makes the offset
+        // mandatory, thus such a value is rejected instead of being silently localized.
+        if (DateTime.TryParse(
+                stringValue,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out var dateTime
+            ) &&
+            dateTime.Kind == DateTimeKind.Unspecified)
+        {
+            throw new ArgumentException(
+                $"CloudEvents attribute '{attributeName}' has a timestamp without a UTC offset. " +
+                "Use a DateTimeOffset or a DateTime with DateTimeKind.Utc so that the event time does not " +
+                "depend on the time zone of the machine that serializes the event.",
+                attributeName
+            );
+        }
+
         return parsed;
     }
 

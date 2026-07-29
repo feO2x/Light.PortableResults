@@ -324,6 +324,19 @@ public sealed class TypedMetadataValueTests
     }
 
     [Fact]
+    public void DecimalAccessorShouldConvertFromSingle()
+    {
+        // Without this conversion, an in-process Single would fail TryGetDecimal while the same value
+        // degraded to the string "0.1" on the wire would succeed - the exact inversion the lenient
+        // accessors exist to prevent. Narrowing back to float keeps the decimal at 0.1m instead of the
+        // widened double 0.10000000149011612m.
+        MetadataValue.FromSingle(0.1f).TryGetDecimal(out var value).Should().BeTrue();
+        value.Should().Be(0.1m);
+
+        MetadataValue.FromSingle(float.MaxValue).TryGetDecimal(out _).Should().BeFalse();
+    }
+
+    [Fact]
     public void SingleShouldWidenToDoubleWithoutChangingItsOwnAccessor()
     {
         var value = MetadataValue.FromSingle(0.1f);

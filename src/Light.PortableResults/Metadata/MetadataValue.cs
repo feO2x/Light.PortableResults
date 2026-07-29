@@ -422,7 +422,8 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     }
 
     /// <summary>
-    /// Attempts to get a decimal number. Signed integers, doubles, and invariant numeric strings are converted.
+    /// Attempts to get a decimal number. Signed integers, doubles, singles, and invariant numeric strings
+    /// are converted.
     /// </summary>
     public bool TryGetDecimal(out decimal value)
     {
@@ -448,11 +449,15 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
             return true;
         }
 
-        if (Kind == MetadataKind.Double)
+        if (Kind == MetadataKind.Double || Kind == MetadataKind.Single)
         {
             try
             {
-                value = (decimal) _payload.Float64;
+                // A Single is narrowed back to float before the decimal conversion so that 0.1f reads as
+                // 0.1m instead of the widened double 0.10000000149011612m.
+                value = Kind == MetadataKind.Single ?
+                    (decimal) (float) _payload.Float64 :
+                    (decimal) _payload.Float64;
                 return true;
             }
             catch (OverflowException)
@@ -1062,7 +1067,8 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
 
     private static string FormatTimeSpan(TimeSpan value) => XmlConvert.ToString(value);
 
-    private static string FormatGuid(Guid value) => value.ToString("D", CultureInfo.InvariantCulture).ToLowerInvariant();
+    // The "D" format is specified to produce lowercase hexadecimal digits, so no additional lowering is needed.
+    private static string FormatGuid(Guid value) => value.ToString("D", CultureInfo.InvariantCulture);
 
     private static string ThrowComplexCanonicalText(MetadataKind kind) =>
         throw new InvalidOperationException($"Kind '{kind}' does not have a primitive canonical text encoding.");

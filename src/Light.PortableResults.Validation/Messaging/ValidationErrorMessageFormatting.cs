@@ -41,8 +41,13 @@ public static class ValidationErrorMessageFormatting
             case ulong uint64:
                 metadataValue = MetadataValue.FromUInt64(uint64);
                 break;
-            case float single:
+            // NaN and Infinity have no metadata kind - the factories reject them - so they fall through to
+            // the culture-aware fallback path below.
+            case float single when !float.IsNaN(single) && !float.IsInfinity(single):
                 metadataValue = MetadataValue.FromSingle(single);
+                break;
+            case double @double when !double.IsNaN(@double) && !double.IsInfinity(@double):
+                metadataValue = MetadataValue.FromDouble(@double);
                 break;
             case char character:
                 metadataValue = MetadataValue.FromChar(character);

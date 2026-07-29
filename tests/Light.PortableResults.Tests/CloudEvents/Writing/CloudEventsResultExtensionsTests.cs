@@ -644,6 +644,33 @@ public sealed class CloudEventsResultExtensionsTests
     }
 
     [Fact]
+    public void ToCloudEvent_ShouldThrow_WhenTimeMetadataHasNoUtcOffset()
+    {
+        // The canonical text of a DateTimeKind.Unspecified value carries no designator. Resolving it against
+        // the serializing machine's time zone would make the same metadata produce different instants on
+        // different hosts, so it is rejected with a pointer towards UTC.
+        const MetadataValueAnnotation annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        var metadata = MetadataObject.Create(
+            ("type", MetadataValue.FromString("app.success", annotation)),
+            ("source", MetadataValue.FromString("urn:test:source", annotation)),
+            (
+                "time",
+                MetadataValue.FromDateTime(
+                    new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Unspecified),
+                    annotation
+                )
+            )
+        );
+        var result = Result.Ok(metadata);
+
+        var act = () => result.ToCloudEvent(options: CreateWriteOptions(source: null));
+
+        act.Should().Throw<ArgumentException>()
+           .Where(exception => exception.ParamName == "time")
+           .WithMessage("*without a UTC offset*DateTimeKind.Utc*");
+    }
+
+    [Fact]
     public void ToCloudEventsEnvelopeForWriting_ShouldCreateEnvelopeWithFrozenOptionsAndConvertedExtensionAttributes()
     {
         var metadata = MetadataObject.Create(

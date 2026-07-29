@@ -8,7 +8,7 @@ This document compares `ai-plans/0055-metadata-restructuring.md` with the implem
 
 The plan was implemented as specified. Every kind in the vocabulary table exists, the shape and canonical-text derivations are in place, the exhaustive switches fail the Release build when a kind is added, and the public API differs between `netstandard2.0` and `net10.0` only in the `DateOnly`/`TimeOnly` members.
 
-Four decisions in the plan were revised during the review that followed implementation, because they specified behavior that turned out to be wrong rather than merely inconvenient. Three of them (1, 3, 4) were reached through the plan's own reasoning and are corrections to it; the fourth was a pre-existing defect the plan would have frozen into a criterion.
+Four decisions in the plan were revised during the review that followed implementation, because they specified behavior that turned out to be wrong rather than merely inconvenient. Three of them (1, 3, 4) were reached through the plan's own reasoning and are corrections to it; the fourth was a pre-existing defect the plan would have frozen into a criterion. A second review added deviations 5 and 6: one records a build target the plan did not anticipate, the other extends the plan's own consistency rules to the pre-existing numeric kinds.
 
 ## Deviations From The Original Plan
 
@@ -78,9 +78,48 @@ Structurally, the kind list guarding that arm was the last dispatch in the chain
 **Impact:**
 `MetadataNumberEncoding` is public API that the plan did not anticipate. It is documented as the companion to `MetadataJsonShape` for serializers of protocols other than JSON, which need the same "which primitive is this written from" answer.
 
+### 5. The Validation project multi-targets alongside the core
+
+**Original plan:**
+The Targets section stated: "The core project multi-targets `netstandard2.0;net10.0`." No other project was slated for a second target.
+
+**Implemented:**
+`Light.PortableResults.Validation` also multi-targets `netstandard2.0;net10.0`.
+
+**Why:**
+`CreateMetadataValue` and `ValidationErrorMessageFormatting` route `DateOnly`/`TimeOnly` validation boundaries to the typed factories, which exist only on the `net10.0` asset of the core package. Without a `net10.0` asset of its own, the Validation package would always bind to the `netstandard2.0` core surface and silently flatten those boundaries back to strings on modern runtimes — undoing the plan's central goal for two of the ten types.
+
+**Impact:**
+The public API of the Validation package is identical across both targets; only the private routing inside `#if NET10_0_OR_GREATER` differs. The root `AGENTS.md` rule stating that only `Light.PortableResults` is built for .NET Standard 2.0 and "all other projects use .NET 10" is now outdated on both counts.
+
+### 6. Lenient numeric handling treats `Single` and `Double` canonically everywhere
+
+**Original plan:**
+The Accessors section specified only "`TryGetDouble` converts from `Single`" as a cross-kind numeric conversion, and the canonical-message criterion was implemented for the ten new BCL types only, leaving `Double` message parameters on the culture-specific `IFormattable` path.
+
+**Implemented (post-review):**
+`TryGetDecimal` also converts from `Single`, narrowing back to `float` before the decimal conversion so that `0.1f` reads as `0.1m` rather than the widened `0.10000000149011612m`. `ValidationErrorMessageFormatting.FormatParameter` routes finite `Double` values through the canonical encoding; non-finite `Single` and `Double` values fall back to the culture path, which also fixes a latent crash — the `Single` arm previously called `FromSingle` unconditionally, which throws for `NaN`.
+
+**Why:**
+`FromSingle(0.1f)` failed `TryGetDecimal` while the same value degraded to the string `"0.1"` on the wire succeeded — the exact in-process/wire-degraded inversion the lenient accessors exist to prevent. And under a non-invariant culture, one validation message could render a `Double` boundary as `0,5` next to a `Single` rendered `0.1`.
+
+**Impact:**
+`Int64` and `Decimal` message parameters keep the culture-specific path; extending the canonical rule to them is a separate decision.
+
+## Post-Review Fixes
+
+Smaller corrections applied on this branch after the review, none of which changes the plan's design:
+
+- **`TryGetTimeSpan` no longer throws on out-of-range durations.** `XmlConvert.ToTimeSpan` throws `OverflowException` rather than `FormatException` for a well-formed XSD duration exceeding the `TimeSpan` range (such as `"P10675200D"`), which escaped the accessor on wire-degraded input.
+- **CloudEvents `time` resolution rejects designator-less timestamps.** The canonical text of a `DateTimeKind.Unspecified` value parsed leniently against the serializing machine's local time zone, so the same metadata produced different instants on different hosts. It now throws an `ArgumentException` pointing towards `DateTimeKind.Utc` or `DateTimeOffset`.
+- **`MetadataValueAnnotationHelper.WithAnnotation` documents its real exception contract.** The `ArgumentOutOfRangeException` arm was dead code — `JsonShape` throws `SwitchExpressionException` for undeclared kinds first — and has been removed along with the stale docs.
+- **`FormatGuid` dropped a redundant `ToLowerInvariant`.** The `"D"` format is specified to produce lowercase hexadecimal digits; no behavior change.
+
 ## Known Gaps
 
 These were identified in the same review and deliberately not addressed on this branch:
 
 - **`TryFormatCanonical` still allocates.** It calls `ToCanonicalString()` and copies into the destination, so the span overload the plan describes does not yet deliver the allocation-free path its shape implies. An honest fix needs per-kind span formatting, a hand-rolled ISO 8601 duration formatter (`XmlConvert.ToString(TimeSpan)` has no span overload), and a `netstandard2.0` fork (`double.TryFormat` does not exist there).
 - **Temporal validation boundaries produce degraded OpenAPI examples.** A `DateTime` boundary cannot be folded by `SemanticModel.GetConstantValue`, so the generated error example carries neither a message nor a `comparativeValue`. This is pre-existing and is tracked in #57. The `DateTime`/`DateTimeOffset`/`TimeSpan`/`Guid`/`Uri` arms added to `ValidatorOpenApiEmitter.ToLiteral` are unreachable through the analyzer until that issue is fixed, and are kept deliberately as its landing site.
+- **`TimeOnly` renders RFC 3339 partial-time, not full-time.** The OpenAPI registry's `format: time` refers to RFC 3339 *full-time*, which requires a UTC offset; a `TimeOnly` has none by nature, so its canonical `13:45:30` does not strictly satisfy the schema the mapper emits. This is the same accepted trade-off as the `Unspecified` `DateTime` rendering in deviation 1, but inherent to the type rather than to a caller's choice — inventing an offset would assert an instant the value does not carry.
+- **Canonical floating-point text depends on the runtime's `"R"` implementation.** On .NET Core 3.0+, `"R"` produces the shortest round-trippable text the vocabulary specifies; on .NET Framework — a valid host for the `netstandard2.0` asset — it has the documented round-trip defect for `Double`, so canonical text there can differ between runtimes and fail to round-trip. This is runtime-dependent rather than TFM-dependent, so `#if` cannot address it. Tracked in #58.
