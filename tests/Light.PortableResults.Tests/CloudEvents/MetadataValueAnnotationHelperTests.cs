@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using FluentAssertions;
 using Light.PortableResults.CloudEvents;
@@ -155,12 +156,17 @@ public sealed class MetadataValueAnnotationHelperTests
     {
         var invalidValue = MetadataValueTestFactory.CreateWithUndeclaredKind();
 
-        var act = () => MetadataValueAnnotationHelper.WithAnnotation(
-            invalidValue,
-            MetadataValueAnnotation.SerializeInCloudEventsData
-        );
+        Action act = () =>
+            _ = MetadataValueAnnotationHelper.WithAnnotation(
+                invalidValue,
+                MetadataValueAnnotation.SerializeInCloudEventsData
+            );
 
+#if TESTING_NETSTANDARD_ASSET
+        act.Should().Throw<InvalidOperationException>();
+#else
         act.Should().Throw<SwitchExpressionException>();
+#endif
     }
 
 }

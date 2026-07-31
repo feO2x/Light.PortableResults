@@ -91,8 +91,10 @@ public sealed class DefaultHttpHeaderConversionServiceTests
                 ),
                 "2026-07-26T13:45:30+02:00"
             ),
+#if !TESTING_NETSTANDARD_ASSET
             (MetadataValue.FromDateOnly(new DateOnly(2026, 7, 26)), "2026-07-26"),
             (MetadataValue.FromTimeOnly(new TimeOnly(13, 45, 30)), "13:45:30"),
+#endif
             (MetadataValue.FromTimeSpan(TimeSpan.FromSeconds(5)), "PT5S"),
             (
                 MetadataValue.FromGuid(new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890")),

@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: ./global.json
       - name: Cache NuGet packages
@@ -34,6 +34,12 @@ jobs:
           --coverage
           --coverage-settings ${{ github.workspace }}/coverage.runsettings
           --coverage-output-format cobertura
+      - name: Test netstandard2.0 core asset
+        run: >
+          dotnet test ./tests/Light.PortableResults.Tests/Light.PortableResults.Tests.csproj
+          --configuration Release
+          -p:PortableResultsAssetTargetFramework=netstandard2.0
+          -p:ContinuousIntegrationBuild=true
       # Each test project writes TestResults/<guid>.cobertura.xml, so the reports are
       # matched by extension rather than by a fixed file name.
       - name: Merge coverage reports

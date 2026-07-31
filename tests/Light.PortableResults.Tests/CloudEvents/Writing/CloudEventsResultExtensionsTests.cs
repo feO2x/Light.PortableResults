@@ -445,8 +445,10 @@ public sealed class CloudEventsResultExtensionsTests
                 ),
                 "2026-07-26T13:45:30+02:00"
             ),
+#if !TESTING_NETSTANDARD_ASSET
             (MetadataValue.FromDateOnly(new DateOnly(2026, 7, 26), annotation), "2026-07-26"),
             (MetadataValue.FromTimeOnly(new TimeOnly(13, 45, 30), annotation), "13:45:30"),
+#endif
             (MetadataValue.FromTimeSpan(TimeSpan.FromSeconds(5), annotation), "PT5S"),
             (
                 MetadataValue.FromGuid(

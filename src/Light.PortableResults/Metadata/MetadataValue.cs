@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Xml;
+using Light.PortableResults.Numbers;
 
 namespace Light.PortableResults.Metadata;
 
@@ -826,6 +827,24 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// <returns><see langword="true" /> when the destination was large enough; otherwise, <see langword="false" />.</returns>
     public bool TryFormatCanonical(Span<char> destination, out int charsWritten)
     {
+        if (Kind == MetadataKind.Double)
+        {
+            return CanonicalFloatingPointFormatter.TryFormat(
+                _payload.Float64,
+                destination,
+                out charsWritten
+            );
+        }
+
+        if (Kind == MetadataKind.Single)
+        {
+            return CanonicalFloatingPointFormatter.TryFormat(
+                (float) _payload.Float64,
+                destination,
+                out charsWritten
+            );
+        }
+
         var canonicalText = ToCanonicalString();
         if (canonicalText.AsSpan().TryCopyTo(destination))
         {
@@ -993,16 +1012,9 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
 
     private static string FormatUInt64(ulong value) => value.ToString(CultureInfo.InvariantCulture);
 
-    private static string FormatSingle(float value) =>
-        EnsureFloatingPointMarker(value.ToString("R", CultureInfo.InvariantCulture));
+    private static string FormatSingle(float value) => CanonicalFloatingPointFormatter.Format(value);
 
-    private static string FormatDouble(double value) =>
-        EnsureFloatingPointMarker(value.ToString("R", CultureInfo.InvariantCulture));
-
-    private static string EnsureFloatingPointMarker(string value) =>
-        value.IndexOf('.') < 0 && value.IndexOf('E') < 0 && value.IndexOf('e') < 0 ?
-            value + ".0" :
-            value;
+    private static string FormatDouble(double value) => CanonicalFloatingPointFormatter.Format(value);
 
     private static bool TryReadStoredDateTime(long binaryValue, out DateTime value)
     {

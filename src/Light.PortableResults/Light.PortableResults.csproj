@@ -3,6 +3,8 @@
     <TargetFramework />
     <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
     <PublishAot>false</PublishAot>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnablePackageValidation>true</EnablePackageValidation>
     <Description>The Light.PortableResults package implements the core functionality: Results, Errors, Metadata, Functional Extensions, and serialization support for various formats like HTTP and CloudEvents. Compatible with Native AOT. Check out the integration packages Light.PortableResults.AspNetCore.MinimalApis or Light.PortableResults.AspNetCore.Mvc.</Description>
     <PackageReleaseNotes>
       Light.PortableResults 0.7.0
@@ -13,6 +15,8 @@
       - Adds native metadata kinds for UInt64, Single, Char, DateTime, DateTimeOffset, DateOnly, TimeOnly,
         TimeSpan, Guid, and Uri, with canonical JSON, HTTP header, and CloudEvents string encodings.
       - Adds a net10.0 asset with DateOnly and TimeOnly metadata APIs while retaining netstandard2.0.
+      - Makes canonical Double and Single text runtime-independent. Output is unchanged on .NET Core 3.0+
+        hosts and corrected on .NET Framework and legacy Mono hosts.
 
       Breaking changes
       ---------------------------------
@@ -42,5 +46,9 @@
     <PackageReference Include="System.Collections.Immutable" />
     <PackageReference Include="System.Text.Json" />
     <PackageReference Include="Ulid" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>
