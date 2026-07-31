@@ -8,7 +8,7 @@ Introduce one public `CanonicalFloatingPointFormatter`, used on every TFM, whose
 
 ## Acceptance Criteria
 
-- [ ] `CanonicalFloatingPointFormatter` exposes the specified `Format` and `TryFormat` overloads for `double` and `float` on both package assets, and `MetadataValue` uses it for all `Double` and `Single` canonical text without target-framework dispatch.
+- [ ] `CanonicalFloatingPointFormatter` exposes the specified `Format` and `TryFormat` overloads for `double` and `float` on both package assets, and `MetadataValue` uses it for all `Double` and `Single` canonical text without target-framework-specific formatting behavior.
 - [ ] The formatter implements and documents one invariant encoding for finite values: shortest round-trippable digits, both rounding tie rules, notation thresholds, uppercase signed exponents with at least two digits, negative zero, and a trailing `.0` for positional whole numbers.
 - [ ] Non-finite values are rejected with `ArgumentException`; an insufficient `TryFormat` destination returns `false`, writes zero to `charsWritten`, and performs no allocation.
 - [ ] Named scenario tests cover each encoding rule, including both notation boundaries for both types, positional zero-padding when the decimal scale exceeds the coefficient length (`2^55` → `36028797018963970.0`, `123456789f` → `123456790.0`), `-0.0`, a non-minimal subnormal, `Epsilon`, `MaxValue`, `MinValue`, the boundary tie at `1e23`, a half-to-even final-digit tie, values requiring 15, 16, and 17 significant digits, and rejection of NaN and both infinities by every overload. Non-obvious cases record the exact IEEE bit pattern and expected text.
@@ -52,7 +52,7 @@ public static class CanonicalFloatingPointFormatter
 }
 ```
 
-`TryFormat` is the primary implementation. It generates digits and renders the sign, notation, exponent, and optional marker directly into the caller's span. `Format` uses a bounded stack buffer and materializes the final string once; 32 characters for `double` and 24 for `float` are sufficient. Neither the formatter nor its compatibility helpers have target-specific behavioral branches: both assets compile and use the same implementation.
+`TryFormat` is the primary implementation. It generates digits and renders the sign, notation, exponent, and optional marker directly into the caller's span. `Format` uses a bounded stack buffer and materializes the final string once; 32 characters for `double` and 24 for `float` are sufficient. Both assets use the same digit-generation and rendering implementation; neither the formatter nor its helpers may select different rounding, notation, or rendering behavior by target framework. Compatibility helpers may use compile-time TFM selection between a framework intrinsic and a semantically equivalent portable fallback. Such selection must not change output, exceptions, allocation behavior, or `charsWritten`.
 
 The `Double` and `Single` arms of `MetadataValue.ToCanonicalString`, currently reached through `FormatDouble` and `FormatSingle`, delegate to the formatter's `Format` overloads. `MetadataValue.TryFormatCanonical` currently always materializes `ToCanonicalString` and copies it to the destination. Change it to dispatch on `Kind`: the `Double` and `Single` arms call the corresponding formatter `TryFormat` overload directly, while every other kind retains the existing string-producing-and-copying path as a fallback. This plan deliberately makes only the floating-point arms allocation-free; direct span formatting for the remaining metadata kinds is separate work.
 
@@ -75,7 +75,7 @@ Pin an immutable commit on `dotnet/runtime`'s `release/6.0` branch, the last pre
 - the digit-generation bignum and power-of-ten tables from `Number.BigInteger.cs`;
 - `NumberBuffer`, IEEE bit extraction, and the small invariant rendering helpers needed by those algorithms.
 
-Remove `Half`, parsing, and unused general-number-formatting members. Replace framework APIs unavailable on `netstandard2.0`, such as the required `BitOperations` and bit-conversion operations, with local helpers used by both target builds. Keep the upstream structure and naming where practical so the source remains comparable with its pinned origin.
+Remove `Half`, parsing, and unused general-number-formatting members. Encapsulate framework APIs unavailable on `netstandard2.0`, such as the required `BitOperations` and bit-conversion operations, behind local compatibility helpers. On `net10.0`, those helpers may call the corresponding framework intrinsic; on `netstandard2.0`, they use semantically identical portable implementations. Keep the upstream structure and naming where practical so the source remains comparable with its pinned origin.
 
 The algorithms do not call a host formatter or parser. Grisu3 performs its digit work with managed integer arithmetic. Dragon4 also uses a floating-point calculation for a bounded decimal-exponent estimate, but exact integer comparisons correct that estimate and determine the emitted digits.
 
