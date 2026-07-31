@@ -20,7 +20,7 @@ Introduce one public `CanonicalFloatingPointFormatter`, used on every TFM, whose
 - [ ] BenchmarkDotNet compares both public formatter shapes with equivalent .NET 10 baselines that use `"R"` span formatting plus the same in-buffer `.0` rule. Across the designated aggregate random-finite and common short-form workloads for both types, the canonical formatter is no more than 25% slower and introduces no additional allocations.
 - [ ] Both target frameworks build in Release with warnings as errors, SDK package validation is enabled for `Light.PortableResults` and confirms the intended cross-target API compatibility during packing, and the Native AOT sample publishes successfully.
 - [ ] `src/Light.PortableResults/Numbers/README.md` records the exact upstream repository, branch, immutable commit SHA, copied files, and every adaptation. Copied files retain their .NET Foundation MIT headers. A repository-root `THIRD-PARTY-NOTICES.md` identifies those files and their provenance, contains the complete upstream .NET Foundation copyright and MIT license text, and is present at the root of the produced `Light.PortableResults.nupkg`.
-- [ ] Test code coverage remains above 95%, and unused upstream members are trimmed rather than retained solely to be excluded from coverage.
+- [ ] Test code coverage remains above 95% without excluding the ported numerics from coverage. Unused upstream members and formatting modes, including Dragon4's fixed significant-digit and fractional-digit cutoff machinery, are removed rather than retained or tested solely to satisfy the metric.
 - [ ] Package release notes state that canonical `Double` and `Single` text is now runtime-independent, changes on .NET Framework and legacy Mono hosts, and retains its existing output on .NET Core 3.0+ hosts.
 
 ## Technical Details
@@ -75,7 +75,9 @@ Pin an immutable commit on `dotnet/runtime`'s `release/6.0` branch, the last pre
 - the digit-generation bignum and power-of-ten tables from `Number.BigInteger.cs`;
 - `NumberBuffer`, IEEE bit extraction, and the small invariant rendering helpers needed by those algorithms.
 
-Remove `Half`, parsing, and unused general-number-formatting members. Encapsulate framework APIs unavailable on `netstandard2.0`, such as the required `BitOperations` and bit-conversion operations, behind local compatibility helpers. On `net10.0`, those helpers may call the corresponding framework intrinsic; on `netstandard2.0`, they use semantically identical portable implementations. Keep the upstream structure and naming where practical so the source remains comparable with its pinned origin.
+Treat the upstream files as source material rather than indivisible units and port only the transitive implementation required by shortest-round-trip Grisu3 formatting and its Dragon4 fallback. Remove `Half`, parsing, and unused general-number-formatting members. Specialize Dragon4 to shortest-unique mode: remove the `cutoffNumber` and `isSignificantDigits` parameters together with the fixed significant-digit, fixed fractional-digit, and beyond-cutoff rounding paths they select. Retain the destination-buffer bound used by the shortest-mode loop.
+
+Encapsulate framework APIs unavailable on `netstandard2.0`, such as the required `BitOperations` and bit-conversion operations, behind local compatibility helpers. On `net10.0`, those helpers may call the corresponding framework intrinsic; on `netstandard2.0`, they use semantically identical portable implementations. Keep the upstream structure and naming where practical where doing so does not preserve unused modes, so the remaining source stays comparable with its pinned origin.
 
 All top-level types ported or adapted from `dotnet/runtime` are `internal`; nested types and members use the narrowest visibility required by the implementation. `CanonicalFloatingPointFormatter` is the sole public surface over the port. This is a deliberate exception to the repository's preference for public, properly encapsulated APIs because the upstream-shaped numerics are replaceable implementation details rather than supported extension points.
 
@@ -94,6 +96,8 @@ Do not add it to `src/Directory.Build.props`, because the other NuGet packages d
 ### Verification and performance
 
 The differential oracle is defined only in test and benchmark code: format with invariant `"R"`, then append `.0` if the result contains neither a decimal point nor an exponent. Named tests remain the normative specification; the corpus detects transcription defects in tables, loop bounds, bit helpers, and rare rounding paths. The corpus samples the bit space rather than ordinary numeric distributions, and its seed is fixed for reproducible failures.
+
+Coverage is reached by removing unused upstream modes and helpers, then exercising every remaining meaningful branch through named IEEE bit patterns, the ordinary differential corpus, and the forced-Dragon4 corpus. Do not add tests for unsupported formatting modes or exclude retained dead code from coverage.
 
 `Light.PortableResults.Tests` remains a `net10.0` test executable but parameterizes its `ProjectReference` target through an MSBuild property that defaults to `net10.0`:
 
