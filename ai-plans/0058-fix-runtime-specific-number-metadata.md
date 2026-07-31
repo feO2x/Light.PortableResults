@@ -13,7 +13,7 @@ Introduce one public `CanonicalFloatingPointFormatter`, used on every TFM, whose
 - [ ] Non-finite values are rejected with `ArgumentException`; an insufficient `TryFormat` destination returns `false`, writes zero to `charsWritten`, and performs no allocation.
 - [ ] Named scenario tests cover each encoding rule, including both notation boundaries for both types, positional zero-padding when the decimal scale exceeds the coefficient length (`2^55` → `36028797018963970.0`, `123456789f` → `123456790.0`), `-0.0`, a non-minimal subnormal, `Epsilon`, `MaxValue`, `MinValue`, the boundary tie at `1e23`, a half-to-even final-digit tie, values requiring 15, 16, and 17 significant digits, and rejection of NaN and both infinities by every overload. Non-obvious cases record the exact IEEE bit pattern and expected text.
 - [ ] A deterministic differential corpus of at least 50,000 finite random bit patterns per type, plus a sweep over every binary exponent, matches the .NET 10 `"R"` output after independently applying the canonical `.0` rule.
-- [ ] The same differential corpus passes with Grisu3 bypassed so that Dragon4 and the shared bignum are verified independently.
+- [ ] The same differential corpus passes through a per-call Dragon4-only formatter path, independently verifying Dragon4 and the shared bignum; selecting that path changes neither process-wide state nor the public API.
 - [ ] The formatter contains no call to `ToString`, `TryFormat`, or `Parse` on `double` or `float`; its production result does not depend on the host's floating-point formatter or parser.
 - [ ] After warm-up, `TryFormat` and `MetadataValue.TryFormatCanonical` allocate nothing for either floating-point type, while `Format` and `MetadataValue.ToCanonicalString` allocate only the returned string, including values that require `.0`.
 - [ ] Existing JSON, HTTP header, CloudEvents, validation-message, and `TryGetSingle` expectations pass unchanged on .NET 10; tests pin the corrected legacy-host representations at the metadata integration points.
@@ -75,7 +75,23 @@ The bignum's fixed inline block buffer requires `AllowUnsafeBlocks`; unsafe code
 
 The differential oracle is defined only in test and benchmark code: format with invariant `"R"`, then append `.0` if the result contains neither a decimal point nor an exponent. Named tests remain the normative specification; the corpus detects transcription defects in tables, loop bounds, bit helpers, and rare rounding paths. The corpus samples the bit space rather than ordinary numeric distributions, and its seed is fixed for reproducible failures.
 
-The forced-Dragon4 run uses an internal test seam and does not alter the public formatter API.
+The public overloads use the normal Grisu3-with-Dragon4-fallback path. Private formatter-core overloads accept the algorithm choice per call:
+
+```csharp
+private static bool TryFormatCore(
+    double value,
+    Span<char> destination,
+    out int charsWritten,
+    bool forceDragon4);
+
+private static bool TryFormatCore(
+    float value,
+    Span<char> destination,
+    out int charsWritten,
+    bool forceDragon4);
+```
+
+Test code locates these exact non-public overloads once through reflection and binds them to strongly typed delegates with `MethodInfo.CreateDelegate`; the corpus invokes the delegates rather than the MethodInfos. This seam requires neither `InternalsVisibleTo` nor friend-assembly signing, does not alter the public formatter API, and stores no algorithm-selection state in static fields.
 
 Allocation assertions warm up all static data and JIT paths before measuring repeated operations with `GC.GetAllocatedBytesForCurrentThread`. Timing is measured only with BenchmarkDotNet. The performance baseline performs `double.TryFormat` or `float.TryFormat` with invariant `"R"` into a span, applies the same marker in that span, and uses the same final string-materialization strategy as the canonical formatter. The 1.25 ratio applies to aggregate random-finite and representative short-form workloads; forced fallback measurements are reported separately because they do not represent the production value distribution.
 
