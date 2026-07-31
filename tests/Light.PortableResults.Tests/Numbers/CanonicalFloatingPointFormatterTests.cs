@@ -50,7 +50,18 @@ public sealed class CanonicalFloatingPointFormatterTests
             { 0xC352BD2668E077C4UL, "-21098088986959630.0" },
             { 0x3FF3C0CA428C59DDUL, "1.23456789012345" },
             { 0x3FF3C0CA428C59F8UL, "1.234567890123456" },
-            { 0x3FF3C0CA428C59FBUL, "1.2345678901234567" }
+            { 0x3FF3C0CA428C59FBUL, "1.2345678901234567" },
+            // Powers of two carry only the implicit mantissa bit, so the distance to the next
+            // representable value is twice the distance to the previous one. Dragon4 tracks the two
+            // margins separately for them. A random bit-pattern corpus practically never produces a
+            // zero fraction, so the unequal-margin arms need named values. 2^55 above covers the
+            // whole-number arm; the following cover the fractional-exponent arm, and each one selects
+            // a different decimal pre-scaling and denominator-alignment path inside that arm.
+            { 0x3FF0000000000000UL, "1.0" },
+            { 0x3FE0000000000000UL, "0.5" },
+            { 0x4020000000000000UL, "8.0" },
+            { 0x3F70000000000000UL, "0.00390625" },
+            { 0x0010000000000000UL, "2.2250738585072014E-308" }
         };
 
     public static TheoryData<uint, string> SingleScenarios =>
@@ -67,7 +78,13 @@ public sealed class CanonicalFloatingPointFormatterTests
             { 0x7F7FFFFFU, "3.4028235E+38" },
             { 0xFF7FFFFFU, "-3.4028235E+38" },
             // Exact value 0.330078125 is halfway after the final 8; the final decimal digit stays even.
-            { 0x3EA90000U, "0.33007812" }
+            { 0x3EA90000U, "0.33007812" },
+            // Binary32 powers of two reach Dragon4's unequal-margin arms for the same reason as the
+            // binary64 entries above.
+            { 0x3F800000U, "1.0" },
+            { 0x40000000U, "2.0" },
+            { 0x3D800000U, "0.0625" },
+            { 0x00800000U, "1.1754944E-38" }
         };
 
     [Theory]
