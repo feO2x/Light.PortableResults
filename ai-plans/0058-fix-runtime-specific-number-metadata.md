@@ -77,6 +77,8 @@ Pin an immutable commit on `dotnet/runtime`'s `release/6.0` branch, the last pre
 
 Remove `Half`, parsing, and unused general-number-formatting members. Encapsulate framework APIs unavailable on `netstandard2.0`, such as the required `BitOperations` and bit-conversion operations, behind local compatibility helpers. On `net10.0`, those helpers may call the corresponding framework intrinsic; on `netstandard2.0`, they use semantically identical portable implementations. Keep the upstream structure and naming where practical so the source remains comparable with its pinned origin.
 
+All top-level types ported or adapted from `dotnet/runtime` are `internal`; nested types and members use the narrowest visibility required by the implementation. `CanonicalFloatingPointFormatter` is the sole public surface over the port. This is a deliberate exception to the repository's preference for public, properly encapsulated APIs because the upstream-shaped numerics are replaceable implementation details rather than supported extension points.
+
 The algorithms do not call a host formatter or parser. Grisu3 performs its digit work with managed integer arithmetic. Dragon4 also uses a floating-point calculation for a bounded decimal-exponent estimate, but exact integer comparisons correct that estimate and determine the emitted digits.
 
 The bignum's fixed inline block buffer requires `AllowUnsafeBlocks`; unsafe code remains confined to the numbers implementation. Its fixed-size stack representation adds no allocation and is compatible with Native AOT. The folder README records this choice and all other deviations from upstream.
