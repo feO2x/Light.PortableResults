@@ -18,7 +18,7 @@ Introduce one public `CanonicalFloatingPointFormatter`, used on every TFM, whose
 - [ ] After warm-up, `TryFormat` and `MetadataValue.TryFormatCanonical` allocate nothing for either floating-point type, while `Format` and `MetadataValue.ToCanonicalString` allocate only the returned string, including values that require `.0`.
 - [ ] Existing JSON, HTTP header, CloudEvents, validation-message, and `TryGetSingle` expectations pass unchanged on .NET 10; tests pin the corrected legacy-host representations at the metadata integration points.
 - [ ] BenchmarkDotNet compares both public formatter shapes with equivalent .NET 10 baselines that use `"R"` span formatting plus the same in-buffer `.0` rule. Across the designated aggregate random-finite and common short-form workloads for both types, the canonical formatter is no more than 25% slower and introduces no additional allocations.
-- [ ] Both target frameworks build in Release with warnings as errors, package validation confirms the intended cross-target API compatibility, and the Native AOT sample publishes successfully.
+- [ ] Both target frameworks build in Release with warnings as errors, SDK package validation is enabled for `Light.PortableResults` and confirms the intended cross-target API compatibility during packing, and the Native AOT sample publishes successfully.
 - [ ] `src/Light.PortableResults/Numbers/README.md` records the exact upstream repository, branch, immutable commit SHA, copied files, and every adaptation; copied files retain their .NET Foundation MIT headers and are named in the repository-root `THIRD-PARTY-NOTICES.md`.
 - [ ] Test code coverage remains above 95%, and unused upstream members are trimmed rather than retained solely to be excluded from coverage.
 - [ ] Package release notes state that canonical `Double` and `Single` text is now runtime-independent, changes on .NET Framework and legacy Mono hosts, and retains its existing output on .NET Core 3.0+ hosts.
@@ -55,6 +55,14 @@ public static class CanonicalFloatingPointFormatter
 `TryFormat` is the primary implementation. It generates digits and renders the sign, notation, exponent, and optional marker directly into the caller's span. `Format` uses a bounded stack buffer and materializes the final string once; 32 characters for `double` and 24 for `float` are sufficient. Neither the formatter nor its compatibility helpers have target-specific behavioral branches: both assets compile and use the same implementation.
 
 `MetadataValue.FormatDouble`, `FormatSingle`, and the floating-point arms of `TryFormatCanonical` delegate to this formatter. `MetadataPayload` widens a `Single` to `double` only as a lossless storage optimization; `MetadataKind.Single` retains the semantic precision. Formatting that stored value therefore casts it back to `float` and calls the `float` overload. Passing the widened value to the `double` overload would select binary64 rounding boundaries, digit limits, and notation thresholds and produce the wrong canonical text. The existing `TryGetSingle` canonical-string validation then acquires the corrected representation without its own changes.
+
+Enable the .NET SDK's package validation for `Light.PortableResults`:
+
+```xml
+<EnablePackageValidation>true</EnablePackageValidation>
+```
+
+Do not configure a baseline package because the library is pre-1.0 and permits breaking changes. Do not enable strict compatible-framework equality because the package intentionally exposes some APIs only on `net10.0`; ordinary compatible-framework validation must still confirm that the `netstandard2.0` contract remains compatible with the `net10.0` asset.
 
 ### Runtime port
 
