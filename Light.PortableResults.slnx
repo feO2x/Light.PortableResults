@@ -16,6 +16,7 @@
     <File Path="Light.PortableResults.Public.snk" />
     <File Path="Light.PortableResults.sln.DotSettings" />
     <File Path="README.md" />
+    <File Path="THIRD-PARTY-NOTICES.md" />
   </Folder>
   <Folder Name="/src/">
     <File Path="src\AGENTS.md" />

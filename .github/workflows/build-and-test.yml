@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: ./global.json
       - name: Cache NuGet packages
@@ -55,6 +55,12 @@ jobs:
         with:
           name: coverage-results
           path: code-coverage-results.md
+      - name: Test netstandard2.0 core asset
+        run: >
+          dotnet test ./tests/Light.PortableResults.Tests/Light.PortableResults.Tests.csproj
+          --configuration Release
+          -p:PortableResultsAssetTargetFramework=netstandard2.0
+          -p:ContinuousIntegrationBuild=true
 
   coverage-comment:
     if: always() && github.event_name == 'pull_request'

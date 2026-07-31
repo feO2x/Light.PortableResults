@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <DefineConstants
+      Condition="'$(PortableResultsAssetTargetFramework)' == 'netstandard2.0'">$(DefineConstants);TESTING_NETSTANDARD_ASSET</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
@@ -9,7 +14,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Light.PortableResults\Light.PortableResults.csproj" />
+    <ProjectReference Include="..\..\src\Light.PortableResults\Light.PortableResults.csproj">
+      <SetTargetFramework
+        Condition="'$(PortableResultsAssetTargetFramework)' != ''">TargetFramework=$(PortableResultsAssetTargetFramework)</SetTargetFramework>
+    </ProjectReference>
   </ItemGroup>
 
 </Project>

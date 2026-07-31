@@ -50,6 +50,7 @@ public sealed class TypedMetadataValueTests
            .BeTrue();
         dateTimeOffset.Should().Be(OffsetDateTime);
 
+#if !TESTING_NETSTANDARD_ASSET
         var dateOnly = new DateOnly(2026, 7, 26);
         MetadataValue.FromDateOnly(dateOnly).TryGetDateOnly(out var storedDateOnly).Should().BeTrue();
         storedDateOnly.Should().Be(dateOnly);
@@ -57,6 +58,7 @@ public sealed class TypedMetadataValueTests
         var timeOnly = new TimeOnly(13, 45, 30, 123);
         MetadataValue.FromTimeOnly(timeOnly).TryGetTimeOnly(out var storedTimeOnly).Should().BeTrue();
         storedTimeOnly.Should().Be(timeOnly);
+#endif
 
         var timeSpan = TimeSpan.FromDays(2) + TimeSpan.FromMilliseconds(125);
         MetadataValue.FromTimeSpan(timeSpan).TryGetTimeSpan(out var storedTimeSpan).Should().BeTrue();
@@ -77,8 +79,10 @@ public sealed class TypedMetadataValueTests
         MetadataValue character = 'x';
         MetadataValue dateTime = UtcDateTime;
         MetadataValue dateTimeOffset = OffsetDateTime;
+#if !TESTING_NETSTANDARD_ASSET
         MetadataValue dateOnly = new DateOnly(2026, 7, 26);
         MetadataValue timeOnly = new TimeOnly(13, 45, 30);
+#endif
         MetadataValue timeSpan = TimeSpan.FromSeconds(5);
         MetadataValue guid = GuidValue;
         MetadataValue uri = UriValue;
@@ -90,8 +94,10 @@ public sealed class TypedMetadataValueTests
                 character.Kind,
                 dateTime.Kind,
                 dateTimeOffset.Kind,
+#if !TESTING_NETSTANDARD_ASSET
                 dateOnly.Kind,
                 timeOnly.Kind,
+#endif
                 timeSpan.Kind,
                 guid.Kind,
                 uri.Kind
@@ -103,8 +109,10 @@ public sealed class TypedMetadataValueTests
                 MetadataKind.Char,
                 MetadataKind.DateTime,
                 MetadataKind.DateTimeOffset,
+#if !TESTING_NETSTANDARD_ASSET
                 MetadataKind.DateOnly,
                 MetadataKind.TimeOnly,
+#endif
                 MetadataKind.TimeSpan,
                 MetadataKind.Guid,
                 MetadataKind.Uri
@@ -236,6 +244,7 @@ public sealed class TypedMetadataValueTests
            .BeTrue();
         dateTimeOffset.Should().Be(OffsetDateTime);
 
+#if !TESTING_NETSTANDARD_ASSET
         MetadataValue.FromString("2026-07-26").TryGetDateOnly(out var dateOnly).Should().BeTrue();
         dateOnly.Should().Be(new DateOnly(2026, 7, 26));
         MetadataValue.FromString("07/26/2026").TryGetDateOnly(out _).Should().BeFalse();
@@ -243,6 +252,7 @@ public sealed class TypedMetadataValueTests
         MetadataValue.FromString("13:45:30").TryGetTimeOnly(out var timeOnly).Should().BeTrue();
         timeOnly.Should().Be(new TimeOnly(13, 45, 30));
         MetadataValue.FromString("13:45").TryGetTimeOnly(out _).Should().BeFalse();
+#endif
 
         MetadataValue.FromString("PT5S").TryGetTimeSpan(out var timeSpan).Should().BeTrue();
         timeSpan.Should().Be(TimeSpan.FromSeconds(5));
@@ -277,8 +287,10 @@ public sealed class TypedMetadataValueTests
             (MetadataValue.FromChar('x'), "\"x\""),
             (MetadataValue.FromDateTime(UtcDateTime), "\"2026-07-26T13:45:30Z\""),
             (MetadataValue.FromDateTimeOffset(OffsetDateTime), "\"2026-07-26T13:45:30\\u002B02:00\""),
+#if !TESTING_NETSTANDARD_ASSET
             (MetadataValue.FromDateOnly(new DateOnly(2026, 7, 26)), "\"2026-07-26\""),
             (MetadataValue.FromTimeOnly(new TimeOnly(13, 45, 30)), "\"13:45:30\""),
+#endif
             (MetadataValue.FromTimeSpan(TimeSpan.FromSeconds(5)), "\"PT5S\""),
             (MetadataValue.FromGuid(GuidValue), "\"a1b2c3d4-e5f6-7890-abcd-ef1234567890\""),
             (MetadataValue.FromUri(UriValue), "\"https://example.com/items/42?view=full#summary\""),
@@ -428,23 +440,31 @@ public sealed class TypedMetadataValueTests
         // DateTime.FromBinary does not throw for this one - it decodes into a Local value, which FromDateTime
         // never stores and whose rendering would depend on the reading machine's time zone.
         var localDateTime = MetadataValueTestFactory.CreateWithInt64Payload(MetadataKind.DateTime, -1L);
+#if !TESTING_NETSTANDARD_ASSET
         var dateOnly = MetadataValueTestFactory.CreateWithInt64Payload(MetadataKind.DateOnly, long.MaxValue);
         var timeOnly = MetadataValueTestFactory.CreateWithInt64Payload(MetadataKind.TimeOnly, long.MaxValue);
+#endif
 
         dateTime.TryGetDateTime(out _).Should().BeFalse();
         localDateTime.TryGetDateTime(out _).Should().BeFalse();
+#if !TESTING_NETSTANDARD_ASSET
         dateOnly.TryGetDateOnly(out _).Should().BeFalse();
         timeOnly.TryGetTimeOnly(out _).Should().BeFalse();
+#endif
 
         var dateTimeFormatAct = () => dateTime.ToCanonicalString();
         var localDateTimeFormatAct = () => localDateTime.ToCanonicalString();
+#if !TESTING_NETSTANDARD_ASSET
         var dateOnlyFormatAct = () => dateOnly.ToCanonicalString();
         var timeOnlyFormatAct = () => timeOnly.ToCanonicalString();
+#endif
 
         dateTimeFormatAct.Should().Throw<InvalidOperationException>();
         localDateTimeFormatAct.Should().Throw<InvalidOperationException>();
+#if !TESTING_NETSTANDARD_ASSET
         dateOnlyFormatAct.Should().Throw<InvalidOperationException>();
         timeOnlyFormatAct.Should().Throw<InvalidOperationException>();
+#endif
     }
 
     [Fact]
@@ -471,8 +491,10 @@ public sealed class TypedMetadataValueTests
                 new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Unspecified)
             ),
             ["dateTimeOffset"] = MetadataValue.FromDateTimeOffset(OffsetDateTime),
+#if !TESTING_NETSTANDARD_ASSET
             ["dateOnly"] = MetadataValue.FromDateOnly(new DateOnly(2026, 7, 26)),
             ["timeOnly"] = MetadataValue.FromTimeOnly(new TimeOnly(13, 45, 30)),
+#endif
             ["timeSpan"] = MetadataValue.FromTimeSpan(TimeSpan.FromSeconds(5)),
             ["guid"] = MetadataValue.FromGuid(GuidValue),
             ["uri"] = MetadataValue.FromUri(UriValue),

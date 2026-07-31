@@ -19,18 +19,18 @@ public sealed class UndeclaredMetadataKindFallbackTests
         var first = MetadataValueTestFactory.CreateWithUndeclaredKind();
         var second = MetadataValueTestFactory.CreateWithUndeclaredKind();
 
-        var act = () => first.Equals(second);
+        Action act = () => _ = first.Equals(second);
 
-        act.Should().Throw<SwitchExpressionException>();
+        AssertUndeclaredKindThrows(act);
     }
 
     [Fact]
     public void GetHashCode_ShouldThrow_ForUndeclaredKind()
     {
         var first = MetadataValueTestFactory.CreateWithUndeclaredKind();
-        var act = () => first.GetHashCode();
+        Action act = () => _ = first.GetHashCode();
 
-        act.Should().Throw<SwitchExpressionException>();
+        AssertUndeclaredKindThrows(act);
     }
 
     [Fact]
@@ -38,9 +38,9 @@ public sealed class UndeclaredMetadataKindFallbackTests
     {
         var value = MetadataValueTestFactory.CreateWithUndeclaredKind();
 
-        var act = () => value.ToString();
+        Action act = () => _ = value.ToString();
 
-        act.Should().Throw<SwitchExpressionException>();
+        AssertUndeclaredKindThrows(act);
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public sealed class UndeclaredMetadataKindFallbackTests
     {
         var value = MetadataValueTestFactory.CreateWithUndeclaredKind();
 
-        var act = () =>
+        Action act = () =>
         {
             using var stream = new MemoryStream();
             using var writer = new Utf8JsonWriter(stream);
@@ -56,6 +56,17 @@ public sealed class UndeclaredMetadataKindFallbackTests
             writer.Flush();
         };
 
-        act.Should().Throw<SwitchExpressionException>();
+        AssertUndeclaredKindThrows(act);
+    }
+
+    private static void AssertUndeclaredKindThrows(Action action)
+    {
+#if TESTING_NETSTANDARD_ASSET
+        // The netstandard2.0 compiler helper cannot reference SwitchExpressionException and emits its
+        // InvalidOperationException fallback. The net10.0 asset retains the more specific exception.
+        action.Should().Throw<InvalidOperationException>();
+#else
+        action.Should().Throw<SwitchExpressionException>();
+#endif
     }
 }
