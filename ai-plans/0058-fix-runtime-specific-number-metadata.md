@@ -19,7 +19,7 @@ Introduce one public `CanonicalFloatingPointFormatter`, used on every TFM, whose
 - [ ] Existing JSON, HTTP header, CloudEvents, validation-message, and `TryGetSingle` expectations pass unchanged on .NET 10; tests pin the corrected legacy-host representations at the metadata integration points.
 - [ ] BenchmarkDotNet compares both public formatter shapes with equivalent .NET 10 baselines that use `"R"` span formatting plus the same in-buffer `.0` rule. Across the designated aggregate random-finite and common short-form workloads for both types, the canonical formatter is no more than 25% slower and introduces no additional allocations.
 - [ ] Both target frameworks build in Release with warnings as errors, SDK package validation is enabled for `Light.PortableResults` and confirms the intended cross-target API compatibility during packing, and the Native AOT sample publishes successfully.
-- [ ] `src/Light.PortableResults/Numbers/README.md` records the exact upstream repository, branch, immutable commit SHA, copied files, and every adaptation; copied files retain their .NET Foundation MIT headers and are named in the repository-root `THIRD-PARTY-NOTICES.md`.
+- [ ] `src/Light.PortableResults/Numbers/README.md` records the exact upstream repository, branch, immutable commit SHA, copied files, and every adaptation. Copied files retain their .NET Foundation MIT headers. A repository-root `THIRD-PARTY-NOTICES.md` identifies those files and their provenance, contains the complete upstream .NET Foundation copyright and MIT license text, and is present at the root of the produced `Light.PortableResults.nupkg`.
 - [ ] Test code coverage remains above 95%, and unused upstream members are trimmed rather than retained solely to be excluded from coverage.
 - [ ] Package release notes state that canonical `Double` and `Single` text is now runtime-independent, changes on .NET Framework and legacy Mono hosts, and retains its existing output on .NET Core 3.0+ hosts.
 
@@ -78,6 +78,14 @@ Remove `Half`, parsing, and unused general-number-formatting members. Replace fr
 The algorithms do not call a host formatter or parser. Grisu3 performs its digit work with managed integer arithmetic. Dragon4 also uses a floating-point calculation for a bounded decimal-exponent estimate, but exact integer comparisons correct that estimate and determine the emitted digits.
 
 The bignum's fixed inline block buffer requires `AllowUnsafeBlocks`; unsafe code remains confined to the numbers implementation. Its fixed-size stack representation adds no allocation and is compatible with Native AOT. The folder README records this choice and all other deviations from upstream.
+
+Create the repository-root `THIRD-PARTY-NOTICES.md` as a targeted notice for the incorporated .NET runtime code rather than copying the runtime repository's notices for unrelated components. Add it to `Light.PortableResults.csproj` as a root-level packed file:
+
+```xml
+<None Include="../../THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="\" />
+```
+
+Do not add it to `src/Directory.Build.props`, because the other NuGet packages depend on `Light.PortableResults` but do not contain the ported code. Package verification inspects the produced core `.nupkg` and confirms the notice is present. The existing `PackageLicenseExpression` continues to describe Light.PortableResults' own license; it does not replace the third-party attribution.
 
 ### Verification and performance
 
