@@ -16,7 +16,7 @@ Introduce one public `CanonicalFloatingPointFormatter`, used on every TFM, whose
 - [ ] The same differential corpus passes through a per-call Dragon4-only formatter path, independently verifying Dragon4 and the shared bignum; selecting that path changes neither process-wide state nor the public API.
 - [ ] The formatter contains no call to `ToString`, `TryFormat`, or `Parse` on `double` or `float`; its production result does not depend on the host's floating-point formatter or parser.
 - [ ] After warm-up, `TryFormat` and `MetadataValue.TryFormatCanonical` allocate nothing for either floating-point type, while `Format` and `MetadataValue.ToCanonicalString` allocate only the returned string, including values that require `.0`.
-- [ ] Existing JSON, HTTP header, CloudEvents, validation-message, and `TryGetSingle` expectations pass unchanged on .NET 10; tests pin the corrected legacy-host representations at the metadata integration points.
+- [ ] Existing JSON, HTTP header, CloudEvents, validation-message, and `TryGetSingle` expectations pass unchanged against the `net10.0` asset. Formatter and metadata-integration regression tests execute against both the `net10.0` and `netstandard2.0` library assets and pin identical canonical floating-point text; the build-and-test workflow runs the `netstandard2.0` asset pass as a dedicated step.
 - [ ] BenchmarkDotNet compares both public formatter shapes with equivalent .NET 10 baselines that use `"R"` span formatting plus the same in-buffer `.0` rule. Across the designated aggregate random-finite and common short-form workloads for both types, the canonical formatter is no more than 25% slower and introduces no additional allocations.
 - [ ] Both target frameworks build in Release with warnings as errors, SDK package validation is enabled for `Light.PortableResults` and confirms the intended cross-target API compatibility during packing, and the Native AOT sample publishes successfully.
 - [ ] `src/Light.PortableResults/Numbers/README.md` records the exact upstream repository, branch, immutable commit SHA, copied files, and every adaptation. Copied files retain their .NET Foundation MIT headers. A repository-root `THIRD-PARTY-NOTICES.md` identifies those files and their provenance, contains the complete upstream .NET Foundation copyright and MIT license text, and is present at the root of the produced `Light.PortableResults.nupkg`.
@@ -94,6 +94,30 @@ Do not add it to `src/Directory.Build.props`, because the other NuGet packages d
 ### Verification and performance
 
 The differential oracle is defined only in test and benchmark code: format with invariant `"R"`, then append `.0` if the result contains neither a decimal point nor an exponent. Named tests remain the normative specification; the corpus detects transcription defects in tables, loop bounds, bit helpers, and rare rounding paths. The corpus samples the bit space rather than ordinary numeric distributions, and its seed is fixed for reproducible failures.
+
+`Light.PortableResults.Tests` remains a `net10.0` test executable but parameterizes its `ProjectReference` target through an MSBuild property that defaults to `net10.0`:
+
+```xml
+<PortableResultsAssetTargetFramework
+  Condition="'$(PortableResultsAssetTargetFramework)' == ''">net10.0</PortableResultsAssetTargetFramework>
+
+<ProjectReference
+  Include="..\..\src\Light.PortableResults\Light.PortableResults.csproj"
+  SetTargetFramework="TargetFramework=$(PortableResultsAssetTargetFramework)" />
+```
+
+When `PortableResultsAssetTargetFramework` is `netstandard2.0`, the test project defines `TESTING_NETSTANDARD_ASSET` and conditionally excludes only tests that require APIs intentionally absent from that asset, such as the `DateOnly` and `TimeOnly` metadata APIs. The formatter contract, differential corpus, forced-Dragon4 run, and applicable metadata integration tests run unchanged in both configurations.
+
+`.github/workflows/build-and-test.yml` retains the normal solution-wide `net10.0` test and coverage step and adds a separate step without coverage that builds and executes the existing core test project against the `netstandard2.0` library asset:
+
+```shell
+dotnet test ./tests/Light.PortableResults.Tests/Light.PortableResults.Tests.csproj \
+  --configuration Release \
+  -p:PortableResultsAssetTargetFramework=netstandard2.0 \
+  -p:ContinuousIntegrationBuild=true
+```
+
+This pass executes the compiled `netstandard2.0` asset on .NET 10, including its portable compatibility-helper paths; running on .NET Framework or Mono remains out of scope.
 
 The public overloads use the normal Grisu3-with-Dragon4-fallback path. Private formatter-core overloads accept the algorithm choice per call:
 
