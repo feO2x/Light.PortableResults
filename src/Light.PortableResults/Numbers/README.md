@@ -44,5 +44,52 @@ Files containing adapted runtime code retain the .NET Foundation MIT header. The
 - Made `TryFormat` the primary rendering path. `Format` uses a bounded stack buffer and constructs
   only the returned string.
 
+## Retained code that shortest-unique mode cannot reach
+
+Two small regions survive from upstream that no input can execute through
+`CanonicalFloatingPointFormatter`. They are kept rather than deleted because they belong to the
+published shape of these algorithms, and cutting into them would make the remaining source harder to
+compare against its pinned origin. Neither is excluded from code coverage. The reasoning below
+records why the test suite cannot cover them, so a later reader does not mistake them for a gap.
+
+### Dragon4's carry-on-round-up block
+
+`Dragon4.GenerateDigits` handles a final digit of `9` that rounds up by propagating a carry through
+the preceding digits. Shortest-unique mode never gets there.
+
+Rounding a `9` up produces a `0`, and a shortest representation never ends in `0` — dropping the zero
+and raising the decimal scale would be shorter and would round-trip identically. The carry would
+therefore have to run through every generated digit, which restricts the candidates to values whose
+shortest representation is exactly `1E±k`: the binary value nearest a power of ten, lying below it.
+
+For such a value the loop would first have to emit a leading `9`, and it cannot:
+
+- When the initial decimal-exponent estimate is exact, `estimateTooLow` is false, which means
+  `value + highMargin < 10^digitExponent`. A carry needs `value + highMargin >= 10^digitExponent`.
+- When the estimate undershoots by one, a leading `9` is possible in general, but the estimate never
+  undershoots for these values. It is `ceil(L * log10(2) - 0.69)` with `L = floor(log2(value))`. For a
+  value within one high margin of `10^(m+1)`, `L * log10(2)` lies in `(m + 1 - log10(2), m + 1]`, whose
+  fractional part exceeds `1 - 0.30103 = 0.69897`. Upstream chose `0.69` precisely so that
+  `0.69 + log10(2) < 1`.
+
+These values instead take the `estimateTooLow` branch, which emits a leading `0` and rounds it to `1`
+through the ordinary increment. `1E+23` (`0x44B52D02C7E14AF6`) is the named test for that path.
+
+### Three zero and identity guards in `Dragon4BigInteger`
+
+The early returns in `Multiply(ref value, uint multiplier, out result)`,
+`Multiply(ref left, ref right, out result)` and `MultiplyPow10` cannot fire. Shortest-unique mode only
+ever multiplies by 2 or 10 and never with a zero operand: `scale` and `scaledMarginLow` are non-zero by
+construction, and once `scaledValue` reaches zero the digit loop has already stopped, because a zero
+numerator always compares below the low margin. `MultiplyPow10`'s only caller guards `digitExponent > 0`.
+
+### How this was established
+
+Both claims were checked against an instrumented copy of these files that counts every entry into the
+regions above. The counters stayed at zero across the complete analytic candidate set for the carry
+(every binary64 and binary32 whose shortest form is a single digit `1`, plus both neighbours of each),
+all-nines coefficients at every length from 1 to 17 digits over the full exponent range, every one of
+the 2,139,095,040 finite `binary32` bit patterns, and 64 million random `binary64` bit patterns.
+
 The complete upstream license is reproduced in the repository-root `THIRD-PARTY-NOTICES.md`, which
 is also packed at the root of the `Light.PortableResults` NuGet package.
