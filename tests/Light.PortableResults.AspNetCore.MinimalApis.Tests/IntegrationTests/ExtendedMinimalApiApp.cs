@@ -55,6 +55,7 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
         App.MapGet("/api/extended/generic-header-only-metadata", GetGenericHeaderOnlyMetadata);
         App.MapGet("/api/extended/non-generic-null-header", GetNonGenericNullHeaderMetadata);
         App.MapGet("/api/extended/generic-header-annotation-flags", GetGenericHeaderAnnotationFlagsMetadata);
+        App.MapGet("/api/extended/formatted-headers", GetFormattedHeaderMetadata);
     }
 
     public WebApplication App { get; }
@@ -223,6 +224,34 @@ public sealed class ExtendedMinimalApiApp : IAsyncLifetime
         );
         var result = Result<string>.Ok("ok", metadata);
         return result.ToMinimalApiResult(overrideOptions: AlwaysSerializeMetadataOptions);
+    }
+
+    private static LightResult GetFormattedHeaderMetadata()
+    {
+        var values = MetadataArray.Create(
+            MetadataValue.FromString("first"),
+            MetadataValue.FromInt64(2),
+            MetadataValue.FromString("third")
+        );
+        var metadata = MetadataObject.Create(
+            (
+                "X-Text",
+                MetadataValue.FromString("plain text", MetadataValueAnnotation.SerializeInHttpHeader)
+            ),
+            (
+                "X-Values",
+                MetadataValue.FromArray(values, MetadataValueAnnotation.SerializeInHttpHeader)
+            ),
+            (
+                "X-Empty",
+                MetadataValue.FromArray(
+                    MetadataArray.Empty,
+                    MetadataValueAnnotation.SerializeInHttpHeader
+                )
+            )
+        );
+
+        return Result.Ok(metadata).ToMinimalApiResult(overrideOptions: AlwaysSerializeMetadataOptions);
     }
 
     private static PortableResultsHttpWriteOptions CreateRichValidationOptions() =>

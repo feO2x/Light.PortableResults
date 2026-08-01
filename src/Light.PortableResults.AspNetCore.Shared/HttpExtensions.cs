@@ -128,6 +128,11 @@ public static class HttpExtensions
             }
 
             var preparedHttpHeader = conversionService.PrepareHttpHeader(key, metadataValue);
+            if (preparedHttpHeader.Value.Count == 0)
+            {
+                continue;
+            }
+
             httpResponse.Headers.Add(preparedHttpHeader);
         }
     }
