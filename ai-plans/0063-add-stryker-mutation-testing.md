@@ -8,13 +8,13 @@ Introduce Stryker.NET as a pinned, opt-in tool with a repository configuration t
 
 ## Acceptance Criteria
 
-- [ ] `dotnet tool restore` installs a version-pinned `dotnet-stryker`, and a repository-root `stryker-config.json` supplies the shared configuration so that a scoped run needs only project and test-project arguments.
+- [ ] `dotnet tool restore` installs `dotnet-stryker` pinned to exactly 4.16.0, and a repository-root `stryker-config.json` supplies the shared configuration so that a scoped run needs only a `-p` argument and an optional `-m` glob.
 - [ ] The committed configuration selects the Microsoft Testing Platform runner and disables coverage analysis; a run against `Light.PortableResults.AspNetCore.Shared` reports a non-zero mutation score, and a run against `Result.cs` reports zero `NoCoverage` mutants.
-- [ ] Mutation output is contained under `StrykerOutput/`, which is ignored by git; a completed or interrupted run leaves `git status` clean.
+- [ ] Mutation output is contained under `StrykerOutput/`, which is ignored by git; a completed or interrupted run adds no new entries to `git status`.
 - [ ] `tests/AGENTS.md` documents the file-scoped and project-scoped invocations, states that a surviving mutant is a signal to investigate together with the three permitted triage outcomes, records the measured cost per project, and records the mutation blind spots that must not be read as adequate coverage.
 - [ ] Mutation testing runs on demand from a developer machine only. No CI workflow is added and no existing workflow is modified; pull request validation time is unchanged.
 - [ ] The documented invocation is verified to run the intended tests: for a run mutating `AspNetCore.Shared`, Stryker's reported test count is 337 — every test project transitively referencing it — and not the 26 tests of `AspNetCore.Shared.Tests` alone.
-- [ ] A baseline mutation score is recorded in `tests/AGENTS.md` for the four projects that complete in minutes (`AspNetCore.Shared`, `AspNetCore.Mvc`, `AspNetCore.MinimalApis`, `Validation.OpenApi`), together with the test count each run executed.
+- [ ] A baseline is recorded in `tests/AGENTS.md` for the four projects that complete in minutes (`AspNetCore.Shared`, `AspNetCore.Mvc`, `AspNetCore.MinimalApis`, `Validation.OpenApi`). Each entry carries enough provenance to be reproduced and compared: commit, `dotnet-stryker` version, concurrency, the test count actually executed, elapsed time, and the killed, timeout, survived, compile-error, ignored, and no-coverage counts — not a percentage alone. The no-coverage count is recorded even though it is expected to be zero, because a non-zero value means `coverage-analysis` is no longer taking effect; it was zero in all four measured runs.
 - [ ] Mutation score thresholds and `break-at` remain unset; nothing in the repository fails a build or a test run because of a mutation score.
 
 ## Technical Details
@@ -37,6 +37,7 @@ The configuration is therefore:
     "solution": "Light.PortableResults.slnx",
     "test-runner": "mtp",
     "coverage-analysis": "off",
+    "configuration": "Debug",
     "reporters": ["json", "html", "progress"]
   }
 }
@@ -44,7 +45,7 @@ The configuration is therefore:
 
 Everything else about the repository is compatible without special handling: `.slnx` analysis, central package management with lock files, the `netstandard2.0;net10.0` multi-targeting (Stryker selects `net10.0` unaided), the netstandard2.0 source generator, `InterceptorsNamespaces`, and the Verify-based snapshot tests, which leave no `.received.*` files behind because 4.14.2 disables DiffEngine under MTP. No strong-naming or `InternalsVisibleTo` seam exists to work around.
 
-Run mutation testing in the `Debug` configuration. `TreatWarningsAsErrors` is Release-only, and Stryker's rollback should not have to contend with warnings promoted to errors.
+`configuration` is pinned to `Debug` in the config rather than left to the invoker. `TreatWarningsAsErrors` is Release-only, and Stryker's rollback should not have to contend with warnings promoted to errors. All measurements in this plan were taken under `Debug`.
 
 Reports are written to `StrykerOutput/<timestamp>/` beneath the working directory; the JSON and HTML reporters exist to produce files, so the goal is containment, not absence. Stryker already writes a `.gitignore` containing `*` into each timestamped directory, and a completed run leaves `git status` clean without any repository change. Add `StrykerOutput/` to `.gitignore` anyway: it states the intent, covers the directory itself, and protects against a run interrupted before that inner file is written. The output location is a CLI concern — `--output` has no `stryker-config.json` equivalent — so nothing here depends on redirecting it, and no wrapper script is needed.
 
@@ -83,7 +84,20 @@ The form to document for agents is therefore source project plus optional file g
 dotnet stryker -p <Source>.csproj -m '**/TheFile.cs'
 ```
 
-Whole small projects (`AspNetCore.Shared`, `Mvc`, `MinimalApis`, `Validation.OpenApi`) complete in one to two minutes and need no `-m`. Omitting `-p` mutates every source project in the solution and is the seven-hour path.
+Every command runs from the repository root. Stryker resolves `stryker-config.json` relative to the current working directory and does not search parent directories, and a missing config file is not an error — it silently falls back to the defaults. From a subdirectory the run therefore loses both load-bearing settings at once, reverting to the `vstest` runner and `perTest` coverage analysis, which is exactly the combination that reports 0.00% or fabricates `NoCoverage`. The failure is a plausible report rather than a diagnostic, so `tests/AGENTS.md` must state the working directory as part of the invocation rather than assume it.
+
+The four small projects need no `-m` at all. Measured end to end, including analysis, build, and initial test run:
+
+| Project | Tests run | Created | Tested | Elapsed |
+| --- | ---: | ---: | ---: | ---: |
+| `AspNetCore.Mvc` | 102 | 33 | 17 | 0:38 |
+| `AspNetCore.MinimalApis` | 237 | 32 | 16 | 0:57 |
+| `AspNetCore.Shared` | 337 | 44 | 31 | 1:57 |
+| `Validation.OpenApi` | 163 | 114 | 76 | 1:59 |
+
+Omitting `-p` mutates every source project in the solution and is the seven-hour path.
+
+Do not derive these times from the three-seconds-per-mutant figure. That rate is an upper bound taken from the large projects, where the mutated assembly is referenced by the whole solution and every test project runs. Two effects make small projects cheaper: only a fraction of created mutants is ever tested — 76 of 114 for `Validation.OpenApi` — and per-mutant cost falls with the size of the associated test set. Use the rate to size the projects in the inventory table above, and these measurements for the small ones.
 
 Do not use or document `--since` under this configuration. It was measured on this branch and never narrowed anything: with a completely clean working tree it still reported `ai-plans/0063-add-stryker-mutation-testing.md` as a changed test file and escalated to `16 mutants will be tested because: Non-CSharp files in test project were changed`.
 
@@ -107,7 +121,7 @@ A surviving mutant means the suite did not distinguish the mutated program from 
 
 Never restructure production code solely to make a mutant killable. The root `AGENTS.md` ranks performance above extensibility, and this library's low-allocation `in`/`ref`/`Span` style is precisely the shape that produces awkward survivors. A lower mutation score is the correct outcome when the alternative is a slower or less direct implementation.
 
-No run performed while preparing this plan produced a single survivor — every scored run returned 100.00%. The first real baseline is therefore also the first exercise of this guidance, and the categories above are stated a priori rather than derived from survivors observed in this codebase.
+The measured runs produced exactly one survivor across all four small projects: a statement-removal mutant at `BuiltInValidationErrorBuilderExtensions.cs:426`, which puts `Validation.OpenApi` at 98.68%. It is untriaged — it is the first item to run through the three categories above, and it is the only evidence so far that the queue will contain anything at all. Every other scored run returned 100.00%, so these categories remain largely a priori rather than derived from survivors observed in this codebase.
 
 ### Blind spots to document
 
