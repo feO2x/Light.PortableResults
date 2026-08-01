@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Light.PortableResults.Metadata;
 using Microsoft.Extensions.Primitives;
 
@@ -22,7 +23,7 @@ public static class HttpHeaderValueFormatter
     /// <exception cref="NotSupportedException">
     /// Thrown when <paramref name="value" /> is an object or an array containing a complex child.
     /// </exception>
-#pragma warning disable CS8524 // Unnamed enum values intentionally throw SwitchExpressionException.
+#pragma warning disable CS8524 // Unnamed enum values intentionally throw.
     public static StringValues Format(MetadataValue value) =>
         value.Kind switch
         {
@@ -50,14 +51,10 @@ public static class HttpHeaderValueFormatter
     private static StringValues FormatArray(MetadataArray array)
     {
         var values = array.AsSpan();
-        if (values.Length == 0)
+        switch (values.Length)
         {
-            return StringValues.Empty;
-        }
-
-        if (values.Length == 1)
-        {
-            return FormatArrayItem(values[0]);
+            case 0: return StringValues.Empty;
+            case 1: return FormatArrayItem(values[0]);
         }
 
         var formattedValues = new string[values.Length];
@@ -72,9 +69,11 @@ public static class HttpHeaderValueFormatter
     private static string FormatArrayItem(MetadataValue value) =>
         value.Kind.IsPrimitive() ? value.ToCanonicalString() : ThrowUnsupportedComplexArrayItem(value.Kind);
 
+    [DoesNotReturn]
     private static StringValues ThrowUnsupportedComplexValue(MetadataKind kind) =>
         throw new NotSupportedException($"Metadata values of kind {kind} cannot be formatted as HTTP header values.");
 
+    [DoesNotReturn]
     private static string ThrowUnsupportedComplexArrayItem(MetadataKind kind) =>
         throw new NotSupportedException(
             $"Metadata arrays containing children of kind {kind} cannot be formatted as HTTP header values."
