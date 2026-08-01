@@ -49,20 +49,21 @@ public static class HttpHeaderValueFormatter
 
     private static StringValues FormatArray(MetadataArray array)
     {
-        if (array.Count == 0)
+        var values = array.AsSpan();
+        if (values.Length == 0)
         {
             return StringValues.Empty;
         }
 
-        if (array.Count == 1)
+        if (values.Length == 1)
         {
-            return FormatArrayItem(array[0]);
+            return FormatArrayItem(values[0]);
         }
 
-        var formattedValues = new string[array.Count];
-        for (var i = 0; i < array.Count; i++)
+        var formattedValues = new string[values.Length];
+        for (var i = 0; i < values.Length; i++)
         {
-            formattedValues[i] = FormatArrayItem(array[i]);
+            formattedValues[i] = FormatArrayItem(values[i]);
         }
 
         return new StringValues(formattedValues);
