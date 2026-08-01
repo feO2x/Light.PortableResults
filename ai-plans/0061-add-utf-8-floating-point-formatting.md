@@ -8,13 +8,13 @@ Add explicit UTF-8 span overloads that write the existing runtime-independent ca
 
 ## Acceptance Criteria
 
-- [ ] `CanonicalFloatingPointFormatter` exposes `TryFormatUtf8` overloads for `double` and `float` plus public maximum-length constants on both package assets, all with XML documentation, while its existing public API remains source- and behavior-compatible.
-- [ ] For every finite value, the UTF-8 output is byte-for-byte equal to the ASCII bytes of the existing canonical text and `bytesWritten` equals the `charsWritten` of the UTF-16 overload for the same value. No byte-order mark or terminator is written, and the bytes are produced without routing through a UTF-16 buffer or a framework floating-point formatter.
-- [ ] UTF-8 formatting rejects NaN and both infinities with the same `ArgumentException` contract as UTF-16 formatting; an insufficient destination returns `false`, writes zero to `bytesWritten`, and leaves the destination unchanged.
-- [ ] After warm-up of both the Grisu3 and the Dragon4 path, both UTF-8 overloads allocate nothing for `double` and `float`.
-- [ ] Automated tests cover both output encodings for the named canonical scenarios, the deterministic finite-value and exponent corpora, the forced-Dragon4 path, non-finite values, and insufficient destinations. The formatter test project passes against both the `net10.0` and the `netstandard2.0` library asset.
-- [ ] `src/Light.PortableResults/Numbers/README.md` records the shared code-unit renderer among the adaptations, and the package release notes mention the new UTF-8 formatting API.
-- [ ] Both target frameworks build in Release with warnings as errors, package validation succeeds, the Native AOT sample publishes successfully, and test coverage remains above 95%.
+- [x] `CanonicalFloatingPointFormatter` exposes `TryFormatUtf8` overloads for `double` and `float` plus public maximum-length constants on both package assets, all with XML documentation, while its existing public API remains source- and behavior-compatible.
+- [x] For every finite value, the UTF-8 output is byte-for-byte equal to the ASCII bytes of the existing canonical text and `bytesWritten` equals the `charsWritten` of the UTF-16 overload for the same value. No byte-order mark or terminator is written, and the bytes are produced without routing through a UTF-16 buffer or a framework floating-point formatter.
+- [x] UTF-8 formatting rejects NaN and both infinities with the same `ArgumentException` contract as UTF-16 formatting; an insufficient destination returns `false`, writes zero to `bytesWritten`, and leaves the destination unchanged.
+- [x] After warm-up of both the Grisu3 and the Dragon4 path, both UTF-8 overloads allocate nothing for `double` and `float`.
+- [x] Automated tests cover both output encodings for the named canonical scenarios, the deterministic finite-value and exponent corpora, the forced-Dragon4 path, non-finite values, and insufficient destinations. The formatter test project passes against both the `net10.0` and the `netstandard2.0` library asset.
+- [x] `src/Light.PortableResults/Numbers/README.md` records the shared code-unit renderer among the adaptations, and the package release notes mention the new UTF-8 formatting API.
+- [x] Both target frameworks build in Release with warnings as errors, package validation succeeds, the Native AOT sample publishes successfully, and test coverage remains above 95%.
 
 ## Technical Details
 

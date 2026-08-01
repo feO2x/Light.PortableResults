@@ -39,10 +39,11 @@ Files containing adapted runtime code retain the .NET Foundation MIT header. The
   buffer is stack-only, requires `AllowUnsafeBlocks`, and leaves headroom above the binary64
   shortest-mode maximum.
 - Replaced runtime-internal memory clearing and copying with bounded fixed-buffer loops.
-- Added a direct invariant renderer for this library's notation thresholds, signed uppercase
-  exponent form, negative zero, and positional whole-number `.0` marker.
-- Made `TryFormat` the primary rendering path. `Format` uses a bounded stack buffer and constructs
-  only the returned string.
+- Added a shared code-unit renderer, specialized for UTF-16 characters and UTF-8 bytes, for this
+  library's notation thresholds, signed uppercase exponent form, negative zero, and positional
+  whole-number `.0` marker. Both encodings write directly into the caller's destination.
+- Made the span-based `TryFormat` and `TryFormatUtf8` methods the primary rendering paths. `Format`
+  uses a bounded stack buffer and constructs only the returned string.
 
 ## Retained code that shortest-unique mode cannot reach
 
