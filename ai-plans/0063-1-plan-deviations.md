@@ -41,6 +41,17 @@ The baseline was measured at commit `04aee20` while the implementation itself (t
 **Impact:**
 Cosmetic. Re-measuring the baseline at the merge commit is a valid cheap follow-up (about six minutes for all four projects) if exact provenance is ever needed.
 
+### 3. The committed configuration pins `concurrency: 8`, which the plan did not specify
+
+**Original plan:**
+The plan specifies the exact contents of `stryker-config.json` (`solution`, `test-runner`, `coverage-analysis`, `configuration`, `reporters`) and requires that a scoped run needs only a `-p` argument and an optional `-m` glob. Concurrency appears only as baseline provenance, supplied via `-c 8` at invocation time — so the documented invocation was not the invocation that produced the baseline.
+
+**Implemented:**
+`stryker-config.json` additionally pins `"concurrency": 8`, and the documented invocations pass no `-c`.
+
+**Why:**
+The result vector is concurrency-sensitive (§1: `Validation.OpenApi` reports 2 timeouts/18 survivors at concurrency 4 vs. 21/1 at 8), so a baseline is only comparable at equal concurrency — making concurrency a load-bearing setting, which the plan's own philosophy places in the configuration rather than the invocation. Relying on the default is not an alternative: 4.16.0 defaults to half the logical processors (verified via the debug options dump; the `--help` text claiming "as many parallel processes as you have CPU cores" is stale), which is 8 on the recording machine but 4 on an 8-core machine. The pinned value reproduces the baseline on any machine with at least 8 logical cores and leaves `-c` free for experiments, e.g. lowering it to unmask slow survivors. Verified to take effect: with `"concurrency": 3` in the config and no `-c`, the debug options dump reports `"Concurrency": 3`.
+
 ## Notes On Items Implemented As Planned
 
 The following measurements from the plan reproduced exactly or within seconds:

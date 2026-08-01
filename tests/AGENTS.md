@@ -26,7 +26,7 @@ Each test project writes `TestResults/<guid>.cobertura.xml`. Merge them with `re
 
 ### How to run
 
-Always run from the repository root: Stryker reads `stryker-config.json` only from the current directory and silently falls back to defaults without it, reverting to the `vstest` runner (cannot drive the xUnit v3 hosts, reports everything survived) and `perTest` coverage analysis (fabricates `NoCoverage`). The config also pins `Debug` because `TreatWarningsAsErrors` is Release-only.
+Always run from the repository root: Stryker reads `stryker-config.json` only from the current directory and silently falls back to defaults without it, reverting to the `vstest` runner (cannot drive the xUnit v3 hosts, reports everything survived) and `perTest` coverage analysis (fabricates `NoCoverage`). The config also pins `Debug` (`TreatWarningsAsErrors` is Release-only) and `concurrency: 8` (result vectors vary with parallelism; override with `-c` for experiments).
 
 ```shell
 # One project — sufficient for the four small projects
@@ -53,7 +53,7 @@ dotnet stryker -p Light.PortableResults.csproj -m '**/Result.cs'
 | `AspNetCore.Mvc` | 33 | 11 |
 | `AspNetCore.MinimalApis` | 32 | 11 |
 
-Baseline measured at commit `04aee20`, `dotnet-stryker` 4.16.0, `-c 8`, `Debug`, Apple M3 Max:
+Baseline measured at commit `04aee20`, `dotnet-stryker` 4.16.0, concurrency 8 (pinned in `stryker-config.json`; the 4.16.0 default is half the logical cores and therefore machine-dependent), `Debug`, Apple M3 Max:
 
 | Project | Tests run | Elapsed | Killed | Timeout | Survived | CompileError | Ignored | NoCoverage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -62,7 +62,7 @@ Baseline measured at commit `04aee20`, `dotnet-stryker` 4.16.0, `-c 8`, `Debug`,
 | `AspNetCore.Shared` | 337 | 1:57 | 31 | 0 | 0 | 3 | 10 | 0 |
 | `Validation.OpenApi` | 163 | 2:06 | 54 | 21 | 1 | 2 | 36 | 0 |
 
-`NoCoverage` must be zero — a non-zero value means `coverage-analysis: off` is no longer taking effect. Compare full count vectors, not percentages.
+`NoCoverage` must be zero — a non-zero value means `coverage-analysis: off` is no longer taking effect. Compare full count vectors at equal concurrency, not percentages.
 
 ### Triaging survivors
 

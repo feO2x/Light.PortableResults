@@ -4,6 +4,7 @@
     "test-runner": "mtp",
     "coverage-analysis": "off",
     "configuration": "Debug",
+    "concurrency": 8,
     "reporters": ["json", "html", "progress"]
   }
 }
