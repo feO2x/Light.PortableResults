@@ -60,7 +60,9 @@ Baseline measured at commit `04aee20`, `dotnet-stryker` 4.16.0, concurrency 8 (p
 | `AspNetCore.Mvc` | 102 | 0:40 | 16 | 1 | 0 | 11 | 5 | 0 |
 | `AspNetCore.MinimalApis` | 237 | 0:58 | 16 | 0 | 0 | 11 | 5 | 0 |
 | `AspNetCore.Shared` | 337 | 1:57 | 31 | 0 | 0 | 3 | 10 | 0 |
-| `Validation.OpenApi` | 163 | 2:06 | 54 | 21 | 1 | 2 | 36 | 0 |
+| `Validation.OpenApi` † | 163 | 2:06 | 54 | 21 | 1 | 2 | 36 | 0 |
+
+† This row is not exactly reproducible. With `coverage-analysis: off` every mutant runs the full 163-test suite, so the Killed/Timeout/Survived split is machine-load dependent (see the timeout-masking blind spot): two runs of identical sources at concurrency 8 gave Killed 51–54, Timeout 21, Survived 1–4. Tests run, CompileError, and Ignored are deterministic. For triage rather than comparison, run this project with `-c 4` to unmask the slow full-suite survivors (56 killed, 2 timeout, 18 survived).
 
 `NoCoverage` must be zero — a non-zero value means `coverage-analysis: off` is no longer taking effect. Compare full count vectors at equal concurrency, not percentages.
 
