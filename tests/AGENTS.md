@@ -26,7 +26,9 @@ Each test project writes `TestResults/<guid>.cobertura.xml`. Merge them with `re
 
 ### How to run
 
-Always run from the repository root: Stryker reads `stryker-config.json` only from the current directory and silently falls back to defaults without it, reverting to the `vstest` runner (cannot drive the xUnit v3 hosts, reports everything survived) and `perTest` coverage analysis (fabricates `NoCoverage`). The config also pins `Debug` (`TreatWarningsAsErrors` is Release-only) and `concurrency: 8` (result vectors vary with parallelism; override with `-c` for experiments).
+Always run from the repository root: Stryker reads `stryker-config.json` only from the current directory and silently falls back to defaults without it, reverting to the `vstest` runner (cannot drive the xUnit v3 hosts, reports everything survived) and `perTest` coverage analysis (fabricates `NoCoverage`). The config also pins `Debug` (`TreatWarningsAsErrors` is Release-only), `concurrency: 8` (result vectors vary with parallelism; override with `-c` for experiments), and `additional-timeout: 30000` (the 5,000 ms default masks slow survivors as timeouts under load).
+
+`additional-timeout` is config-file-only in 4.16.0 and is milliseconds of headroom added to Stryker's timeout derived from the initial test run, not the total timeout. Raising it makes genuine hangs take longer to classify, but the measured value exposes all known slow survivors while keeping the four small-project runs within minutes.
 
 Revisit `coverage-analysis: off` when Stryker's MTP per-test coverage support ([#3516](https://github.com/stryker-mutator/stryker-net/pull/3516)) ships and proves trustworthy; it is the main lever on run time because it avoids running the full discovered test set for every mutant.
 
@@ -58,16 +60,16 @@ The smoke-check vector is tied to the current `Result.cs` and its tests; update 
 | `AspNetCore.Mvc` | 33 | 11 |
 | `AspNetCore.MinimalApis` | 32 | 11 |
 
-Baseline measured at commit `04aee20`, `dotnet-stryker` 4.16.0, concurrency 8 (pinned in `stryker-config.json`; the 4.16.0 default is half the logical cores and therefore machine-dependent), `Debug`, Apple M3 Max (16 logical cores):
+Baseline for sources at commit `04aee20`, remeasured with `dotnet-stryker` 4.16.0, concurrency 8 and 30,000 ms additional timeout (both pinned in `stryker-config.json`), `Debug`, Apple M3 Max (16 logical cores):
 
 | Project | Tests run | Elapsed | Killed | Timeout | Survived | CompileError | Ignored | NoCoverage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `AspNetCore.Mvc` | 102 | 0:40 | 16 | 1 | 0 | 11 | 5 | 0 |
-| `AspNetCore.MinimalApis` | 237 | 0:58 | 16 | 0 | 0 | 11 | 5 | 0 |
-| `AspNetCore.Shared` | 337 | 1:57 | 31 | 0 | 0 | 3 | 10 | 0 |
-| `Validation.OpenApi` † | 163 | 2:06 | 54 | 21 | 1 | 2 | 36 | 0 |
+| `AspNetCore.Mvc` | 102 | 0:53 | 16 | 0 | 1 | 11 | 5 | 0 |
+| `AspNetCore.MinimalApis` | 237 | 1:22 | 16 | 0 | 0 | 11 | 5 | 0 |
+| `AspNetCore.Shared` | 337 | 2:29 | 31 | 0 | 0 | 3 | 10 | 0 |
+| `Validation.OpenApi` | 163 | 2:38 | 57 | 0 | 19 | 2 | 36 | 0 |
 
-† This row is not exactly reproducible. With `coverage-analysis: off` every mutant runs the full 163-test suite, so the Killed/Timeout/Survived split is machine-load dependent (see the timeout-masking blind spot): two runs of identical sources at concurrency 8 gave Killed 51–54, Timeout 21, Survived 1–4. Tests run, CompileError, and Ignored are deterministic. For triage rather than comparison, run this project with `-c 4` to unmask the slow full-suite survivors (56 killed, 2 timeout, 18 survived).
+`Validation.OpenApi` was run twice consecutively with the 30,000 ms setting; both runs produced 57 killed, 0 timeout, 19 survived, and a 75.00% score, completing in 2:32 and 2:38. At 20,000 ms, one of two runs still timed out a mutant known to survive. At the 5,000 ms default, 21 mutants were reported as timeouts, masking most survivors and inflating the score to 98.68%.
 
 `Ignored` is not user suppression: all 56 baseline entries are `Block removal` mutants discarded deterministically by Stryker's built-in "block already covered" filter because another active mutant exists inside the block. A different reason or count should be investigated.
 
@@ -86,5 +88,5 @@ Never restructure production code to make a mutant killable: performance outrank
 ### Blind spots — do not read as adequate coverage
 
 - ~9.5% of mutants fail to compile (mostly the `out`/`ref` style); Stryker's Safe Mode then discards every mutant in the enclosing method: `Dragon4.GenerateDigits`, `ResultJsonReader.ReadStatusValue`/`ReadIndexValue`, `ErrorsExtensions.WriteRichErrors`, and all of `LightResult.cs` receive no mutation coverage. Tool limitation, not a test defect — a high score in `Numbers/` is not verified behavior.
-- `Timeout` counts as killed, but full-suite survivors can exceed the per-mutant timeout under load: `Validation.OpenApi`'s 21 timeouts at `-c 8` become 18 survivors at `-c 4` (76.32%). Treat `Timeout` like `Survived` in that project.
+- `Timeout` counts as killed. The pinned 30,000 ms additional timeout reduced `Validation.OpenApi` from 21 timeouts to zero in two consecutive concurrency-8 runs, but no finite value makes classification independent of hardware and load. Investigate any future timeout as either a genuine hang or insufficient headroom; do not assume it represents a killed mutant.
 - The MTP runner is a preview (stryker-mutator/stryker-net#3094); verify surprising results against a plain `dotnet test` run.
