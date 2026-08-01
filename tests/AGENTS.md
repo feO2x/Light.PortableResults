@@ -34,9 +34,12 @@ Revisit `coverage-analysis: off` when Stryker's MTP per-test coverage support ([
 # One project — sufficient for the four small projects
 dotnet stryker -p Light.PortableResults.AspNetCore.Shared.csproj
 
-# One file (~4 minutes for Result.cs)
+# One-file configuration smoke check (~4 minutes)
+# Expect: 2,398 tests, 67 killed, 0 NoCoverage, 100.00%
 dotnet stryker -p Light.PortableResults.csproj -m '**/Result.cs'
 ```
+
+The smoke-check vector is tied to the current `Result.cs` and its tests; update it after intentional changes alter the mutant inventory. All mutants surviving with a 0.00% score suggests fallback to the `vstest` runner, while any non-zero `NoCoverage` count suggests `coverage-analysis: off` was lost.
 
 `-p` selects the mutated project, not the tests: Stryker runs every test project transitively referencing it (`AspNetCore.Shared` → 337 tests, `Light.PortableResults` → all 2,398). Cross-project kills are legitimate (sociable tests) and nearly free. Never pass `-tp` (it does not narrow tests) or `--since` (any non-C# file in the diff, e.g. an `ai-plans/` document, degrades it to a full run). Reports go to `StrykerOutput/<timestamp>/reports/` (gitignored): JSON for agents (filter `"status": "Survived"`), HTML for humans.
 
