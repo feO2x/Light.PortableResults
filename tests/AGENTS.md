@@ -91,6 +91,10 @@ If a survivor can only be killed by asserting on something incidental — exact 
 
 ### Blind spots — do not read as adequate coverage
 
-- ~9.5% of mutants fail to compile (mostly the `out`/`ref` style); Stryker's Safe Mode then discards every mutant in the enclosing method: `Dragon4.GenerateDigits`, `ResultJsonReader.ReadStatusValue`/`ReadIndexValue`, `ErrorsExtensions.WriteRichErrors`, and all of `LightResult.cs` receive no mutation coverage. Tool limitation, not a test defect — a high score in `Numbers/` is not verified behavior.
+- ~9.5% of mutants fail to compile (mostly the `out`/`ref` style); Stryker's Safe Mode then discards every mutant in the enclosing method, which receives no mutation coverage at all. Tool limitation, not a test defect — a high score in `Numbers/` is not verified behavior. Observed at the baseline: `Dragon4.GenerateDigits`, `ResultJsonReader.ReadStatusValue`/`ReadIndexValue`, `ErrorsExtensions.WriteRichErrors`, and all of `LightResult.cs` (11 of 11 mutants).
+
+  Treat that list as observed, not fixed: any new `out`/`ref` code joins it silently. Stryker announces it as `[INF] Safe Mode! Stryker will remove all mutations in <method>` on the console only — no log file is written — and the discarded mutants are simply absent from the JSON report. The durable way to recover the current set is to filter the report for `"status": "CompileError"`; those sites are the only trace left, and their enclosing methods are the ones running blind.
+
+  When changing a method in that set, mutation score carries no information about it and line coverage only proves execution. Adequacy has to be argued by hand: enumerate the behaviors the method promises and point at the test constraining each one. State that reasoning in the pull request, because no tool in this repository can check it.
 - `Timeout` counts as killed. The pinned 30,000 ms additional timeout reduced `Validation.OpenApi` from 21 timeouts to zero in two consecutive concurrency-8 runs, but no finite value makes classification independent of hardware and load. Investigate any future timeout as either a genuine hang or insufficient headroom; do not assume it represents a killed mutant.
 - The MTP runner is a preview (stryker-mutator/stryker-net#3094); verify surprising results against a plain `dotnet test` run.
