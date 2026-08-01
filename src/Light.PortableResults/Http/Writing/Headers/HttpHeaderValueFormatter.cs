@@ -68,30 +68,8 @@ public static class HttpHeaderValueFormatter
         return new StringValues(formattedValues);
     }
 
-#pragma warning disable CS8524 // Unnamed enum values intentionally throw SwitchExpressionException.
     private static string FormatArrayItem(MetadataValue value) =>
-        value.Kind switch
-        {
-            MetadataKind.Null => value.ToCanonicalString(),
-            MetadataKind.Boolean => value.ToCanonicalString(),
-            MetadataKind.Int64 => value.ToCanonicalString(),
-            MetadataKind.Double => value.ToCanonicalString(),
-            MetadataKind.String => value.ToCanonicalString(),
-            MetadataKind.Decimal => value.ToCanonicalString(),
-            MetadataKind.UInt64 => value.ToCanonicalString(),
-            MetadataKind.Single => value.ToCanonicalString(),
-            MetadataKind.Char => value.ToCanonicalString(),
-            MetadataKind.DateTime => value.ToCanonicalString(),
-            MetadataKind.DateTimeOffset => value.ToCanonicalString(),
-            MetadataKind.DateOnly => value.ToCanonicalString(),
-            MetadataKind.TimeOnly => value.ToCanonicalString(),
-            MetadataKind.TimeSpan => value.ToCanonicalString(),
-            MetadataKind.Guid => value.ToCanonicalString(),
-            MetadataKind.Uri => value.ToCanonicalString(),
-            MetadataKind.Array => ThrowUnsupportedComplexArrayItem(MetadataKind.Array),
-            MetadataKind.Object => ThrowUnsupportedComplexArrayItem(MetadataKind.Object)
-        };
-#pragma warning restore CS8524
+        value.Kind.IsPrimitive() ? value.ToCanonicalString() : ThrowUnsupportedComplexArrayItem(value.Kind);
 
     private static StringValues ThrowUnsupportedComplexValue(MetadataKind kind) =>
         throw new NotSupportedException($"Metadata values of kind {kind} cannot be formatted as HTTP header values.");
