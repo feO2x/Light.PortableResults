@@ -29,12 +29,16 @@ public sealed class DefaultHttpHeaderConversionServiceTests
         }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
         var service = new DefaultHttpHeaderConversionService(converters);
-        var metadataValue = MetadataValue.FromString("abc");
+        var metadataValue = MetadataValue.FromString(
+            "abc",
+            MetadataValueAnnotation.SerializeInHttpHeaderAndBody
+        );
 
         var header = service.PrepareHttpHeader("traceId", metadataValue);
 
         header.Key.Should().Be("X-Trace-Id");
         header.Value.ToString().Should().Be("abc");
+        converter.ReceivedValue.Should().Be(metadataValue);
     }
 
     [Fact]
@@ -65,14 +69,13 @@ public sealed class DefaultHttpHeaderConversionServiceTests
     }
 
     [Fact]
-    public void PrepareHttpHeader_ShouldUseCanonicalUnquotedTextForEveryPrimitiveKind()
+    public void PrepareHttpHeader_ShouldUseCanonicalUnquotedTextForEveryNonNullPrimitiveKind()
     {
         var service = new DefaultHttpHeaderConversionService(
             new Dictionary<string, HttpHeaderConverter>().ToFrozenDictionary()
         );
         var values = new (MetadataValue Value, string Expected)[]
         {
-            (MetadataValue.Null, "null"),
             (MetadataValue.FromBoolean(true), "true"),
             (MetadataValue.FromInt64(42), "42"),
             (MetadataValue.FromDouble(5), "5.0"),
@@ -111,12 +114,35 @@ public sealed class DefaultHttpHeaderConversionServiceTests
         }
     }
 
+    [Fact]
+    public void PrepareHttpHeaderShouldFormatPrimitiveArrayAsSeparateValues()
+    {
+        var service = new DefaultHttpHeaderConversionService(
+            new Dictionary<string, HttpHeaderConverter>().ToFrozenDictionary()
+        );
+        var metadataValue = MetadataValue.FromArray(
+            MetadataArray.Create(
+                MetadataValue.FromString("first"),
+                MetadataValue.FromInt64(2),
+                MetadataValue.FromString("third")
+            )
+        );
+
+        var header = service.PrepareHttpHeader("values", metadataValue);
+
+        header.Key.Should().Be("values");
+        header.Value.Should().Equal("first", "2", "third");
+    }
+
     private sealed class TraceIdConverter : HttpHeaderConverter
     {
         public TraceIdConverter() : base(["traceId"]) { }
 
+        public MetadataValue? ReceivedValue { get; private set; }
+
         public override KeyValuePair<string, StringValues> PrepareHttpHeader(string metadataKey, MetadataValue value)
         {
+            ReceivedValue = value;
             value.TryGetString(out var traceId);
             return new KeyValuePair<string, StringValues>("X-Trace-Id", traceId);
         }

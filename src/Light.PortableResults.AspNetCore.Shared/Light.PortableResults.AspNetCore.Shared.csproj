@@ -10,6 +10,8 @@
       - Result enrichment with ASP.NET Core's HttpContext.
       - Shared logic for Minimal APIs and MVC's composition root.
       - Compatible with .NET Native AOT.
+      - Suppresses response headers when header conversion produces no values, including empty primitive arrays
+        and deliberate empty output from custom converters.
     </PackageReleaseNotes>
   </PropertyGroup>
 

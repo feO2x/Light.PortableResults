@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Net;
 using FluentAssertions;
 using Light.PortableResults.Http.Writing;
@@ -246,6 +248,53 @@ public sealed class HttpExtensionsTests
     }
 
     [Fact]
+    public void SetMetadataValuesAsHeadersIfNecessaryShouldOmitEmptyArrayFromDefaultConversion()
+    {
+        var response = new DefaultHttpContext().Response;
+        var result = Result.Ok(
+            MetadataObject.Create(
+                (
+                    "X-Empty",
+                    MetadataValue.FromArray(
+                        MetadataArray.Empty,
+                        MetadataValueAnnotation.SerializeInHttpHeader
+                    )
+                )
+            )
+        );
+        var conversionService = new DefaultHttpHeaderConversionService(
+            new Dictionary<string, HttpHeaderConverter>().ToFrozenDictionary()
+        );
+
+        response.SetMetadataValuesAsHeadersIfNecessary(result, conversionService);
+
+        response.Headers.ContainsKey("X-Empty").Should().BeFalse();
+    }
+
+    [Fact]
+    public void SetMetadataValuesAsHeadersIfNecessaryShouldLetRegisteredConverterSuppressHeader()
+    {
+        var response = new DefaultHttpContext().Response;
+        var metadataValue = MetadataValue.FromString(
+            "original",
+            MetadataValueAnnotation.SerializeInHttpHeader
+        );
+        var result = Result.Ok(MetadataObject.Create(("source", metadataValue)));
+        var converter = new SuppressingHttpHeaderConverter();
+        var conversionService = new DefaultHttpHeaderConversionService(
+            new Dictionary<string, HttpHeaderConverter>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["source"] = converter
+            }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase)
+        );
+
+        response.SetMetadataValuesAsHeadersIfNecessary(result, conversionService);
+
+        converter.ReceivedValue.Should().Be(metadataValue);
+        response.Headers.ContainsKey("X-Suppressed").Should().BeFalse();
+    }
+
+    [Fact]
     public void ResolvePortableResultsHttpWriteOptions_ShouldThrow_WhenHttpContextIsNull()
     {
         HttpContext? httpContext = null;
@@ -322,6 +371,19 @@ public sealed class HttpExtensionsTests
             var preparedHeader = new KeyValuePair<string, StringValues>(metadataKey, new StringValues(stringValue));
             PreparedHeaders.Add(preparedHeader);
             return preparedHeader;
+        }
+    }
+
+    private sealed class SuppressingHttpHeaderConverter : HttpHeaderConverter
+    {
+        public SuppressingHttpHeaderConverter() : base(ImmutableArray.Create("source")) { }
+
+        public MetadataValue? ReceivedValue { get; private set; }
+
+        public override KeyValuePair<string, StringValues> PrepareHttpHeader(string metadataKey, MetadataValue value)
+        {
+            ReceivedValue = value;
+            return new KeyValuePair<string, StringValues>("X-Suppressed", StringValues.Empty);
         }
     }
 }

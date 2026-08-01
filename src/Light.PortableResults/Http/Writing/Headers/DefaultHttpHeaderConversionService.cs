@@ -36,8 +36,6 @@ public sealed class DefaultHttpHeaderConversionService : IHttpHeaderConversionSe
             targetConverter.PrepareHttpHeader(metadataKey, metadataValue) :
             new KeyValuePair<string, StringValues>(
                 metadataKey,
-                metadataValue.Kind.IsPrimitive() ?
-                    metadataValue.ToCanonicalString() :
-                    metadataValue.ToString()
+                HttpHeaderValueFormatter.Format(metadataValue)
             );
 }

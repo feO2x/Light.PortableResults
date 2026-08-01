@@ -215,4 +215,22 @@ public sealed class ExtendedAppIntegrationTests
 
         await Verifier.Verify(response);
     }
+
+    [Fact]
+    public async Task ToMinimalApiResultShouldReceiveCanonicalScalarAndSeparateArrayHeaderValues()
+    {
+        using var httpClient = _fixture.CreateHttpClient();
+
+        using var response = await httpClient.GetAsync(
+            "/api/extended/formatted-headers",
+            cancellationToken: TestContext.Current.CancellationToken
+        );
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Headers.TryGetValues("X-Text", out var textValues).Should().BeTrue();
+        textValues.Should().Equal("plain text");
+        response.Headers.TryGetValues("X-Values", out var arrayValues).Should().BeTrue();
+        arrayValues.Should().Equal("first", "2", "third");
+        response.Headers.Contains("X-Empty").Should().BeFalse();
+    }
 }
