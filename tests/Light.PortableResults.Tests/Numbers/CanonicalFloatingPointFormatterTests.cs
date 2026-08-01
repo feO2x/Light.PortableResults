@@ -86,10 +86,25 @@ public sealed class CanonicalFloatingPointFormatterTests
         };
 
     [Fact]
-    public void MaximumLengthsShouldBoundBothEncodings()
+    public void MaximumLengthsShouldBoundEveryFiniteValueInBothEncodings()
     {
-        CanonicalFloatingPointFormatter.MaximumDoubleLength.Should().Be(32);
-        CanonicalFloatingPointFormatter.MaximumSingleLength.Should().Be(24);
+        // An all-ones mantissa maximizes the significant digit count, so these sweeps drive both
+        // digit generators to the longest coefficient each binary exponent can produce.
+        const ulong doubleMantissa = 0x000FFFFFFFFFFFFFUL;
+        for (ulong exponent = 0; exponent < 0x7FF; exponent++)
+        {
+            var bits = (exponent << 52) | doubleMantissa;
+            AssertFitsIntoMaximumLength(BitConverter.Int64BitsToDouble((long) bits));
+            AssertFitsIntoMaximumLength(BitConverter.Int64BitsToDouble((long) (bits | (1UL << 63))));
+        }
+
+        const uint singleMantissa = 0x007FFFFFU;
+        for (uint exponent = 0; exponent < 0xFF; exponent++)
+        {
+            var bits = (exponent << 23) | singleMantissa;
+            AssertFitsIntoMaximumLength(BitConverter.Int32BitsToSingle((int) bits));
+            AssertFitsIntoMaximumLength(BitConverter.Int32BitsToSingle((int) (bits | (1U << 31))));
+        }
     }
 
     [Theory]
@@ -369,6 +384,46 @@ public sealed class CanonicalFloatingPointFormatterTests
         MeasureStringAllocations(() => singleMetadata.ToCanonicalString())
            .Should()
            .Be(singleBaseline);
+    }
+
+    private static void AssertFitsIntoMaximumLength(double value)
+    {
+        // The destinations are sized exactly at the constant, so a successful call is itself the
+        // proof that the constant bounds this value in this encoding.
+        Span<char> chars = stackalloc char[CanonicalFloatingPointFormatter.MaximumDoubleLength];
+        Span<byte> bytes = stackalloc byte[CanonicalFloatingPointFormatter.MaximumDoubleLength];
+
+        CanonicalFloatingPointFormatter.TryFormat(value, chars, out var charsWritten)
+           .Should()
+           .BeTrue();
+        CanonicalFloatingPointFormatter.TryFormatUtf8(value, bytes, out var bytesWritten)
+           .Should()
+           .BeTrue();
+        ForceDragon4DoubleChars(value, chars, out var dragon4CharsWritten, true).Should().BeTrue();
+        ForceDragon4DoubleBytes(value, bytes, out var dragon4BytesWritten, true).Should().BeTrue();
+
+        bytesWritten.Should().Be(charsWritten);
+        dragon4CharsWritten.Should().Be(charsWritten);
+        dragon4BytesWritten.Should().Be(charsWritten);
+    }
+
+    private static void AssertFitsIntoMaximumLength(float value)
+    {
+        Span<char> chars = stackalloc char[CanonicalFloatingPointFormatter.MaximumSingleLength];
+        Span<byte> bytes = stackalloc byte[CanonicalFloatingPointFormatter.MaximumSingleLength];
+
+        CanonicalFloatingPointFormatter.TryFormat(value, chars, out var charsWritten)
+           .Should()
+           .BeTrue();
+        CanonicalFloatingPointFormatter.TryFormatUtf8(value, bytes, out var bytesWritten)
+           .Should()
+           .BeTrue();
+        ForceDragon4SingleChars(value, chars, out var dragon4CharsWritten, true).Should().BeTrue();
+        ForceDragon4SingleBytes(value, bytes, out var dragon4BytesWritten, true).Should().BeTrue();
+
+        bytesWritten.Should().Be(charsWritten);
+        dragon4CharsWritten.Should().Be(charsWritten);
+        dragon4BytesWritten.Should().Be(charsWritten);
     }
 
     private static void AssertMatchesOracle(double value)

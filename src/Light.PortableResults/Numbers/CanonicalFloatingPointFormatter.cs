@@ -22,15 +22,31 @@ namespace Light.PortableResults.Numbers;
 public static class CanonicalFloatingPointFormatter
 {
     /// <summary>
-    /// The maximum number of UTF-16 characters or UTF-8 bytes produced for a finite
-    /// double-precision value.
+    /// A destination size that is always large enough to hold the canonical encoding of any finite
+    /// double-precision value, in UTF-16 characters or in UTF-8 bytes.
     /// </summary>
+    /// <remarks>
+    /// This is an upper bound with headroom, not the length of the longest output: no finite value
+    /// produces this many code units. Size a destination with it and
+    /// <see cref="TryFormat(double, Span{char}, out int)" /> and
+    /// <see cref="TryFormatUtf8(double, Span{byte}, out int)" /> always succeed. A single value bounds
+    /// both encodings because the canonical alphabet is entirely ASCII, so every character occupies
+    /// exactly one UTF-8 byte.
+    /// </remarks>
     public const int MaximumDoubleLength = 32;
 
     /// <summary>
-    /// The maximum number of UTF-16 characters or UTF-8 bytes produced for a finite
-    /// single-precision value.
+    /// A destination size that is always large enough to hold the canonical encoding of any finite
+    /// single-precision value, in UTF-16 characters or in UTF-8 bytes.
     /// </summary>
+    /// <remarks>
+    /// This is an upper bound with headroom, not the length of the longest output: no finite value
+    /// produces this many code units. Size a destination with it and
+    /// <see cref="TryFormat(float, Span{char}, out int)" /> and
+    /// <see cref="TryFormatUtf8(float, Span{byte}, out int)" /> always succeed. A single value bounds
+    /// both encodings because the canonical alphabet is entirely ASCII, so every character occupies
+    /// exactly one UTF-8 byte.
+    /// </remarks>
     public const int MaximumSingleLength = 24;
 
     private const int DoubleDigitsLength = 17;
@@ -290,6 +306,7 @@ public static class CanonicalFloatingPointFormatter
         destination[index++] = ToCodeUnit<TCodeUnit>((byte) ('0' + exponent % 10));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static TCodeUnit ToCodeUnit<TCodeUnit>(byte value)
         where TCodeUnit : unmanaged
     {
