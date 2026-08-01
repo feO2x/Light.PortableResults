@@ -23,6 +23,9 @@ public static class PortableValidationOpenApiRouteHandlerBuilderExtensions
     )
         where TValidator : IPortableValidationOpenApiContract
     {
+        // The delegated ProducesPortableValidationProblem guards the same parameter, so the observable contract is
+        // identical with or without this guard.
+        // Stryker disable once Statement : equivalent - ProducesPortableValidationProblem guards the same parameter
         ArgumentNullException.ThrowIfNull(builder);
 
         return builder.ProducesPortableValidationProblem(

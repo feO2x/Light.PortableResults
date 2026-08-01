@@ -37,13 +37,13 @@ Revisit `coverage-analysis: off` when Stryker's MTP per-test coverage support ([
 dotnet stryker -p Light.PortableResults.AspNetCore.Shared.csproj
 
 # One-file configuration smoke check (~4 minutes)
-# Expect: 2,398 tests, 67 killed, 0 NoCoverage, 100.00%
+# Expect: 2,401 tests, 67 killed, 0 NoCoverage, 100.00%
 dotnet stryker -p Light.PortableResults.csproj -m '**/Result.cs'
 ```
 
 The smoke-check vector is tied to the current `Result.cs` and its tests; update it after intentional changes alter the mutant inventory. All mutants surviving with a 0.00% score suggests fallback to the `vstest` runner, while any non-zero `NoCoverage` count suggests `coverage-analysis: off` was lost.
 
-`-p` selects the mutated project, not the tests: Stryker runs every test project transitively referencing it (`AspNetCore.Shared` → 337 tests, `Light.PortableResults` → all 2,398). Cross-project kills are legitimate (sociable tests) and nearly free. Never pass `-tp` (it does not narrow tests) or `--since` (any non-C# file in the diff, e.g. an `ai-plans/` document, degrades it to a full run). Reports go to `StrykerOutput/<timestamp>/reports/` (gitignored): JSON for agents (filter `"status"` for both `"Survived"` and `"Timeout"`; investigate the timeout cause before survivor triage), HTML for humans.
+`-p` selects the mutated project, not the tests: Stryker runs every test project transitively referencing it (`AspNetCore.Shared` → 337 tests, `Light.PortableResults` → all 2,401). Cross-project kills are legitimate (sociable tests) and nearly free. Never pass `-tp` (it does not narrow tests) or `--since` (any non-C# file in the diff, e.g. an `ai-plans/` document, degrades it to a full run). Reports go to `StrykerOutput/<timestamp>/reports/` (gitignored): JSON for agents (filter `"status"` for both `"Survived"` and `"Timeout"`; investigate the timeout cause before survivor triage), HTML for humans.
 
 ### Cost and baseline
 
@@ -60,18 +60,20 @@ The smoke-check vector is tied to the current `Result.cs` and its tests; update 
 | `AspNetCore.Mvc` | 33 | 11 |
 | `AspNetCore.MinimalApis` | 32 | 11 |
 
-Baseline for sources at commit `04aee20`, remeasured with `dotnet-stryker` 4.16.0, concurrency 8 and 30,000 ms additional timeout (both pinned in `stryker-config.json`), `Debug`, Apple M3 Max (16 logical cores):
+Baselines carry per-row provenance, because rows are re-measured individually as survivors are triaged. A row measured as part of the change that produced it cites the issue rather than a hash the commit cannot contain; find it with `git log --grep "Closes #<n>"`. All runs used `dotnet-stryker` 4.16.0, concurrency 8 and 30,000 ms additional timeout (both pinned in `stryker-config.json`), `Debug`, Apple M3 Max (16 logical cores):
 
-| Project | Tests run | Elapsed | Killed | Timeout | Survived | CompileError | Ignored | NoCoverage |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `AspNetCore.Mvc` | 102 | 0:53 | 16 | 0 | 1 | 11 | 5 | 0 |
-| `AspNetCore.MinimalApis` | 237 | 1:22 | 16 | 0 | 0 | 11 | 5 | 0 |
-| `AspNetCore.Shared` | 337 | 2:29 | 31 | 0 | 0 | 3 | 10 | 0 |
-| `Validation.OpenApi` | 163 | 2:38 | 57 | 0 | 19 | 2 | 36 | 0 |
+| Project | Provenance | Tests run | Elapsed | Killed | Timeout | Survived | CompileError | Ignored | NoCoverage |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `AspNetCore.Mvc` | `#66` | 103 | 0:43 | 17 | 0 | 0 | 11 | 5 | 0 |
+| `AspNetCore.MinimalApis` | `04aee20` | 237 | 1:22 | 16 | 0 | 0 | 11 | 5 | 0 |
+| `AspNetCore.Shared` | `04aee20` | 337 | 2:29 | 31 | 0 | 0 | 3 | 10 | 0 |
+| `Validation.OpenApi` | `#66` | 165 | 2:20 | 59 | 0 | 14 | 2 | 39 | 0 |
 
-`Validation.OpenApi` was run twice consecutively with the 30,000 ms setting; both runs produced 57 killed, 0 timeout, 19 survived, and a 75.00% score, completing in 2:32 and 2:38. At 20,000 ms, one of two runs still timed out a mutant known to survive. At the 5,000 ms default, 21 mutants were reported as timeouts, masking most survivors and inflating the score to 98.68%.
+Both `Validation.OpenApi` survivor groups are accounted for and neither is a missing test: twelve are the `target`-provided branch of the typed helpers, deferred to the bug in #57 so that tests are written against the corrected contract, and two are the known-false static-initializer mutants described in the blind spots below. Its 39 `Ignored` are 36 block-removal plus the three triage suppressions.
 
-`Ignored` is not user suppression: all 56 baseline entries are `Block removal` mutants discarded deterministically by Stryker's built-in "block already covered" filter because another active mutant exists inside the block. A different reason or count should be investigated.
+At the 5,000 ms default additional timeout, `Validation.OpenApi` reported 21 mutants as timeouts, masking most of these survivors and inflating the score to 98.68%. At 20,000 ms, one of two runs still timed out a mutant known to survive.
+
+`Ignored` covers two distinct things, and the report carries the reason for each. Most entries are `Block removal` mutants discarded deterministically by Stryker's built-in "block already covered" filter because another active mutant exists inside the block. The rest are `Stryker disable once` suppressions from triage, which carry the justification written at the source. Check the reasons, not just the count: a `Block removal` count that moves without a source change should be investigated.
 
 `NoCoverage` must be zero — a non-zero value means `coverage-analysis: off` is no longer taking effect. Compare full count vectors at equal concurrency, not percentages.
 
@@ -96,5 +98,6 @@ If a survivor can only be killed by asserting on something incidental — exact 
   Treat that list as observed, not fixed: any new `out`/`ref` code joins it silently. Stryker announces it as `[INF] Safe Mode! Stryker will remove all mutations in <method>` on the console only — no log file is written — and the discarded mutants are simply absent from the JSON report. The durable way to recover the current set is to filter the report for `"status": "CompileError"`; those sites are the only trace left, and their enclosing methods are the ones running blind.
 
   When changing a method in that set, mutation score carries no information about it and line coverage only proves execution. Adequacy has to be argued by hand: enumerate the behaviors the method promises and point at the test constraining each one. State that reasoning in the pull request, because no tool in this repository can check it.
+- Mutants reachable only during static initialization are reported as survived even when the suite kills them. Measured on `BuiltInValidationErrorContracts`: emptying the `Contracts` registry fails 46 of 112 tests and blanking the built-in schema id string fails 52 of 112, yet Stryker reported both as `Survived`. Both sites run only while a static property initializer executes, which a reused test host runs once per process, independently of mutant activation. Verify any survivor in a static initializer, a static constructor, or a helper called only from one by applying the mutation to the source by hand and running the affected test project — the report cannot settle it. Do not add tests for such a survivor before that check: the two above already had covering assertions.
 - `Timeout` counts as killed. The pinned 30,000 ms additional timeout reduced `Validation.OpenApi` from 21 timeouts to zero in two consecutive concurrency-8 runs, but no finite value makes classification independent of hardware and load. Investigate any future timeout as either a genuine hang or insufficient headroom; do not assume it represents a killed mutant.
 - The MTP runner is a preview (stryker-mutator/stryker-net#3094); verify surprising results against a plain `dotnet test` run.
