@@ -8,14 +8,14 @@ Introduce Stryker.NET as a pinned, opt-in tool with a repository configuration t
 
 ## Acceptance Criteria
 
-- [ ] `dotnet tool restore` installs `dotnet-stryker` pinned to exactly 4.16.0, and a repository-root `stryker-config.json` supplies the shared configuration so that a scoped run needs only a `-p` argument and an optional `-m` glob.
-- [ ] The committed configuration selects the Microsoft Testing Platform runner and disables coverage analysis; a run against `Light.PortableResults.AspNetCore.Shared` reports a non-zero mutation score, and a run against `Result.cs` reports zero `NoCoverage` mutants.
-- [ ] Mutation output is contained under `StrykerOutput/`, which is ignored by git; a completed or interrupted run adds no new entries to `git status`.
-- [ ] `tests/AGENTS.md` documents the file-scoped and project-scoped invocations, states that a surviving mutant is a signal to investigate together with the three permitted triage outcomes, records the measured cost per project, and records the mutation blind spots that must not be read as adequate coverage.
-- [ ] Mutation testing runs on demand from a developer machine only. No CI workflow is added and no existing workflow is modified; pull request validation time is unchanged.
-- [ ] The documented invocation is verified to run the intended tests: for a run mutating `AspNetCore.Shared`, Stryker's reported test count is 337 — every test project transitively referencing it — and not the 26 tests of `AspNetCore.Shared.Tests` alone.
-- [ ] A baseline is recorded in `tests/AGENTS.md` for the four projects that complete in minutes (`AspNetCore.Shared`, `AspNetCore.Mvc`, `AspNetCore.MinimalApis`, `Validation.OpenApi`). Each entry carries enough provenance to be reproduced and compared: commit, `dotnet-stryker` version, concurrency, the test count actually executed, elapsed time, and the killed, timeout, survived, compile-error, ignored, and no-coverage counts — not a percentage alone. The no-coverage count is recorded even though it is expected to be zero, because a non-zero value means `coverage-analysis` is no longer taking effect; it was zero in all four measured runs.
-- [ ] Mutation score thresholds and `break-at` remain unset; nothing in the repository fails a build or a test run because of a mutation score.
+- [x] `dotnet tool restore` installs `dotnet-stryker` pinned to exactly 4.16.0, and a repository-root `stryker-config.json` supplies the shared configuration so that a scoped run needs only a `-p` argument and an optional `-m` glob.
+- [x] The committed configuration selects the Microsoft Testing Platform runner and disables coverage analysis; a run against `Light.PortableResults.AspNetCore.Shared` reports a non-zero mutation score, and a run against `Result.cs` reports zero `NoCoverage` mutants.
+- [x] Mutation output is contained under `StrykerOutput/`, which is ignored by git; a completed or interrupted run adds no new entries to `git status`.
+- [x] `tests/AGENTS.md` documents the file-scoped and project-scoped invocations, states that a surviving mutant is a signal to investigate together with the three permitted triage outcomes, records the measured cost per project, and records the mutation blind spots that must not be read as adequate coverage.
+- [x] Mutation testing runs on demand from a developer machine only. No CI workflow is added and no existing workflow is modified; pull request validation time is unchanged.
+- [x] The documented invocation is verified to run the intended tests: for a run mutating `AspNetCore.Shared`, Stryker's reported test count is 337 — every test project transitively referencing it — and not the 26 tests of `AspNetCore.Shared.Tests` alone.
+- [x] A baseline is recorded in `tests/AGENTS.md` for the four projects that complete in minutes (`AspNetCore.Shared`, `AspNetCore.Mvc`, `AspNetCore.MinimalApis`, `Validation.OpenApi`). Each entry carries enough provenance to be reproduced and compared: commit, `dotnet-stryker` version, concurrency, the test count actually executed, elapsed time, and the killed, timeout, survived, compile-error, ignored, and no-coverage counts — not a percentage alone. The no-coverage count is recorded even though it is expected to be zero, because a non-zero value means `coverage-analysis` is no longer taking effect; it was zero in all four measured runs.
+- [x] Mutation score thresholds and `break-at` remain unset; nothing in the repository fails a build or a test run because of a mutation score.
 
 ## Technical Details
 

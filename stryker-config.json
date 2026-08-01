@@ -1,0 +1,9 @@
+{
+  "stryker-config": {
+    "solution": "Light.PortableResults.slnx",
+    "test-runner": "mtp",
+    "coverage-analysis": "off",
+    "configuration": "Debug",
+    "reporters": ["json", "html", "progress"]
+  }
+}

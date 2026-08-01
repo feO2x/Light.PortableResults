@@ -8,6 +8,7 @@ obj/
 TestResults/
 coverage-merged/
 *.received.*
+StrykerOutput/
 .DS_Store
 *.lscache
 .codex
