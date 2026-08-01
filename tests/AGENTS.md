@@ -85,6 +85,10 @@ Exactly three permitted responses to a survivor:
 
 Never restructure production code to make a mutant killable: performance outranks mutation score here, and the low-allocation `in`/`ref`/`Span` style produces awkward survivors by nature.
 
+The same discipline applies to test code. A test written under response 1 must stand on its own as a statement about the contract: name it for the behavior it pins down, and assert only on what the public API promises. Nothing in a test may refer to a mutant — no mutant ID, no line number, no mention of Stryker in a name, comment, or assertion message. The source suppression from response 2 is the only place a mutant is named.
+
+If a survivor can only be killed by asserting on something incidental — exact message composition, member or property ordering, a call count, a value the contract does not fix — it is response 2, not response 1. Suppress it with that reasoning. Such a test raises the score once and then constrains an implementation detail forever, which is a worse position than the survivor: the next legitimate refactoring breaks it, and the failure carries no information about the contract.
+
 ### Blind spots — do not read as adequate coverage
 
 - ~9.5% of mutants fail to compile (mostly the `out`/`ref` style); Stryker's Safe Mode then discards every mutant in the enclosing method: `Dragon4.GenerateDigits`, `ResultJsonReader.ReadStatusValue`/`ReadIndexValue`, `ErrorsExtensions.WriteRichErrors`, and all of `LightResult.cs` receive no mutation coverage. Tool limitation, not a test defect — a high score in `Numbers/` is not verified behavior.
