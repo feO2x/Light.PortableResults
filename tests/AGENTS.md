@@ -28,6 +28,8 @@ Each test project writes `TestResults/<guid>.cobertura.xml`. Merge them with `re
 
 Always run from the repository root: Stryker reads `stryker-config.json` only from the current directory and silently falls back to defaults without it, reverting to the `vstest` runner (cannot drive the xUnit v3 hosts, reports everything survived) and `perTest` coverage analysis (fabricates `NoCoverage`). The config also pins `Debug` (`TreatWarningsAsErrors` is Release-only) and `concurrency: 8` (result vectors vary with parallelism; override with `-c` for experiments).
 
+Revisit `coverage-analysis: off` when Stryker's MTP per-test coverage support ([#3516](https://github.com/stryker-mutator/stryker-net/pull/3516)) ships and proves trustworthy; it is the main lever on run time because it avoids running the full discovered test set for every mutant.
+
 ```shell
 # One project — sufficient for the four small projects
 dotnet stryker -p Light.PortableResults.AspNetCore.Shared.csproj
@@ -53,7 +55,7 @@ dotnet stryker -p Light.PortableResults.csproj -m '**/Result.cs'
 | `AspNetCore.Mvc` | 33 | 11 |
 | `AspNetCore.MinimalApis` | 32 | 11 |
 
-Baseline measured at commit `04aee20`, `dotnet-stryker` 4.16.0, concurrency 8 (pinned in `stryker-config.json`; the 4.16.0 default is half the logical cores and therefore machine-dependent), `Debug`, Apple M3 Max:
+Baseline measured at commit `04aee20`, `dotnet-stryker` 4.16.0, concurrency 8 (pinned in `stryker-config.json`; the 4.16.0 default is half the logical cores and therefore machine-dependent), `Debug`, Apple M3 Max (16 logical cores):
 
 | Project | Tests run | Elapsed | Killed | Timeout | Survived | CompileError | Ignored | NoCoverage |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
