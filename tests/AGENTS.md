@@ -43,7 +43,7 @@ dotnet stryker -p Light.PortableResults.csproj -m '**/Result.cs'
 
 The smoke-check vector is tied to the current `Result.cs` and its tests; update it after intentional changes alter the mutant inventory. All mutants surviving with a 0.00% score suggests fallback to the `vstest` runner, while any non-zero `NoCoverage` count suggests `coverage-analysis: off` was lost.
 
-`-p` selects the mutated project, not the tests: Stryker runs every test project transitively referencing it (`AspNetCore.Shared` → 337 tests, `Light.PortableResults` → all 2,398). Cross-project kills are legitimate (sociable tests) and nearly free. Never pass `-tp` (it does not narrow tests) or `--since` (any non-C# file in the diff, e.g. an `ai-plans/` document, degrades it to a full run). Reports go to `StrykerOutput/<timestamp>/reports/` (gitignored): JSON for agents (filter `"status": "Survived"`), HTML for humans.
+`-p` selects the mutated project, not the tests: Stryker runs every test project transitively referencing it (`AspNetCore.Shared` → 337 tests, `Light.PortableResults` → all 2,398). Cross-project kills are legitimate (sociable tests) and nearly free. Never pass `-tp` (it does not narrow tests) or `--since` (any non-C# file in the diff, e.g. an `ai-plans/` document, degrades it to a full run). Reports go to `StrykerOutput/<timestamp>/reports/` (gitignored): JSON for agents (filter `"status"` for both `"Survived"` and `"Timeout"`; investigate the timeout cause before survivor triage), HTML for humans.
 
 ### Cost and baseline
 
