@@ -1,0 +1,11 @@
+{
+  "stryker-config": {
+    "solution": "Light.PortableResults.slnx",
+    "test-runner": "mtp",
+    "coverage-analysis": "off",
+    "configuration": "Debug",
+    "concurrency": 8,
+    "additional-timeout": 30000,
+    "reporters": ["json", "html", "progress"]
+  }
+}
