@@ -64,6 +64,8 @@ Baseline measured at commit `04aee20`, `dotnet-stryker` 4.16.0, concurrency 8 (p
 
 † This row is not exactly reproducible. With `coverage-analysis: off` every mutant runs the full 163-test suite, so the Killed/Timeout/Survived split is machine-load dependent (see the timeout-masking blind spot): two runs of identical sources at concurrency 8 gave Killed 51–54, Timeout 21, Survived 1–4. Tests run, CompileError, and Ignored are deterministic. For triage rather than comparison, run this project with `-c 4` to unmask the slow full-suite survivors (56 killed, 2 timeout, 18 survived).
 
+`Ignored` is not user suppression: all 56 baseline entries are `Block removal` mutants discarded deterministically by Stryker's built-in "block already covered" filter because another active mutant exists inside the block. A different reason or count should be investigated.
+
 `NoCoverage` must be zero — a non-zero value means `coverage-analysis: off` is no longer taking effect. Compare full count vectors at equal concurrency, not percentages.
 
 ### Triaging survivors
