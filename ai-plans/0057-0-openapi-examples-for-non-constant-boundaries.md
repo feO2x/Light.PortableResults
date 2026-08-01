@@ -16,7 +16,7 @@ Date and time boundaries are among the cases where a client most needs the bound
 - [ ] The value rendered into the message text and the value carried in the metadata entry are the same text for every reconstructed kind, verified against `MetadataValue.ToCanonicalString()` rather than against a hard-coded expectation.
 - [ ] A rule whose metadata cannot be reconstructed reports a new diagnostic identifying the rule and the argument, and a boundary computed at runtime such as `DateTime.UtcNow.AddDays(30)` reports it rather than failing the build. An expression that exceeds the recursion bound, and a `static readonly` field whose initializer chain forms a cycle, both reach that same diagnostic instead of hanging or crashing the compiler.
 - [ ] An expression that is valid C# but throws when evaluated — `new DateTime(2026, 13, 1)`, `Guid.Parse("invalid")`, `new Uri("http://[")`, `TimeSpan.FromDays(double.MaxValue)` — produces the diagnostic and a degraded example rather than an unhandled exception, and the compilation that contains it still succeeds. `OperationCanceledException` is the only exception that propagates out of reconstruction.
-- [ ] Generator tests assert the emitted `WithErrorExample` call, driven through the analyzer rather than by calling `ToLiteral` directly, and cover every row of the whitelist tables: each accepted constructor family, each named factory, each well-known static, a nested `DateTimeOffset` offset in each accepted `TimeSpan` form, and a `static readonly` field in the validator's own file.
+- [ ] Generator tests assert the emitted `WithErrorExample` call, driven through the analyzer rather than by calling `ToLiteral` directly, and cover every row of the whitelist tables: each accepted constructor family, each named factory, each well-known static, a nested `DateTimeOffset` offset in each accepted `TimeSpan` form, and a `static readonly` field in the validator's own file. The unsuffixed `TimeSpan.FromHours(2)` is covered as written, so that overload resolution itself is exercised rather than assumed, and the multi-argument component overloads are asserted to be rejected.
 - [ ] Generator tests also cover the rejection paths with their exact severity and location: a cross-file field, a `DateTimeKind.Local` value, each invalid or overflowing expression from the failure contract, a runtime-computed boundary, a recursion-bound and a cycle case, and a user-defined type or member whose name matches an accepted one but whose symbol does not.
 - [ ] A runtime test asserts that a reconstructed example reaches the published document with its message and metadata intact.
 - [ ] `ValidatorOpenApiAnalysis` equality and hashing account for each diagnostic's source path and span, and an incremental test that reuses one generator driver across two compilations — moving an unresolved argument without otherwise changing it — observes the reported location move with it.
@@ -86,7 +86,7 @@ Static factory methods:
 
 | Type | Accepted factories |
 | --- | --- |
-| `TimeSpan` | `FromTicks(long)`, and the `double` overloads of `FromDays`, `FromHours`, `FromMinutes`, `FromSeconds`, `FromMilliseconds` |
+| `TimeSpan` | `FromTicks(long)`, and the **single-argument** overloads of `FromDays`, `FromHours`, `FromMinutes`, `FromSeconds`, `FromMilliseconds`, `FromMicroseconds`, in both their `double` and integral forms — `FromDays(int)`, `FromHours(int)`, `FromMinutes(long)`, `FromSeconds(long)`, `FromMilliseconds(long)`, `FromMicroseconds(long)`. The multi-argument component overloads are excluded |
 | `DateOnly` | `FromDayNumber(int)` |
 | `DateTimeOffset` | `FromUnixTimeSeconds(long)`, `FromUnixTimeMilliseconds(long)` |
 | `Guid` | `Parse(string)`, `ParseExact(string, string)` |
@@ -101,6 +101,12 @@ Well-known statics, recognized by symbol rather than syntax:
 | `DateOnly` | `MinValue`, `MaxValue` |
 | `TimeOnly` | `MinValue`, `MaxValue` |
 | `Guid` | `Empty` |
+
+Both the `double` and integral `TimeSpan.From*` families must be accepted, because which one a boundary binds to is not a property of the source text. .NET 8 added integral overloads, so `TimeSpan.FromHours(2)` binds to `FromHours(double)` when the consumer targets `netstandard2.0` or `net6.0` and to `FromHours(int)` on `net8.0` and later, where the `int` literal is an exact match. Accepting only one family would make reconstruction depend on the consumer's target framework — and would reject `TimeSpan.FromHours(2)`, this plan's own worked example, on any current target.
+
+Recognition must match the full resolved signature, not the method name. The component overloads have optional parameters, so `FromHours(int, long, long, long, long)` is a candidate for a name-based match and must be rejected by comparing the symbol's parameters.
+
+Evaluating the integral overloads needs care for the reason given above: they do not exist in `netstandard2.0`, so the generator cannot call them. Compute those from the payload arithmetically — ticks as the quantity multiplied by the corresponding `TimeSpan.TicksPer*` constant, in checked arithmetic so that an overflow throws and lands in the failure contract. Do not silently substitute the `double` overload for an integral one: the two agree on ordinary integral values, but `FromDays(double)` rounds to the nearest millisecond and has a different range, so at the extremes they are not the same function.
 
 The offset argument of a `DateTimeOffset` accepts any accepted `TimeSpan` shape: `TimeSpan.Zero`, the `From*` factories, `new TimeSpan(...)`, `MinValue`/`MaxValue`, or a `static readonly` `TimeSpan` field declared in source. `MinValue` and `MaxValue` are accepted as shapes and then throw during evaluation, which the failure contract below turns into the diagnostic — the recognizer does not need to know which offsets are legal.
 
@@ -117,7 +123,8 @@ Everything else is omitted, and an omission is a diagnostic rather than a silent
 | Locals, parameters, properties, and instance or non-`readonly` fields | Value depends on flow the generator does not track |
 | `static readonly` fields declared outside the validator's syntax tree, including referenced assemblies | Multi-file resolution is deliberately unsupported in this iteration and reports the warning |
 | Arithmetic and chaining such as `X.AddDays(1)` or `a + b` | Would require a general expression evaluator rather than a whitelist |
-| `TimeSpan.FromMicroseconds`, the integer `TimeSpan.From*` overloads, `DateOnly.FromDateTime`, `TimeOnly.FromDateTime`/`FromTimeSpan` | Not needed for a boundary; add on demand rather than by default |
+| The multi-argument `TimeSpan.From*` component overloads, such as `FromHours(int, long, long, long, long)` | A boundary is written as one quantity; these exist mainly to spell out components, and their optional parameters make them easy to match by accident |
+| `DateOnly.FromDateTime`, `TimeOnly.FromDateTime`/`FromTimeSpan` | Not needed for a boundary; add on demand rather than by default |
 | Any reconstructed `DateTime` whose `Kind` is `Local` | Nondeterministic; see Excluded shapes |
 
 ### Reconstruction must not be able to break a build
