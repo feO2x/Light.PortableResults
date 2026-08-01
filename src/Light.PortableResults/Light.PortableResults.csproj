@@ -17,6 +17,8 @@
       - Adds a net10.0 asset with DateOnly and TimeOnly metadata APIs while retaining netstandard2.0.
       - Makes canonical Double and Single text runtime-independent. Output is unchanged on .NET Core 3.0+
         hosts and corrected on .NET Framework and legacy Mono hosts.
+      - Adds allocation-free UTF-8 span formatting for canonical Double and Single values, plus public
+        maximum-length constants shared by the UTF-16 and UTF-8 formatting APIs.
       - Emits primitive metadata arrays as ordered, separate HTTP header values. Custom header converters can reuse
         the new public HttpHeaderValueFormatter.
 

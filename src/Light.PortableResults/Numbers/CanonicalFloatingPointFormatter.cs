@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Light.PortableResults.Numbers;
 
@@ -20,16 +21,42 @@ namespace Light.PortableResults.Numbers;
 /// </remarks>
 public static class CanonicalFloatingPointFormatter
 {
+    /// <summary>
+    /// A destination size that is always large enough to hold the canonical encoding of any finite
+    /// double-precision value, in UTF-16 characters or in UTF-8 bytes.
+    /// </summary>
+    /// <remarks>
+    /// This is an upper bound with headroom, not the length of the longest output: no finite value
+    /// produces this many code units. Size a destination with it and
+    /// <see cref="TryFormat(double, Span{char}, out int)" /> and
+    /// <see cref="TryFormatUtf8(double, Span{byte}, out int)" /> always succeed. A single value bounds
+    /// both encodings because the canonical alphabet is entirely ASCII, so every character occupies
+    /// exactly one UTF-8 byte.
+    /// </remarks>
+    public const int MaximumDoubleLength = 32;
+
+    /// <summary>
+    /// A destination size that is always large enough to hold the canonical encoding of any finite
+    /// single-precision value, in UTF-16 characters or in UTF-8 bytes.
+    /// </summary>
+    /// <remarks>
+    /// This is an upper bound with headroom, not the length of the longest output: no finite value
+    /// produces this many code units. Size a destination with it and
+    /// <see cref="TryFormat(float, Span{char}, out int)" /> and
+    /// <see cref="TryFormatUtf8(float, Span{byte}, out int)" /> always succeed. A single value bounds
+    /// both encodings because the canonical alphabet is entirely ASCII, so every character occupies
+    /// exactly one UTF-8 byte.
+    /// </remarks>
+    public const int MaximumSingleLength = 24;
+
     private const int DoubleDigitsLength = 17;
-    private const int DoubleTextLength = 32;
     private const int SingleDigitsLength = 9;
-    private const int SingleTextLength = 24;
 
     /// <summary>Formats a finite double-precision value.</summary>
     /// <exception cref="ArgumentException">Thrown when <paramref name="value" /> is not finite.</exception>
     public static string Format(double value)
     {
-        Span<char> buffer = stackalloc char[DoubleTextLength];
+        Span<char> buffer = stackalloc char[MaximumDoubleLength];
         TryFormatCore(value, buffer, out var charsWritten, forceDragon4: false);
         return buffer.Slice(0, charsWritten).ToString();
     }
@@ -38,7 +65,7 @@ public static class CanonicalFloatingPointFormatter
     /// <exception cref="ArgumentException">Thrown when <paramref name="value" /> is not finite.</exception>
     public static string Format(float value)
     {
-        Span<char> buffer = stackalloc char[SingleTextLength];
+        Span<char> buffer = stackalloc char[MaximumSingleLength];
         TryFormatCore(value, buffer, out var charsWritten, forceDragon4: false);
         return buffer.Slice(0, charsWritten).ToString();
     }
@@ -61,12 +88,33 @@ public static class CanonicalFloatingPointFormatter
     public static bool TryFormat(float value, Span<char> destination, out int charsWritten) =>
         TryFormatCore(value, destination, out charsWritten, forceDragon4: false);
 
-    private static bool TryFormatCore(
+    /// <summary>Attempts to format a finite double-precision value as a UTF-8 numeric token.</summary>
+    /// <returns>
+    /// <see langword="true" /> when the destination is large enough; otherwise <see langword="false" />.
+    /// On failure, <paramref name="bytesWritten" /> is zero and the destination is not modified. No byte-order
+    /// mark or terminator is written.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="value" /> is not finite.</exception>
+    public static bool TryFormatUtf8(double value, Span<byte> destination, out int bytesWritten) =>
+        TryFormatCore(value, destination, out bytesWritten, forceDragon4: false);
+
+    /// <summary>Attempts to format a finite single-precision value as a UTF-8 numeric token.</summary>
+    /// <returns>
+    /// <see langword="true" /> when the destination is large enough; otherwise <see langword="false" />.
+    /// On failure, <paramref name="bytesWritten" /> is zero and the destination is not modified. No byte-order
+    /// mark or terminator is written.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="value" /> is not finite.</exception>
+    public static bool TryFormatUtf8(float value, Span<byte> destination, out int bytesWritten) =>
+        TryFormatCore(value, destination, out bytesWritten, forceDragon4: false);
+
+    private static bool TryFormatCore<TCodeUnit>(
         double value,
-        Span<char> destination,
-        out int charsWritten,
+        Span<TCodeUnit> destination,
+        out int unitsWritten,
         bool forceDragon4
     )
+        where TCodeUnit : unmanaged
     {
         if (!FloatingPointBits.IsFinite(value))
         {
@@ -94,16 +142,17 @@ public static class CanonicalFloatingPointFormatter
             FloatingPointBits.IsNegative(value),
             positionalMaximumScale: 17,
             destination,
-            out charsWritten
+            out unitsWritten
         );
     }
 
-    private static bool TryFormatCore(
+    private static bool TryFormatCore<TCodeUnit>(
         float value,
-        Span<char> destination,
-        out int charsWritten,
+        Span<TCodeUnit> destination,
+        out int unitsWritten,
         bool forceDragon4
     )
+        where TCodeUnit : unmanaged
     {
         if (!FloatingPointBits.IsFinite(value))
         {
@@ -131,18 +180,19 @@ public static class CanonicalFloatingPointFormatter
             FloatingPointBits.IsNegative(value),
             positionalMaximumScale: 9,
             destination,
-            out charsWritten
+            out unitsWritten
         );
     }
 
-    private static bool TryRender(
+    private static bool TryRender<TCodeUnit>(
         ReadOnlySpan<byte> digits,
         int scale,
         bool isNegative,
         int positionalMaximumScale,
-        Span<char> destination,
-        out int charsWritten
+        Span<TCodeUnit> destination,
+        out int unitsWritten
     )
+        where TCodeUnit : unmanaged
     {
         var useScientificNotation = scale < -3 || scale > positionalMaximumScale;
         var requiredLength = isNegative ? 1 : 0;
@@ -169,37 +219,37 @@ public static class CanonicalFloatingPointFormatter
 
         if (destination.Length < requiredLength)
         {
-            charsWritten = 0;
+            unitsWritten = 0;
             return false;
         }
 
         var index = 0;
         if (isNegative)
         {
-            destination[index++] = '-';
+            destination[index++] = ToCodeUnit<TCodeUnit>((byte) '-');
         }
 
         if (useScientificNotation)
         {
-            destination[index++] = (char) digits[0];
+            destination[index++] = ToCodeUnit<TCodeUnit>(digits[0]);
             if (digits.Length > 1)
             {
-                destination[index++] = '.';
+                destination[index++] = ToCodeUnit<TCodeUnit>((byte) '.');
                 CopyDigits(digits[1..], destination, ref index);
             }
 
-            destination[index++] = 'E';
+            destination[index++] = ToCodeUnit<TCodeUnit>((byte) 'E');
             var exponent = scale - 1;
-            destination[index++] = exponent < 0 ? '-' : '+';
+            destination[index++] = ToCodeUnit<TCodeUnit>(exponent < 0 ? (byte) '-' : (byte) '+');
             WriteExponent(exponent < 0 ? -exponent : exponent, destination, ref index);
         }
         else if (scale <= 0)
         {
-            destination[index++] = '0';
-            destination[index++] = '.';
+            destination[index++] = ToCodeUnit<TCodeUnit>((byte) '0');
+            destination[index++] = ToCodeUnit<TCodeUnit>((byte) '.');
             for (var zeroIndex = 0; zeroIndex < -scale; zeroIndex++)
             {
-                destination[index++] = '0';
+                destination[index++] = ToCodeUnit<TCodeUnit>((byte) '0');
             }
 
             CopyDigits(digits, destination, ref index);
@@ -207,7 +257,7 @@ public static class CanonicalFloatingPointFormatter
         else if (scale < digits.Length)
         {
             CopyDigits(digits[..scale], destination, ref index);
-            destination[index++] = '.';
+            destination[index++] = ToCodeUnit<TCodeUnit>((byte) '.');
             CopyDigits(digits[scale..], destination, ref index);
         }
         else
@@ -215,38 +265,57 @@ public static class CanonicalFloatingPointFormatter
             CopyDigits(digits, destination, ref index);
             for (var zeroIndex = digits.Length; zeroIndex < scale; zeroIndex++)
             {
-                destination[index++] = '0';
+                destination[index++] = ToCodeUnit<TCodeUnit>((byte) '0');
             }
 
-            destination[index++] = '.';
-            destination[index++] = '0';
+            destination[index++] = ToCodeUnit<TCodeUnit>((byte) '.');
+            destination[index++] = ToCodeUnit<TCodeUnit>((byte) '0');
         }
 
-        charsWritten = index;
+        unitsWritten = index;
         return true;
     }
 
-    private static void CopyDigits(
+    private static void CopyDigits<TCodeUnit>(
         ReadOnlySpan<byte> digits,
-        Span<char> destination,
+        Span<TCodeUnit> destination,
         ref int destinationIndex
     )
+        where TCodeUnit : unmanaged
     {
         for (var index = 0; index < digits.Length; index++)
         {
-            destination[destinationIndex++] = (char) digits[index];
+            destination[destinationIndex++] = ToCodeUnit<TCodeUnit>(digits[index]);
         }
     }
 
-    private static void WriteExponent(int exponent, Span<char> destination, ref int index)
+    private static void WriteExponent<TCodeUnit>(
+        int exponent,
+        Span<TCodeUnit> destination,
+        ref int index
+    )
+        where TCodeUnit : unmanaged
     {
         if (exponent >= 100)
         {
-            destination[index++] = (char) ('0' + exponent / 100);
+            destination[index++] = ToCodeUnit<TCodeUnit>((byte) ('0' + exponent / 100));
             exponent %= 100;
         }
 
-        destination[index++] = (char) ('0' + exponent / 10);
-        destination[index++] = (char) ('0' + exponent % 10);
+        destination[index++] = ToCodeUnit<TCodeUnit>((byte) ('0' + exponent / 10));
+        destination[index++] = ToCodeUnit<TCodeUnit>((byte) ('0' + exponent % 10));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static TCodeUnit ToCodeUnit<TCodeUnit>(byte value)
+        where TCodeUnit : unmanaged
+    {
+        if (typeof(TCodeUnit) == typeof(byte))
+        {
+            return Unsafe.As<byte, TCodeUnit>(ref value);
+        }
+
+        var character = (char) value;
+        return Unsafe.As<char, TCodeUnit>(ref character);
     }
 }
