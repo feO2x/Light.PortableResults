@@ -266,9 +266,13 @@ public static class PortableResultsJsonContracts
         throw new InvalidOperationException(CreateMissingLibraryContractMessage(typeof(TLibraryType)));
     }
 
-    // Mirrors how JsonSerializerOptions select a converter from their converter list: the first entry that can
-    // convert the type wins. Converters that a caller inserted before the Light.PortableResults defaults therefore
-    // keep their precedence, and the library converter is only reached when no other entry matches.
+    // Follows the order in which JsonSerializerOptions search their converter list - the first entry that can convert
+    // the type wins - so converters a caller inserted before the Light.PortableResults defaults keep their precedence
+    // and the library converter is only reached when no other entry matches.
+    //
+    // One deliberate difference: an entry whose CanConvert claims the type but that cannot supply a
+    // JsonConverter<TLibraryType> is skipped here, whereas JsonSerializerOptions would select it and then throw.
+    // Skipping keeps such an entry from making a library-owned type unwritable and unreadable.
     private static JsonConverter<TLibraryType>? FindRegisteredConverter<TLibraryType>(JsonSerializerOptions options)
     {
         var converters = options.Converters;
