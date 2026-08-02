@@ -27,7 +27,7 @@ internal static class MetadataValueReconstructor
         SemanticModel semanticModel,
         ExpressionSyntax expression,
         CancellationToken cancellationToken,
-        out ReconstructedMetadataValue? value
+        out object? value
     )
     {
         var frameworkTypes = new FrameworkTypes(semanticModel.Compilation);
@@ -50,7 +50,7 @@ internal static class MetadataValueReconstructor
         int depth,
         ISet<IFieldSymbol> resolvingFields,
         CancellationToken cancellationToken,
-        out ReconstructedMetadataValue? value
+        out object? value
     )
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -63,7 +63,8 @@ internal static class MetadataValueReconstructor
         var constant = semanticModel.GetConstantValue(expression, cancellationToken);
         if (constant.HasValue)
         {
-            return MetadataReconstructionResult.Unsupported;
+            value = constant.Value;
+            return MetadataReconstructionResult.Success;
         }
 
         var operation = semanticModel.GetOperation(expression, cancellationToken);
@@ -114,7 +115,7 @@ internal static class MetadataValueReconstructor
         int depth,
         ISet<IFieldSymbol> resolvingFields,
         CancellationToken cancellationToken,
-        out ReconstructedMetadataValue? value
+        out object? value
     )
     {
         value = null;
@@ -163,7 +164,7 @@ internal static class MetadataValueReconstructor
         int depth,
         ISet<IFieldSymbol> resolvingFields,
         CancellationToken cancellationToken,
-        out ReconstructedMetadataValue? value
+        out object? value
     )
     {
         value = null;
@@ -269,7 +270,7 @@ internal static class MetadataValueReconstructor
         int depth,
         ISet<IFieldSymbol> resolvingFields,
         CancellationToken cancellationToken,
-        out ReconstructedMetadataValue? value
+        out object? value
     )
     {
         value = null;
@@ -367,7 +368,7 @@ internal static class MetadataValueReconstructor
     private static bool TryGetWellKnownStatic(
         ISymbol field,
         FrameworkTypes frameworkTypes,
-        out ReconstructedMetadataValue? value
+        out object? value
     )
     {
         value = null;

@@ -235,6 +235,37 @@ public sealed class BoundaryMetadataReconstructionTests
         );
     }
 
+    [Fact]
+    public void GeneratorReconstructsStaticReadonlyFieldsWithConstantInitializers()
+    {
+        AssertAcceptedCases(
+            "TimeSpan",
+            new[] { TimeSpanCase("new TimeSpan(Hours, 0, 0)", new TimeSpan(2, 0, 0)) },
+            "private static readonly int Hours = 2;"
+        );
+        AssertAcceptedCases(
+            "int",
+            new[] { new BoundaryCase("Boundary", MetadataValue.FromInt64(2).ToCanonicalString(), "2") },
+            "private static readonly int Boundary = 2;"
+        );
+        AssertAcceptedCases(
+            "Guid",
+            new[] { GuidCase("new Guid(Text)", new Guid(GuidText)) },
+            $"private static readonly string Text = \"{GuidText}\";"
+        );
+        AssertAcceptedCases(
+            "DateTime",
+            new[]
+            {
+                DateTimeCase(
+                    "new DateTime(2026, 1, 2, 3, 4, 5, Kind)",
+                    new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc)
+                )
+            },
+            "private static readonly DateTimeKind Kind = DateTimeKind.Utc;"
+        );
+    }
+
     private static void AssertAcceptedCases(
         string valueType,
         IReadOnlyList<BoundaryCase> cases,
