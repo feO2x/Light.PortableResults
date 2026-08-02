@@ -42,6 +42,7 @@ public sealed class CloudEventsAttributeTextTests
     [InlineData("plain ASCII")]
     [InlineData("Grüße 日本語 😀")]
     [InlineData("\uD83D\uDE00")]
+    [InlineData("\uFFFD")]
     public void IndexOfDisallowedCharacterShouldAcceptConformingText(string text)
     {
         CloudEventsAttributeText.IndexOfDisallowedCharacter(text).Should().Be(-1);

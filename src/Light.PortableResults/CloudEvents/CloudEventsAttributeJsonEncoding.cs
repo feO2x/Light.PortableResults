@@ -98,3 +98,5 @@ public static class CloudEventsAttributeJsonEncodingExtensions
             $"CloudEvents extension attributes cannot encode metadata kind '{kind}'."
         );
 }
+
+#pragma warning restore CS8524

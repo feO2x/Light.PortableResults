@@ -50,6 +50,10 @@
       - CloudEvents extension attributes whose String encoding contains controls, Unicode noncharacters, or
         unpaired surrogates are now rejected. Values are not normalized. This validation is limited to extension
         attributes and does not change CloudEvents data or problem+json payloads.
+      - A custom ICloudEventsAttributeConversionService or directly constructed CloudEvents envelope that supplies
+        the reserved lproutcome attribute now causes an ArgumentException during JSON writing instead of having
+        that supplied value silently dropped. Supplied data and data_base64 entries remain skipped as standard
+        attributes.
       - MetadataValue.TryGetInt64 now accepts canonical signed-integer text from any string metadata value,
         including values originating in headers, JSON, or caller code. Noncanonical forms such as a leading plus,
         negative zero, leading zeros, surrounding whitespace, and out-of-range text remain rejected.

@@ -197,11 +197,6 @@ public static class JsonCloudEventsExtensions
                 ValidateCallerControlledText(attributeName, value);
                 WriteStringAttribute(writer, attributeName, value);
                 return;
-
-            default:
-                throw new InvalidOperationException(
-                    $"Unknown CloudEvents attribute JSON encoding '{encoding}'."
-                );
         }
     }
 
