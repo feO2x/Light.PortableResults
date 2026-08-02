@@ -1,6 +1,5 @@
 using System;
 using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using Light.PortableResults.Metadata;
 
 namespace Light.PortableResults.SharedJsonSerialization.Writing;
@@ -69,16 +68,14 @@ public static class ErrorsExtensions
 
             if (error.Metadata.HasValue)
             {
-                var metadataTypeInfo = serializerOptions.GetTypeInfo(typeof(MetadataObject));
-                if (metadataTypeInfo is not JsonTypeInfo<MetadataObject> castTypeInfo)
-                {
-                    throw new InvalidOperationException(
-                        "Could not resolve 'JsonTypeInfo<MetadataObject>'. Please ensure that your JsonSerializerOptions are configured correctly."
-                    );
-                }
+                // The MetadataObject converter differs per transport - CloudEvents writing and HTTP writing register
+                // their own - so no library-owned fallback converter is supplied here. The one configured on the
+                // options is used, and a missing registration is reported instead of silently reflecting.
+                var metadataTypeInfo =
+                    PortableResultsJsonContracts.GetLibraryTypeInfo<MetadataObject>(serializerOptions);
 
                 writer.WritePropertyName("metadata");
-                JsonSerializer.Serialize(writer, error.Metadata.Value, castTypeInfo);
+                JsonSerializer.Serialize(writer, error.Metadata.Value, metadataTypeInfo);
             }
 
             writer.WriteEndObject();

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Light.PortableResults.Validation.ConfigurationIntegration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -17,7 +18,7 @@ public static class PortableResultsValidationModule
     /// </summary>
     /// <param name="services">The service collection that holds all registrations.</param>
     /// <param name="createOptions">
-    /// The optional delegate that creates the default <see cref="ValidationContextOptions"/> instance. The created
+    /// The optional delegate that creates the default <see cref="ValidationContextOptions" /> instance. The created
     /// options are registered as a singleton (as the <see cref="IValidationContextFactory" /> itself is registered
     /// as a singleton).
     /// </param>
@@ -51,11 +52,16 @@ public static class PortableResultsValidationModule
     /// pipeline from Microsoft.Extensions.Options.
     /// </summary>
     /// <typeparam name="TOptions">The options type to validate.</typeparam>
-    /// <typeparam name="TValidator">The validator type that implements <see cref="Validator{TOptions}" />.</typeparam>
+    /// <typeparam name="TValidator">
+    /// The validator type that implements <see cref="Validator{TOptions}" />. It is instantiated by the DI container,
+    /// so its public constructors must be preserved when trimming.
+    /// </typeparam>
     /// <param name="builder">The options builder to configure.</param>
     /// <returns>The <see cref="OptionsBuilder{TOptions}" /> for further chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="builder" /> is null.</exception>
-    public static OptionsBuilder<TOptions> ValidateWithPortableResults<TOptions, TValidator>(
+    public static OptionsBuilder<TOptions> ValidateWithPortableResults<
+        TOptions,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TValidator>(
         this OptionsBuilder<TOptions> builder
     )
         where TOptions : class

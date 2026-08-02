@@ -56,7 +56,7 @@
       "light.portableresults.aspnetcore.shared": {
         "type": "Project",
         "dependencies": {
-          "Light.PortableResults": "[0.6.0, )"
+          "Light.PortableResults": "[0.7.0, )"
         }
       },
       "Microsoft.Bcl.HashCode": {

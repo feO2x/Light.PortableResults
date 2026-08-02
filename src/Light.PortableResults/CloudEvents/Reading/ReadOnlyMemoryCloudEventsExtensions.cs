@@ -3,6 +3,7 @@ using System.Text.Json;
 using Light.PortableResults.CloudEvents.Reading.Json;
 using Light.PortableResults.Http.Reading.Json;
 using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization;
 
 namespace Light.PortableResults.CloudEvents.Reading;
 
@@ -71,10 +72,7 @@ public static class ReadOnlyMemoryCloudEventsExtensions
     )
     {
         options ??= PortableResultsCloudEventsReadOptions.Default;
-        var parsedEnvelope = JsonSerializer.Deserialize<CloudEventsEnvelopePayload>(
-            cloudEvent.Span,
-            options.SerializerOptions
-        );
+        var parsedEnvelope = ParseEnvelope(cloudEvent, options);
         var isFailure = DetermineIsFailure(parsedEnvelope, options);
 
         var dataSegment = parsedEnvelope is { HasData: true, IsDataNull: false } ?
@@ -114,10 +112,7 @@ public static class ReadOnlyMemoryCloudEventsExtensions
     )
     {
         options ??= PortableResultsCloudEventsReadOptions.Default;
-        var parsedEnvelope = JsonSerializer.Deserialize<CloudEventsEnvelopePayload>(
-            cloudEvent.Span,
-            options.SerializerOptions
-        );
+        var parsedEnvelope = ParseEnvelope(cloudEvent, options);
         var isFailure = DetermineIsFailure(parsedEnvelope, options);
 
         var dataSegment = parsedEnvelope is { HasData: true, IsDataNull: false } ?
@@ -140,6 +135,18 @@ public static class ReadOnlyMemoryCloudEventsExtensions
     }
 
 
+    private static CloudEventsEnvelopePayload ParseEnvelope(
+        ReadOnlyMemory<byte> cloudEvent,
+        PortableResultsCloudEventsReadOptions options
+    ) =>
+        JsonSerializer.Deserialize(
+            cloudEvent.Span,
+            PortableResultsJsonContracts.GetLibraryTypeInfo(
+                options.SerializerOptions,
+                static () => new CloudEventsEnvelopePayloadJsonConverter()
+            )
+        );
+
     private static Result ParseResultPayload(
         ReadOnlyMemory<byte> dataSegment,
         bool isFailure,
@@ -160,16 +167,16 @@ public static class ReadOnlyMemoryCloudEventsExtensions
 
         if (isFailure)
         {
-            var failurePayload = JsonSerializer.Deserialize<CloudEventsFailurePayload>(
-                dataSegment.Span,
-                options.SerializerOptions
-            );
+            var failurePayload = ParseFailurePayload(dataSegment, options);
             return Result.Fail(failurePayload.Errors, failurePayload.Metadata);
         }
 
-        var successPayload = JsonSerializer.Deserialize<CloudEventsSuccessPayload>(
+        var successPayload = JsonSerializer.Deserialize(
             dataSegment.Span,
-            options.SerializerOptions
+            PortableResultsJsonContracts.GetLibraryTypeInfo(
+                options.SerializerOptions,
+                static () => new CloudEventsSuccessPayloadJsonConverter()
+            )
         );
         var metadata = successPayload.Metadata;
         if (metadata is not null)
@@ -182,6 +189,18 @@ public static class ReadOnlyMemoryCloudEventsExtensions
 
         return Result.Ok(metadata);
     }
+
+    private static CloudEventsFailurePayload ParseFailurePayload(
+        ReadOnlyMemory<byte> dataSegment,
+        PortableResultsCloudEventsReadOptions options
+    ) =>
+        JsonSerializer.Deserialize(
+            dataSegment.Span,
+            PortableResultsJsonContracts.GetLibraryTypeInfo(
+                options.SerializerOptions,
+                static () => new CloudEventsFailurePayloadJsonConverter()
+            )
+        );
 
     private static Result<T> ParseGenericResultPayload<T>(
         ReadOnlyMemory<byte> dataSegment,
@@ -199,10 +218,7 @@ public static class ReadOnlyMemoryCloudEventsExtensions
 
         if (isFailure)
         {
-            var failurePayload = JsonSerializer.Deserialize<CloudEventsFailurePayload>(
-                dataSegment.Span,
-                options.SerializerOptions
-            );
+            var failurePayload = ParseFailurePayload(dataSegment, options);
             return Result<T>.Fail(failurePayload.Errors, failurePayload.Metadata);
         }
 
@@ -213,18 +229,24 @@ public static class ReadOnlyMemoryCloudEventsExtensions
 
         if (normalizedPreference == PreferSuccessPayload.BareValue)
         {
-            var payload = JsonSerializer.Deserialize<CloudEventsBareSuccessPayload<T>>(
+            var payload = JsonSerializer.Deserialize(
                 dataSegment.Span,
-                options.SerializerOptions
+                PortableResultsJsonContracts.GetLibraryTypeInfo(
+                    options.SerializerOptions,
+                    static () => new CloudEventsBareSuccessPayloadJsonConverter<T>()
+                )
             );
             return CreateSuccessfulGenericResult(payload.Value, metadata: null);
         }
 
         if (normalizedPreference == PreferSuccessPayload.WrappedValue)
         {
-            var payload = JsonSerializer.Deserialize<CloudEventsWrappedSuccessPayload<T>>(
+            var payload = JsonSerializer.Deserialize(
                 dataSegment.Span,
-                options.SerializerOptions
+                PortableResultsJsonContracts.GetLibraryTypeInfo(
+                    options.SerializerOptions,
+                    static () => new CloudEventsWrappedSuccessPayloadJsonConverter<T>()
+                )
             );
             var metadata = payload.Metadata;
             if (metadata is not null)
@@ -238,9 +260,12 @@ public static class ReadOnlyMemoryCloudEventsExtensions
             return CreateSuccessfulGenericResult(payload.Value, metadata);
         }
 
-        var autoPayload = JsonSerializer.Deserialize<CloudEventsAutoSuccessPayload<T>>(
+        var autoPayload = JsonSerializer.Deserialize(
             dataSegment.Span,
-            options.SerializerOptions
+            PortableResultsJsonContracts.GetLibraryTypeInfo(
+                options.SerializerOptions,
+                static () => new CloudEventsAutoSuccessPayloadJsonConverter<T>()
+            )
         );
         var autoMetadata = autoPayload.Metadata;
         if (autoMetadata is not null)

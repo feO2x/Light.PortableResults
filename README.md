@@ -22,6 +22,7 @@ Most Result Pattern libraries stop at the application boundary. Light.PortableRe
 - [CloudEvents Quick Start](#cloudevents-quick-start)
 - [Validation In Depth](#validation-in-depth)
 - [OpenAPI Support](#openapi-support)
+- [Native AOT and Trimming](#native-aot-and-trimming)
 - [Configuration Reference](#configuration-reference)
 
 <a id="key-features"></a>
@@ -1314,6 +1315,79 @@ app.MapPut("/api/movieRatings", handler)
         configure: x => x.WithErrorCodes("VersionMismatch")
     );
 ```
+
+<a id="native-aot-and-trimming"></a>
+
+## 🛩️ Native AOT and Trimming
+
+`Light.PortableResults` and `Light.PortableResults.Validation` ship `net10.0` assets that are built with
+`IsAotCompatible`, and CI publishes a Native AOT sample so that trim and AOT regressions fail the build.
+
+### What you have to register
+
+You only register **your own result value types** with a `JsonSerializerContext`. Every envelope and payload type
+that Light.PortableResults owns is resolved by the library itself, so you never declare closed library wrappers such
+as `CloudEventsEnvelopeForWriting<MovieRating>` or `HttpReadAutoSuccessResultPayload<MovieRating>`. Combining
+source-generated resolvers cannot synthesize those closed generics from separate contracts anyway.
+
+```csharp
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+[JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
+[JsonSerializable(typeof(MovieRating))]
+public sealed partial class MovieRatingJsonContext : JsonSerializerContext;
+```
+
+Compose the options by setting the resolver and then adding the Light.PortableResults converters:
+
+```csharp
+using Light.PortableResults.CloudEvents.Reading;
+using Light.PortableResults.CloudEvents.Writing;
+using Light.PortableResults.Http.Reading;
+
+var serializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+{
+    TypeInfoResolver = MovieRatingJsonContext.Default
+};
+serializerOptions.AddDefaultPortableResultsCloudEventsWriteJsonConverters();
+
+var writeOptions = new PortableResultsCloudEventsWriteOptions
+{
+    SerializerOptions = serializerOptions,
+    Source = "urn:movies:rating-service"
+};
+
+byte[] cloudEvent = result.ToCloudEvent(successType: "movie.rated", options: writeOptions);
+```
+
+The same composition applies to `AddDefaultPortableResultsCloudEventsReadJsonConverters` and
+`AddDefaultPortableResultsHttpReadJsonConverters`. Non-generic `Result` values require **no** consumer registration
+at all: every type involved in writing and reading them belongs to Light.PortableResults.
+
+### How a contract is resolved
+
+For each library-owned type, `PortableResultsJsonContracts` resolves in this order:
+
+1. When the options carry no resolver and reflection-based serialization is enabled, the reflection resolver is
+   materialized so that the shared default options keep working exactly as before.
+2. A contract supplied by the configured `TypeInfoResolver` wins. Declaring a library type in your own context
+   therefore still overrides the library.
+3. Otherwise the converter that the options select for the type is used, following the normal
+   `JsonSerializerOptions` precedence — the first entry in `Converters` that can convert the type. A converter you
+   insert **before** the Light.PortableResults defaults keeps its precedence; the library converter is only reached
+   when nothing else matches. Contracts created this way are cached per `JsonSerializerOptions` instance and can be
+   created after the options became read-only.
+
+If a value type is missing from your context, the affected entry point throws an `InvalidOperationException` that
+names the unresolved type and tells you to register it, instead of failing deep inside `System.Text.Json`.
+
+### HTTP writing with ASP.NET Core
+
+The HTTP write path is the exception: `LightResult`/`LightActionResult` serialize `HttpResultForWriting` and
+`HttpResultForWriting<T>` through the configured resolver, so those wrappers still have to be declared in your
+context — see the `samples/NativeAotMovieRating` project. `Light.PortableResults.AspNetCore.Mvc` is not Native AOT
+compatible.
 
 <a id="configuration-reference"></a>
 

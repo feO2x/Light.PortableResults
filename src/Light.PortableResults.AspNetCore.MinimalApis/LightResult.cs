@@ -5,6 +5,7 @@ using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using Light.PortableResults.AspNetCore.MinimalApis.Serialization;
 using Light.PortableResults.Http.Writing;
+using Light.PortableResults.SharedJsonSerialization;
 using Microsoft.AspNetCore.Http;
 
 namespace Light.PortableResults.AspNetCore.MinimalApis;
@@ -47,11 +48,12 @@ public sealed class LightResult : BaseLightResult<Result>
         var serializerOptions = httpContext.RequestServices.ResolveJsonSerializerOptions(SerializerOptions);
         var wrapper = enrichedResult.ToHttpResultForWriting(resolvedOptions);
 
-        var typeInfo = serializerOptions.GetTypeInfo(typeof(HttpResultForWriting));
-        if (typeInfo is not JsonTypeInfo<HttpResultForWriting> castTypeInfo)
+        PortableResultsJsonContracts.EnsureTypeInfoResolver(serializerOptions);
+        if (!serializerOptions.TryGetTypeInfo(typeof(HttpResultForWriting), out var typeInfo) ||
+            typeInfo is not JsonTypeInfo<HttpResultForWriting> castTypeInfo)
         {
             throw new InvalidOperationException(
-                "Could not resolve 'JsonTypeInfo<HttpResultForWriting>'. Please ensure that your JsonSerializerOptions are configured correctly. The AddDefaultLightResultsHttpWriteJsonConverters extension method can help you with this."
+                $"Could not resolve 'JsonTypeInfo<{typeof(HttpResultForWriting)}>'. Please ensure that your JsonSerializerOptions are configured correctly. The AddDefaultLightResultsHttpWriteJsonConverters extension method can help you with this."
             );
         }
 
@@ -103,11 +105,12 @@ public sealed class LightResult<T> : BaseLightResult<Result<T>>
         var serializerOptions = httpContext.RequestServices.ResolveJsonSerializerOptions(SerializerOptions);
         var wrapper = enrichedResult.ToHttpResultForWriting(resolvedOptions);
 
-        var typeInfo = serializerOptions.GetTypeInfo(typeof(HttpResultForWriting<T>));
-        if (typeInfo is not JsonTypeInfo<HttpResultForWriting<T>> castTypeInfo)
+        PortableResultsJsonContracts.EnsureTypeInfoResolver(serializerOptions);
+        if (!serializerOptions.TryGetTypeInfo(typeof(HttpResultForWriting<T>), out var typeInfo) ||
+            typeInfo is not JsonTypeInfo<HttpResultForWriting<T>> castTypeInfo)
         {
             throw new InvalidOperationException(
-                $"Could not resolve 'JsonTypeInfo<HttpResultForWriting<{nameof(T)}>>'. Please ensure that your JsonSerializerOptions are configured correctly. The AddDefaultLightResultsHttpWriteJsonConverters extension method can help you with this."
+                $"Could not resolve 'JsonTypeInfo<{typeof(HttpResultForWriting<T>)}>'. Please ensure that your JsonSerializerOptions are configured correctly. The AddDefaultLightResultsHttpWriteJsonConverters extension method can help you with this."
             );
         }
 

@@ -8,15 +8,15 @@ The warnings represent runtime failures: with reflection serialization disabled,
 
 ## Acceptance Criteria
 
-- [ ] The `net10.0` assets of `Light.PortableResults` and `Light.PortableResults.Validation` build with `IsAotCompatible`; their `netstandard2.0` assets build without `NETSDK1210`.
-- [ ] Both packages build clean in `Release`, where future IL2026/IL3050 diagnostics fail the build. No rule is disabled through `.editorconfig` or `NoWarn`.
-- [ ] Consumers register only their result value types in `JsonSerializerContext`; the library resolves its own CloudEvents write, CloudEvents read, and HTTP read types.
-- [ ] With a source-generated resolver declaring only the value type, non-generic `Result` and generic `Result<T>` round-trip over CloudEvents and HTTP in process without a reflection-backed resolver.
-- [ ] Library-owned contracts are created once per `JsonSerializerOptions` instance and can be created after the options become read-only.
-- [ ] Missing consumer value-type metadata produces an exception that names the type and remedy at every affected entry point, with a negative test per site. The unreachable guards in `SystemTextJsonWritingExtensions`, `LightResult`, and `LightActionResult` are repaired.
-- [ ] Reflection-backed behavior remains unchanged: existing tests require additions only, the shared default options continue to support arbitrary `T`, and converters configured ahead of the library defaults retain precedence. Library-created contracts are used only when the configured resolver cannot supply one.
-- [ ] CI publishes the Native AOT sample, fails on trim or AOT diagnostics from Light.PortableResults assemblies, and keeps diagnostics from unannotated package dependencies non-fatal. The replacement for `SuppressTrimAnalysisWarnings` is proven with an injected library-side regression.
-- [ ] The README documents Native AOT option composition, and every affected package updates `<PackageReleaseNotes>`.
+- [x] The `net10.0` assets of `Light.PortableResults` and `Light.PortableResults.Validation` build with `IsAotCompatible`; their `netstandard2.0` assets build without `NETSDK1210`.
+- [x] Both packages build clean in `Release`, where future IL2026/IL3050 diagnostics fail the build. No rule is disabled through `.editorconfig` or `NoWarn`.
+- [x] Consumers register only their result value types in `JsonSerializerContext`; the library resolves its own CloudEvents write, CloudEvents read, and HTTP read types.
+- [x] With a source-generated resolver declaring only the value type, non-generic `Result` and generic `Result<T>` round-trip over CloudEvents and HTTP in process without a reflection-backed resolver.
+- [x] Library-owned contracts are created once per `JsonSerializerOptions` instance and can be created after the options become read-only.
+- [x] Missing consumer value-type metadata produces an exception that names the type and remedy at every affected entry point, with a negative test per site. The unreachable guards in `SystemTextJsonWritingExtensions`, `LightResult`, and `LightActionResult` are repaired.
+- [x] Reflection-backed behavior remains unchanged: existing tests require additions only, the shared default options continue to support arbitrary `T`, and converters configured ahead of the library defaults retain precedence. Library-created contracts are used only when the configured resolver cannot supply one.
+- [x] CI publishes the Native AOT sample, fails on trim or AOT diagnostics from Light.PortableResults assemblies, and keeps diagnostics from unannotated package dependencies non-fatal. The replacement for `SuppressTrimAnalysisWarnings` is proven with an injected library-side regression.
+- [x] The README documents Native AOT option composition, and every affected package updates `<PackageReleaseNotes>`.
 
 ## Technical Details
 
@@ -43,7 +43,7 @@ Route each warned serialization call through a `JsonTypeInfo<T>` overload. Do no
 
 ### Contract resolution and error behavior
 
-Use `JsonSerializerOptions.TryGetTypeInfo`; `GetTypeInfo` throws `NotSupportedException` for a missing contract before a null or failed-cast guard can run. Convert the existing unreachable guards in `SystemTextJsonWritingExtensions`, `LightResult`, and `LightActionResult`, and use the same pattern at new sites. A failed lookup becomes `InvalidOperationException` naming the unresolved consumer type and instructing the caller to register it in the context supplied to the options. Negative tests assert the exception type and unresolved type at every converted site.
+Use `JsonSerializerOptions.TryGetTypeInfo`; `GetTypeInfo` throws `NotSupportedException` for a missing contract before a null or failed -cast guard can run. Convert the existing unreachable guards in `SystemTextJsonWritingExtensions`, `LightResult`, and `LightActionResult`, and use the same pattern at new sites. A failed lookup becomes `InvalidOperationException` naming the unresolved consumer type and instructing the caller to register it in the context supplied to the options. Negative tests assert the exception type and unresolved type at every converted site.
 
 Combining source-generated resolvers cannot synthesize a closed contract such as `CloudEventsEnvelopeForWriting<MyDto>` from separate contracts for the wrapper and `MyDto`. Do not ship library contexts that force consumers to declare closed library wrappers. Instead, resolve every library-owned wrapper in this order:
 
