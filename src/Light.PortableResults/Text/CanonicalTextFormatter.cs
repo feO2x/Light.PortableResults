@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 #endif
 #if NET10_0_OR_GREATER
-using System.Buffers;
 using System.Text.Unicode;
 #endif
 
@@ -248,6 +247,12 @@ public static partial class CanonicalTextFormatter
         out int bytesWritten
     )
     {
+        if (text.IsEmpty)
+        {
+            bytesWritten = 0;
+            return true;
+        }
+
         var requiredLength = GetUtf8ByteCountWithReplacement(text);
         if (destination.Length < requiredLength)
         {
@@ -256,15 +261,15 @@ public static partial class CanonicalTextFormatter
         }
 
 #if NET10_0_OR_GREATER
-        var status = Utf8.FromUtf16(
+        Utf8.FromUtf16(
             text,
             destination,
-            out var charsRead,
+            out _,
             out bytesWritten,
             replaceInvalidSequences: true,
             isFinalBlock: true
         );
-        return status == OperationStatus.Done && charsRead == text.Length;
+        return true;
 #else
         fixed (char* textPointer = text)
         {
@@ -282,7 +287,7 @@ public static partial class CanonicalTextFormatter
 #endif
     }
 
-    private static int GetUtf8ByteCountWithReplacement(ReadOnlySpan<char> text)
+    private static long GetUtf8ByteCountWithReplacement(ReadOnlySpan<char> text)
     {
         long count = 0;
         for (var index = 0; index < text.Length; index++)
@@ -309,7 +314,7 @@ public static partial class CanonicalTextFormatter
             }
         }
 
-        return count <= int.MaxValue ? (int) count : int.MaxValue;
+        return count;
     }
 
 #if !NET10_0_OR_GREATER
@@ -329,7 +334,6 @@ public static partial class CanonicalTextFormatter
                 index + 1 < textLength &&
                 text[index + 1] is >= '\uDC00' and <= '\uDFFF')
             {
-                scalar = 0x10000 + ((scalar - 0xD800) << 10) + text[index + 1] - 0xDC00;
                 index++;
                 continue;
             }

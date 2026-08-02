@@ -27,11 +27,14 @@ public sealed class CanonicalTextFormatterTests
                 { "int64-minimum", MetadataValue.FromInt64(long.MinValue), Invariant(long.MinValue) },
                 { "int64-maximum", MetadataValue.FromInt64(long.MaxValue), Invariant(long.MaxValue) },
                 { "double", MetadataValue.FromDouble(-0.0), "-0.0" },
+                { "string-empty", MetadataValue.FromString(string.Empty), string.Empty },
                 { "string-ascii", MetadataValue.FromString("canonical text"), "canonical text" },
                 { "string-non-ascii", MetadataValue.FromString("Grüße 日本語 😀"), "Grüße 日本語 😀" },
                 { "string-unpaired-high", MetadataValue.FromString("a\uD800b"), "a\uD800b" },
                 { "string-unpaired-low", MetadataValue.FromString("a\uDC00b"), "a\uDC00b" },
                 { "decimal-scale", MetadataValue.FromDecimal(19.50m), Invariant(19.50m) },
+                { "decimal-negative-scale", MetadataValue.FromDecimal(-19.50m), Invariant(-19.50m) },
+                { "decimal-negative-fraction", MetadataValue.FromDecimal(-0.5m), Invariant(-0.5m) },
                 { "decimal-negative-zero", MetadataValue.FromDecimal(-0.000m), Invariant(-0.000m) },
                 { "decimal-minimum", MetadataValue.FromDecimal(decimal.MinValue), Invariant(decimal.MinValue) },
                 { "decimal-maximum", MetadataValue.FromDecimal(decimal.MaxValue), Invariant(decimal.MaxValue) },
@@ -207,6 +210,22 @@ public sealed class CanonicalTextFormatterTests
         var expectedUtf8Length = Encoding.UTF8.GetByteCount(expected);
         var chars = CreateFilledArray(Math.Max(expected.Length, 1), '\uA55A');
         var bytes = CreateFilledArray(Math.Max(expectedUtf8Length, 1), (byte) 0xA5);
+
+        if (expected.Length == 0)
+        {
+            value.TryFormatCanonical(chars.AsSpan(0, 0), out var emptyCharsWritten)
+               .Should()
+               .BeTrue(caseName);
+            value.TryFormatCanonicalUtf8(bytes.AsSpan(0, 0), out var emptyBytesWritten)
+               .Should()
+               .BeTrue(caseName);
+
+            emptyCharsWritten.Should().Be(0, caseName);
+            emptyBytesWritten.Should().Be(0, caseName);
+            chars.Should().OnlyContain(character => character == '\uA55A', caseName);
+            bytes.Should().OnlyContain(element => element == 0xA5, caseName);
+            return;
+        }
 
         value.TryFormatCanonical(chars.AsSpan(0, expected.Length - 1), out var charsWritten)
            .Should()

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Text.Json;
 using Light.PortableResults.Metadata;
 
@@ -99,7 +100,8 @@ public static class MetadataExtensions
                 // skipped because the text comes from our own formatter and non-finite values are rejected at
                 // construction, so it is always a well-formed JSON number.
                 Span<byte> canonicalNumber = stackalloc byte[MetadataValue.MaximumPrimitiveCanonicalLength];
-                value.TryFormatCanonicalUtf8(canonicalNumber, out var bytesWritten);
+                var formatted = value.TryFormatCanonicalUtf8(canonicalNumber, out var bytesWritten);
+                Debug.Assert(formatted);
                 writer.WriteRawValue(canonicalNumber.Slice(0, bytesWritten), skipInputValidation: true);
                 return;
             case MetadataNumberEncoding.None:
@@ -128,7 +130,8 @@ public static class MetadataExtensions
             default:
                 // Every remaining string-shaped kind has bounded, entirely ASCII canonical text.
                 Span<byte> canonicalText = stackalloc byte[MetadataValue.MaximumPrimitiveCanonicalLength];
-                value.TryFormatCanonicalUtf8(canonicalText, out var bytesWritten);
+                var formatted = value.TryFormatCanonicalUtf8(canonicalText, out var bytesWritten);
+                Debug.Assert(formatted);
                 writer.WriteStringValue(canonicalText.Slice(0, bytesWritten));
                 return;
         }

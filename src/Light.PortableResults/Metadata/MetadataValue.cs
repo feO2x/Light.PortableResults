@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Xml;
 using Light.PortableResults.Text;
@@ -909,9 +910,8 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
                 );
             case MetadataKind.Array:
             case MetadataKind.Object:
-                return ThrowComplexCanonicalFormat(Kind, out charsWritten);
             default:
-                throw new InvalidOperationException($"Kind '{Kind}' does not have a canonical text encoding.");
+                return ThrowComplexCanonicalFormat(Kind, out charsWritten);
         }
     }
 
@@ -1003,9 +1003,8 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
                 );
             case MetadataKind.Array:
             case MetadataKind.Object:
-                return ThrowComplexCanonicalFormat(Kind, out bytesWritten);
             default:
-                throw new InvalidOperationException($"Kind '{Kind}' does not have a canonical text encoding.");
+                return ThrowComplexCanonicalFormat(Kind, out bytesWritten);
         }
     }
 
@@ -1166,7 +1165,8 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     private static string FormatBoundedCanonical(MetadataValue value)
     {
         Span<char> destination = stackalloc char[MaximumPrimitiveCanonicalLength];
-        value.TryFormatCanonical(destination, out var charsWritten);
+        var formatted = value.TryFormatCanonical(destination, out var charsWritten);
+        Debug.Assert(formatted);
         return destination.Slice(0, charsWritten).ToString();
     }
 
@@ -1369,12 +1369,12 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         return CanonicalTextFormatter.TryFormatTimeUtf8(ticks, destination, out bytesWritten);
     }
 
-    private static bool ThrowComplexCanonicalFormat<TCodeUnit>(
+    private static bool ThrowComplexCanonicalFormat(
         MetadataKind kind,
-        out TCodeUnit unitsWritten
+        out int unitsWritten
     )
     {
-        unitsWritten = default!;
+        unitsWritten = 0;
         throw new InvalidOperationException($"Kind '{kind}' does not have a primitive canonical text encoding.");
     }
 
