@@ -386,7 +386,7 @@ public sealed class DateTimeKindValidationTests
     );
 }
 
-public sealed class TimestampDto
+file sealed class TimestampDto
 {
     public DateTime OccurredAt { get; init; }
 }

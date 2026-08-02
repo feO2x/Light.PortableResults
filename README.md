@@ -765,7 +765,7 @@ public sealed class OrderItemValidator : Validator<OrderItemDto>
 
 `IsUuidV7` fails with the `UuidV7` error code unless the GUID's RFC 9562 version field is `7` **and** its variant bits are the RFC variant. The same invariant is available standalone as `guid.IsUuidV7()` (`GuidExtensions`) when a repository or message handler needs to guard it outside a check chain.
 
-`IsUtc`, `IsLocal`, and `IsUnspecified` assert the `DateTime.Kind` of the checked value and fail with the `Utc`, `Local`, and `Unspecified` error codes. They partition `DateTimeKind`: every `DateTime` is accepted by exactly one of them. The contract is only the kind of the value the check sees, independent of its origin — `DateTime.UtcNow`, `DateTime.SpecifyKind`, a custom converter, and non-JSON transports all produce `Utc` just as a JSON payload with a trailing `Z` does.
+`IsUtc`, `IsLocal`, and `IsUnspecified` assert the `DateTime.Kind` of the checked value and fail with the `Utc`, `Local`, and `Unspecified` error codes. They partition `DateTimeKind`: every `DateTime` is accepted by exactly one of them. The contract is only the kind of the value the check sees, independent of its origin — `DateTime.UtcNow`, `DateTime.SpecifyKind`, a custom converter, and non-JSON transports can all produce `Utc` just as a JSON payload with a trailing `Z` does.
 
 That matters for JSON requests, because the default `System.Text.Json` converter maps the ISO 8601 forms to kinds like this:
 
