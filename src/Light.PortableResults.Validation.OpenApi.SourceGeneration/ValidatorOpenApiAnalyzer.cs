@@ -72,11 +72,13 @@ public static class ValidatorOpenApiAnalyzer
         }
 
         var semanticModel = compilation.GetSemanticModel(methodDeclaration.SyntaxTree);
+        var metadataValueReconstructor = new MetadataValueReconstructor(compilation);
         var sourceParameterName =
             performValidation.Parameters.Length >= 3 ? performValidation.Parameters[2].Name : null;
         var rules = ImmutableArray.CreateBuilder<RuleCallModel>();
         AnalyzePerformValidationBody(
             semanticModel,
+            metadataValueReconstructor,
             methodDeclaration,
             sourceParameterName,
             rules,
@@ -204,6 +206,7 @@ public static class ValidatorOpenApiAnalyzer
 
     private static void AnalyzePerformValidationBody(
         SemanticModel semanticModel,
+        MetadataValueReconstructor metadataValueReconstructor,
         MethodDeclarationSyntax methodDeclaration,
         string? sourceParameterName,
         ICollection<RuleCallModel> rules,
@@ -223,6 +226,7 @@ public static class ValidatorOpenApiAnalyzer
             {
                 AnalyzeCheckExpression(
                     semanticModel,
+                    metadataValueReconstructor,
                     expression,
                     sourceParameterName,
                     rules,
@@ -238,6 +242,7 @@ public static class ValidatorOpenApiAnalyzer
 
     private static void AnalyzeCheckExpression(
         SemanticModel semanticModel,
+        MetadataValueReconstructor metadataValueReconstructor,
         ExpressionSyntax expression,
         string? sourceParameterName,
         ICollection<RuleCallModel> rules,
@@ -294,6 +299,7 @@ public static class ValidatorOpenApiAnalyzer
 
             var rule = CreateRuleCall(
                 semanticModel,
+                metadataValueReconstructor,
                 invocation,
                 symbol,
                 ruleAttribute,
@@ -311,6 +317,7 @@ public static class ValidatorOpenApiAnalyzer
 
     private static RuleCallModel? CreateRuleCall(
         SemanticModel semanticModel,
+        MetadataValueReconstructor metadataValueReconstructor,
         InvocationExpressionSyntax invocation,
         IMethodSymbol symbol,
         AttributeData ruleAttribute,
@@ -356,6 +363,7 @@ public static class ValidatorOpenApiAnalyzer
             {
                 if (!TryResolveArgumentConstant(
                         semanticModel,
+                        metadataValueReconstructor,
                         invocation,
                         symbol,
                         sourceArgument!,
@@ -784,6 +792,7 @@ public static class ValidatorOpenApiAnalyzer
 
     private static bool TryResolveArgumentConstant(
         SemanticModel semanticModel,
+        MetadataValueReconstructor metadataValueReconstructor,
         InvocationExpressionSyntax invocation,
         IMethodSymbol symbol,
         string sourceArgument,
@@ -841,7 +850,7 @@ public static class ValidatorOpenApiAnalyzer
             }
             else
             {
-                reconstructionResult = MetadataValueReconstructor.TryReconstruct(
+                reconstructionResult = metadataValueReconstructor.TryReconstruct(
                     semanticModel,
                     argument.Expression,
                     cancellationToken,

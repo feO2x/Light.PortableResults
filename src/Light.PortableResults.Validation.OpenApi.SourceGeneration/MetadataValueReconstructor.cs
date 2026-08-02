@@ -11,31 +11,48 @@ using Microsoft.CodeAnalysis.Operations;
 
 namespace Light.PortableResults.Validation.OpenApi.SourceGeneration;
 
-internal enum MetadataReconstructionResult
+/// <summary>
+/// Describes the outcome of reconstructing a validation metadata value.
+/// </summary>
+public enum MetadataReconstructionResult
 {
     Success = 0,
     Unsupported = 1,
     MultiFileFieldUnsupported = 2
 }
 
-internal static class MetadataValueReconstructor
+/// <summary>
+/// Reconstructs supported validation metadata expressions into deterministic values.
+/// </summary>
+public sealed class MetadataValueReconstructor
 {
     private const int MaximumDepth = 4;
     private const long TicksPerMicrosecond = 10L;
+    private readonly FrameworkTypes _frameworkTypes;
 
-    public static MetadataReconstructionResult TryReconstruct(
+    /// <summary>
+    /// Creates a reconstructor for expressions belonging to the specified compilation.
+    /// </summary>
+    public MetadataValueReconstructor(Compilation compilation)
+    {
+        _frameworkTypes = new FrameworkTypes(compilation);
+    }
+
+    /// <summary>
+    /// Attempts to reconstruct the specified expression.
+    /// </summary>
+    public MetadataReconstructionResult TryReconstruct(
         SemanticModel semanticModel,
         ExpressionSyntax expression,
         CancellationToken cancellationToken,
         out object? value
     )
     {
-        var frameworkTypes = new FrameworkTypes(semanticModel.Compilation);
         var resolvingFields = new HashSet<IFieldSymbol>(SymbolEqualityComparer.Default);
         return TryReconstruct(
             semanticModel,
             expression,
-            frameworkTypes,
+            _frameworkTypes,
             depth: 0,
             resolvingFields,
             cancellationToken,
@@ -576,7 +593,7 @@ internal static class MetadataValueReconstructor
                      ParameterType.Int32
                  ))
         {
-            constructor = SupportedConstructor.TimeSpanHours;
+            constructor = SupportedConstructor.TimeSpanThreeArguments;
         }
         else if (Matches(
                      method,
@@ -587,7 +604,7 @@ internal static class MetadataValueReconstructor
                      ParameterType.Int32
                  ))
         {
-            constructor = SupportedConstructor.TimeSpanDays;
+            constructor = SupportedConstructor.TimeSpanFourArguments;
         }
         else if (Matches(
                      method,
@@ -599,7 +616,7 @@ internal static class MetadataValueReconstructor
                      ParameterType.Int32
                  ))
         {
-            constructor = SupportedConstructor.TimeSpanMilliseconds;
+            constructor = SupportedConstructor.TimeSpanFiveArguments;
         }
         else if (Matches(method, frameworkTypes.TimeSpan, ParameterType.Int64))
         {
@@ -858,10 +875,10 @@ internal static class MetadataValueReconstructor
             SupportedConstructor.DateTimeOffsetDateTime => ReconstructedMetadataValue.FromDateTimeOffset(
                 new DateTimeOffset(ToDateTime(arguments[0]), ToTimeSpan(arguments[1]))
             ),
-            SupportedConstructor.TimeSpanHours => ReconstructedMetadataValue.FromTimeSpan(
+            SupportedConstructor.TimeSpanThreeArguments => ReconstructedMetadataValue.FromTimeSpan(
                 new TimeSpan(ToInt32(arguments[0]), ToInt32(arguments[1]), ToInt32(arguments[2]))
             ),
-            SupportedConstructor.TimeSpanDays => ReconstructedMetadataValue.FromTimeSpan(
+            SupportedConstructor.TimeSpanFourArguments => ReconstructedMetadataValue.FromTimeSpan(
                 new TimeSpan(
                     ToInt32(arguments[0]),
                     ToInt32(arguments[1]),
@@ -869,7 +886,7 @@ internal static class MetadataValueReconstructor
                     ToInt32(arguments[3])
                 )
             ),
-            SupportedConstructor.TimeSpanMilliseconds => ReconstructedMetadataValue.FromTimeSpan(
+            SupportedConstructor.TimeSpanFiveArguments => ReconstructedMetadataValue.FromTimeSpan(
                 new TimeSpan(
                     ToInt32(arguments[0]),
                     ToInt32(arguments[1]),
@@ -1195,9 +1212,9 @@ internal static class MetadataValueReconstructor
         DateTimeOffsetMillisecond = 8,
         DateTimeOffsetTicks = 9,
         DateTimeOffsetDateTime = 10,
-        TimeSpanHours = 11,
-        TimeSpanDays = 12,
-        TimeSpanMilliseconds = 13,
+        TimeSpanThreeArguments = 11,
+        TimeSpanFourArguments = 12,
+        TimeSpanFiveArguments = 13,
         TimeSpanTicks = 14,
         DateOnly = 15,
         TimeOnlyMinute = 16,
