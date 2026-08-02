@@ -16,7 +16,7 @@ The underlying design is sound. Every failing site serializes a library-owned ty
 - [ ] A non-generic `Result` and a `Result<T>` round-trip over CloudEvents and HTTP against options whose only resolver is a consumer context declaring the value type alone, proving the paths need no runtime code generation. Tests assert this in-process by resolver composition, not by toggling the reflection switch.
 - [ ] Library-owned contracts are created once per `JsonSerializerOptions` instance, not per serialization call, and creation works against options that are already read-only.
 - [ ] Behavior for consumers who pass reflection-backed options is unchanged: the existing test suites pass without modification beyond additions, and `PortableResultsCloudEventsWriteOptions.Default` and `PortableResultsHttpReadOptions.Default` keep serializing arbitrary `T` as they do today.
-- [ ] CI publishes the Native AOT sample with `PublishAot=true` and fails on any trim or AOT warning originating in a Light.PortableResults assembly, which requires that the sample's blanket `SuppressTrimAnalysisWarnings` no longer hide them.
+- [ ] CI publishes the Native AOT sample and fails on any trim or AOT diagnostic originating in a Light.PortableResults assembly, while the sample's unannotated package dependencies stay non-fatal. The sample's blanket `SuppressTrimAnalysisWarnings` is gone, and the replacement is demonstrated to fail the publish on an injected library-side regression.
 - [ ] The README documents how to compose options for Native AOT, and the `<PackageReleaseNotes>` of every affected package describe their respective changes.
 
 ## Technical Details
@@ -82,9 +82,26 @@ In-process tests compose options whose only resolver is a test-local source-gene
 
 The ILC publish covers `samples/NativeAotMovieRating`, which exercises the Minimal API write path exclusively — the path that already works. It therefore does not verify the CloudEvents write or HTTP read paths in this release; extending the sample to walk them is deferred to a follow-up the maintainer will drive. Keep the gate anyway: it proves ILC still succeeds after the `IsAotCompatible` and `JsonTypeInfo` changes, and it is the seam the later sample work plugs into.
 
-For the gate to report anything at all from this library, one sample setting has to change. The sample sets `SuppressTrimAnalysisWarnings=true` to silence Serilog's unannotated assembly rollup, which equally hides every warning originating in Light.PortableResults. Replace it with a targeted suppression scoped to the Serilog assemblies, and set `TrimmerSingleWarn=false` so individual warnings are reported rather than collapsed into one per assembly. This is the only change the sample needs here, and it adds no new code paths.
+For the gate to report anything at all from this library, one sample setting has to change. The sample sets `SuppressTrimAnalysisWarnings=true` to silence Serilog's unannotated assembly rollup, which equally hides every warning originating in Light.PortableResults. Drop it, and keep single-warning mode rather than turning it off:
 
-Add the publish to `build-and-test.yml` as a separate step after the existing test steps, on the runner's own RID. It is the slowest step in the workflow; keep it out of the matrix and do not gate the coverage jobs on it.
+```xml
+<!-- Serilog is not yet fully annotated for trimming. Keep the per-assembly rollup for package
+     references and demote only that rollup, so project references keep reporting in full. -->
+<WarningsNotAsErrors>$(WarningsNotAsErrors);IL2104</WarningsNotAsErrors>
+```
+
+Do not set `TrimmerSingleWarn=false`. Verified on this sample: it expands Serilog into individual diagnostics, `Serilog.Capturing.PropertyValueConverter.TryConvertStructure` raises `IL2067`, the repository's Release `TreatWarningsAsErrors` promotes it to an error, and ILC fails with `MSB3077`. Suppressing that through `NoWarn` is not an option either — `IL2067` is not Serilog-specific, and silencing it globally would hide the same diagnostic in Light assemblies.
+
+The configuration above is not a blunt suppression, because the SDK applies single-warn to package references while project references always report in detail. Verified end to end by injecting a `JsonSerializer.Serialize(value, value.GetType())` call into `Light.PortableResults` and publishing the sample:
+
+| Origin | Reported as | Fatal |
+| --- | --- | --- |
+| `Serilog.dll` (package reference) | one `IL2104` rollup | no |
+| `Light.PortableResults` (project reference) | `IL3050` and `IL2026`, with file and line | yes |
+
+The injected regression failed the publish while Serilog stayed quiet, which is exactly the asymmetry the gate needs. Note this also holds today, before the analyzers are enabled: `IsAotCompatible` governs compile-time analysis, so ILC is the only thing that would have caught such a call in the current codebase.
+
+Add the publish to `build-and-test.yml` as a separate step after the existing test steps, on the runner's own RID. Publish the sample project directly and do not pass `/p:PublishAot=true` on the command line: as a global property it flows into every project reference and fails the `netstandard2.0` source generator with `NETSDK1207`. The sample already sets `PublishAot` internally and strips it from its references via `GlobalPropertiesToRemove`, which is why `dotnet publish <sample> -c Release -r <rid>` is the correct invocation. It is the slowest step in the workflow; keep it out of the matrix and do not gate the coverage jobs on it.
 
 ### Deliberately out of scope
 
