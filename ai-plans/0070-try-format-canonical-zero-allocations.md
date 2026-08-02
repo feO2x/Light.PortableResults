@@ -24,7 +24,7 @@ Introduce canonical span formatters for the remaining primitive kinds in both en
 - [ ] A microbenchmark compares the new `Guid` and `DateTime` formatters with the framework `TryFormat` APIs on `net10.0`, and its result is recorded in the pull request as evidence for the deferred follow-up decision. No target-specific implementation is introduced in this issue regardless of the result.
 - [ ] The CloudEvents and HTTP write benchmark fixtures carry metadata of the kinds this issue affects, and before/after allocation figures for both are recorded in the pull request.
 - [ ] `THIRD-PARTY-NOTICES.md` and the folder README record the newly adapted upstream files and the adaptations made to them, following the existing provenance pattern, and every file containing adapted runtime code retains the .NET Foundation MIT header.
-- [ ] The `netstandard2.0` decimal path documents its runtime assumption and enforces it at type initialization, so a runtime that violates it fails loudly instead of producing wrong text.
+- [ ] The `netstandard2.0` decimal path documents its runtime assumption and enforces it without allocating, surfacing `PlatformNotSupportedException` from the decimal formatting path itself, so a runtime that violates it fails loudly instead of producing wrong text and no other kind's formatting is affected.
 - [ ] The package release notes mention the new formatting APIs and the removed allocations.
 - [ ] Both target frameworks build in Release with warnings as errors, package validation succeeds, the Native AOT sample publishes successfully, and test coverage remains above 95%.
 
@@ -67,7 +67,17 @@ Two adaptations are unavoidable and one target is a trap:
 
   This does not reopen the single-implementation decision. What differs is how the four integers are obtained; the digit generation and the renderer are one body, and both extractions are pinned to the same contractual quadruple by `GetBits` semantics.
 
-  Verify the `netstandard2.0` assumption at type initialization rather than trusting it: compare the reinterpreted fields against `decimal.GetBits` for a probe value once, and throw `PlatformNotSupportedException` on mismatch. The allocating overload is acceptable there because it runs once per process, and the check converts silent wrong output on an unforeseen runtime into an immediate, diagnosable failure. Note that a mutant in that static initializer will be reported as survived regardless of coverage, per the blind spot in `tests/AGENTS.md`.
+  Verify the `netstandard2.0` assumption once rather than trusting it, and verify it **without allocating**. Do not reach for `decimal.GetBits(decimal)` in the guard: it allocates a four-element array on first use, which breaches the unqualified no-allocation criterion, and the warmed-up allocation test cannot catch it, because the warm-up iteration triggers type initialization before measurement starts. Seed the probe from the constructor instead:
+
+  ```csharp
+  var probe = new decimal(lo: 0x11111111, mid: 0x22222222, hi: 0x33333333, isNegative: true, scale: 5);
+  ```
+
+  Reinterpret that value and compare the fields against the constructor arguments and the expected flags word — `0x80050000` for the parameters above, being the sign bit and the scale in bits 16 to 23. `decimal(int, int, int, bool, byte)` defines the logical representation exactly as `GetBits` does, so this is no weaker a check, and it touches nothing on the heap: a struct construction, a reinterpret, and four integer comparisons.
+
+  Isolate the guard so its failure is proportionate. Put it in a decimal-specific private helper rather than in `CanonicalTextFormatter`'s own initializer; a throwing initializer on the outer type would disable integer, date, `TimeSpan`, and `Guid` formatting too, none of which depend on the layout. Store the outcome in a `static readonly bool` and throw `PlatformNotSupportedException` from the decimal formatting path, rather than throwing from the initializer — an initializer that throws surfaces to callers as `TypeInitializationException` wrapping the real cause, which contradicts the exception documented on the method. The flag read folds away once the type is initialized, so it costs nothing on the formatting path.
+
+  Note that a mutant in that initializer will be reported as survived regardless of coverage, per the blind spot in `tests/AGENTS.md`.
 
   A unit test comparing the reinterpret against `decimal.GetBits` is still worth having, but be precise about what it proves: the test suite runs both package assets on the same .NET 10 host, so it validates the compilation target, never the `netstandard2.0` asset's behavior on .NET Framework or Mono. Only the runtime guard covers that case.
 
@@ -223,6 +233,8 @@ Test the canonical text through `MetadataValue` (sociable), and reach `Canonical
 Pin the `char` overload resolution with a test that calls `CanonicalTextFormatter.TryFormat` with a `char` literal and asserts the character, not its code point — the failure this guards against is a binding change, so the test must pass a `char` typed argument rather than a variable already narrowed elsewhere.
 
 Assert the absence of allocations with `GC.GetAllocatedBytesForCurrentThread` around a warmed-up loop over one value of each affected kind in each encoding, following the precedent in the floating-point formatter tests. Cover `ToCanonicalString` for `Null`, `Boolean`, `String`, and `Uri` in the same way: those four are allocation-free today, so the assertion guards a regression the inversion could otherwise introduce silently, since the returned text would still be correct.
+
+Be aware of what the warm-up hides: it triggers type initialization and any lazy setup before measurement begins, so a one-time allocation on first use is invisible to these tests. One-time initialization must therefore be allocation-free by construction, not merely amortized — the assertion cannot enforce it.
 
 Extend the same assertions to the `TryGetXxx` validator paths, which the formatting-API tests do not reach. Those paths run only when the value is a `String` kind being parsed — `TryGetGuid` on a `Guid`-kind value returns early without formatting anything — so the test must build `String`-kind values holding canonical text and call `TryGetGuid`, `TryGetDateTime`, `TryGetInt64`, and the rest against them. That is where the per-candidate string allocation lives today.
 
