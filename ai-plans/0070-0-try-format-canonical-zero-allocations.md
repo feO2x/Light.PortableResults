@@ -1,5 +1,46 @@
 # Allocation-Free Canonical Formatting for MetadataValue
 
+> **Benchmark results.** BenchmarkDotNet v0.15.8, macOS Tahoe 26.6, Apple M3 Max (16 logical cores),
+> .NET SDK 10.0.302, .NET 10.0.10 Arm64 RyuJIT, `DefaultJob`, Release.
+>
+> Owned formatters against framework `TryFormat` (`CanonicalTextFormatterBenchmarks`). Each invocation
+> formats three values into a stack buffer, so the per-value cost is one third of the mean. Neither
+> side allocates.
+>
+> | Method | Category | Mean | Ratio |
+> | --- | --- | ---: | ---: |
+> | `FrameworkDateTimeTryFormat` | DateTime | 229.59 ns | 1.00 |
+> | `CanonicalDateTimeTryFormat` | DateTime | 47.06 ns | 0.20 |
+> | `FrameworkGuidTryFormat` | Guid | 10.52 ns | 1.00 |
+> | `CanonicalGuidTryFormat` | Guid | 28.50 ns | 2.71 |
+>
+> The split matches this plan's expectation. The owned `DateTime` renderer wins by 4.9× because the
+> canonical custom pattern drives `DateTime.TryFormat` into the general format interpreter instead of
+> fixed-shape `TryFormatO`; the same reasoning covers `DateTimeOffset`, `DateOnly`, and `TimeOnly`,
+> which share that renderer. `Guid.TryFormat` wins by 2.7× because its `D` branch is vectorized in
+> current runtimes while the `v6.0.36` port predates that rewrite. That gap is the evidence for the
+> deferred follow-up: roughly 6 ns per GUID against the ~900 ns cost of writing a whole CloudEvent,
+> to be weighed against reintroducing an asset-divergent path in the area #58 unified. No
+> target-specific implementation was added here.
+>
+> End-to-end write allocations. "Before" was measured in a worktree at `7c0e1b9`, the commit preceding
+> this change, with the new benchmark fixtures copied in verbatim, so both columns serialize identical
+> payloads and the delta isolates the library change rather than the fixture change.
+>
+> | Benchmark | Mean before | Mean after | Alloc before | Alloc after | Δ alloc |
+> | --- | ---: | ---: | ---: | ---: | ---: |
+> | `ToCloudEvents_GenericSuccessWithMetadata` | 1.043 µs | 916.6 ns | 1.31 KB | 1.09 KB | −16.8 % |
+> | `ToCloudEvents_GenericSuccessWithMetadata_LegacyDirect` | 1.004 µs | 871.9 ns | 3.35 KB | 3.12 KB | −6.9 % |
+> | `HttpWriteSerialization.GenericSuccessWithMetadata` | 430.3 ns | 328.4 ns | 432 B | 192 B | −55.6 % |
+>
+> Both paths drop ≈225–240 B, the sum of the canonical strings no longer materialized: a 36-character
+> `Guid` (96 B), a 28-character `DateTime` (80 B), and a 22-character `Double` (72 B). CloudEvents
+> shows the smaller relative win only because envelope construction dominates its larger baseline. The
+> 12–24 % throughput improvement follows from the removed allocations and is an observation, not a
+> goal. The header path is excluded from any claim: `HttpHeaderValueFormatter` returns `StringValues`
+> and still materializes text by construction. The remaining benchmarks in both classes contain no
+> affected metadata kinds and were not re-run.
+
 ## Rationale
 
 `MetadataValue.TryFormatCanonical` is genuinely span-based only for `Double` and `Single`; every other kind calls `ToCanonicalString()` and copies the result. `Null`, `Boolean`, `String`, and `Uri` already return a literal or stored reference, but the other ten kinds allocate. This affects `JsonCloudEventsExtensions.WriteStringAttribute`, which still creates a throwaway string for values such as `Guid`, `DateTime`, and `Int64`, and the nine `TryGetXxx` validators that reformat candidates (`Int64`, `UInt64`, `Single`, four date/time kinds, `TimeSpan`, and `Guid`). `TryGetDecimal`, `TryGetChar`, and `TryGetUri` do not reformat and are unaffected.
