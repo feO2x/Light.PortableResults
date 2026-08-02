@@ -15,8 +15,7 @@ The underlying design is sound: registering `CloudEventsEnvelopeForWriting`, `Cl
 - [ ] The core package ships public source-generated `JsonSerializerContext` types covering its own CloudEvents write, CloudEvents read, and HTTP read payload types, so a consumer never has to name library-internal payload types in their own context.
 - [ ] Options constructed from the shipped contexts round-trip a non-generic `Result` and a `Result<T>` over CloudEvents and HTTP without a reflection-based resolver present, proving the paths need no runtime code generation. Tests assert this in-process by resolver composition, not by toggling the reflection switch.
 - [ ] Behavior for consumers who pass reflection-backed options is unchanged: the existing test suites pass without modification beyond additions, and `PortableResultsCloudEventsWriteOptions.Default` and `PortableResultsHttpReadOptions.Default` keep serializing arbitrary `T` as they do today.
-- [ ] The Native AOT sample exercises the CloudEvents write path and the HTTP read path, so ILC covers the code this issue is about, and its blanket `SuppressTrimAnalysisWarnings` no longer hides warnings from Light.PortableResults assemblies.
-- [ ] CI publishes the sample with `PublishAot=true` and fails on any trim or AOT warning originating in a Light.PortableResults assembly.
+- [ ] CI publishes the Native AOT sample with `PublishAot=true` and fails on any trim or AOT warning originating in a Light.PortableResults assembly, which requires that the sample's blanket `SuppressTrimAnalysisWarnings` no longer hide them.
 - [ ] The README documents how to compose options for Native AOT, and the `<PackageReleaseNotes>` of every affected package describe their respective changes.
 
 ## Technical Details
@@ -65,11 +64,13 @@ where `MyContext` declares `[JsonSerializable(typeof(CloudEventsEnvelopeForWriti
 
 ### Proving it, in tests and in CI
 
-Two layers, because neither is sufficient alone.
+The in-process tests are the primary proof for this issue; the ILC publish is regression protection for the paths the sample already walks.
 
 In-process tests compose options whose only resolver is a source-generated context — the shipped one combined with a test-local context for the value type — and assert that a non-generic `Result` and a `Result<T>` round-trip over CloudEvents and HTTP. A path that completes with no reflection-based resolver in the graph cannot have needed runtime code generation, which is the property under test. Do not toggle `System.Text.Json.JsonSerializer.IsReflectionEnabledByDefault` from a test: the value is read once and cached per process, and the test hosts are shared and parallel. The switch remains the right manual reproduction, via a standalone console app with `<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>`, and that is how the failures in the Rationale were confirmed.
 
-The ILC publish is the end-to-end gate, and it only means something once two things change in `samples/NativeAotMovieRating`. First, the sample is a server that exercises the Minimal API write path exclusively — the path that already works. Extend it to publish a CloudEvents message and to read a `Result<T>` back from an `HttpResponseMessage`, so ILC and the trim analyzer actually walk the code this issue is about; the in-memory database module is a reasonable place to hang an outbox-style publish, and the sample's own endpoints can serve as the source for a typed-client read. Second, the sample sets `SuppressTrimAnalysisWarnings=true` to silence Serilog's unannotated assembly rollup, which would equally hide every warning this work is meant to catch. Replace it with a targeted suppression scoped to the Serilog assemblies, and set `TrimmerSingleWarn=false` so individual warnings are reported rather than collapsed into one per assembly.
+The ILC publish covers `samples/NativeAotMovieRating`, which exercises the Minimal API write path exclusively — the path that already works. It therefore does not verify the CloudEvents write or HTTP read paths in this release; extending the sample to walk them is deferred to a follow-up the maintainer will drive. Keep the gate anyway: it proves ILC still succeeds after the `IsAotCompatible` and `JsonTypeInfo` changes, and it is the seam the later sample work plugs into.
+
+For the gate to report anything at all from this library, one sample setting has to change. The sample sets `SuppressTrimAnalysisWarnings=true` to silence Serilog's unannotated assembly rollup, which equally hides every warning originating in Light.PortableResults. Replace it with a targeted suppression scoped to the Serilog assemblies, and set `TrimmerSingleWarn=false` so individual warnings are reported rather than collapsed into one per assembly. This is the only change the sample needs here, and it adds no new code paths.
 
 Add the publish to `build-and-test.yml` as a separate step after the existing test steps, on the runner's own RID. It is the slowest step in the workflow; keep it out of the matrix and do not gate the coverage jobs on it.
 
@@ -77,5 +78,6 @@ Add the publish to `build-and-test.yml` as a separate step after the existing te
 
 - **`Light.PortableResults.AspNetCore.Mvc`.** MVC is not Native AOT compatible, and its package description does not claim otherwise.
 - **Making the shared `Default` options AOT-complete.** Rejected above; the generic payload types make it impossible without the consumer's context.
+- **Extending the Native AOT sample to exercise the CloudEvents write and HTTP read paths.** Deferred to a follow-up the maintainer will drive. Until then the ILC gate covers the Minimal API write path only, and the in-process resolver-composition tests carry the proof for the paths this issue fixes.
 - **Trim-only (`PublishTrimmed`) verification as a separate gate.** The AOT publish subsumes the trim analyzer for this code; a dedicated trimmed-but-not-AOT configuration would add a second slow CI step for no additional signal.
 - **The `default(Result<T>)` write guard** and **`EnablePackageValidation`.** Tracked separately as items 2 and 3 of #77.
