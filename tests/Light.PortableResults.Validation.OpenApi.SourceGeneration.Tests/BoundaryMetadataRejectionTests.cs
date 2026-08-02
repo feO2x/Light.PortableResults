@@ -104,6 +104,13 @@ public sealed class BoundaryMetadataRejectionTests
             "",
             ""
         ];
+        yield return
+        [
+            "DateTime",
+            "new DateTime(2026, 1, 2, 3, 4, 5, Kind)",
+            "private static readonly DateTimeKind Kind = DateTimeKind.Local;",
+            ""
+        ];
     }
 
     [Theory]
