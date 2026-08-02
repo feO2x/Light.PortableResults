@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -124,6 +126,10 @@ public sealed class BoundaryMetadataRejectionTests
     [InlineData("Uri", "new Uri(\"http://[\")")]
     [InlineData("Uri", "new Uri(\"items/42\")")]
     [InlineData("TimeSpan", "TimeSpan.FromDays(double.MaxValue)")]
+    [InlineData("DateOnly", "DateOnly.FromDayNumber(-1)")]
+    [InlineData("TimeOnly", "new TimeOnly(-1L)")]
+    [InlineData("TimeSpan", "TimeSpan.FromMicroseconds(double.NaN)")]
+    [InlineData("TimeSpan", "TimeSpan.FromMicroseconds(double.MaxValue)")]
     public void GeneratorDegradesWhenRecognizedEvaluationThrows(string valueType, string expression)
     {
         var result = AssertRejectedBoundary(valueType, expression);
@@ -131,6 +137,27 @@ public sealed class BoundaryMetadataRejectionTests
         result.Diagnostics.Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
            .Should()
            .BeEmpty();
+    }
+
+    [Fact]
+    public void GeneratorPropagatesCancellation()
+    {
+        var compilation = GeneratorTestHarness.CreateCompilation(
+            (
+                "Validator.cs",
+                CreateValidatorSource("DateTime", "new DateTime(2026, 1, 2)")
+            )
+        );
+        var cancellationToken = new CancellationToken(canceled: true);
+
+        Action act = () => GeneratorTestHarness.CreateDriver().RunGeneratorsAndUpdateCompilation(
+            compilation,
+            out _,
+            out _,
+            cancellationToken
+        );
+
+        act.Should().ThrowExactly<OperationCanceledException>();
     }
 
     [Theory]
@@ -287,6 +314,30 @@ public sealed class BoundaryMetadataRejectionTests
         );
 
         AssertCrossFileWarning(result, "Boundaries.Value");
+    }
+
+    [Fact]
+    public void GeneratorPropagatesCrossFileWarningFromNestedConstructorArgument()
+    {
+        const string expression =
+            "new DateTimeOffset(2026, 1, 2, 0, 0, 0, Boundaries.Offset)";
+        var validatorSource = CreateValidatorSource("DateTimeOffset", expression);
+        var result = GeneratorTestHarness.Run(
+            ("Validator.cs", validatorSource),
+            (
+                "Boundaries.cs",
+                """
+                using System;
+
+                public static class Boundaries
+                {
+                    public static readonly TimeSpan Offset = TimeSpan.FromHours(2);
+                }
+                """
+            )
+        );
+
+        AssertCrossFileWarning(result, expression);
     }
 
     [Fact]

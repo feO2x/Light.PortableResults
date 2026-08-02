@@ -146,11 +146,7 @@ internal static class MetadataValueReconstructor
             value = EvaluateConstructor(supportedConstructor, arguments);
             return MetadataReconstructionResult.Success;
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception)
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
             value = null;
             return MetadataReconstructionResult.Unsupported;
@@ -194,11 +190,7 @@ internal static class MetadataValueReconstructor
             value = EvaluateFactory(supportedFactory, arguments);
             return MetadataReconstructionResult.Success;
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception)
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
             value = null;
             return MetadataReconstructionResult.Unsupported;
