@@ -21,7 +21,7 @@ public enum ReconstructedMetadataValueKind
 /// <summary>
 /// Carries a reconstructed validation metadata boundary as a deterministic structural payload.
 /// </summary>
-public sealed class ReconstructedMetadataValue : IEquatable<ReconstructedMetadataValue>
+public sealed class ReconstructedMetadataValue
 {
     private const string DateTimeFormat = "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFK";
     private const string DateTimeOffsetFormat = "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFzzz";
@@ -60,14 +60,6 @@ public sealed class ReconstructedMetadataValue : IEquatable<ReconstructedMetadat
     /// Gets the ordinal text payload, when the represented kind uses one.
     /// </summary>
     public string? Text { get; }
-
-    /// <inheritdoc />
-    public bool Equals(ReconstructedMetadataValue? other) =>
-        other is not null &&
-        Kind == other.Kind &&
-        PrimaryValue == other.PrimaryValue &&
-        SecondaryValue == other.SecondaryValue &&
-        string.Equals(Text, other.Text, StringComparison.Ordinal);
 
     /// <summary>
     /// Creates a structural value from a deterministic <see cref="System.DateTime" />.
@@ -241,22 +233,6 @@ public sealed class ReconstructedMetadataValue : IEquatable<ReconstructedMetadat
                 ", global::System.UriKind.RelativeOrAbsolute)",
             _ => throw new InvalidOperationException($"Unsupported reconstructed metadata kind '{Kind}'.")
         };
-
-    /// <inheritdoc />
-    public override bool Equals(object? obj) => Equals(obj as ReconstructedMetadataValue);
-
-    /// <inheritdoc />
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            var hashCode = (int) Kind;
-            hashCode = hashCode * 31 + PrimaryValue.GetHashCode();
-            hashCode = hashCode * 31 + SecondaryValue.GetHashCode();
-            hashCode = hashCode * 31 + (Text is null ? 0 : StringComparer.Ordinal.GetHashCode(Text));
-            return hashCode;
-        }
-    }
 
     private static string GetDateTimeKindName(DateTimeKind kind) =>
         kind switch
