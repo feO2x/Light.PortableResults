@@ -18,7 +18,8 @@ namespace Light.PortableResults.SharedJsonSerialization;
 /// The envelope and payload types owned by Light.PortableResults are resolved by this class: it prefers a contract
 /// supplied by the configured <see cref="JsonSerializerOptions.TypeInfoResolver" /> and otherwise creates a contract
 /// from the converter that the options select for the type. Created contracts are cached per
-/// <see cref="JsonSerializerOptions" /> instance and can be created after the options became read-only.
+/// <see cref="JsonSerializerOptions" /> instance and can be created after the options became read-only. Creating one
+/// makes the options read-only, so that the cached contract cannot be invalidated by a converter registered later.
 /// </para>
 /// </summary>
 public static class PortableResultsJsonContracts
@@ -151,6 +152,7 @@ public static class PortableResultsJsonContracts
         }
 
         var converter = ResolveLibraryConverter(options, createLibraryConverter);
+        FreezeBeforeCaching(options);
         var createdTypeInfo = JsonMetadataServices.CreateValueInfo<TLibraryType>(options, converter);
         return CacheTypeInfo(options, createdTypeInfo);
     }
@@ -159,7 +161,8 @@ public static class PortableResultsJsonContracts
     /// Writes a value of a type owned by Light.PortableResults. A contract supplied by the configured resolver takes
     /// precedence; otherwise the converter that <paramref name="options" /> select for
     /// <typeparamref name="TLibraryType" /> is invoked directly, falling back to
-    /// <paramref name="createLibraryConverter" /> when no converter is registered.
+    /// <paramref name="createLibraryConverter" /> when no converter is registered. The writer is flushed once the
+    /// value has been written, regardless of which of the two paths was taken.
     /// </summary>
     /// <typeparam name="TLibraryType">The Light.PortableResults type to write.</typeparam>
     /// <param name="writer">The JSON writer receiving the value.</param>
@@ -194,7 +197,7 @@ public static class PortableResultsJsonContracts
 
         if (TryGetCachedConverter<TLibraryType>(options, out var cachedConverter))
         {
-            cachedConverter.Write(writer, value, options);
+            WriteWithConverter(writer, value, options, cachedConverter);
             return;
         }
 
@@ -206,8 +209,23 @@ public static class PortableResultsJsonContracts
             return;
         }
 
-        var converter = CacheConverter(options, ResolveLibraryConverter(options, createLibraryConverter));
+        var resolvedConverter = ResolveLibraryConverter(options, createLibraryConverter);
+        FreezeBeforeCaching(options);
+        WriteWithConverter(writer, value, options, CacheConverter(options, resolvedConverter));
+    }
+
+    // JsonSerializer.Serialize(Utf8JsonWriter, ...) flushes the writer once it has written the value, while a
+    // converter invoked directly does not. Flushing here keeps the observable behavior of the public write APIs
+    // independent of whether the contract came from the configured resolver or from a library-owned converter.
+    private static void WriteWithConverter<TLibraryType>(
+        Utf8JsonWriter writer,
+        TLibraryType value,
+        JsonSerializerOptions options,
+        JsonConverter<TLibraryType> converter
+    )
+    {
         converter.Write(writer, value, options);
+        writer.Flush();
     }
 
     // JsonSerializer.IsReflectionEnabledByDefault is a link-time constant: when reflection-based serialization is
@@ -297,19 +315,17 @@ public static class PortableResultsJsonContracts
         return false;
     }
 
-    // Contracts are only cached once the options are frozen. A mutable instance can still gain a converter that
-    // would change the outcome of the resolution, and freezing happens at the latest when the value is written or
-    // read with the resolved contract.
+    // Only a frozen instance may be cached against: a mutable one can still gain a converter that would change the
+    // outcome of the resolution, which would leave the cache serving a stale contract. Freezing here is not an
+    // additional behavior change - reading or writing with the resolved contract freezes the options anyway - but it
+    // has to happen explicitly, because invoking a converter directly does not freeze them.
+    private static void FreezeBeforeCaching(JsonSerializerOptions options) => options.MakeReadOnly();
+
     private static JsonTypeInfo<TLibraryType> CacheTypeInfo<TLibraryType>(
         JsonSerializerOptions options,
         JsonTypeInfo<TLibraryType> typeInfo
     )
     {
-        if (!options.IsReadOnly)
-        {
-            return typeInfo;
-        }
-
         var contracts = ContractsPerOptions.GetValue(options, static _ => new LibraryContracts());
         return (JsonTypeInfo<TLibraryType>) contracts.TypeInfos.GetOrAdd(typeof(TLibraryType), typeInfo);
     }
@@ -335,11 +351,6 @@ public static class PortableResultsJsonContracts
         JsonConverter<TLibraryType> converter
     )
     {
-        if (!options.IsReadOnly)
-        {
-            return converter;
-        }
-
         var contracts = ContractsPerOptions.GetValue(options, static _ => new LibraryContracts());
         return (JsonConverter<TLibraryType>) contracts.Converters.GetOrAdd(typeof(TLibraryType), converter);
     }

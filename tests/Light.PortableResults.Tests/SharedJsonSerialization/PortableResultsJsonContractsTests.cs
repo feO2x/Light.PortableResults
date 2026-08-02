@@ -131,6 +131,18 @@ public sealed class PortableResultsJsonContractsTests
     }
 
     [Fact]
+    public void GetLibraryTypeInfoShouldCreateTheContractOnlyOnceForOptionsTheCallerNeverFroze()
+    {
+        var options = SourceGeneratedOptions.CreateSerializerOptions(NoContractsJsonTypeInfoResolver.Instance);
+        options.Converters.Add(new FixedSuccessPayloadConverter());
+
+        var first = PortableResultsJsonContracts.GetLibraryTypeInfo<CloudEventsSuccessPayload>(options);
+        var second = PortableResultsJsonContracts.GetLibraryTypeInfo<CloudEventsSuccessPayload>(options);
+
+        second.Should().BeSameAs(first);
+    }
+
+    [Fact]
     public void GetLibraryTypeInfoShouldCreateSeparateContractsPerOptionsInstance()
     {
         var firstOptions = SourceGeneratedOptions.CreateSerializerOptions();
@@ -259,6 +271,19 @@ public sealed class PortableResultsJsonContractsTests
         var converter = new CountingSuccessPayloadConverter();
         options.Converters.Add(converter);
         options.MakeReadOnly();
+
+        WriteSuccessPayload(options);
+        WriteSuccessPayload(options);
+
+        converter.CanConvertCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void WriteLibraryValueShouldReuseTheResolvedConverterForOptionsTheCallerNeverFroze()
+    {
+        var options = SourceGeneratedOptions.CreateSerializerOptions(NoContractsJsonTypeInfoResolver.Instance);
+        var converter = new CountingSuccessPayloadConverter();
+        options.Converters.Add(converter);
 
         WriteSuccessPayload(options);
         WriteSuccessPayload(options);
