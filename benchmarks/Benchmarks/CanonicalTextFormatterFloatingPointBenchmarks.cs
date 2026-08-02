@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
-using Light.PortableResults.Numbers;
+using Light.PortableResults.Text;
 
 namespace Benchmarks;
 
 [MemoryDiagnoser]
 [GroupBenchmarksBy(BenchmarkDotNet.Configs.BenchmarkLogicalGroupRule.ByCategory)]
 [CategoriesColumn]
-public class CanonicalFloatingPointFormatterBenchmarks
+public class CanonicalTextFormatterFloatingPointBenchmarks
 {
     private const int ValueCount = 1_024;
 
@@ -87,7 +87,7 @@ public class CanonicalFloatingPointFormatterBenchmarks
         var totalLength = 0;
         foreach (var value in _doubleValues)
         {
-            CanonicalFloatingPointFormatter.TryFormat(value, destination, out var charsWritten);
+            CanonicalTextFormatter.TryFormat(value, destination, out var charsWritten);
             totalLength += charsWritten;
         }
 
@@ -116,7 +116,7 @@ public class CanonicalFloatingPointFormatterBenchmarks
         var totalLength = 0;
         foreach (var value in _singleValues)
         {
-            CanonicalFloatingPointFormatter.TryFormat(value, destination, out var charsWritten);
+            CanonicalTextFormatter.TryFormat(value, destination, out var charsWritten);
             totalLength += charsWritten;
         }
 
@@ -141,7 +141,7 @@ public class CanonicalFloatingPointFormatterBenchmarks
     {
         foreach (var value in _doubleValues)
         {
-            _consumer.Consume(CanonicalFloatingPointFormatter.Format(value));
+            _consumer.Consume(CanonicalTextFormatter.Format(value));
         }
     }
 
@@ -163,7 +163,7 @@ public class CanonicalFloatingPointFormatterBenchmarks
     {
         foreach (var value in _singleValues)
         {
-            _consumer.Consume(CanonicalFloatingPointFormatter.Format(value));
+            _consumer.Consume(CanonicalTextFormatter.Format(value));
         }
     }
 

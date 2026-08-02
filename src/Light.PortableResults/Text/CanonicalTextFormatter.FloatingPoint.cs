@@ -1,7 +1,7 @@
 using System;
-using System.Runtime.CompilerServices;
+using Light.PortableResults.Numbers;
 
-namespace Light.PortableResults.Numbers;
+namespace Light.PortableResults.Text;
 
 /// <summary>
 /// Formats finite IEEE 754 binary floating-point values with one runtime-independent invariant encoding.
@@ -19,7 +19,7 @@ namespace Light.PortableResults.Numbers;
 /// including zero, end in <c>.0</c> so their floating-point JSON shape is unambiguous.
 /// </para>
 /// </remarks>
-public static class CanonicalFloatingPointFormatter
+public static partial class CanonicalTextFormatter
 {
     /// <summary>
     /// A destination size that is always large enough to hold the canonical encoding of any finite
@@ -226,30 +226,32 @@ public static class CanonicalFloatingPointFormatter
         var index = 0;
         if (isNegative)
         {
-            destination[index++] = ToCodeUnit<TCodeUnit>((byte) '-');
+            destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>((byte) '-');
         }
 
         if (useScientificNotation)
         {
-            destination[index++] = ToCodeUnit<TCodeUnit>(digits[0]);
+            destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>(digits[0]);
             if (digits.Length > 1)
             {
-                destination[index++] = ToCodeUnit<TCodeUnit>((byte) '.');
+                destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>((byte) '.');
                 CopyDigits(digits[1..], destination, ref index);
             }
 
-            destination[index++] = ToCodeUnit<TCodeUnit>((byte) 'E');
+            destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>((byte) 'E');
             var exponent = scale - 1;
-            destination[index++] = ToCodeUnit<TCodeUnit>(exponent < 0 ? (byte) '-' : (byte) '+');
+            destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>(
+                exponent < 0 ? (byte) '-' : (byte) '+'
+            );
             WriteExponent(exponent < 0 ? -exponent : exponent, destination, ref index);
         }
         else if (scale <= 0)
         {
-            destination[index++] = ToCodeUnit<TCodeUnit>((byte) '0');
-            destination[index++] = ToCodeUnit<TCodeUnit>((byte) '.');
+            destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>((byte) '0');
+            destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>((byte) '.');
             for (var zeroIndex = 0; zeroIndex < -scale; zeroIndex++)
             {
-                destination[index++] = ToCodeUnit<TCodeUnit>((byte) '0');
+                destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>((byte) '0');
             }
 
             CopyDigits(digits, destination, ref index);
@@ -257,7 +259,7 @@ public static class CanonicalFloatingPointFormatter
         else if (scale < digits.Length)
         {
             CopyDigits(digits[..scale], destination, ref index);
-            destination[index++] = ToCodeUnit<TCodeUnit>((byte) '.');
+            destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>((byte) '.');
             CopyDigits(digits[scale..], destination, ref index);
         }
         else
@@ -265,11 +267,11 @@ public static class CanonicalFloatingPointFormatter
             CopyDigits(digits, destination, ref index);
             for (var zeroIndex = digits.Length; zeroIndex < scale; zeroIndex++)
             {
-                destination[index++] = ToCodeUnit<TCodeUnit>((byte) '0');
+                destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>((byte) '0');
             }
 
-            destination[index++] = ToCodeUnit<TCodeUnit>((byte) '.');
-            destination[index++] = ToCodeUnit<TCodeUnit>((byte) '0');
+            destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>((byte) '.');
+            destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>((byte) '0');
         }
 
         unitsWritten = index;
@@ -285,7 +287,7 @@ public static class CanonicalFloatingPointFormatter
     {
         for (var index = 0; index < digits.Length; index++)
         {
-            destination[destinationIndex++] = ToCodeUnit<TCodeUnit>(digits[index]);
+            destination[destinationIndex++] = CanonicalCodeUnit.FromAscii<TCodeUnit>(digits[index]);
         }
     }
 
@@ -298,24 +300,17 @@ public static class CanonicalFloatingPointFormatter
     {
         if (exponent >= 100)
         {
-            destination[index++] = ToCodeUnit<TCodeUnit>((byte) ('0' + exponent / 100));
+            destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>(
+                (byte) ('0' + exponent / 100)
+            );
             exponent %= 100;
         }
 
-        destination[index++] = ToCodeUnit<TCodeUnit>((byte) ('0' + exponent / 10));
-        destination[index++] = ToCodeUnit<TCodeUnit>((byte) ('0' + exponent % 10));
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static TCodeUnit ToCodeUnit<TCodeUnit>(byte value)
-        where TCodeUnit : unmanaged
-    {
-        if (typeof(TCodeUnit) == typeof(byte))
-        {
-            return Unsafe.As<byte, TCodeUnit>(ref value);
-        }
-
-        var character = (char) value;
-        return Unsafe.As<char, TCodeUnit>(ref character);
+        destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>(
+            (byte) ('0' + exponent / 10)
+        );
+        destination[index++] = CanonicalCodeUnit.FromAscii<TCodeUnit>(
+            (byte) ('0' + exponent % 10)
+        );
     }
 }

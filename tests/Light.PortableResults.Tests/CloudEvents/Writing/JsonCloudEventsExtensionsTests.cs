@@ -159,31 +159,15 @@ public sealed class JsonCloudEventsExtensionsTests
     [Fact]
     public void FloatingPointExtensionAttributeWritingShouldAllocateNothingAfterWarmup()
     {
-        var output = new ArrayBufferWriter<byte>(1024 * 1024);
-        using var writer = new Utf8JsonWriter(output);
         var doubleValue = MetadataValue.FromDouble(36_028_797_018_963_968.0);
         var singleValue = MetadataValue.FromSingle(123_456_789f);
-        writer.WriteStartObject();
 
-        for (var index = 0; index < 100; index++)
-        {
-            writer.WriteCloudEventsExtensionAttribute("doublevalue", doubleValue);
-            writer.WriteCloudEventsExtensionAttribute("singlevalue", singleValue);
-        }
-
-        var before = GC.GetAllocatedBytesForCurrentThread();
-        for (var index = 0; index < 1_000; index++)
-        {
-            writer.WriteCloudEventsExtensionAttribute("doublevalue", doubleValue);
-            writer.WriteCloudEventsExtensionAttribute("singlevalue", singleValue);
-        }
-
-        var after = GC.GetAllocatedBytesForCurrentThread();
-        after.Should().Be(before);
+        MeasureMinimumWriterAllocations(doubleValue).Should().Be(0);
+        MeasureMinimumWriterAllocations(singleValue).Should().Be(0);
     }
 
     [Fact]
-    public void OtherStringMappedKindsShouldNotAllocateMoreThanCanonicalFormatting()
+    public void OtherStringMappedKindsShouldNotAllocateCanonicalText()
     {
         var values = new[]
         {
@@ -212,11 +196,8 @@ public sealed class JsonCloudEventsExtensionsTests
             var canonicalAllocations = MeasureMinimumCanonicalFormattingAllocations(value);
             var writerAllocations = MeasureMinimumWriterAllocations(value);
 
-            writerAllocations.Should().BeLessThanOrEqualTo(
-                canonicalAllocations,
-                "writing {0} should materialize at most its existing canonical string",
-                value.Kind
-            );
+            canonicalAllocations.Should().Be(0, "formatting {0} is span-based", value.Kind);
+            writerAllocations.Should().Be(0, "writing {0} should not materialize canonical text", value.Kind);
         }
     }
 

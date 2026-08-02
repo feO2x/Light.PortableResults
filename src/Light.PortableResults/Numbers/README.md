@@ -15,8 +15,9 @@ The following upstream files under
 - `Number.NumberBuffer.cs`
 - `Number.Formatting.cs` (IEEE bit extraction and the floating-point-to-number dispatch)
 
-Files containing adapted runtime code retain the .NET Foundation MIT header. The public
-`CanonicalFloatingPointFormatter` and its invariant renderer are Light.PortableResults code.
+Files containing adapted runtime code retain the .NET Foundation MIT header. The floating-point
+portion of the public `CanonicalTextFormatter` and its invariant renderer are
+Light.PortableResults code.
 
 ## Adaptations
 
@@ -47,8 +48,8 @@ Files containing adapted runtime code retain the .NET Foundation MIT header. The
 
 ## Retained code that shortest-unique mode cannot reach
 
-Two small regions survive from upstream that no input can execute through
-`CanonicalFloatingPointFormatter`. They are kept rather than deleted because they belong to the
+Two small regions survive from upstream that no input can execute through the floating-point
+overloads on `CanonicalTextFormatter`. They are kept rather than deleted because they belong to the
 published shape of these algorithms, and cutting into them would make the remaining source harder to
 compare against its pinned origin. Neither is excluded from code coverage. The reasoning below
 records why the test suite cannot cover them, so a later reader does not mistake them for a gap.

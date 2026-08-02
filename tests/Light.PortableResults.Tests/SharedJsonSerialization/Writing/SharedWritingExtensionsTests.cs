@@ -1,7 +1,9 @@
 using System;
+using System.Buffers;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using FluentAssertions;
@@ -13,6 +15,8 @@ namespace Light.PortableResults.Tests.SharedJsonSerialization.Writing;
 
 public sealed class SharedWritingExtensionsTests
 {
+    private const int AllocationIterations = 1_000;
+
     [Fact]
     public void WriteMetadataValue_ShouldThrow_WhenWriterIsNull()
     {
@@ -162,6 +166,63 @@ public sealed class SharedWritingExtensionsTests
         json.Should().Be("[9.99,99.90]");
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TextBearingMetadataShouldPreserveTheWriterUtf16RouteBytes(bool useUnsafeEncoder)
+    {
+        var values = new (MetadataValue Value, string DefaultJson, string UnsafeJson)[]
+        {
+            (MetadataValue.FromString("Grüße"), "\"Gr\\u00FC\\u00DFe\"", "\"Grüße\""),
+            (MetadataValue.FromString("a\uD800b"), "\"a\\uFFFDb\"", "\"a\\uFFFDb\""),
+            (MetadataValue.FromChar('\uD800'), "\"\\uFFFD\"", "\"\\uFFFD\"")
+        };
+        var options = new JsonWriterOptions
+        {
+            Encoder = useUnsafeEncoder ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : null
+        };
+
+        foreach (var (value, defaultJson, unsafeJson) in values)
+        {
+            var actual = SerializeToUtf8(
+                writer => writer.WriteMetadataValue(
+                    value,
+                    MetadataValueAnnotation.SerializeInHttpResponseBody
+                ),
+                options
+            );
+
+            actual.Should().Equal(
+                Encoding.UTF8.GetBytes(useUnsafeEncoder ? unsafeJson : defaultJson),
+                value.Kind.ToString()
+            );
+        }
+    }
+
+    [Fact]
+    public void CanonicallyFormattedJsonValuesShouldNotAllocateStrings()
+    {
+        var values = new[]
+        {
+            MetadataValue.FromDouble(36_028_797_018_963_968.0),
+            MetadataValue.FromSingle(123_456_789f),
+            MetadataValue.FromUInt64(ulong.MaxValue),
+            MetadataValue.FromDateTime(
+                new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Utc).AddTicks(1_234_567)
+            ),
+            MetadataValue.FromTimeSpan(TimeSpan.MaxValue),
+            MetadataValue.FromGuid(new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890")),
+            MetadataValue.FromString("Grüße 日本語 😀"),
+            MetadataValue.FromChar('ß'),
+            MetadataValue.FromUri(new Uri("https://example.com/Grüße?q=日本語"))
+        };
+
+        foreach (var value in values)
+        {
+            MeasureWriterAllocations(value).Should().Be(0, value.Kind.ToString());
+        }
+    }
+
     [Fact]
     public void WriteRichErrors_ShouldThrow_WhenWriterIsNull()
     {
@@ -228,5 +289,45 @@ public sealed class SharedWritingExtensionsTests
         writer.Flush();
 
         return Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    private static byte[] SerializeToUtf8(
+        Action<Utf8JsonWriter> writeAction,
+        JsonWriterOptions options
+    )
+    {
+        var output = new ArrayBufferWriter<byte>();
+        using var writer = new Utf8JsonWriter(output, options);
+        writeAction(writer);
+        writer.Flush();
+        return output.WrittenSpan.ToArray();
+    }
+
+    private static long MeasureWriterAllocations(MetadataValue value)
+    {
+        var minimumAllocations = long.MaxValue;
+        for (var sample = 0; sample < 5; sample++)
+        {
+            var output = new ArrayBufferWriter<byte>(1024 * 1024);
+            using var writer = new Utf8JsonWriter(output);
+            writer.WriteStartArray();
+            for (var index = 0; index < 100; index++)
+            {
+                writer.WriteMetadataValue(value, MetadataValueAnnotation.SerializeInHttpResponseBody);
+            }
+
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var index = 0; index < AllocationIterations; index++)
+            {
+                writer.WriteMetadataValue(value, MetadataValueAnnotation.SerializeInHttpResponseBody);
+            }
+
+            minimumAllocations = Math.Min(
+                minimumAllocations,
+                GC.GetAllocatedBytesForCurrentThread() - before
+            );
+        }
+
+        return minimumAllocations;
     }
 }

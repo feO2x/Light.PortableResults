@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Text.Json;
 using Light.PortableResults.Metadata;
 
@@ -66,7 +67,7 @@ public static class MetadataExtensions
                 WriteNumberValue(writer, value);
                 break;
             case MetadataJsonShape.String:
-                writer.WriteStringValue(value.ToCanonicalString());
+                WriteStringValue(writer, value);
                 break;
             case MetadataJsonShape.Array:
                 value.TryGetArray(out var arrayMetadataValue);
@@ -98,12 +99,41 @@ public static class MetadataExtensions
                 // back as an Int64. The canonical text is therefore built and written raw. Validation is
                 // skipped because the text comes from our own formatter and non-finite values are rejected at
                 // construction, so it is always a well-formed JSON number.
-                writer.WriteRawValue(value.ToCanonicalString(), skipInputValidation: true);
+                Span<byte> canonicalNumber = stackalloc byte[MetadataValue.MaximumPrimitiveCanonicalLength];
+                var formatted = value.TryFormatCanonicalUtf8(canonicalNumber, out var bytesWritten);
+                Debug.Assert(formatted);
+                writer.WriteRawValue(canonicalNumber.Slice(0, bytesWritten), skipInputValidation: true);
                 return;
             case MetadataNumberEncoding.None:
                 throw new InvalidOperationException(
                     $"Metadata kind '{value.Kind}' does not have a JSON number shape."
                 );
+        }
+    }
+
+    private static void WriteStringValue(Utf8JsonWriter writer, MetadataValue value)
+    {
+        switch (value.Kind)
+        {
+            case MetadataKind.String:
+            case MetadataKind.Uri:
+                // Keep text-bearing values on the UTF-16 writer route. Besides avoiding a redundant
+                // transcode, this preserves the configured encoder's handling of malformed UTF-16.
+                writer.WriteStringValue(value.ToCanonicalString());
+                return;
+            case MetadataKind.Char:
+                value.TryGetChar(out var character);
+                Span<char> characterText = stackalloc char[1];
+                characterText[0] = character;
+                writer.WriteStringValue(characterText);
+                return;
+            default:
+                // Every remaining string-shaped kind has bounded, entirely ASCII canonical text.
+                Span<byte> canonicalText = stackalloc byte[MetadataValue.MaximumPrimitiveCanonicalLength];
+                var formatted = value.TryFormatCanonicalUtf8(canonicalText, out var bytesWritten);
+                Debug.Assert(formatted);
+                writer.WriteStringValue(canonicalText.Slice(0, bytesWritten));
+                return;
         }
     }
 

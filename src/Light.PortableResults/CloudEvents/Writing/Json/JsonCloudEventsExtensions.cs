@@ -11,10 +11,6 @@ namespace Light.PortableResults.CloudEvents.Writing.Json;
 /// </summary>
 public static class JsonCloudEventsExtensions
 {
-    // Guid's canonical D format is the longest bounded primitive encoding. Arbitrarily long String and Uri
-    // values reuse their existing text when this buffer is insufficient.
-    private const int CanonicalTextBufferLength = 36;
-
     /// <summary>
     /// Serializes the contents of a <see cref="CloudEventsEnvelopeForWriting" /> into the provided
     /// <see cref="Utf8JsonWriter" /> using the supplied serializer options.
@@ -375,7 +371,7 @@ public static class JsonCloudEventsExtensions
         MetadataValue value
     )
     {
-        Span<char> canonicalText = stackalloc char[CanonicalTextBufferLength];
+        Span<char> canonicalText = stackalloc char[MetadataValue.MaximumPrimitiveCanonicalLength];
         if (value.TryFormatCanonical(canonicalText, out var charsWritten))
         {
             writer.WritePropertyName(attributeName);

@@ -70,6 +70,34 @@ public class CloudEventsWritingBenchmarks
             "traceid",
             MetadataValue.FromString("trace-456", MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes)
         );
+        metadataBuilder.Add(
+            "correlationid",
+            MetadataValue.FromGuid(
+                new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890"),
+                MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+            )
+        );
+        metadataBuilder.Add(
+            "recordedat",
+            MetadataValue.FromDateTime(
+                new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Utc).AddTicks(1_234_567),
+                MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+            )
+        );
+        metadataBuilder.Add(
+            "measurement",
+            MetadataValue.FromDouble(
+                36_028_797_018_963_968.0,
+                MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+            )
+        );
+        metadataBuilder.Add(
+            "sequence",
+            MetadataValue.FromInt64(
+                (long) int.MaxValue + 1,
+                MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+            )
+        );
         var metadata = metadataBuilder.Build();
 
         _genericSuccessWithMetadataResult = Result<ContactDto>.Ok(
@@ -459,4 +487,6 @@ public class CloudEventsWritingBenchmarks
 }
 
 [JsonSerializable(typeof(CloudEventsWritingBenchmarks.ContactDto))]
+[JsonSerializable(typeof(CloudEventsEnvelopeForWriting))]
+[JsonSerializable(typeof(CloudEventsEnvelopeForWriting<CloudEventsWritingBenchmarks.ContactDto>))]
 internal partial class CloudEventsWritingBenchmarksJsonContext : JsonSerializerContext;
