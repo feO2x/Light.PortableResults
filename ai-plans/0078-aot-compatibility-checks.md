@@ -15,6 +15,7 @@ The underlying design is sound. Every failing site serializes a library-owned ty
 - [ ] A consumer never names a library-owned type in their own `JsonSerializerContext`. Registering the result value type is sufficient for CloudEvents write, CloudEvents read, and HTTP read; the library resolves contracts for its own envelope and payload types itself.
 - [ ] A non-generic `Result` and a `Result<T>` round-trip over CloudEvents and HTTP against options whose only resolver is a consumer context declaring the value type alone, proving the paths need no runtime code generation. Tests assert this in-process by resolver composition, not by toggling the reflection switch.
 - [ ] Library-owned contracts are created once per `JsonSerializerOptions` instance, not per serialization call, and creation works against options that are already read-only.
+- [ ] When the consumer's value type is unresolvable, every affected entry point throws an exception that names the unresolved type and states the remedy, and a negative test pins that behavior per site. The unreachable guards in `SystemTextJsonWritingExtensions`, `LightResult`, and `LightActionResult` are converted so they can fire.
 - [ ] Behavior for consumers who pass reflection-backed options is unchanged: the existing test suites pass without modification beyond additions, and `PortableResultsCloudEventsWriteOptions.Default` and `PortableResultsHttpReadOptions.Default` keep serializing arbitrary `T` as they do today.
 - [ ] CI publishes the Native AOT sample and fails on any trim or AOT diagnostic originating in a Light.PortableResults assembly, while the sample's unannotated package dependencies stay non-fatal. The sample's blanket `SuppressTrimAnalysisWarnings` is gone, and the replacement is demonstrated to fail the publish on an injected library-side regression.
 - [ ] The README documents how to compose options for Native AOT, and the `<PackageReleaseNotes>` of every affected package describe their respective changes.
@@ -42,11 +43,27 @@ Measured warning distribution in `Light.PortableResults` before any fix — use 
 
 ### Resolving the warnings: route through `JsonTypeInfo`, do not annotate
 
-Every warning is a call to a `JsonSerializer.Serialize`/`Deserialize<T>(…, JsonSerializerOptions)` overload. The payload type is statically known at each site; only the resolver is the caller's. The library already has the correct pattern for this and it produces no warnings: `SystemTextJsonWritingExtensions` resolves `options.GetTypeInfo(typeof(T))`, casts to `JsonTypeInfo<T>`, and calls the `JsonTypeInfo` overload; `LightResult` and `LightActionResult` do the same and throw an actionable message when the cast fails. Apply that pattern to the four files above.
+Every warning is a call to a `JsonSerializer.Serialize`/`Deserialize<T>(…, JsonSerializerOptions)` overload. The payload type is statically known at each site; only the resolver is the caller's. The fix is to resolve a `JsonTypeInfo<T>` from the options and call the `JsonTypeInfo` overload, which is analyzer-clean. `SystemTextJsonWritingExtensions`, `LightResult`, and `LightActionResult` already do this, but resolve through `options.GetTypeInfo(typeof(T))` — see the next section before copying them.
 
 This is the decision that shapes the rest of the work, so record why the alternative was rejected. Annotating the public entry points with `[RequiresDynamicCode]`/`[RequiresUnreferencedCode]` would be permanently wrong: these methods do not intrinsically require dynamic code, they require the caller's options to carry a resolver. Annotating would force a suppression on every correctly configured AOT consumer while doing nothing for an incorrectly configured one. Blanket `UnconditionalSuppressMessage` at the call sites is equally wrong here — it silences a diagnostic that is currently accurate. The two existing suppressions in `CloudEventsEnvelopeForWritingJsonConverterFactory` and its HTTP counterpart stay: `MakeGenericType` over a resolved generic is genuinely safe when the closed type is registered, which is what their justifications already state.
 
-Where a resolved `JsonTypeInfo<T>` cannot be obtained for the consumer's value type, throw `InvalidOperationException` naming the missing type, matching the wording style already used in `LightResult`. This replaces `System.Text.Json`'s generic "reflection has been disabled" message, which does not tell the caller which type to register.
+### Resolve with `TryGetTypeInfo`, and repair the existing guards
+
+`JsonSerializerOptions.GetTypeInfo` does not return `null` for an unknown type — it throws `NotSupportedException` first. Verified against a source-generated resolver declaring only `string`:
+
+```
+GetTypeInfo(typeof(HttpResultForWriting))
+  -> NotSupportedException: JsonTypeInfo metadata for type '…HttpResultForWriting' was not provided by
+     TypeInfoResolver of type 'OnlyStringContext'. …
+TryGetTypeInfo(typeof(HttpResultForWriting), out var info)
+  -> false, info is null
+```
+
+So a `GetTypeInfo` call followed by a null check or a failed-cast check can never produce the intended exception; the guard is unreachable for the missing-type case, which is the only case that occurs in practice. Three existing guards are dead code for this reason and must be converted as part of this work, not copied: `SystemTextJsonWritingExtensions` (the `is null` check after `GetTypeInfo`; the `TryGetTypeInfo` call later in the same method is already correct and is the model), `LightResult`, and `LightActionResult`.
+
+Resolve through `options.TryGetTypeInfo(typeof(T), out var typeInfo)` and translate the negative result into an `InvalidOperationException` that names the unresolved type and states the remedy. Keep `InvalidOperationException` for consistency with the existing wording in `LightResult`, and keep the message specific to what the caller must do — register their value type with the context supplied to these options. `System.Text.Json`'s own message names the type and the resolver but cannot mention the library-specific setup, and the "reflection has been disabled" variant names no type at all.
+
+Every converted site needs a negative test asserting the exception type and that the message names the unresolved type; without it the guards stay untested, which is how the current three came to be unreachable.
 
 ### Library-owned contracts, not resolver composition
 
@@ -105,7 +122,7 @@ Add the publish to `build-and-test.yml` as a separate step after the existing te
 
 ### Deliberately out of scope
 
-- **`Light.PortableResults.AspNetCore.Mvc`.** MVC is not Native AOT compatible, and its package description does not claim otherwise.
+- **Native AOT support for `Light.PortableResults.AspNetCore.Mvc`.** MVC is not Native AOT compatible, and its package description does not claim otherwise, so it gets no `IsAotCompatible` and no analyzer triage. The unreachable guard in `LightActionResult` is still repaired: it is the same defect as the other two and is not an AOT concern.
 - **Putting a source-generated resolver on the shared `Default` options.** Rejected above: only the consumer's context can supply a contract for their `T`, and a source-generated resolver on the shared defaults would break arbitrary `T` for the non-AOT majority.
 - **Shipping `JsonSerializerContext` types for library-owned payloads.** Superseded — with the library building its own contracts from its own converters, there is nothing left for a shipped context to declare. Add one only if triage finds a site where converter-backed contract creation is impractical, and record why.
 - **Extending the Native AOT sample to exercise the CloudEvents write and HTTP read paths.** Deferred to a follow-up the maintainer will drive. Until then the ILC gate covers the Minimal API write path only, and the in-process resolver-composition tests carry the proof for the paths this issue fixes.
