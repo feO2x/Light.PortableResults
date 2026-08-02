@@ -67,6 +67,9 @@ public sealed class ValidatorOpenApiAnalysis : IEquatable<ValidatorOpenApiAnalys
                 hashCode = hashCode * 31 + diagnostic.Id.GetHashCode();
                 hashCode = hashCode * 31 + diagnostic.Severity.GetHashCode();
                 hashCode = hashCode * 31 + diagnostic.GetMessage().GetHashCode();
+                hashCode = hashCode * 31 + GetDiagnosticSourcePath(diagnostic).GetHashCode();
+                hashCode = hashCode * 31 + diagnostic.Location.SourceSpan.Start.GetHashCode();
+                hashCode = hashCode * 31 + diagnostic.Location.SourceSpan.Length.GetHashCode();
             }
 
             return hashCode;
@@ -87,7 +90,9 @@ public sealed class ValidatorOpenApiAnalysis : IEquatable<ValidatorOpenApiAnalys
         {
             if (left[i].Id != right[i].Id ||
                 left[i].Severity != right[i].Severity ||
-                left[i].GetMessage() != right[i].GetMessage())
+                left[i].GetMessage() != right[i].GetMessage() ||
+                GetDiagnosticSourcePath(left[i]) != GetDiagnosticSourcePath(right[i]) ||
+                left[i].Location.SourceSpan != right[i].Location.SourceSpan)
             {
                 return false;
             }
@@ -95,6 +100,9 @@ public sealed class ValidatorOpenApiAnalysis : IEquatable<ValidatorOpenApiAnalys
 
         return true;
     }
+
+    private static string GetDiagnosticSourcePath(Diagnostic diagnostic) =>
+        diagnostic.Location.SourceTree?.FilePath ?? string.Empty;
 }
 
 public sealed class ValidatorModel
@@ -282,7 +290,8 @@ public sealed class InlineSchemaRuleComparer : IEqualityComparer<RuleCallModel>
             return true;
         }
 
-        if (x is null || y is null ||
+        if (x is null ||
+            y is null ||
             x.Code != y.Code ||
             x.MetadataSchemaProperties.Length != y.MetadataSchemaProperties.Length)
         {

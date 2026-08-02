@@ -1216,7 +1216,9 @@ app.MapPut("/api/movieRatings", AddMovieRating)
     );
 ```
 
-The generator analyzes top-level `context.Check(...).Rule(...)` chains and produces response schemas and examples when metadata arguments are compile-time constants (e.g. `HasLengthIn(10, 1000)` or `IsInRange(1, 5)`).
+The generator analyzes top-level `context.Check(...).Rule(...)` chains and produces response schemas and examples from compile-time constants (for example, `HasLengthIn(10, 1000)` or `IsInRange(1, 5)`). It also reconstructs deterministic `DateTime`, `DateTimeOffset`, `TimeSpan`, `DateOnly`, `TimeOnly`, `Guid`, and `Uri` boundaries written with supported constructors, factories, well-known static values, or `static readonly` fields declared in the validator's file. Reconstructed message values and example metadata use the same canonical text.
+
+Runtime-computed or unsupported boundary expressions still generate valid schemas, but the affected example omits its message and metadata and reports `LPRSG0015` at the argument. `DateTimeKind.Local`, culture-sensitive parsing, arithmetic or chained calls, and invalid constructor or factory arguments follow this degraded path. A `static readonly` field declared in another file or assembly is deliberately not followed and reports `LPRSG0016`; write the value inline or move its declaration into the validator's file when the complete example is required.
 
 Use `[PortableValidationOpenApiErrorHint]` to annotate codes the generator cannot infer (for example, from `Must(...)`, `Custom(...)`, or child validators):
 

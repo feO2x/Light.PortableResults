@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Light.PortableResults.AspNetCore.MinimalApis;
@@ -51,6 +52,23 @@ public sealed class TemporalMetadataOpenApiConformanceTests
         );
         ValidationOpenApiDocumentTestUtilities.SchemaIncludesType(schema, JsonSchemaType.String).Should().BeTrue();
         schema.Format.Should().Be("date-time");
+
+        var responseDefinition = (OpenApiResponse) document.Paths["/temporal-validation"]
+           .Operations![HttpMethod.Post]
+           .Responses![StatusCodes.Status400BadRequest.ToString()];
+        var example = (OpenApiExample) responseDefinition.Content!["application/problem+json"]
+           .Examples!["ValidationProblem"];
+        var exampleBody = example.Value.Should().BeOfType<JsonObject>().Subject;
+        var exampleError = exampleBody["errors"]!.AsArray()
+           .Single(item => item!["code"]!.GetValue<string>() == ValidationErrorCodes.InRange)!;
+        exampleError["message"]!.GetValue<string>().Should()
+           .Be("timestamp must be between 2026-07-26T13:45:30Z and 2026-07-27T13:45:30Z");
+        exampleError["metadata"]!["lowerBoundary"]!.GetValue<string>()
+           .Should()
+           .Be("2026-07-26T13:45:30Z");
+        exampleError["metadata"]!["upperBoundary"]!.GetValue<string>()
+           .Should()
+           .Be("2026-07-27T13:45:30Z");
     }
 
     private static WebApplication CreateApp()

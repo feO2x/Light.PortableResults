@@ -262,7 +262,7 @@ public static class ValidatorOpenApiEmitter
                                  "\u001F",
                                  example.MetadataValues.Select(
                                      static metadata =>
-                                         metadata.Key + "=" + (metadata.Value?.ToString() ?? string.Empty)
+                                         metadata.Key + "=" + GetDeduplicationValue(metadata.Value)
                                  )
                              )
                          }
@@ -330,50 +330,57 @@ public static class ValidatorOpenApiEmitter
         };
 
     private static string ToLiteral(object? value) =>
-        TryCreateDateOnlyOrTimeOnlyLiteral(value) ??
-        value switch
-        {
-            null => "null",
-            string stringValue => ToStringLiteral(stringValue),
-            char charValue => "'" + EscapeChar(charValue) + "'",
-            bool boolValue => boolValue ? "true" : "false",
-            byte byteValue => byteValue.ToString(CultureInfo.InvariantCulture),
-            sbyte sbyteValue => sbyteValue.ToString(CultureInfo.InvariantCulture),
-            short shortValue => shortValue.ToString(CultureInfo.InvariantCulture),
-            ushort ushortValue => ushortValue.ToString(CultureInfo.InvariantCulture),
-            int intValue => intValue.ToString(CultureInfo.InvariantCulture),
-            uint uintValue => uintValue.ToString(CultureInfo.InvariantCulture) + "U",
-            long longValue => longValue.ToString(CultureInfo.InvariantCulture) + "L",
-            ulong ulongValue => ulongValue.ToString(CultureInfo.InvariantCulture) + "UL",
-            float floatValue => floatValue.ToString("R", CultureInfo.InvariantCulture) + "F",
-            double doubleValue => doubleValue.ToString("R", CultureInfo.InvariantCulture) + "D",
-            decimal decimalValue => decimalValue.ToString(CultureInfo.InvariantCulture) + "M",
-            DateTime dateTimeValue =>
-                "new global::System.DateTime(" +
-                dateTimeValue.Ticks.ToString(CultureInfo.InvariantCulture) +
-                "L, global::System.DateTimeKind." +
-                dateTimeValue.Kind +
-                ")",
-            DateTimeOffset dateTimeOffsetValue =>
-                "new global::System.DateTimeOffset(" +
-                dateTimeOffsetValue.Ticks.ToString(CultureInfo.InvariantCulture) +
-                "L, global::System.TimeSpan.FromTicks(" +
-                dateTimeOffsetValue.Offset.Ticks.ToString(CultureInfo.InvariantCulture) +
-                "L))",
-            TimeSpan timeSpanValue =>
-                "global::System.TimeSpan.FromTicks(" +
-                timeSpanValue.Ticks.ToString(CultureInfo.InvariantCulture) +
-                "L)",
-            Guid guidValue =>
-                "global::System.Guid.ParseExact(" +
-                ToStringLiteral(guidValue.ToString("D")) +
-                ", \"D\")",
-            Uri uriValue =>
-                "new global::System.Uri(" +
-                ToStringLiteral(uriValue.OriginalString) +
-                ", global::System.UriKind.RelativeOrAbsolute)",
-            _ => ToStringLiteral(value.ToString() ?? string.Empty)
-        };
+        value is ReconstructedMetadataValue reconstructedValue ?
+            reconstructedValue.ToCSharpLiteral() :
+            TryCreateDateOnlyOrTimeOnlyLiteral(value) ??
+            value switch
+            {
+                null => "null",
+                string stringValue => ToStringLiteral(stringValue),
+                char charValue => "'" + EscapeChar(charValue) + "'",
+                bool boolValue => boolValue ? "true" : "false",
+                byte byteValue => byteValue.ToString(CultureInfo.InvariantCulture),
+                sbyte sbyteValue => sbyteValue.ToString(CultureInfo.InvariantCulture),
+                short shortValue => shortValue.ToString(CultureInfo.InvariantCulture),
+                ushort ushortValue => ushortValue.ToString(CultureInfo.InvariantCulture),
+                int intValue => intValue.ToString(CultureInfo.InvariantCulture),
+                uint uintValue => uintValue.ToString(CultureInfo.InvariantCulture) + "U",
+                long longValue => longValue.ToString(CultureInfo.InvariantCulture) + "L",
+                ulong ulongValue => ulongValue.ToString(CultureInfo.InvariantCulture) + "UL",
+                float floatValue => floatValue.ToString("R", CultureInfo.InvariantCulture) + "F",
+                double doubleValue => doubleValue.ToString("R", CultureInfo.InvariantCulture) + "D",
+                decimal decimalValue => decimalValue.ToString(CultureInfo.InvariantCulture) + "M",
+                DateTime dateTimeValue =>
+                    "new global::System.DateTime(" +
+                    dateTimeValue.Ticks.ToString(CultureInfo.InvariantCulture) +
+                    "L, global::System.DateTimeKind." +
+                    dateTimeValue.Kind +
+                    ")",
+                DateTimeOffset dateTimeOffsetValue =>
+                    "new global::System.DateTimeOffset(" +
+                    dateTimeOffsetValue.Ticks.ToString(CultureInfo.InvariantCulture) +
+                    "L, global::System.TimeSpan.FromTicks(" +
+                    dateTimeOffsetValue.Offset.Ticks.ToString(CultureInfo.InvariantCulture) +
+                    "L))",
+                TimeSpan timeSpanValue =>
+                    "global::System.TimeSpan.FromTicks(" +
+                    timeSpanValue.Ticks.ToString(CultureInfo.InvariantCulture) +
+                    "L)",
+                Guid guidValue =>
+                    "global::System.Guid.ParseExact(" +
+                    ToStringLiteral(guidValue.ToString("D")) +
+                    ", \"D\")",
+                Uri uriValue =>
+                    "new global::System.Uri(" +
+                    ToStringLiteral(uriValue.OriginalString) +
+                    ", global::System.UriKind.RelativeOrAbsolute)",
+                _ => ToStringLiteral(value.ToString() ?? string.Empty)
+            };
+
+    private static string GetDeduplicationValue(object? value) =>
+        value is ReconstructedMetadataValue reconstructedValue ?
+            reconstructedValue.Kind + ":" + reconstructedValue.ToCSharpLiteral() :
+            value?.ToString() ?? string.Empty;
 
     private static string? TryCreateDateOnlyOrTimeOnlyLiteral(object? value)
     {
