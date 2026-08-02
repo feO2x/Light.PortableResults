@@ -122,6 +122,7 @@ public sealed class BoundaryMetadataRejectionTests
     [InlineData("DateTime", "new DateTime(2026, 13, 1)")]
     [InlineData("Guid", "Guid.Parse(\"invalid\")")]
     [InlineData("Uri", "new Uri(\"http://[\")")]
+    [InlineData("Uri", "new Uri(\"items/42\")")]
     [InlineData("TimeSpan", "TimeSpan.FromDays(double.MaxValue)")]
     public void GeneratorDegradesWhenRecognizedEvaluationThrows(string valueType, string expression)
     {

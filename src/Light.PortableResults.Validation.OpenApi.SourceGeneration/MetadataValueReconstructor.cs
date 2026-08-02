@@ -918,7 +918,7 @@ internal static class MetadataValueReconstructor
             ),
             SupportedConstructor.TimeOnlyTicks => CreateTimeOnly(ToInt64(arguments[0])),
             SupportedConstructor.Guid => ReconstructedMetadataValue.FromGuid(new Guid((string) arguments[0]!)),
-            SupportedConstructor.Uri => CreateUri(new Uri((string) arguments[0]!, UriKind.RelativeOrAbsolute)),
+            SupportedConstructor.Uri => CreateUri(new Uri((string) arguments[0]!, UriKind.Absolute)),
             SupportedConstructor.UriKind => CreateUri(
                 new Uri((string) arguments[0]!, ToUriKind(arguments[1]))
             ),
