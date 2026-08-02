@@ -138,8 +138,11 @@ public static class CloudEventsEnvelopeJsonReader
                     throw new JsonException("Unexpected end of JSON while reading extension attribute value.");
                 }
 
-                var extensionValue = ReadExtensionAttributeValue(ref reader);
-                extensionBuilder.AddOrReplace(extensionAttributeName, extensionValue);
+                if (reader.TokenType != JsonTokenType.Null)
+                {
+                    var extensionValue = ReadExtensionAttributeValue(ref reader);
+                    extensionBuilder.AddOrReplace(extensionAttributeName, extensionValue);
+                }
             }
         }
 

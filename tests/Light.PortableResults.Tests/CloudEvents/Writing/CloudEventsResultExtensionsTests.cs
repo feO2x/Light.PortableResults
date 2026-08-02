@@ -1,7 +1,13 @@
 using System;
+using System.Collections.Frozen;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.IO;
 using System.Text.Json;
 using FluentAssertions;
+using Light.PortableResults.CloudEvents;
 using Light.PortableResults.CloudEvents.Writing;
+using Light.PortableResults.CloudEvents.Writing.Json;
 using Light.PortableResults.Metadata;
 using Light.PortableResults.SharedJsonSerialization;
 using Xunit;
@@ -537,7 +543,7 @@ public sealed class CloudEventsResultExtensionsTests
     }
 
     [Fact]
-    public void ToCloudEvent_ShouldWriteDecimalExtensionAttribute_AsUnquotedNumber()
+    public void ToCloudEventShouldWriteDecimalExtensionAttributeAsQuotedCanonicalText()
     {
         var metadata = MetadataObject.Create(
             (
@@ -557,8 +563,225 @@ public sealed class CloudEventsResultExtensionsTests
         using var document = JsonDocument.Parse(json);
         var price = document.RootElement.GetProperty("price");
 
-        price.ValueKind.Should().Be(JsonValueKind.Number);
-        price.GetDecimal().Should().Be(19.99m);
+        price.ValueKind.Should().Be(JsonValueKind.String);
+        price.GetString().Should().Be("19.99");
+    }
+
+    [Fact]
+    public void ToCloudEventShouldUseCloudEventsMappingForEveryNonNullPrimitive()
+    {
+        var values = new (MetadataValue Value, JsonValueKind JsonKind, string CanonicalText)[]
+        {
+            (MetadataValue.FromBoolean(true), JsonValueKind.True, "true"),
+            (MetadataValue.FromInt64(int.MinValue), JsonValueKind.Number, "-2147483648"),
+            (MetadataValue.FromInt64(int.MaxValue), JsonValueKind.Number, "2147483647"),
+            (MetadataValue.FromInt64((long) int.MinValue - 1), JsonValueKind.String, "-2147483649"),
+            (MetadataValue.FromInt64((long) int.MaxValue + 1), JsonValueKind.String, "2147483648"),
+            (MetadataValue.FromDouble(5), JsonValueKind.String, "5.0"),
+            (MetadataValue.FromString("plain text"), JsonValueKind.String, "plain text"),
+            (MetadataValue.FromDecimal(19.50m), JsonValueKind.String, "19.50"),
+            (MetadataValue.FromUInt64(ulong.MaxValue), JsonValueKind.String, "18446744073709551615"),
+            (MetadataValue.FromSingle(0.1f), JsonValueKind.String, "0.1"),
+            (MetadataValue.FromChar('ß'), JsonValueKind.String, "ß"),
+            (
+                MetadataValue.FromDateTime(new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Utc)),
+                JsonValueKind.String,
+                "2026-07-26T13:45:30Z"
+            ),
+            (
+                MetadataValue.FromDateTimeOffset(
+                    new DateTimeOffset(2026, 7, 26, 13, 45, 30, TimeSpan.FromHours(2))
+                ),
+                JsonValueKind.String,
+                "2026-07-26T13:45:30+02:00"
+            ),
+#if !TESTING_NETSTANDARD_ASSET
+            (
+                MetadataValue.FromDateOnly(new DateOnly(2026, 7, 26)),
+                JsonValueKind.String,
+                "2026-07-26"
+            ),
+            (MetadataValue.FromTimeOnly(new TimeOnly(13, 45, 30)), JsonValueKind.String, "13:45:30"),
+#endif
+            (MetadataValue.FromTimeSpan(TimeSpan.FromSeconds(5)), JsonValueKind.String, "PT5S"),
+            (
+                MetadataValue.FromGuid(new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890")),
+                JsonValueKind.String,
+                "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+            ),
+            (
+                MetadataValue.FromUri(new Uri("https://example.com/items/42")),
+                JsonValueKind.String,
+                "https://example.com/items/42"
+            )
+        };
+
+        foreach (var (value, expectedKind, expectedText) in values)
+        {
+            var annotatedValue = MetadataValueAnnotationHelper.WithAnnotation(
+                value,
+                MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+            );
+            var result = Result.Ok(MetadataObject.Create(("attribute", annotatedValue)));
+
+            var json = result.ToCloudEvent(
+                successType: "app.success",
+                failureType: "app.failure",
+                id: "evt-matrix",
+                time: new DateTimeOffset(2026, 7, 26, 13, 45, 30, TimeSpan.Zero),
+                options: CreateWriteOptions()
+            );
+
+            using var document = JsonDocument.Parse(json);
+            var attribute = document.RootElement.GetProperty("attribute");
+            attribute.ValueKind.Should().Be(expectedKind, "{0} has a normative CloudEvents encoding", value.Kind);
+            var actualText = expectedKind == JsonValueKind.String ? attribute.GetString() : attribute.GetRawText();
+            actualText.Should().Be(expectedText, "{0} uses canonical invariant text", value.Kind);
+        }
+    }
+
+    [Fact]
+    public void ToCloudEventShouldOmitNullExtensionAttributeWithoutChangingEnvelopeBytes()
+    {
+        var annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        var withNull = Result.Ok(MetadataObject.Create(("optional", MetadataValue.FromNull(annotation))));
+        var withoutAttribute = Result.Ok();
+        var time = new DateTimeOffset(2026, 7, 26, 13, 45, 30, TimeSpan.Zero);
+
+        var withNullJson = withNull.ToCloudEvent(
+            successType: "app.success",
+            failureType: "app.failure",
+            id: "evt-null",
+            time: time,
+            options: CreateWriteOptions()
+        );
+        var withoutAttributeJson = withoutAttribute.ToCloudEvent(
+            successType: "app.success",
+            failureType: "app.failure",
+            id: "evt-null",
+            time: time,
+            options: CreateWriteOptions()
+        );
+
+        withNullJson.Should().Equal(withoutAttributeJson);
+    }
+
+    [Fact]
+    public void ToCloudEventShouldExposeValueDependentInt64ShapeForOneAttributeName()
+    {
+        using var inRange = WriteInt64Attribute(int.MaxValue, CreateWriteOptions());
+        using var outOfRange = WriteInt64Attribute((long) int.MaxValue + 1, CreateWriteOptions());
+
+        inRange.RootElement.GetProperty("sequence").ValueKind.Should().Be(JsonValueKind.Number);
+        outOfRange.RootElement.GetProperty("sequence").ValueKind.Should().Be(JsonValueKind.String);
+    }
+
+    [Fact]
+    public void ToCloudEventShouldKeepInt64ShapeStableWhenConverterUsesStringKind()
+    {
+        var converter = new Int64ToStringAttributeConverter();
+        var converters = new Dictionary<string, CloudEventsAttributeConverter>(StringComparer.Ordinal)
+        {
+            ["sequence"] = converter
+        }.ToFrozenDictionary(StringComparer.Ordinal);
+        var options = CreateWriteOptions();
+        options.ConversionService = new DefaultCloudEventsAttributeConversionService(converters);
+
+        using var inRange = WriteInt64Attribute(int.MaxValue, options);
+        using var outOfRange = WriteInt64Attribute((long) int.MaxValue + 1, options);
+
+        inRange.RootElement.GetProperty("sequence").ValueKind.Should().Be(JsonValueKind.String);
+        outOfRange.RootElement.GetProperty("sequence").ValueKind.Should().Be(JsonValueKind.String);
+        inRange.RootElement.GetProperty("sequence").GetString().Should().Be("2147483647");
+        outOfRange.RootElement.GetProperty("sequence").GetString().Should().Be("2147483648");
+    }
+
+    [Fact]
+    public void ToCloudEventShouldRejectInvalidTextReturnedByCustomConversionService()
+    {
+        var annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        var metadata = MetadataObject.Create(("original", MetadataValue.FromString("safe", annotation)));
+        var options = CreateWriteOptions();
+        options.ConversionService = new InvalidTextConversionService();
+
+        Action act = () => Result.Ok(metadata).ToCloudEvent(
+            successType: "app.success",
+            failureType: "app.failure",
+            id: "evt-invalid-custom",
+            options: options
+        );
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*converted*U+0001*");
+    }
+
+    [Fact]
+    public void WriteCloudEventsShouldRejectInvalidTextFromDirectlyConstructedEnvelope()
+    {
+        var extensionAttributes = MetadataObject.Create(
+            ("direct", MetadataValue.FromString("invalid\uFDD0text"))
+        );
+        var envelope = new CloudEventsEnvelopeForWriting(
+            "app.success",
+            "urn:test:source",
+            "evt-direct",
+            Result.Ok(),
+            new ResolvedCloudEventsWriteOptions(MetadataSerializationMode.ErrorsOnly),
+            ExtensionAttributes: extensionAttributes
+        );
+
+        Action act = () =>
+        {
+            using var stream = new MemoryStream();
+            using var writer = new Utf8JsonWriter(stream);
+            writer.WriteCloudEvents(envelope, PortableResultsCloudEventsWriteOptions.Default.SerializerOptions);
+        };
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*direct*U+FDD0*");
+    }
+
+    [Fact]
+    public void ToCloudEventShouldKeepMetadataResolvedStandardAttributesAsStrings()
+    {
+        var annotation = MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes;
+        var metadata = MetadataObject.Create(
+            ("type", MetadataValue.FromInt64(42, annotation)),
+            ("source", MetadataValue.FromUri(new Uri("urn:test:source"), annotation)),
+            ("subject", MetadataValue.FromDecimal(19.50m, annotation)),
+            (
+                "dataschema",
+                MetadataValue.FromUri(new Uri("https://example.com/schema"), annotation)
+            ),
+            (
+                "time",
+                MetadataValue.FromDateTimeOffset(
+                    new DateTimeOffset(2026, 7, 26, 13, 45, 30, TimeSpan.Zero),
+                    annotation
+                )
+            ),
+            (
+                "id",
+                MetadataValue.FromGuid(
+                    new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890"),
+                    annotation
+                )
+            )
+        );
+
+        var json = Result.Ok(metadata).ToCloudEvent(options: CreateWriteOptions(source: null));
+
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+        foreach (var attributeName in new[] { "type", "source", "subject", "dataschema", "time", "id" })
+        {
+            root.GetProperty(attributeName).ValueKind.Should().Be(JsonValueKind.String);
+        }
+
+        root.GetProperty("type").GetString().Should().Be("42");
+        root.GetProperty("source").GetString().Should().Be("urn:test:source");
+        root.GetProperty("subject").GetString().Should().Be("19.50");
+        root.GetProperty("dataschema").GetString().Should().Be("https://example.com/schema");
+        root.GetProperty("time").GetString().Should().Be("2026-07-26T13:45:30.0000000+00:00");
+        root.GetProperty("id").GetString().Should().Be("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
     }
 
     [Fact]
@@ -757,5 +980,54 @@ public sealed class CloudEventsResultExtensionsTests
         {
             Source = source
         };
+    }
+
+    private static JsonDocument WriteInt64Attribute(
+        long value,
+        PortableResultsCloudEventsWriteOptions options
+    )
+    {
+        var metadata = MetadataObject.Create(
+            (
+                "sequence",
+                MetadataValue.FromInt64(
+                    value,
+                    MetadataValueAnnotation.SerializeInCloudEventsExtensionAttributes
+                )
+            )
+        );
+        var json = Result.Ok(metadata).ToCloudEvent(
+            successType: "app.success",
+            failureType: "app.failure",
+            id: "evt-int64-shape",
+            options: options
+        );
+        return JsonDocument.Parse(json);
+    }
+
+    private sealed class Int64ToStringAttributeConverter : CloudEventsAttributeConverter
+    {
+        public Int64ToStringAttributeConverter() : base(ImmutableArray.Create("sequence")) { }
+
+        public override KeyValuePair<string, MetadataValue> PrepareCloudEventsAttribute(
+            string metadataKey,
+            MetadataValue value
+        ) =>
+            new (
+                metadataKey,
+                MetadataValue.FromString(value.ToCanonicalString(), value.Annotation)
+            );
+    }
+
+    private sealed class InvalidTextConversionService : ICloudEventsAttributeConversionService
+    {
+        public KeyValuePair<string, MetadataValue> PrepareCloudEventsAttribute(
+            string metadataKey,
+            MetadataValue metadataValue
+        ) =>
+            new (
+                "converted",
+                MetadataValue.FromString("invalid\u0001text", metadataValue.Annotation)
+            );
     }
 }

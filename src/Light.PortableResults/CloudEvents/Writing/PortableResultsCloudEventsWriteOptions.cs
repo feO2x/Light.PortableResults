@@ -2,6 +2,7 @@ using System;
 using System.Buffers;
 using System.Text.Json;
 using Light.PortableResults.Buffers;
+using Light.PortableResults.Metadata;
 using Light.PortableResults.SharedJsonSerialization;
 
 namespace Light.PortableResults.CloudEvents.Writing;
@@ -33,7 +34,11 @@ public sealed record PortableResultsCloudEventsWriteOptions
         PortableResultsCloudEventsWritingModule.DefaultSerializerOptions;
 
     /// <summary>
-    /// Gets or sets the conversion service used to map metadata entries to CloudEvents attributes.
+    /// Gets or sets the conversion service used to map metadata entries to CloudEvents attributes. After
+    /// conversion, extension values use the JSON Event Format mapping described by
+    /// <see cref="CloudEventsAttributeJsonEncodingExtensions.GetCloudEventsAttributeJsonEncoding" />.
+    /// Convert an <see cref="MetadataKind.Int64" /> to <see cref="MetadataKind.String" />
+    /// when one attribute name requires a stable string encoding across the full signed 64-bit range.
     /// </summary>
     public ICloudEventsAttributeConversionService ConversionService { get; set; } =
         DefaultCloudEventsAttributeConversionService.Instance;

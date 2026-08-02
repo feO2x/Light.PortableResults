@@ -43,7 +43,10 @@ public sealed class DefaultCloudEventsAttributeConversionService : ICloudEventsA
     /// <param name="metadataValue">The metadata value to convert.</param>
     /// <returns>The CloudEvents attribute key and value pair.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="metadataKey" /> is <see langword="null" />.</exception>
-    /// <exception cref="ArgumentException">Thrown when the resulting attribute name is invalid, reserved, or the value is not a primitive type for extension attributes.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the resulting attribute name is invalid, reserved, or the value is not a primitive type for extension
+    /// attributes.
+    /// </exception>
     public KeyValuePair<string, MetadataValue> PrepareCloudEventsAttribute(
         string metadataKey,
         MetadataValue metadataValue
@@ -87,26 +90,13 @@ public sealed class DefaultCloudEventsAttributeConversionService : ICloudEventsA
             return;
         }
 
-        if (!IsValidExtensionAttributeName(attributeName))
+        if (!CloudEventsAttributeName.IsValidExtensionAttributeName(attributeName))
         {
             throw new ArgumentException(
                 $"The CloudEvents extension attribute '{attributeName}' is invalid. Only lowercase alphanumeric names are allowed.",
                 nameof(attributeName)
             );
         }
-    }
-
-    private static bool IsValidExtensionAttributeName(string attributeName)
-    {
-        foreach (var character in attributeName)
-        {
-            if (character is (< 'a' or > 'z') and (< '0' or > '9'))
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private static void ValidateAttributeValue(string attributeName, MetadataValue value)
