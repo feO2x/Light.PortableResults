@@ -1,15 +1,19 @@
 # Third-Party Notices
 
-Light.PortableResults incorporates adapted floating-point number-formatting code from:
+Light.PortableResults incorporates adapted primitive-formatting code from:
 
 - Project: .NET Runtime
 - Repository: https://github.com/dotnet/runtime
 - Source line: `release/6.0`
 - Immutable source: tag `v6.0.36`, commit `f1dd57165bfd91875761329ac3a8b17f6606ad18`
-- Adapted files: `Number.Grisu3.cs`, `Number.DiyFp.cs`, `Number.Dragon4.cs`,
-  `Number.BigInteger.cs`, `Number.NumberBuffer.cs`, and `Number.Formatting.cs`
+- Adapted files under `src/libraries/System.Private.CoreLib/src/System`:
+  `Number.Grisu3.cs`, `Number.DiyFp.cs`, `Number.Dragon4.cs`, `Number.BigInteger.cs`,
+  `Number.NumberBuffer.cs`, `Number.Formatting.cs`, `Decimal.DecCalc.cs`,
+  `Globalization/DateTimeFormat.cs`, and `Guid.cs`
+- Adapted XML file: `src/libraries/System.Private.Xml/src/System/Xml/Schema/XsdDuration.cs`
 - Local files: the adapted implementation files under
-  `src/Light.PortableResults/Numbers`, as detailed in that folder's `README.md`
+  `src/Light.PortableResults/Numbers` and `src/Light.PortableResults/Text`, as detailed in those
+  folders' `README.md` files
 
 ## .NET Foundation MIT License
 

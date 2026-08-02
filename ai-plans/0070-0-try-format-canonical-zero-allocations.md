@@ -10,23 +10,23 @@ Add allocation-free canonical formatters for both encodings, expose them through
 
 ## Acceptance Criteria
 
-- [ ] `MetadataValue` exposes `TryFormatCanonical` and `TryFormatCanonicalUtf8`; neither allocates for any primitive kind, including copying or transcoding `String`, `Char`, and `Uri` into the caller's destination.
-- [ ] One canonical renderer serves both package assets and encodings. Only decimal field extraction and UTF-16-to-UTF-8 transcoding vary by target, and neither decides the output text. There is no target-specific formatter, renderer, cross-encoding route, or intermediate output buffer; every method writes directly to the requested destination. One expected-output corpus passes unchanged against both assets.
-- [ ] A public, XML-documented `CanonicalTextFormatter` exposes the new primitives in both encodings and per-type maximum lengths bounding both encodings on both assets.
-- [ ] `MetadataValue` exposes a documented public bound for every bounded primitive in either encoding; `JsonCloudEventsExtensions` uses it instead of a private magic number.
-- [ ] UTF-16 output exactly matches the previous `ToCanonicalString` text and count. UTF-8 output is that text's replacement-fallback encoding—lossy only for malformed UTF-16—with equal byte/character counts whenever the canonical text is ASCII.
-- [ ] In both encodings, insufficient capacity returns `false`, reports zero, and leaves the destination unchanged; `Array` and `Object` still throw `InvalidOperationException`; corrupt `DateTime`, `DateOnly`, and `TimeOnly` payloads still throw `InvalidOperationException`.
-- [ ] `CanonicalTextFormatter.TryFormat(DateTime, …)` normalizes `Local` to UTC like `MetadataValue.FromDateTime`, so all accepted values fit `MaximumDateTimeLength`; `Utc` and `Unspecified` are unchanged. A direct test covers this.
-- [ ] `TryGetXxx` round-trip validators compare span-formatted text without allocating a candidate string.
-- [ ] `ToCanonicalString` remains allocation-free for `Null`, `Boolean`, `String`, and `Uri`, and remains textually unchanged for every kind.
-- [ ] The JSON metadata writer materializes no canonical string for string-shaped or `Double`/`Single` number-shaped values. Its bytes remain unchanged under the default and `UnsafeRelaxedJsonEscaping` encoders, including non-ASCII text and unpaired surrogates.
-- [ ] Tests cover every kind and encoding: canonical output/count, exact and one-short capacity, boundaries, invalid-payload exceptions, and allocations. Metadata tests pass against the `net10.0` and `netstandard2.0` library assets.
-- [ ] A `net10.0` microbenchmark compares the new `Guid` and `DateTime` formatters with framework `TryFormat`; results are recorded in the pull request as evidence for a deferred follow-up, with no target-specific implementation added here regardless of outcome.
-- [ ] CloudEvents and HTTP write benchmarks contain affected metadata kinds; before/after allocations for both are recorded in the pull request.
-- [ ] `THIRD-PARTY-NOTICES.md` and the folder README identify all adapted upstream files and adaptations; every adapted source retains the .NET Foundation MIT header.
-- [ ] The `netstandard2.0` decimal path documents and allocation-freely enforces its runtime-layout assumption. A violation throws `PlatformNotSupportedException` from decimal formatting itself without disabling other formatters.
-- [ ] Package release notes mention the new APIs and removed allocations.
-- [ ] Both targets build in Release with warnings as errors, package validation succeeds, the Native AOT sample publishes, and coverage remains above 95%.
+- [x] `MetadataValue` exposes `TryFormatCanonical` and `TryFormatCanonicalUtf8`; neither allocates for any primitive kind, including copying or transcoding `String`, `Char`, and `Uri` into the caller's destination.
+- [x] One canonical renderer serves both package assets and encodings. Only decimal field extraction and UTF-16-to-UTF-8 transcoding vary by target, and neither decides the output text. There is no target-specific formatter, renderer, cross-encoding route, or intermediate output buffer; every method writes directly to the requested destination. One expected-output corpus passes unchanged against both assets.
+- [x] A public, XML-documented `CanonicalTextFormatter` exposes the new primitives in both encodings and per-type maximum lengths bounding both encodings on both assets.
+- [x] `MetadataValue` exposes a documented public bound for every bounded primitive in either encoding; `JsonCloudEventsExtensions` uses it instead of a private magic number.
+- [x] UTF-16 output exactly matches the previous `ToCanonicalString` text and count. UTF-8 output is that text's replacement-fallback encoding—lossy only for malformed UTF-16—with equal byte/character counts whenever the canonical text is ASCII.
+- [x] In both encodings, insufficient capacity returns `false`, reports zero, and leaves the destination unchanged; `Array` and `Object` still throw `InvalidOperationException`; corrupt `DateTime`, `DateOnly`, and `TimeOnly` payloads still throw `InvalidOperationException`.
+- [x] `CanonicalTextFormatter.TryFormat(DateTime, …)` normalizes `Local` to UTC like `MetadataValue.FromDateTime`, so all accepted values fit `MaximumDateTimeLength`; `Utc` and `Unspecified` are unchanged. A direct test covers this.
+- [x] `TryGetXxx` round-trip validators compare span-formatted text without allocating a candidate string.
+- [x] `ToCanonicalString` remains allocation-free for `Null`, `Boolean`, `String`, and `Uri`, and remains textually unchanged for every kind.
+- [x] The JSON metadata writer materializes no canonical string for string-shaped or `Double`/`Single` number-shaped values. Its bytes remain unchanged under the default and `UnsafeRelaxedJsonEscaping` encoders, including non-ASCII text and unpaired surrogates.
+- [x] Tests cover every kind and encoding: canonical output/count, exact and one-short capacity, boundaries, invalid-payload exceptions, and allocations. Metadata tests pass against the `net10.0` and `netstandard2.0` library assets.
+- [x] A `net10.0` microbenchmark compares the new `Guid` and `DateTime` formatters with framework `TryFormat`; results are recorded in the pull request as evidence for a deferred follow-up, with no target-specific implementation added here regardless of outcome.
+- [x] CloudEvents and HTTP write benchmarks contain affected metadata kinds; before/after allocations for both are recorded in the pull request.
+- [x] `THIRD-PARTY-NOTICES.md` and the folder README identify all adapted upstream files and adaptations; every adapted source retains the .NET Foundation MIT header.
+- [x] The `netstandard2.0` decimal path documents and allocation-freely enforces its runtime-layout assumption. A violation throws `PlatformNotSupportedException` from decimal formatting itself without disabling other formatters.
+- [x] Package release notes mention the new APIs and removed allocations.
+- [x] Both targets build in Release with warnings as errors, package validation succeeds, the Native AOT sample publishes, and coverage remains above 95%.
 
 ## Technical Details
 

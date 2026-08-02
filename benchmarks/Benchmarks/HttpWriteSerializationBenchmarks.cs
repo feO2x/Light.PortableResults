@@ -77,6 +77,26 @@ public class HttpWriteSerializationBenchmarks
         var metadata = MetadataObject.Create(
             ("correlationId",
              MetadataValue.FromString("corr-123", MetadataValueAnnotation.SerializeInHttpResponseBody)),
+            ("requestId",
+             MetadataValue.FromGuid(
+                 new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890"),
+                 MetadataValueAnnotation.SerializeInHttpResponseBody
+             )),
+            ("recordedAt",
+             MetadataValue.FromDateTime(
+                 new DateTime(2026, 7, 26, 13, 45, 30, DateTimeKind.Utc).AddTicks(1_234_567),
+                 MetadataValueAnnotation.SerializeInHttpResponseBody
+             )),
+            ("measurement",
+             MetadataValue.FromDouble(
+                 36_028_797_018_963_968.0,
+                 MetadataValueAnnotation.SerializeInHttpResponseBody
+             )),
+            ("sequence",
+             MetadataValue.FromInt64(
+                 (long) int.MaxValue + 1,
+                 MetadataValueAnnotation.SerializeInHttpResponseBody
+             )),
             ("traceId", MetadataValue.FromString("trace-456", MetadataValueAnnotation.SerializeInHttpHeader))
         );
         _genericSuccessWithMetadata = Result<ContactDto>.Ok(

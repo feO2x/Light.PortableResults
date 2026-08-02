@@ -6,12 +6,12 @@ using System.Reflection;
 using System.Text;
 using FluentAssertions;
 using Light.PortableResults.Metadata;
-using Light.PortableResults.Numbers;
+using Light.PortableResults.Text;
 using Xunit;
 
 namespace Light.PortableResults.Tests.Numbers;
 
-public sealed class CanonicalFloatingPointFormatterTests
+public sealed class CanonicalTextFormatterFloatingPointTests
 {
     private const int CorpusSize = 50_000;
     private const int CorpusSeed = 0x5EED_0058;
@@ -31,7 +31,7 @@ public sealed class CanonicalFloatingPointFormatterTests
         CreateSingleDragon4Formatter<byte, ForcedSingleByteFormatter>();
 
     public static TheoryData<ulong, string> DoubleScenarios =>
-        new ()
+        new()
         {
             { 0x3F1A36E2EB1C432DUL, "0.0001" },
             { 0x3EE4F8B588E368F1UL, "1E-05" },
@@ -63,7 +63,7 @@ public sealed class CanonicalFloatingPointFormatterTests
         };
 
     public static TheoryData<uint, string> SingleScenarios =>
-        new ()
+        new()
         {
             { 0x38D1B717U, "0.0001" },
             { 0x3727C5ACU, "1E-05" },
@@ -113,7 +113,7 @@ public sealed class CanonicalFloatingPointFormatterTests
     {
         var value = BitConverter.Int64BitsToDouble((long) bits);
 
-        CanonicalFloatingPointFormatter.Format(value).Should().Be(expected);
+        CanonicalTextFormatter.Format(value).Should().Be(expected);
         Format(value).Should().Be(expected);
         FormatWithDragon4(value).Should().Be(expected);
         AssertUtf8Matches(value, expected, forceDragon4: false);
@@ -127,7 +127,7 @@ public sealed class CanonicalFloatingPointFormatterTests
     {
         var value = BitConverter.Int32BitsToSingle((int) bits);
 
-        CanonicalFloatingPointFormatter.Format(value).Should().Be(expected);
+        CanonicalTextFormatter.Format(value).Should().Be(expected);
         Format(value).Should().Be(expected);
         FormatWithDragon4(value).Should().Be(expected);
         AssertUtf8Matches(value, expected, forceDragon4: false);
@@ -140,17 +140,17 @@ public sealed class CanonicalFloatingPointFormatterTests
     {
         foreach (var value in new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity })
         {
-            var format = () => CanonicalFloatingPointFormatter.Format(value);
+            var format = () => CanonicalTextFormatter.Format(value);
             var tryFormat = () =>
-                CanonicalFloatingPointFormatter.TryFormat(
+                CanonicalTextFormatter.TryFormat(
                     value,
-                    new char[CanonicalFloatingPointFormatter.MaximumDoubleLength],
+                    new char[CanonicalTextFormatter.MaximumDoubleLength],
                     out _
                 );
             var tryFormatUtf8 = () =>
-                CanonicalFloatingPointFormatter.TryFormatUtf8(
+                CanonicalTextFormatter.TryFormatUtf8(
                     value,
-                    new byte[CanonicalFloatingPointFormatter.MaximumDoubleLength],
+                    new byte[CanonicalTextFormatter.MaximumDoubleLength],
                     out _
                 );
 
@@ -165,17 +165,17 @@ public sealed class CanonicalFloatingPointFormatterTests
     {
         foreach (var value in new[] { float.NaN, float.PositiveInfinity, float.NegativeInfinity })
         {
-            var format = () => CanonicalFloatingPointFormatter.Format(value);
+            var format = () => CanonicalTextFormatter.Format(value);
             var tryFormat = () =>
-                CanonicalFloatingPointFormatter.TryFormat(
+                CanonicalTextFormatter.TryFormat(
                     value,
-                    new char[CanonicalFloatingPointFormatter.MaximumSingleLength],
+                    new char[CanonicalTextFormatter.MaximumSingleLength],
                     out _
                 );
             var tryFormatUtf8 = () =>
-                CanonicalFloatingPointFormatter.TryFormatUtf8(
+                CanonicalTextFormatter.TryFormatUtf8(
                     value,
-                    new byte[CanonicalFloatingPointFormatter.MaximumSingleLength],
+                    new byte[CanonicalTextFormatter.MaximumSingleLength],
                     out _
                 );
 
@@ -197,28 +197,28 @@ public sealed class CanonicalFloatingPointFormatterTests
         doubleUtf8Destination.Fill(0xAA);
         singleUtf8Destination.Fill(0xBB);
 
-        CanonicalFloatingPointFormatter.TryFormat(
+        CanonicalTextFormatter.TryFormat(
                 double.MaxValue,
                 doubleDestination,
                 out var doubleCharsWritten
             )
            .Should()
            .BeFalse();
-        CanonicalFloatingPointFormatter.TryFormat(
+        CanonicalTextFormatter.TryFormat(
                 float.MaxValue,
                 singleDestination,
                 out var singleCharsWritten
             )
            .Should()
            .BeFalse();
-        CanonicalFloatingPointFormatter.TryFormatUtf8(
+        CanonicalTextFormatter.TryFormatUtf8(
                 double.MaxValue,
                 doubleUtf8Destination,
                 out var doubleBytesWritten
             )
            .Should()
            .BeFalse();
-        CanonicalFloatingPointFormatter.TryFormatUtf8(
+        CanonicalTextFormatter.TryFormatUtf8(
                 float.MaxValue,
                 singleUtf8Destination,
                 out var singleBytesWritten
@@ -255,7 +255,7 @@ public sealed class CanonicalFloatingPointFormatterTests
 
             var value = BitConverter.Int64BitsToDouble((long) bits);
             var expected = CanonicalizeRuntimeText(value.ToString("R", CultureInfo.InvariantCulture));
-            CanonicalFloatingPointFormatter.Format(value)
+            CanonicalTextFormatter.Format(value)
                .Should()
                .Be(expected, "binary64 bits 0x{0:X16} must be deterministic", bits);
             FormatWithDragon4(value)
@@ -277,7 +277,7 @@ public sealed class CanonicalFloatingPointFormatterTests
 
             var value = BitConverter.Int32BitsToSingle((int) bits);
             var expected = CanonicalizeRuntimeText(value.ToString("R", CultureInfo.InvariantCulture));
-            CanonicalFloatingPointFormatter.Format(value)
+            CanonicalTextFormatter.Format(value)
                .Should()
                .Be(expected, "binary32 bits 0x{0:X8} must be deterministic", bits);
             FormatWithDragon4(value)
@@ -316,15 +316,15 @@ public sealed class CanonicalFloatingPointFormatterTests
         const float singleValue = 123_456_789f;
         var doubleMetadata = MetadataValue.FromDouble(doubleValue);
         var singleMetadata = MetadataValue.FromSingle(singleValue);
-        Span<char> charDestination = stackalloc char[CanonicalFloatingPointFormatter.MaximumDoubleLength];
-        Span<byte> byteDestination = stackalloc byte[CanonicalFloatingPointFormatter.MaximumDoubleLength];
+        Span<char> charDestination = stackalloc char[CanonicalTextFormatter.MaximumDoubleLength];
+        Span<byte> byteDestination = stackalloc byte[CanonicalTextFormatter.MaximumDoubleLength];
 
         for (var index = 0; index < 100; index++)
         {
-            CanonicalFloatingPointFormatter.TryFormat(doubleValue, charDestination, out _);
-            CanonicalFloatingPointFormatter.TryFormat(singleValue, charDestination, out _);
-            CanonicalFloatingPointFormatter.TryFormatUtf8(doubleValue, byteDestination, out _);
-            CanonicalFloatingPointFormatter.TryFormatUtf8(singleValue, byteDestination, out _);
+            CanonicalTextFormatter.TryFormat(doubleValue, charDestination, out _);
+            CanonicalTextFormatter.TryFormat(singleValue, charDestination, out _);
+            CanonicalTextFormatter.TryFormatUtf8(doubleValue, byteDestination, out _);
+            CanonicalTextFormatter.TryFormatUtf8(singleValue, byteDestination, out _);
             ForceDragon4DoubleChars(doubleValue, charDestination, out _, true);
             ForceDragon4SingleChars(singleValue, charDestination, out _, true);
             ForceDragon4DoubleBytes(doubleValue, byteDestination, out _, true);
@@ -336,10 +336,10 @@ public sealed class CanonicalFloatingPointFormatterTests
         var before = GC.GetAllocatedBytesForCurrentThread();
         for (var index = 0; index < 1_000; index++)
         {
-            CanonicalFloatingPointFormatter.TryFormat(doubleValue, charDestination, out _);
-            CanonicalFloatingPointFormatter.TryFormat(singleValue, charDestination, out _);
-            CanonicalFloatingPointFormatter.TryFormatUtf8(doubleValue, byteDestination, out _);
-            CanonicalFloatingPointFormatter.TryFormatUtf8(singleValue, byteDestination, out _);
+            CanonicalTextFormatter.TryFormat(doubleValue, charDestination, out _);
+            CanonicalTextFormatter.TryFormat(singleValue, charDestination, out _);
+            CanonicalTextFormatter.TryFormatUtf8(doubleValue, byteDestination, out _);
+            CanonicalTextFormatter.TryFormatUtf8(singleValue, byteDestination, out _);
             ForceDragon4DoubleChars(doubleValue, charDestination, out _, true);
             ForceDragon4SingleChars(singleValue, charDestination, out _, true);
             ForceDragon4DoubleBytes(doubleValue, byteDestination, out _, true);
@@ -356,15 +356,15 @@ public sealed class CanonicalFloatingPointFormatterTests
     {
         const double doubleValue = 36_028_797_018_963_968.0;
         const float singleValue = 123_456_789f;
-        var doubleText = CanonicalFloatingPointFormatter.Format(doubleValue);
-        var singleText = CanonicalFloatingPointFormatter.Format(singleValue);
+        var doubleText = CanonicalTextFormatter.Format(doubleValue);
+        var singleText = CanonicalTextFormatter.Format(singleValue);
         var doubleMetadata = MetadataValue.FromDouble(doubleValue);
         var singleMetadata = MetadataValue.FromSingle(singleValue);
 
         for (var index = 0; index < 100; index++)
         {
-            _ = CanonicalFloatingPointFormatter.Format(doubleValue);
-            _ = CanonicalFloatingPointFormatter.Format(singleValue);
+            _ = CanonicalTextFormatter.Format(doubleValue);
+            _ = CanonicalTextFormatter.Format(singleValue);
             _ = doubleMetadata.ToCanonicalString();
             _ = singleMetadata.ToCanonicalString();
         }
@@ -372,13 +372,13 @@ public sealed class CanonicalFloatingPointFormatterTests
         var doubleBaseline = MeasureStringAllocations(() => new string(doubleText.AsSpan()));
         var singleBaseline = MeasureStringAllocations(() => new string(singleText.AsSpan()));
 
-        MeasureStringAllocations(() => CanonicalFloatingPointFormatter.Format(doubleValue))
+        MeasureStringAllocations(() => CanonicalTextFormatter.Format(doubleValue))
            .Should()
            .Be(doubleBaseline);
         MeasureStringAllocations(() => doubleMetadata.ToCanonicalString())
            .Should()
            .Be(doubleBaseline);
-        MeasureStringAllocations(() => CanonicalFloatingPointFormatter.Format(singleValue))
+        MeasureStringAllocations(() => CanonicalTextFormatter.Format(singleValue))
            .Should()
            .Be(singleBaseline);
         MeasureStringAllocations(() => singleMetadata.ToCanonicalString())
@@ -390,13 +390,13 @@ public sealed class CanonicalFloatingPointFormatterTests
     {
         // The destinations are sized exactly at the constant, so a successful call is itself the
         // proof that the constant bounds this value in this encoding.
-        Span<char> chars = stackalloc char[CanonicalFloatingPointFormatter.MaximumDoubleLength];
-        Span<byte> bytes = stackalloc byte[CanonicalFloatingPointFormatter.MaximumDoubleLength];
+        Span<char> chars = stackalloc char[CanonicalTextFormatter.MaximumDoubleLength];
+        Span<byte> bytes = stackalloc byte[CanonicalTextFormatter.MaximumDoubleLength];
 
-        CanonicalFloatingPointFormatter.TryFormat(value, chars, out var charsWritten)
+        CanonicalTextFormatter.TryFormat(value, chars, out var charsWritten)
            .Should()
            .BeTrue();
-        CanonicalFloatingPointFormatter.TryFormatUtf8(value, bytes, out var bytesWritten)
+        CanonicalTextFormatter.TryFormatUtf8(value, bytes, out var bytesWritten)
            .Should()
            .BeTrue();
         ForceDragon4DoubleChars(value, chars, out var dragon4CharsWritten, true).Should().BeTrue();
@@ -409,13 +409,13 @@ public sealed class CanonicalFloatingPointFormatterTests
 
     private static void AssertFitsIntoMaximumLength(float value)
     {
-        Span<char> chars = stackalloc char[CanonicalFloatingPointFormatter.MaximumSingleLength];
-        Span<byte> bytes = stackalloc byte[CanonicalFloatingPointFormatter.MaximumSingleLength];
+        Span<char> chars = stackalloc char[CanonicalTextFormatter.MaximumSingleLength];
+        Span<byte> bytes = stackalloc byte[CanonicalTextFormatter.MaximumSingleLength];
 
-        CanonicalFloatingPointFormatter.TryFormat(value, chars, out var charsWritten)
+        CanonicalTextFormatter.TryFormat(value, chars, out var charsWritten)
            .Should()
            .BeTrue();
-        CanonicalFloatingPointFormatter.TryFormatUtf8(value, bytes, out var bytesWritten)
+        CanonicalTextFormatter.TryFormatUtf8(value, bytes, out var bytesWritten)
            .Should()
            .BeTrue();
         ForceDragon4SingleChars(value, chars, out var dragon4CharsWritten, true).Should().BeTrue();
@@ -429,7 +429,7 @@ public sealed class CanonicalFloatingPointFormatterTests
     private static void AssertMatchesOracle(double value)
     {
         var expected = CanonicalizeRuntimeText(value.ToString("R", CultureInfo.InvariantCulture));
-        CanonicalFloatingPointFormatter.Format(value).Should().Be(expected);
+        CanonicalTextFormatter.Format(value).Should().Be(expected);
         FormatWithDragon4(value).Should().Be(expected);
         AssertUtf8Matches(value, expected, forceDragon4: false);
         AssertUtf8Matches(value, expected, forceDragon4: true);
@@ -438,7 +438,7 @@ public sealed class CanonicalFloatingPointFormatterTests
     private static void AssertMatchesOracle(float value)
     {
         var expected = CanonicalizeRuntimeText(value.ToString("R", CultureInfo.InvariantCulture));
-        CanonicalFloatingPointFormatter.Format(value).Should().Be(expected);
+        CanonicalTextFormatter.Format(value).Should().Be(expected);
         FormatWithDragon4(value).Should().Be(expected);
         AssertUtf8Matches(value, expected, forceDragon4: false);
         AssertUtf8Matches(value, expected, forceDragon4: true);
@@ -449,8 +449,8 @@ public sealed class CanonicalFloatingPointFormatterTests
 
     private static string Format(double value)
     {
-        Span<char> destination = stackalloc char[CanonicalFloatingPointFormatter.MaximumDoubleLength];
-        CanonicalFloatingPointFormatter.TryFormat(value, destination, out var charsWritten)
+        Span<char> destination = stackalloc char[CanonicalTextFormatter.MaximumDoubleLength];
+        CanonicalTextFormatter.TryFormat(value, destination, out var charsWritten)
            .Should()
            .BeTrue();
         return new string(destination[..charsWritten]);
@@ -458,8 +458,8 @@ public sealed class CanonicalFloatingPointFormatterTests
 
     private static string Format(float value)
     {
-        Span<char> destination = stackalloc char[CanonicalFloatingPointFormatter.MaximumSingleLength];
-        CanonicalFloatingPointFormatter.TryFormat(value, destination, out var charsWritten)
+        Span<char> destination = stackalloc char[CanonicalTextFormatter.MaximumSingleLength];
+        CanonicalTextFormatter.TryFormat(value, destination, out var charsWritten)
            .Should()
            .BeTrue();
         return new string(destination[..charsWritten]);
@@ -467,30 +467,30 @@ public sealed class CanonicalFloatingPointFormatterTests
 
     private static string FormatWithDragon4(double value)
     {
-        Span<char> destination = stackalloc char[CanonicalFloatingPointFormatter.MaximumDoubleLength];
+        Span<char> destination = stackalloc char[CanonicalTextFormatter.MaximumDoubleLength];
         ForceDragon4DoubleChars(value, destination, out var charsWritten, true).Should().BeTrue();
         return new string(destination[..charsWritten]);
     }
 
     private static string FormatWithDragon4(float value)
     {
-        Span<char> destination = stackalloc char[CanonicalFloatingPointFormatter.MaximumSingleLength];
+        Span<char> destination = stackalloc char[CanonicalTextFormatter.MaximumSingleLength];
         ForceDragon4SingleChars(value, destination, out var charsWritten, true).Should().BeTrue();
         return new string(destination[..charsWritten]);
     }
 
     private static void AssertUtf8Matches(double value, string expected, bool forceDragon4)
     {
-        Span<char> chars = stackalloc char[CanonicalFloatingPointFormatter.MaximumDoubleLength];
-        Span<byte> bytes = stackalloc byte[CanonicalFloatingPointFormatter.MaximumDoubleLength + 1];
+        Span<char> chars = stackalloc char[CanonicalTextFormatter.MaximumDoubleLength];
+        Span<byte> bytes = stackalloc byte[CanonicalTextFormatter.MaximumDoubleLength + 1];
         bytes.Fill(UnwrittenByte);
 
         var charsSucceeded = forceDragon4 ?
             ForceDragon4DoubleChars(value, chars, out var charsWritten, true) :
-            CanonicalFloatingPointFormatter.TryFormat(value, chars, out charsWritten);
+            CanonicalTextFormatter.TryFormat(value, chars, out charsWritten);
         var bytesSucceeded = forceDragon4 ?
             ForceDragon4DoubleBytes(value, bytes, out var bytesWritten, true) :
-            CanonicalFloatingPointFormatter.TryFormatUtf8(value, bytes, out bytesWritten);
+            CanonicalTextFormatter.TryFormatUtf8(value, bytes, out bytesWritten);
 
         charsSucceeded.Should().BeTrue();
         bytesSucceeded.Should().BeTrue();
@@ -502,16 +502,16 @@ public sealed class CanonicalFloatingPointFormatterTests
 
     private static void AssertUtf8Matches(float value, string expected, bool forceDragon4)
     {
-        Span<char> chars = stackalloc char[CanonicalFloatingPointFormatter.MaximumSingleLength];
-        Span<byte> bytes = stackalloc byte[CanonicalFloatingPointFormatter.MaximumSingleLength + 1];
+        Span<char> chars = stackalloc char[CanonicalTextFormatter.MaximumSingleLength];
+        Span<byte> bytes = stackalloc byte[CanonicalTextFormatter.MaximumSingleLength + 1];
         bytes.Fill(UnwrittenByte);
 
         var charsSucceeded = forceDragon4 ?
             ForceDragon4SingleChars(value, chars, out var charsWritten, true) :
-            CanonicalFloatingPointFormatter.TryFormat(value, chars, out charsWritten);
+            CanonicalTextFormatter.TryFormat(value, chars, out charsWritten);
         var bytesSucceeded = forceDragon4 ?
             ForceDragon4SingleBytes(value, bytes, out var bytesWritten, true) :
-            CanonicalFloatingPointFormatter.TryFormatUtf8(value, bytes, out bytesWritten);
+            CanonicalTextFormatter.TryFormatUtf8(value, bytes, out bytesWritten);
 
         charsSucceeded.Should().BeTrue();
         bytesSucceeded.Should().BeTrue();
@@ -536,7 +536,7 @@ public sealed class CanonicalFloatingPointFormatterTests
            .CreateDelegate(typeof(TFormatter));
 
     private static MethodInfo GetTryFormatCore(Type numberType) =>
-        typeof(CanonicalFloatingPointFormatter)
+        typeof(CanonicalTextFormatter)
            .GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
            .Single(
                 method =>

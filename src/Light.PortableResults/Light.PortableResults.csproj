@@ -19,6 +19,10 @@
         hosts and corrected on .NET Framework and legacy Mono hosts.
       - Adds allocation-free UTF-8 span formatting for canonical Double and Single values, plus public
         maximum-length constants shared by the UTF-16 and UTF-8 formatting APIs.
+      - Adds CanonicalTextFormatter with allocation-free UTF-16 and UTF-8 formatters for all primitive
+        metadata types, MetadataValue.TryFormatCanonicalUtf8, and public cross-encoding length bounds.
+      - Removes canonical-string allocations from metadata round-trip validation, JSON metadata writing,
+        and CloudEvents extension-attribute writing for bounded primitive values.
       - Emits primitive metadata arrays as ordered, separate HTTP header values. Custom header converters can reuse
         the new public HttpHeaderValueFormatter.
 
@@ -28,6 +32,8 @@
       - Values of the ten newly typed BCL metadata types no longer flatten to MetadataKind.String.
         Their JSON representations now use the canonical encoding of their dedicated kind.
       - Whole-number Double and Single metadata values serialize with a trailing .0.
+      - CanonicalFloatingPointFormatter has been consolidated into the partial CanonicalTextFormatter;
+        its floating-point constants and formatting overloads now reside on CanonicalTextFormatter.
       - Default HTTP header conversion no longer surrounds string metadata values with quotes.
       - Float metadata values now use MetadataKind.Single rather than MetadataKind.Double.
       - Decimal metadata values now have the dedicated kind MetadataKind.Decimal instead of MetadataKind.String,

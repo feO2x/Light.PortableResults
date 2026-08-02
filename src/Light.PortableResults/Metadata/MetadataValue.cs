@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 using System.Xml;
-using Light.PortableResults.Numbers;
+using Light.PortableResults.Text;
 
 namespace Light.PortableResults.Metadata;
 
@@ -13,15 +13,25 @@ namespace Light.PortableResults.Metadata;
 /// </summary>
 public readonly struct MetadataValue : IEquatable<MetadataValue>
 {
-    private const string DateTimeFormat = "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFK";
-    private const string DateTimeOffsetFormat = "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFzzz";
     private const string DateOnlyFormat = "yyyy-MM-dd";
-    private const string TimeOnlyFormat = "HH:mm:ss.FFFFFFF";
+    private const string NullCanonicalText = "null";
+    private const string TrueCanonicalText = "true";
+    private const string FalseCanonicalText = "false";
 
     /// <summary>
     /// Gets the default annotation for metadata values, which is <see cref="MetadataValueAnnotation.SerializeInBodies" />.
     /// </summary>
     public const MetadataValueAnnotation DefaultAnnotation = MetadataValueAnnotation.SerializeInBodies;
+
+    /// <summary>
+    /// A destination size that holds the canonical text of every bounded primitive metadata value,
+    /// in UTF-16 characters or UTF-8 bytes.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="MetadataKind.String" /> and <see cref="MetadataKind.Uri" /> are unbounded and may
+    /// require a larger destination. Every other primitive kind fits this bound.
+    /// </remarks>
+    public const int MaximumPrimitiveCanonicalLength = CanonicalTextFormatter.MaximumGuidLength;
 
     private readonly MetadataPayload _payload;
 
@@ -54,13 +64,13 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// <summary>
     /// Gets a <see cref="MetadataValue" /> representing a null value.
     /// </summary>
-    public static MetadataValue Null => new (MetadataKind.Null, default);
+    public static MetadataValue Null => new(MetadataKind.Null, default);
 
     /// <summary>
     /// Creates a null metadata value.
     /// </summary>
     public static MetadataValue FromNull(MetadataValueAnnotation annotation = DefaultAnnotation) =>
-        new (MetadataKind.Null, default, annotation);
+        new(MetadataKind.Null, default, annotation);
 
     /// <summary>
     /// Creates a metadata value from a Boolean.
@@ -69,7 +79,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         bool value,
         MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
-        new (MetadataKind.Boolean, new MetadataPayload(value ? 1L : 0L), annotation);
+        new(MetadataKind.Boolean, new MetadataPayload(value ? 1L : 0L), annotation);
 
     /// <summary>
     /// Creates a metadata value from a signed 64-bit integer.
@@ -78,7 +88,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         long value,
         MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
-        new (MetadataKind.Int64, new MetadataPayload(value), annotation);
+        new(MetadataKind.Int64, new MetadataPayload(value), annotation);
 
     /// <summary>
     /// Creates a metadata value from a double-precision floating-point number.
@@ -115,7 +125,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         decimal value,
         MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
-        new (MetadataKind.Decimal, new MetadataPayload(value), annotation);
+        new(MetadataKind.Decimal, new MetadataPayload(value), annotation);
 
     /// <summary>
     /// Creates a metadata value from an unsigned 64-bit integer.
@@ -124,7 +134,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         ulong value,
         MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
-        new (MetadataKind.UInt64, MetadataPayload.FromUInt64(value), annotation);
+        new(MetadataKind.UInt64, MetadataPayload.FromUInt64(value), annotation);
 
     /// <summary>
     /// Creates a metadata value from a single-precision floating-point number.
@@ -146,7 +156,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         char value,
         MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
-        new (MetadataKind.Char, new MetadataPayload(value), annotation);
+        new(MetadataKind.Char, new MetadataPayload(value), annotation);
 
     /// <summary>
     /// <para>
@@ -182,7 +192,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         DateTimeOffset value,
         MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
-        new (MetadataKind.DateTimeOffset, new MetadataPayload(value), annotation);
+        new(MetadataKind.DateTimeOffset, new MetadataPayload(value), annotation);
 
 #if NET10_0_OR_GREATER
     /// <summary>
@@ -211,7 +221,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         TimeSpan value,
         MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
-        new (MetadataKind.TimeSpan, new MetadataPayload(value.Ticks), annotation);
+        new(MetadataKind.TimeSpan, new MetadataPayload(value.Ticks), annotation);
 
     /// <summary>
     /// Creates a metadata value from a globally unique identifier.
@@ -220,7 +230,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         Guid value,
         MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
-        new (MetadataKind.Guid, new MetadataPayload(value), annotation);
+        new(MetadataKind.Guid, new MetadataPayload(value), annotation);
 
     /// <summary>
     /// Creates a metadata value from a URI. A null URI becomes a null metadata value.
@@ -392,7 +402,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
 
         if (TryGetRawString(out var text) &&
             long.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value) &&
-            string.Equals(value.ToString(CultureInfo.InvariantCulture), text, StringComparison.Ordinal))
+            IsCanonical(value, text))
         {
             return true;
         }
@@ -490,7 +500,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
 
         if (TryGetRawString(out var text) &&
             ulong.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out value) &&
-            string.Equals(FormatUInt64(value), text, StringComparison.Ordinal))
+            IsCanonical(value, text))
         {
             return true;
         }
@@ -512,7 +522,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
             float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) &&
             !float.IsNaN(value) &&
             !float.IsInfinity(value) &&
-            string.Equals(FormatSingle(value), text, StringComparison.Ordinal))
+            IsCanonical(value, text))
         {
             return true;
         }
@@ -560,7 +570,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
                 out value
             ) &&
             value.Kind != DateTimeKind.Local &&
-            string.Equals(FormatDateTime(value), text, StringComparison.Ordinal))
+            IsCanonical(value, text))
         {
             return true;
         }
@@ -600,13 +610,13 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     }
 
     private static bool IsCanonicalDateTimeOffsetText(DateTimeOffset value, string text) =>
-        string.Equals(FormatDateTimeOffset(value), text, StringComparison.Ordinal) ||
+        IsCanonical(value, text) ||
         // A zero offset is also written as "Z" by RFC 3339 emitters everywhere, including this library's own
         // DateTime kind, so it is accepted although the DateTimeOffset writer never produces it. Text without
         // any designator is still rejected: it parses against the reading machine's local offset and matches
         // neither form.
         (value.Offset == TimeSpan.Zero &&
-         string.Equals(FormatDateTime(value.UtcDateTime), text, StringComparison.Ordinal));
+         IsCanonical(value.UtcDateTime, text));
 
 #if NET10_0_OR_GREATER
     /// <summary>Attempts to get a date or parse its canonical RFC 3339 full-date encoding.</summary>
@@ -634,7 +644,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
                 DateTimeStyles.None,
                 out value
             ) &&
-            string.Equals(FormatDateOnly(value.DayNumber), text, StringComparison.Ordinal))
+            IsCanonicalDate(value.DayNumber, text))
         {
             return true;
         }
@@ -667,7 +677,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
                 DateTimeStyles.None,
                 out value
             ) &&
-            string.Equals(FormatTimeOnly(value.Ticks), text, StringComparison.Ordinal))
+            IsCanonicalTime(value.Ticks, text))
         {
             return true;
         }
@@ -691,7 +701,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
             try
             {
                 value = XmlConvert.ToTimeSpan(text);
-                if (string.Equals(FormatTimeSpan(value), text, StringComparison.Ordinal))
+                if (IsCanonical(value, text))
                 {
                     return true;
                 }
@@ -719,7 +729,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
 
         if (TryGetRawString(out var text) &&
             Guid.TryParseExact(text, "D", out value) &&
-            string.Equals(FormatGuid(value), text, StringComparison.Ordinal))
+            IsCanonical(value, text))
         {
             return true;
         }
@@ -806,24 +816,13 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     public string ToCanonicalString() =>
         Kind switch
         {
-            MetadataKind.Null => "null",
-            MetadataKind.Boolean => _payload.Int64 != 0 ? "true" : "false",
-            MetadataKind.Int64 => _payload.Int64.ToString(CultureInfo.InvariantCulture),
-            MetadataKind.Double => FormatDouble(_payload.Float64),
+            MetadataKind.Null => NullCanonicalText,
+            MetadataKind.Boolean => _payload.Int64 != 0 ? TrueCanonicalText : FalseCanonicalText,
             MetadataKind.String => GetRequiredReference<string>(),
-            MetadataKind.Decimal => GetRequiredReference<decimal>().ToString(CultureInfo.InvariantCulture),
-            MetadataKind.UInt64 => FormatUInt64(_payload.UInt64),
-            MetadataKind.Single => FormatSingle((float) _payload.Float64),
-            MetadataKind.Char => ((char) _payload.Int64).ToString(),
-            MetadataKind.DateTime => FormatStoredDateTime(_payload.Int64),
-            MetadataKind.DateTimeOffset => FormatDateTimeOffset(GetRequiredReference<DateTimeOffset>()),
-            MetadataKind.DateOnly => FormatDateOnly(_payload.Int64),
-            MetadataKind.TimeOnly => FormatTimeOnly(_payload.Int64),
-            MetadataKind.TimeSpan => FormatTimeSpan(new TimeSpan(_payload.Int64)),
-            MetadataKind.Guid => FormatGuid(GetRequiredReference<Guid>()),
             MetadataKind.Uri => GetRequiredReference<Uri>().OriginalString,
             MetadataKind.Array => ThrowComplexCanonicalText(MetadataKind.Array),
-            MetadataKind.Object => ThrowComplexCanonicalText(MetadataKind.Object)
+            MetadataKind.Object => ThrowComplexCanonicalText(MetadataKind.Object),
+            _ => FormatBoundedCanonical(this)
         };
 
     /// <summary>
@@ -831,40 +830,187 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     /// </summary>
     /// <param name="destination">The destination for the encoded characters.</param>
     /// <param name="charsWritten">The number of characters written.</param>
-    /// <returns><see langword="true" /> when the destination was large enough; otherwise, <see langword="false" />.</returns>
+    /// <returns>
+    /// <see langword="true" /> when the destination was large enough; otherwise, <see langword="false" />.
+    /// On failure, <paramref name="charsWritten" /> is zero and the destination is unchanged.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">The value is complex or has a malformed payload.</exception>
     public bool TryFormatCanonical(Span<char> destination, out int charsWritten)
     {
-        if (Kind == MetadataKind.Double)
+        switch (Kind)
         {
-            return CanonicalFloatingPointFormatter.TryFormat(
-                _payload.Float64,
-                destination,
-                out charsWritten
-            );
+            case MetadataKind.Null:
+                return TryCopyAscii(NullCanonicalText, destination, out charsWritten);
+            case MetadataKind.Boolean:
+                return TryCopyAscii(
+                    _payload.Int64 != 0 ? TrueCanonicalText : FalseCanonicalText,
+                    destination,
+                    out charsWritten
+                );
+            case MetadataKind.Int64:
+                return CanonicalTextFormatter.TryFormat(_payload.Int64, destination, out charsWritten);
+            case MetadataKind.Double:
+                return CanonicalTextFormatter.TryFormat(
+                    _payload.Float64,
+                    destination,
+                    out charsWritten
+                );
+            case MetadataKind.String:
+                return TryCopyText(GetRequiredReference<string>(), destination, out charsWritten);
+            case MetadataKind.Decimal:
+                return CanonicalTextFormatter.TryFormat(
+                    GetRequiredReference<decimal>(),
+                    destination,
+                    out charsWritten
+                );
+            case MetadataKind.UInt64:
+                return CanonicalTextFormatter.TryFormat(_payload.UInt64, destination, out charsWritten);
+            case MetadataKind.Single:
+                return CanonicalTextFormatter.TryFormat(
+                    (float) _payload.Float64,
+                    destination,
+                    out charsWritten
+                );
+            case MetadataKind.Char:
+                return CanonicalTextFormatter.TryFormat(
+                    (char) _payload.Int64,
+                    destination,
+                    out charsWritten
+                );
+            case MetadataKind.DateTime:
+                return TryFormatStoredDateTime(_payload.Int64, destination, out charsWritten);
+            case MetadataKind.DateTimeOffset:
+                return CanonicalTextFormatter.TryFormat(
+                    GetRequiredReference<DateTimeOffset>(),
+                    destination,
+                    out charsWritten
+                );
+            case MetadataKind.DateOnly:
+                return TryFormatStoredDate(_payload.Int64, destination, out charsWritten);
+            case MetadataKind.TimeOnly:
+                return TryFormatStoredTime(_payload.Int64, destination, out charsWritten);
+            case MetadataKind.TimeSpan:
+                return CanonicalTextFormatter.TryFormat(
+                    new TimeSpan(_payload.Int64),
+                    destination,
+                    out charsWritten
+                );
+            case MetadataKind.Guid:
+                return CanonicalTextFormatter.TryFormat(
+                    GetRequiredReference<Guid>(),
+                    destination,
+                    out charsWritten
+                );
+            case MetadataKind.Uri:
+                return TryCopyText(
+                    GetRequiredReference<Uri>().OriginalString,
+                    destination,
+                    out charsWritten
+                );
+            case MetadataKind.Array:
+            case MetadataKind.Object:
+                return ThrowComplexCanonicalFormat(Kind, out charsWritten);
+            default:
+                throw new InvalidOperationException($"Kind '{Kind}' does not have a canonical text encoding.");
         }
+    }
 
-        if (Kind == MetadataKind.Single)
+    /// <summary>
+    /// Attempts to write the replacement-fallback UTF-8 encoding of the canonical text to the supplied destination.
+    /// </summary>
+    /// <param name="destination">The destination for the encoded bytes.</param>
+    /// <param name="bytesWritten">The number of bytes written.</param>
+    /// <returns>
+    /// <see langword="true" /> when the destination was large enough; otherwise, <see langword="false" />.
+    /// On failure, <paramref name="bytesWritten" /> is zero and the destination is unchanged.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">The value is complex or has a malformed payload.</exception>
+    public bool TryFormatCanonicalUtf8(Span<byte> destination, out int bytesWritten)
+    {
+        switch (Kind)
         {
-            return CanonicalFloatingPointFormatter.TryFormat(
-                (float) _payload.Float64,
-                destination,
-                out charsWritten
-            );
+            case MetadataKind.Null:
+                return TryCopyAscii(NullCanonicalText, destination, out bytesWritten);
+            case MetadataKind.Boolean:
+                return TryCopyAscii(
+                    _payload.Int64 != 0 ? TrueCanonicalText : FalseCanonicalText,
+                    destination,
+                    out bytesWritten
+                );
+            case MetadataKind.Int64:
+                return CanonicalTextFormatter.TryFormatUtf8(_payload.Int64, destination, out bytesWritten);
+            case MetadataKind.Double:
+                return CanonicalTextFormatter.TryFormatUtf8(
+                    _payload.Float64,
+                    destination,
+                    out bytesWritten
+                );
+            case MetadataKind.String:
+                return CanonicalTextFormatter.TryFormatUtf8(
+                    GetRequiredReference<string>().AsSpan(),
+                    destination,
+                    out bytesWritten
+                );
+            case MetadataKind.Decimal:
+                return CanonicalTextFormatter.TryFormatUtf8(
+                    GetRequiredReference<decimal>(),
+                    destination,
+                    out bytesWritten
+                );
+            case MetadataKind.UInt64:
+                return CanonicalTextFormatter.TryFormatUtf8(_payload.UInt64, destination, out bytesWritten);
+            case MetadataKind.Single:
+                return CanonicalTextFormatter.TryFormatUtf8(
+                    (float) _payload.Float64,
+                    destination,
+                    out bytesWritten
+                );
+            case MetadataKind.Char:
+                return CanonicalTextFormatter.TryFormatUtf8(
+                    (char) _payload.Int64,
+                    destination,
+                    out bytesWritten
+                );
+            case MetadataKind.DateTime:
+                return TryFormatStoredDateTimeUtf8(_payload.Int64, destination, out bytesWritten);
+            case MetadataKind.DateTimeOffset:
+                return CanonicalTextFormatter.TryFormatUtf8(
+                    GetRequiredReference<DateTimeOffset>(),
+                    destination,
+                    out bytesWritten
+                );
+            case MetadataKind.DateOnly:
+                return TryFormatStoredDateUtf8(_payload.Int64, destination, out bytesWritten);
+            case MetadataKind.TimeOnly:
+                return TryFormatStoredTimeUtf8(_payload.Int64, destination, out bytesWritten);
+            case MetadataKind.TimeSpan:
+                return CanonicalTextFormatter.TryFormatUtf8(
+                    new TimeSpan(_payload.Int64),
+                    destination,
+                    out bytesWritten
+                );
+            case MetadataKind.Guid:
+                return CanonicalTextFormatter.TryFormatUtf8(
+                    GetRequiredReference<Guid>(),
+                    destination,
+                    out bytesWritten
+                );
+            case MetadataKind.Uri:
+                return CanonicalTextFormatter.TryFormatUtf8(
+                    GetRequiredReference<Uri>().OriginalString.AsSpan(),
+                    destination,
+                    out bytesWritten
+                );
+            case MetadataKind.Array:
+            case MetadataKind.Object:
+                return ThrowComplexCanonicalFormat(Kind, out bytesWritten);
+            default:
+                throw new InvalidOperationException($"Kind '{Kind}' does not have a canonical text encoding.");
         }
-
-        var canonicalText = ToCanonicalString();
-        if (canonicalText.AsSpan().TryCopyTo(destination))
-        {
-            charsWritten = canonicalText.Length;
-            return true;
-        }
-
-        charsWritten = 0;
-        return false;
     }
 
     internal MetadataValue WithAnnotation(MetadataValueAnnotation annotation) =>
-        new (Kind, _payload, annotation);
+        new(Kind, _payload, annotation);
 
     /// <inheritdoc />
     public bool Equals(MetadataValue other)
@@ -1017,11 +1163,113 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         }
     }
 
-    private static string FormatUInt64(ulong value) => value.ToString(CultureInfo.InvariantCulture);
+    private static string FormatBoundedCanonical(MetadataValue value)
+    {
+        Span<char> destination = stackalloc char[MaximumPrimitiveCanonicalLength];
+        value.TryFormatCanonical(destination, out var charsWritten);
+        return destination.Slice(0, charsWritten).ToString();
+    }
 
-    private static string FormatSingle(float value) => CanonicalFloatingPointFormatter.Format(value);
+    private static bool TryCopyText(
+        string text,
+        Span<char> destination,
+        out int charsWritten
+    )
+    {
+        if (!text.AsSpan().TryCopyTo(destination))
+        {
+            charsWritten = 0;
+            return false;
+        }
 
-    private static string FormatDouble(double value) => CanonicalFloatingPointFormatter.Format(value);
+        charsWritten = text.Length;
+        return true;
+    }
+
+    private static bool TryCopyAscii<TCodeUnit>(
+        string text,
+        Span<TCodeUnit> destination,
+        out int unitsWritten
+    )
+        where TCodeUnit : unmanaged
+    {
+        if (destination.Length < text.Length)
+        {
+            unitsWritten = 0;
+            return false;
+        }
+
+        for (var index = 0; index < text.Length; index++)
+        {
+            destination[index] = CanonicalCodeUnit.FromAscii<TCodeUnit>((byte) text[index]);
+        }
+
+        unitsWritten = text.Length;
+        return true;
+    }
+
+    private static bool IsCanonical(long value, string text)
+    {
+        Span<char> destination = stackalloc char[CanonicalTextFormatter.MaximumInt64Length];
+        return CanonicalTextFormatter.TryFormat(value, destination, out var charsWritten) &&
+               destination.Slice(0, charsWritten).SequenceEqual(text.AsSpan());
+    }
+
+    private static bool IsCanonical(ulong value, string text)
+    {
+        Span<char> destination = stackalloc char[CanonicalTextFormatter.MaximumUInt64Length];
+        return CanonicalTextFormatter.TryFormat(value, destination, out var charsWritten) &&
+               destination.Slice(0, charsWritten).SequenceEqual(text.AsSpan());
+    }
+
+    private static bool IsCanonical(float value, string text)
+    {
+        Span<char> destination = stackalloc char[CanonicalTextFormatter.MaximumSingleLength];
+        return CanonicalTextFormatter.TryFormat(value, destination, out var charsWritten) &&
+               destination.Slice(0, charsWritten).SequenceEqual(text.AsSpan());
+    }
+
+    private static bool IsCanonical(DateTime value, string text)
+    {
+        Span<char> destination = stackalloc char[CanonicalTextFormatter.MaximumDateTimeLength];
+        return CanonicalTextFormatter.TryFormat(value, destination, out var charsWritten) &&
+               destination.Slice(0, charsWritten).SequenceEqual(text.AsSpan());
+    }
+
+    private static bool IsCanonical(DateTimeOffset value, string text)
+    {
+        Span<char> destination = stackalloc char[CanonicalTextFormatter.MaximumDateTimeOffsetLength];
+        return CanonicalTextFormatter.TryFormat(value, destination, out var charsWritten) &&
+               destination.Slice(0, charsWritten).SequenceEqual(text.AsSpan());
+    }
+
+    private static bool IsCanonicalDate(int dayNumber, string text)
+    {
+        Span<char> destination = stackalloc char[CanonicalTextFormatter.MaximumDateLength];
+        return CanonicalTextFormatter.TryFormatDate(dayNumber, destination, out var charsWritten) &&
+               destination.Slice(0, charsWritten).SequenceEqual(text.AsSpan());
+    }
+
+    private static bool IsCanonicalTime(long ticks, string text)
+    {
+        Span<char> destination = stackalloc char[CanonicalTextFormatter.MaximumTimeLength];
+        return CanonicalTextFormatter.TryFormatTime(ticks, destination, out var charsWritten) &&
+               destination.Slice(0, charsWritten).SequenceEqual(text.AsSpan());
+    }
+
+    private static bool IsCanonical(TimeSpan value, string text)
+    {
+        Span<char> destination = stackalloc char[CanonicalTextFormatter.MaximumTimeSpanLength];
+        return CanonicalTextFormatter.TryFormat(value, destination, out var charsWritten) &&
+               destination.Slice(0, charsWritten).SequenceEqual(text.AsSpan());
+    }
+
+    private static bool IsCanonical(Guid value, string text)
+    {
+        Span<char> destination = stackalloc char[CanonicalTextFormatter.MaximumGuidLength];
+        return CanonicalTextFormatter.TryFormat(value, destination, out var charsWritten) &&
+               destination.Slice(0, charsWritten).SequenceEqual(text.AsSpan());
+    }
 
     private static bool TryReadStoredDateTime(long binaryValue, out DateTime value)
     {
@@ -1047,47 +1295,88 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         }
     }
 
-    private static string FormatStoredDateTime(long binaryValue) =>
+    private static bool TryFormatStoredDateTime(
+        long binaryValue,
+        Span<char> destination,
+        out int charsWritten
+    ) =>
         TryReadStoredDateTime(binaryValue, out var value) ?
-            FormatDateTime(value) :
+            CanonicalTextFormatter.TryFormat(value, destination, out charsWritten) :
             throw new InvalidOperationException("The DateTime metadata payload is invalid.");
 
-    private static string FormatDateTime(DateTime value) =>
-        value.ToString(DateTimeFormat, CultureInfo.InvariantCulture);
+    private static bool TryFormatStoredDateTimeUtf8(
+        long binaryValue,
+        Span<byte> destination,
+        out int bytesWritten
+    ) =>
+        TryReadStoredDateTime(binaryValue, out var value) ?
+            CanonicalTextFormatter.TryFormatUtf8(value, destination, out bytesWritten) :
+            throw new InvalidOperationException("The DateTime metadata payload is invalid.");
 
-    private static string FormatDateTimeOffset(DateTimeOffset value) =>
-        value.ToString(DateTimeOffsetFormat, CultureInfo.InvariantCulture);
-
-    private static string FormatDateOnly(long dayNumber)
+    private static bool TryFormatStoredDate(
+        long dayNumber,
+        Span<char> destination,
+        out int charsWritten
+    )
     {
-        try
+        if ((ulong) dayNumber > CanonicalTextFormatter.MaximumDayNumber)
         {
-            var ticks = checked(dayNumber * TimeSpan.TicksPerDay);
-            return new DateTime(ticks, DateTimeKind.Unspecified).ToString(
-                DateOnlyFormat,
-                CultureInfo.InvariantCulture
-            );
+            throw new InvalidOperationException("The DateOnly metadata payload is invalid.");
         }
-        catch (Exception exception) when (exception is ArgumentOutOfRangeException or OverflowException)
-        {
-            throw new InvalidOperationException("The DateOnly metadata payload is invalid.", exception);
-        }
+
+        return CanonicalTextFormatter.TryFormatDate((int) dayNumber, destination, out charsWritten);
     }
 
-    private static string FormatTimeOnly(long ticks)
+    private static bool TryFormatStoredDateUtf8(
+        long dayNumber,
+        Span<byte> destination,
+        out int bytesWritten
+    )
     {
-        if (ticks < 0 || ticks >= TimeSpan.TicksPerDay)
+        if ((ulong) dayNumber > CanonicalTextFormatter.MaximumDayNumber)
+        {
+            throw new InvalidOperationException("The DateOnly metadata payload is invalid.");
+        }
+
+        return CanonicalTextFormatter.TryFormatDateUtf8((int) dayNumber, destination, out bytesWritten);
+    }
+
+    private static bool TryFormatStoredTime(
+        long ticks,
+        Span<char> destination,
+        out int charsWritten
+    )
+    {
+        if ((ulong) ticks > (ulong) CanonicalTextFormatter.MaximumTimeOfDayTicks)
         {
             throw new InvalidOperationException("The TimeOnly metadata payload is invalid.");
         }
 
-        return new DateTime(ticks, DateTimeKind.Unspecified).ToString(TimeOnlyFormat, CultureInfo.InvariantCulture);
+        return CanonicalTextFormatter.TryFormatTime(ticks, destination, out charsWritten);
     }
 
-    private static string FormatTimeSpan(TimeSpan value) => XmlConvert.ToString(value);
+    private static bool TryFormatStoredTimeUtf8(
+        long ticks,
+        Span<byte> destination,
+        out int bytesWritten
+    )
+    {
+        if ((ulong) ticks > (ulong) CanonicalTextFormatter.MaximumTimeOfDayTicks)
+        {
+            throw new InvalidOperationException("The TimeOnly metadata payload is invalid.");
+        }
 
-    // The "D" format is specified to produce lowercase hexadecimal digits, so no additional lowering is needed.
-    private static string FormatGuid(Guid value) => value.ToString("D", CultureInfo.InvariantCulture);
+        return CanonicalTextFormatter.TryFormatTimeUtf8(ticks, destination, out bytesWritten);
+    }
+
+    private static bool ThrowComplexCanonicalFormat<TCodeUnit>(
+        MetadataKind kind,
+        out TCodeUnit unitsWritten
+    )
+    {
+        unitsWritten = default!;
+        throw new InvalidOperationException($"Kind '{kind}' does not have a primitive canonical text encoding.");
+    }
 
     private static string ThrowComplexCanonicalText(MetadataKind kind) =>
         throw new InvalidOperationException($"Kind '{kind}' does not have a primitive canonical text encoding.");
