@@ -148,4 +148,24 @@ public static class DiagnosticDescriptors
         isEnabledByDefault: true,
         helpLinkUri: HelpLinkBase
     );
+
+    public static readonly DiagnosticDescriptor MetadataValueCannotBeReconstructed = new (
+        "LPRSG0015",
+        "Validation metadata value cannot be reconstructed",
+        "Validation rule '{0}' metadata argument '{1}' cannot be reconstructed for an OpenAPI error example",
+        Category,
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        helpLinkUri: HelpLinkBase
+    );
+
+    public static readonly DiagnosticDescriptor MultiFileMetadataFieldUnsupported = new (
+        "LPRSG0016",
+        "Multi-file validation metadata field resolution is unsupported",
+        "Validation rule '{0}' metadata argument '{1}' references a static readonly field that requires unsupported multi-file resolution; declare it in the validator's file or write it inline",
+        Category,
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        helpLinkUri: HelpLinkBase
+    );
 }

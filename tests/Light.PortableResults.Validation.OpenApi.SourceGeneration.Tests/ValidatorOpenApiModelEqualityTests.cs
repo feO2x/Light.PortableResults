@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 using Xunit;
 
 namespace Light.PortableResults.Validation.OpenApi.SourceGeneration.Tests;
@@ -75,8 +77,53 @@ public sealed class ValidatorOpenApiAnalysisTests
         first.Equals(second).Should().BeFalse();
     }
 
+    [Fact]
+    public void Equals_ShouldReturnFalseWhenDiagnosticSourcePathDiffers()
+    {
+        var first = new ValidatorOpenApiAnalysis(
+            "Hint.g.cs",
+            "source",
+            CreateDiagnostics("a", "First.cs", 1)
+        );
+        var second = new ValidatorOpenApiAnalysis(
+            "Hint.g.cs",
+            "source",
+            CreateDiagnostics("a", "Second.cs", 1)
+        );
+
+        first.Equals(second).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Equals_ShouldReturnFalseWhenDiagnosticSourceSpanDiffers()
+    {
+        var first = new ValidatorOpenApiAnalysis(
+            "Hint.g.cs",
+            "source",
+            CreateDiagnostics("a", "Validator.cs", 1)
+        );
+        var second = new ValidatorOpenApiAnalysis(
+            "Hint.g.cs",
+            "source",
+            CreateDiagnostics("a", "Validator.cs", 2)
+        );
+
+        first.Equals(second).Should().BeFalse();
+    }
+
     private static ImmutableArray<Diagnostic> CreateDiagnostics(string argument) =>
         [Diagnostic.Create(Descriptor, Location.None, argument)];
+
+    private static ImmutableArray<Diagnostic> CreateDiagnostics(
+        string argument,
+        string path,
+        int spanStart
+    )
+    {
+        var syntaxTree = CSharpSyntaxTree.ParseText("abcd", path: path);
+        var location = Location.Create(syntaxTree, new TextSpan(spanStart, 1));
+        return [Diagnostic.Create(Descriptor, location, argument)];
+    }
 }
 
 public sealed class RuleSchemaKeyComparerTests

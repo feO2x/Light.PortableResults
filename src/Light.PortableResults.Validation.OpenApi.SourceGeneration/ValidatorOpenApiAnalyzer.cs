@@ -72,11 +72,13 @@ public static class ValidatorOpenApiAnalyzer
         }
 
         var semanticModel = compilation.GetSemanticModel(methodDeclaration.SyntaxTree);
+        var metadataValueReconstructor = new MetadataValueReconstructor(compilation);
         var sourceParameterName =
             performValidation.Parameters.Length >= 3 ? performValidation.Parameters[2].Name : null;
         var rules = ImmutableArray.CreateBuilder<RuleCallModel>();
         AnalyzePerformValidationBody(
             semanticModel,
+            metadataValueReconstructor,
             methodDeclaration,
             sourceParameterName,
             rules,
@@ -204,6 +206,7 @@ public static class ValidatorOpenApiAnalyzer
 
     private static void AnalyzePerformValidationBody(
         SemanticModel semanticModel,
+        MetadataValueReconstructor metadataValueReconstructor,
         MethodDeclarationSyntax methodDeclaration,
         string? sourceParameterName,
         ICollection<RuleCallModel> rules,
@@ -223,6 +226,7 @@ public static class ValidatorOpenApiAnalyzer
             {
                 AnalyzeCheckExpression(
                     semanticModel,
+                    metadataValueReconstructor,
                     expression,
                     sourceParameterName,
                     rules,
@@ -238,6 +242,7 @@ public static class ValidatorOpenApiAnalyzer
 
     private static void AnalyzeCheckExpression(
         SemanticModel semanticModel,
+        MetadataValueReconstructor metadataValueReconstructor,
         ExpressionSyntax expression,
         string? sourceParameterName,
         ICollection<RuleCallModel> rules,
@@ -294,6 +299,7 @@ public static class ValidatorOpenApiAnalyzer
 
             var rule = CreateRuleCall(
                 semanticModel,
+                metadataValueReconstructor,
                 invocation,
                 symbol,
                 ruleAttribute,
@@ -311,6 +317,7 @@ public static class ValidatorOpenApiAnalyzer
 
     private static RuleCallModel? CreateRuleCall(
         SemanticModel semanticModel,
+        MetadataValueReconstructor metadataValueReconstructor,
         InvocationExpressionSyntax invocation,
         IMethodSymbol symbol,
         AttributeData ruleAttribute,
@@ -337,6 +344,7 @@ public static class ValidatorOpenApiAnalyzer
         }
 
         var metadataValues = ImmutableArray.CreateBuilder<MetadataValueModel>();
+        var diagnosedArguments = new HashSet<string>(StringComparer.Ordinal);
         foreach (var metadataAttribute in definitionSymbol.GetAttributes()
                     .Where(static attribute => IsAttribute(attribute, KnownTypeNames.ValidationRuleMetadataAttribute)))
         {
@@ -355,13 +363,16 @@ public static class ValidatorOpenApiAnalyzer
             {
                 if (!TryResolveArgumentConstant(
                         semanticModel,
+                        metadataValueReconstructor,
                         invocation,
                         symbol,
                         sourceArgument!,
                         cancellationToken,
                         out var value,
                         out var valueTypeName,
-                        out var hasConstantValue
+                        out var hasConstantValue,
+                        out var argument,
+                        out var reconstructionResult
                     ))
                 {
                     diagnostics.Add(
@@ -373,6 +384,24 @@ public static class ValidatorOpenApiAnalyzer
                         )
                     );
                     return null;
+                }
+
+                if (!hasConstantValue &&
+                    argument is not null &&
+                    diagnosedArguments.Add(sourceArgument!))
+                {
+                    var descriptor =
+                        reconstructionResult == MetadataReconstructionResult.MultiFileFieldUnsupported ?
+                            DiagnosticDescriptors.MultiFileMetadataFieldUnsupported :
+                            DiagnosticDescriptors.MetadataValueCannotBeReconstructed;
+                    diagnostics.Add(
+                        Diagnostic.Create(
+                            descriptor,
+                            argument.GetLocation(),
+                            symbol.Name,
+                            sourceArgument
+                        )
+                    );
                 }
 
                 metadataValues.Add(new MetadataValueModel(metadataKey!, value, hasConstantValue, valueTypeName));
@@ -616,6 +645,7 @@ public static class ValidatorOpenApiAnalyzer
         return value switch
         {
             null => string.Empty,
+            ReconstructedMetadataValue reconstructedValue => reconstructedValue.ToCanonicalString(),
             IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
             _ => value.ToString() ?? string.Empty
         };
@@ -762,18 +792,23 @@ public static class ValidatorOpenApiAnalyzer
 
     private static bool TryResolveArgumentConstant(
         SemanticModel semanticModel,
+        MetadataValueReconstructor metadataValueReconstructor,
         InvocationExpressionSyntax invocation,
         IMethodSymbol symbol,
         string sourceArgument,
         CancellationToken cancellationToken,
         out object? value,
         out string typeName,
-        out bool hasConstantValue
+        out bool hasConstantValue,
+        out ArgumentSyntax? resolvedArgument,
+        out MetadataReconstructionResult reconstructionResult
     )
     {
         value = null;
         typeName = "object";
         hasConstantValue = false;
+        resolvedArgument = null;
+        reconstructionResult = MetadataReconstructionResult.Unsupported;
 
         var parameterIndex = -1;
         for (var i = 0; i < symbol.Parameters.Length; i++)
@@ -806,10 +841,26 @@ public static class ValidatorOpenApiAnalyzer
             }
 
             var constant = semanticModel.GetConstantValue(argument.Expression, cancellationToken);
+            resolvedArgument = argument;
             if (constant.HasValue)
             {
                 value = constant.Value;
                 hasConstantValue = true;
+                reconstructionResult = MetadataReconstructionResult.Success;
+            }
+            else
+            {
+                reconstructionResult = metadataValueReconstructor.TryReconstruct(
+                    semanticModel,
+                    argument.Expression,
+                    cancellationToken,
+                    out var reconstructedValue
+                );
+                if (reconstructionResult == MetadataReconstructionResult.Success)
+                {
+                    value = reconstructedValue;
+                    hasConstantValue = true;
+                }
             }
 
             return true;
@@ -820,6 +871,7 @@ public static class ValidatorOpenApiAnalyzer
         {
             value = parameter.ExplicitDefaultValue;
             hasConstantValue = true;
+            reconstructionResult = MetadataReconstructionResult.Success;
         }
 
         return true;
@@ -1018,22 +1070,6 @@ public static class ValidatorOpenApiAnalyzer
         }
 
         return char.ToLowerInvariant(name[0]) + name.Substring(1);
-    }
-
-    private readonly struct MessageTemplatePart
-    {
-        private MessageTemplatePart(string text, string? placeholder)
-        {
-            Text = text;
-            Placeholder = placeholder;
-        }
-
-        public string Text { get; }
-        public string? Placeholder { get; }
-
-        public static MessageTemplatePart Literal(string text) => new (text, null);
-
-        public static MessageTemplatePart PlaceholderValue(string placeholder) => new (string.Empty, placeholder);
     }
 
     private static string? ResolveTypedValueTypeName(IMethodSymbol symbol, RuleMetadataShape shape)
@@ -1558,5 +1594,21 @@ public static class ValidatorOpenApiAnalyzer
             typeSymbol.ContainingNamespace.ToDisplayString() + "." :
             string.Empty;
         return containingNamespace + typeSymbol.MetadataName;
+    }
+
+    private readonly struct MessageTemplatePart
+    {
+        private MessageTemplatePart(string text, string? placeholder)
+        {
+            Text = text;
+            Placeholder = placeholder;
+        }
+
+        public string Text { get; }
+        public string? Placeholder { get; }
+
+        public static MessageTemplatePart Literal(string text) => new (text, null);
+
+        public static MessageTemplatePart PlaceholderValue(string placeholder) => new (string.Empty, placeholder);
     }
 }
