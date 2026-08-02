@@ -519,7 +519,7 @@ public sealed class ValidationErrorDefinitionTests
     }
 
     [Fact]
-    public void CountEqualityStringEnumAndDecimalDefinitions_ShouldExposeStableProviders()
+    public void CountEqualityStringEnumDecimalAndGuidDefinitions_ShouldExposeStableProviders()
     {
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var readOnlyContext = context.AsReadOnly();
@@ -538,6 +538,7 @@ public sealed class ValidationErrorDefinitionTests
         var lettersAndDigitsOnly = BuiltInValidationErrorDefinitions.LettersAndDigitsOnly;
         var enumValue = BuiltInValidationErrorDefinitions.IsInEnum<TestStatus>();
         var precisionScale = BuiltInValidationErrorDefinitions.PrecisionScale(4, 2, ignoreTrailingZeros: true);
+        var uuidV7 = BuiltInValidationErrorDefinitions.UuidV7;
 
         count.TryGetStableMessageProvider(readOnlyContext, out var countProvider).Should().BeTrue();
         minCount.TryGetStableMessageProvider(readOnlyContext, out var minCountProvider).Should().BeTrue();
@@ -555,6 +556,7 @@ public sealed class ValidationErrorDefinitionTests
            .BeTrue();
         enumValue.TryGetStableMessageProvider(readOnlyContext, out var enumProvider).Should().BeTrue();
         precisionScale.TryGetStableMessageProvider(readOnlyContext, out var precisionScaleProvider).Should().BeTrue();
+        uuidV7.TryGetStableMessageProvider(readOnlyContext, out var uuidV7Provider).Should().BeTrue();
 
         countProvider.Should().BeSameAs(context.ErrorTemplates.Count);
         minCountProvider.Should().BeSameAs(context.ErrorTemplates.MinCount);
@@ -571,6 +573,7 @@ public sealed class ValidationErrorDefinitionTests
         lettersDigitsProvider.Should().BeSameAs(context.ErrorTemplates.LettersAndDigitsOnly);
         enumProvider.Should().BeSameAs(context.ErrorTemplates.Enum);
         precisionScaleProvider.Should().BeSameAs(context.ErrorTemplates.PrecisionScale);
+        uuidV7Provider.Should().BeSameAs(context.ErrorTemplates.UuidV7);
     }
 
     [Fact]
@@ -706,6 +709,16 @@ public sealed class ValidationErrorDefinitionTests
         var messageContext = context.Check("A1", target: "code", displayName: "Code").CreateMessageContext();
         var precisionScale = BuiltInValidationErrorDefinitions.PrecisionScale(4, 2, ignoreTrailingZeros: true);
         precisionScale.ProvideMessage(messageContext).Text.Should().ContainAll("4", "2");
+    }
+
+    [Fact]
+    public void UuidV7_ShouldProvideExpectedMessage()
+    {
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
+        var messageContext = context.Check(Guid.Empty, target: "orderId", displayName: "Order ID")
+           .CreateMessageContext();
+        var uuidV7 = BuiltInValidationErrorDefinitions.UuidV7;
+        uuidV7.ProvideMessage(messageContext).Text.Should().ContainAll("Order ID", "version 7 UUID");
     }
 
     [Fact]

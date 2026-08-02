@@ -12,6 +12,7 @@
       - Typed comparison and range helper metadata contracts for endpoint-specific narrowing.
       - Opt-in source generator for deriving Minimal API and MVC validation OpenAPI metadata from synchronous validators.
       - Native AOT compatible.
+      - Registers a built-in metadata-free contract for the new UuidV7 validation error code.
     </PackageReleaseNotes>
   </PropertyGroup>
 

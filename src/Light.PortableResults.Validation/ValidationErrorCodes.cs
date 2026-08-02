@@ -59,6 +59,8 @@ public static class ValidationErrorCodes
     public const string DigitsOnly = "DigitsOnly";
     /// <summary>Validation error code for letters-and-digits-only failures.</summary>
     public const string LettersAndDigitsOnly = "LettersAndDigitsOnly";
+    /// <summary>Validation error code for version 7 UUID failures.</summary>
+    public const string UuidV7 = "UuidV7";
     /// <summary>Validation error code for predicate-based failures.</summary>
     public const string Predicate = "Predicate";
 }

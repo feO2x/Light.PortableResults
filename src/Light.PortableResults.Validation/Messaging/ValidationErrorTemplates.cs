@@ -81,6 +81,9 @@ public sealed partial record ValidationErrorTemplates
     private static readonly IValidationErrorMessageTemplate DefaultLettersAndDigitsOnlyTemplate =
         new DisplayName(" must contain only letters and digits");
 
+    private static readonly IValidationErrorMessageTemplate DefaultUuidV7Template =
+        new DisplayName(" must be a version 7 UUID");
+
     private static readonly IValidationErrorMessageTemplate<int> DefaultCountTemplate =
         new DisplayNameWithParameter<int>(" must contain exactly ", " item(s)");
 
@@ -136,6 +139,7 @@ public sealed partial record ValidationErrorTemplates
         Email = original.Email;
         DigitsOnly = original.DigitsOnly;
         LettersAndDigitsOnly = original.LettersAndDigitsOnly;
+        UuidV7 = original.UuidV7;
         Count = original.Count;
         MinCount = original.MinCount;
         MaxCount = original.MaxCount;
@@ -367,6 +371,15 @@ public sealed partial record ValidationErrorTemplates
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));
     } = DefaultLettersAndDigitsOnlyTemplate;
+
+    /// <summary>
+    /// Gets the template for version 7 UUID validation failures.
+    /// </summary>
+    public IValidationErrorMessageTemplate UuidV7
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultUuidV7Template;
 
     /// <summary>
     /// Gets the template for exact-count validation failures.

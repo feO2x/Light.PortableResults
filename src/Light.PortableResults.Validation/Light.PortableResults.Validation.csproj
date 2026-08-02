@@ -15,6 +15,7 @@
       - Built-in comparison and range metadata now preserves the typed scalar vocabulary and its canonical
         validation-message encodings.
       - Adds a net10.0 asset so DateOnly and TimeOnly validation boundaries retain their dedicated metadata kinds.
+      - Adds the IsUuidV7 assertion for Check&lt;Guid>, with the UuidV7 error code, a customizable message template, and the standalone GuidExtensions.IsUuidV7 predicate.
     </PackageReleaseNotes>
   </PropertyGroup>
 

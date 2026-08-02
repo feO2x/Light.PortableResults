@@ -126,7 +126,8 @@ public static class BuiltInValidationErrorContracts
             [ValidationErrorCodes.NotNullOrWhiteSpace] = ErrorMetadataContract.NoMetadata,
             [ValidationErrorCodes.Email] = ErrorMetadataContract.NoMetadata,
             [ValidationErrorCodes.DigitsOnly] = ErrorMetadataContract.NoMetadata,
-            [ValidationErrorCodes.LettersAndDigitsOnly] = ErrorMetadataContract.NoMetadata
+            [ValidationErrorCodes.LettersAndDigitsOnly] = ErrorMetadataContract.NoMetadata,
+            [ValidationErrorCodes.UuidV7] = ErrorMetadataContract.NoMetadata
         }.ToFrozenDictionary(StringComparer.Ordinal);
     }
 
