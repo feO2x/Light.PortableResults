@@ -108,7 +108,8 @@ public sealed class BuiltInValidationErrorContractsTests
             ValidationErrorCodes.NotNullOrWhiteSpace,
             ValidationErrorCodes.Email,
             ValidationErrorCodes.DigitsOnly,
-            ValidationErrorCodes.LettersAndDigitsOnly
+            ValidationErrorCodes.LettersAndDigitsOnly,
+            ValidationErrorCodes.UuidV7
         ];
 
         BuiltInValidationErrorContracts.Contracts.Keys.Should()

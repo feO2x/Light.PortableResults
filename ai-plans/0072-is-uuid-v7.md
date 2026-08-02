@@ -8,15 +8,15 @@ UUIDv7 (RFC 9562 §5.7) leads with a 48-bit Unix millisecond timestamp, which ke
 
 ## Acceptance Criteria
 
-- [ ] `Check<Guid>` exposes `IsUuidV7` in both built-in-message and `ErrorOverrides` overloads, each honoring `shortCircuitOnError` and the already-short-circuited state, matching every other built-in assertion.
-- [ ] The same invariant is available standalone as public `GuidExtensions.IsUuidV7(this Guid value)`, under that one name, with the assertion delegating to it so the bit manipulation exists in a single place.
-- [ ] The assertion passes only for GUIDs whose RFC 9562 version field is `7` **and** whose two most significant variant bits are `10`. `Guid.Empty`, `Guid.NewGuid()` (v4), and version-7 values with a non-RFC variant all fail.
-- [ ] Failures carry the new `ValidationErrorCodes.UuidV7` code and a message from a new customizable `ValidationErrorTemplates.UuidV7` template, which survives `with`-expression copies of `ValidationErrorTemplates`.
-- [ ] The rule is discoverable by OpenAPI source generation and resolves to a registered metadata-free contract, so a validator using it documents the `UuidV7` code without an explicit hint and without an unknown-code diagnostic.
-- [ ] An exhaustive version-nibble × variant-nibble matrix checks the predicate against an oracle built from **both** `Guid.Version` and `Guid.Variant`, so the BCL guards the whole layout assumption rather than half of it.
-- [ ] Automated tests additionally cover both overloads, short-circuit propagation, template customization, and the generated OpenAPI metadata. Solution test coverage stays above 95%.
-- [ ] One predicate implementation serves both target frameworks, without conditional compilation, and the passing path allocates nothing on either.
-- [ ] The README shows the assertion where client-generated identifiers are validated, and the 0.7.0 `<PackageReleaseNotes>` of **both** affected packages record their own part of the change.
+- [x] `Check<Guid>` exposes `IsUuidV7` in both built-in-message and `ErrorOverrides` overloads, each honoring `shortCircuitOnError` and the already-short-circuited state, matching every other built-in assertion.
+- [x] The same invariant is available standalone as public `GuidExtensions.IsUuidV7(this Guid value)`, under that one name, with the assertion delegating to it so the bit manipulation exists in a single place.
+- [x] The assertion passes only for GUIDs whose RFC 9562 version field is `7` **and** whose two most significant variant bits are `10`. `Guid.Empty`, `Guid.NewGuid()` (v4), and version-7 values with a non-RFC variant all fail.
+- [x] Failures carry the new `ValidationErrorCodes.UuidV7` code and a message from a new customizable `ValidationErrorTemplates.UuidV7` template, which survives `with`-expression copies of `ValidationErrorTemplates`.
+- [x] The rule is discoverable by OpenAPI source generation and resolves to a registered metadata-free contract, so a validator using it documents the `UuidV7` code without an explicit hint and without an unknown-code diagnostic.
+- [x] An exhaustive version-nibble × variant-nibble matrix checks the predicate against an oracle built from **both** `Guid.Version` and `Guid.Variant`, so the BCL guards the whole layout assumption rather than half of it.
+- [x] Automated tests additionally cover both overloads, short-circuit propagation, template customization, and the generated OpenAPI metadata. Solution test coverage stays above 95%.
+- [x] One predicate implementation serves both target frameworks, without conditional compilation, and the passing path allocates nothing on either.
+- [x] The README shows the assertion where client-generated identifiers are validated, and the 0.7.0 `<PackageReleaseNotes>` of **both** affected packages record their own part of the change.
 
 ## Technical Details
 

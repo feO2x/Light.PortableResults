@@ -76,6 +76,47 @@ public sealed class GeneratedValidationOpenApiIntegrationTests
     }
 
     [Fact]
+    public async Task ProducesPortableValidationProblemFor_ShouldDocumentUuidV7FromTheBuiltInContracts()
+    {
+        await using var app = ValidationOpenApiDocumentTestUtilities.CreateApp(
+            contracts => contracts.RegisterBuiltInValidationErrors(),
+            endpoints =>
+            {
+                endpoints
+                   .MapPost("/generated-validation/uuid-v7", static () => Results.BadRequest())
+                   .WithName("GeneratedUuidV7Validation")
+                   .ProducesPortableValidationProblemFor<GeneratedClientIdentifierValidator>(
+                        configure: builder => builder.UseFormat(ValidationProblemSerializationFormat.Rich)
+                    );
+            }
+        );
+
+        var document = await ValidationOpenApiDocumentTestUtilities.GetOpenApiDocumentAsync(app);
+        var operation = document.Paths["/generated-validation/uuid-v7"].Operations![HttpMethod.Post];
+        var response = (OpenApiResponse) operation.Responses![StatusCodes.Status400BadRequest.ToString()];
+        var mediaType = response.Content!["application/problem+json"];
+        var schemaReference = (OpenApiSchemaReference) mediaType.Schema!;
+        var envelope = ValidationOpenApiDocumentTestUtilities.GetSchemaComponent(
+            document,
+            ValidationOpenApiDocumentTestUtilities.GetSchemaReferenceId(schemaReference)
+        );
+        var errors = (OpenApiSchema) ((OpenApiSchema) envelope.Properties!["errors"]).Items!;
+
+        errors.OneOf!.Select(
+                static schema =>
+                    ValidationOpenApiDocumentTestUtilities.GetSchemaReferenceId((OpenApiSchemaReference) schema)
+            )
+           .Should()
+           .BeEquivalentTo("PortableError__UuidV7");
+
+        var example = (OpenApiExample) mediaType.Examples!["ValidationProblem"];
+        var body = example.Value.Should().BeOfType<JsonObject>().Subject;
+        var exampleErrors = body["errors"].Should().BeOfType<JsonArray>().Subject;
+        exampleErrors.ToJsonString().Should().Contain("\"code\":\"UuidV7\"");
+        exampleErrors.ToJsonString().Should().Contain("\"message\":\"id must be a version 7 UUID\"");
+    }
+
+    [Fact]
     public async Task MvcAttribute_ShouldApplyGeneratedSchemasExamplesAndOverrides()
     {
         await using var app = ValidationOpenApiDocumentTestUtilities.CreateMvcApp(
@@ -290,6 +331,28 @@ public sealed partial class GeneratedRatingValidator : Validator<GeneratedRating
         context.Check(dto.Id).IsNotEmpty();
         dto.Comment = context.Check(dto.Comment).HasLengthIn(10, 1000);
         context.Check(dto.Rating).IsInRange(1, 5);
+        return checkpoint.ToValidatedValue(dto);
+    }
+}
+
+public sealed class GeneratedClientIdentifierDto
+{
+    public Guid Id { get; init; }
+}
+
+[GeneratePortableValidationOpenApi]
+public sealed partial class GeneratedClientIdentifierValidator : Validator<GeneratedClientIdentifierDto>
+{
+    public GeneratedClientIdentifierValidator(IValidationContextFactory validationContextFactory)
+        : base(validationContextFactory) { }
+
+    protected override ValidatedValue<GeneratedClientIdentifierDto> PerformValidation(
+        ValidationContext context,
+        ValidationCheckpoint checkpoint,
+        GeneratedClientIdentifierDto dto
+    )
+    {
+        context.Check(dto.Id).IsUuidV7();
         return checkpoint.ToValidatedValue(dto);
     }
 }

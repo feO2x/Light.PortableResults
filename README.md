@@ -700,7 +700,9 @@ public sealed class PurchaseOrderValidator : Validator<PurchaseOrderDto>
         PurchaseOrderDto dto
     )
     {
-        context.Check(dto.OrderId).IsNotEmpty();
+        // The client mints the order ID, so require a UUIDv7 — its leading timestamp keeps
+        // client-generated keys roughly sortable and index-friendly. Guid.Empty and v4 GUIDs fail.
+        context.Check(dto.OrderId).IsUuidV7();
         dto.CustomerEmail = context.Check(dto.CustomerEmail).IsEmail();
 
         // If dto.ShippingAddress is null the child validator emits a null error automatically.
@@ -754,6 +756,8 @@ public sealed class OrderItemValidator : Validator<OrderItemDto>
     }
 }
 ```
+
+`IsUuidV7` fails with the `UuidV7` error code unless the GUID's RFC 9562 version field is `7` **and** its variant bits are the RFC variant. The same invariant is available standalone as `guid.IsUuidV7()` (`GuidExtensions`) when a repository or message handler needs to guard it outside a check chain.
 
 > **What is `ValidatedValue<T>`?**
 >
