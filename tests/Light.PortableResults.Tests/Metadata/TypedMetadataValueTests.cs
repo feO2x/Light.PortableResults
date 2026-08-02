@@ -216,6 +216,13 @@ public sealed class TypedMetadataValueTests
     [Fact]
     public void StringAccessorsShouldAcceptOnlyCanonicalEncodings()
     {
+        MetadataValue
+           .FromString(long.MinValue.ToString())
+           .TryGetInt64(out var int64)
+           .Should()
+           .BeTrue();
+        int64.Should().Be(long.MinValue);
+
         MetadataValue.FromString(ulong.MaxValue.ToString())
            .TryGetUInt64(out var uint64)
            .Should()
@@ -269,6 +276,21 @@ public sealed class TypedMetadataValueTests
         MetadataValue.FromString(UriValue.OriginalString).TryGetUri(out var uri).Should().BeTrue();
         uri!.OriginalString.Should().Be(UriValue.OriginalString);
         MetadataValue.FromString("hello world").TryGetUri(out _).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("+5")]
+    [InlineData("-0")]
+    [InlineData("01234")]
+    [InlineData(" 5")]
+    [InlineData("9223372036854775808")]
+    [InlineData("-9223372036854775809")]
+    public void Int64AccessorShouldRejectNoncanonicalOrOutOfRangeText(string text)
+    {
+        var value = MetadataValue.FromString(text);
+
+        value.TryGetInt64(out var result).Should().BeFalse();
+        result.Should().Be(0);
     }
 
     [Fact]

@@ -32,7 +32,9 @@ public sealed record PortableResultsCloudEventsReadOptions
     public Func<string, bool>? IsFailureType { get; init; }
 
     /// <summary>
-    /// Gets or sets an optional parsing service used to convert extension attributes into metadata for tier-1 methods.
+    /// Gets or sets an optional parsing service used to convert extension attributes into metadata for tier-1
+    /// methods. JSON string attributes initially have <see cref="MetadataKind.String" /> even when the writer
+    /// mapped another primitive kind to canonical text; register an attribute parser to restore that kind.
     /// </summary>
     public ICloudEventsAttributeParsingService? ParsingService { get; init; }
 

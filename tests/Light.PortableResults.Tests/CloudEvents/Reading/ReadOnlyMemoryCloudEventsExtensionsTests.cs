@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Text;
 using System.Text.Json;
 using FluentAssertions;
@@ -558,5 +559,119 @@ public sealed class ReadOnlyMemoryCloudEventsExtensionsTests
         result.Metadata.Should().BeNull();
     }
 
+    [Fact]
+    public void ReadResultWithCloudEventsEnvelopeShouldReadEveryAttributeEncodingAndOmitNull()
+    {
+        var cloudEvent = CreateUtf8(
+            """
+            {
+                "specversion": "1.0",
+                "type": "app.success",
+                "source": "urn:test:source",
+                "id": "evt-encodings",
+                "lproutcome": "success",
+                "booleanattribute": true,
+                "integerattribute": 2147483647,
+                "stringattribute": "19.50",
+                "largeinteger": "2147483648",
+                "nullattribute": null
+            }
+            """
+        );
+
+        var envelope = cloudEvent.ReadResultWithCloudEventsEnvelope();
+
+        var attributes = envelope.ExtensionAttributes!.Value;
+        attributes["booleanattribute"].Kind.Should().Be(MetadataKind.Boolean);
+        attributes["integerattribute"].Kind.Should().Be(MetadataKind.Int64);
+        attributes["stringattribute"].Kind.Should().Be(MetadataKind.String);
+        attributes["largeinteger"].Kind.Should().Be(MetadataKind.String);
+        attributes["largeinteger"].TryGetInt64(out var largeInteger).Should().BeTrue();
+        largeInteger.Should().Be(2147483648L);
+        attributes.ContainsKey("nullattribute").Should().BeFalse();
+    }
+
+    [Fact]
+    public void ReadResultShouldNotLetNullExtensionReplacePayloadMetadata()
+    {
+        var cloudEvent = CreateUtf8(
+            """
+            {
+                "specversion": "1.0",
+                "type": "app.success",
+                "source": "urn:test:source",
+                "id": "evt-null-collision",
+                "lproutcome": "success",
+                "traceid": null,
+                "data": {
+                    "metadata": {
+                        "traceid": "from-payload"
+                    }
+                }
+            }
+            """
+        );
+        var options = new PortableResultsCloudEventsReadOptions
+        {
+            ParsingService = new DefaultCloudEventsAttributeParsingService(),
+            MergeStrategy = MetadataMergeStrategy.PreserveExisting
+        };
+
+        var result = cloudEvent.ReadResult(options);
+
+        result.Metadata!.Value.TryGetString("traceid", out var traceId).Should().BeTrue();
+        traceId.Should().Be("from-payload");
+    }
+
+    [Fact]
+    public void ReadResultShouldUseRegisteredParserToRestoreStringMappedKind()
+    {
+        var cloudEvent = CreateUtf8(
+            """
+            {
+                "specversion": "1.0",
+                "type": "app.success",
+                "source": "urn:test:source",
+                "id": "evt-parser",
+                "lproutcome": "success",
+                "price": "19.50"
+            }
+            """
+        );
+        var parsers = CloudEventsAttributeParserRegistry.Create([new DecimalAttributeParser()]);
+        var options = new PortableResultsCloudEventsReadOptions
+        {
+            ParsingService = new DefaultCloudEventsAttributeParsingService(parsers)
+        };
+
+        var result = cloudEvent.ReadResult(options);
+
+        var price = result.Metadata!.Value["price"];
+        price.Kind.Should().Be(MetadataKind.Decimal);
+        price.TryGetDecimal(out var decimalValue).Should().BeTrue();
+        decimalValue.Should().Be(19.50m);
+    }
+
     private static ReadOnlyMemory<byte> CreateUtf8(string json) => Encoding.UTF8.GetBytes(json);
+
+    private sealed class DecimalAttributeParser : CloudEventsAttributeParser
+    {
+        public DecimalAttributeParser() : base("price", ImmutableArray.Create("price")) { }
+
+        public override MetadataValue ParseAttribute(
+            string attributeName,
+            MetadataValue value,
+            MetadataValueAnnotation annotation
+        )
+        {
+            if (!value.TryGetDecimal(out var decimalValue))
+            {
+                throw new InvalidOperationException(
+                    $"CloudEvents extension attribute '{attributeName}' is not a decimal."
+                );
+            }
+
+            return MetadataValue.FromDecimal(decimalValue, annotation);
+        }
+    }
 }

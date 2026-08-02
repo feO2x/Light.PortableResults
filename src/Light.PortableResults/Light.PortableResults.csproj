@@ -31,14 +31,28 @@
       - Default HTTP header conversion no longer surrounds string metadata values with quotes.
       - Float metadata values now use MetadataKind.Single rather than MetadataKind.Double.
       - Decimal metadata values now have the dedicated kind MetadataKind.Decimal instead of MetadataKind.String,
-        and they are serialized as JSON numbers instead of quoted strings. This aligns the response bodies with
-        the generated OpenAPI documents, which have always described decimals as numbers.
+        and they are serialized as JSON numbers instead of quoted strings in response bodies, problem+json, and
+        CloudEvents data payloads. This aligns those payloads with the generated OpenAPI documents, which have
+        always described decimals as numbers. CloudEvents extension attributes use the separate mapping below.
       - MetadataValue.TryGetString no longer returns true for decimal metadata values. Use TryGetDecimal instead.
       - Decimal metadata values that differ only in trailing zeros (19.50 and 19.5) now compare equal, because
         equality is delegated to decimal. The scale is still preserved during serialization.
       - The numeric values of MetadataKind.Array and MetadataKind.Object changed to 200 and 201 so that the
         values 16 to 199 are reserved for future primitive kinds. This only affects callers that persisted or
         transmitted the numeric value of MetadataKind.
+      - CloudEvents extension attributes now follow the JSON Event Format context-attribute mapping. Double,
+        Single, Decimal, and Int64 values outside the inclusive 32-bit signed range are written as JSON strings
+        containing canonical invariant text. This does not change CloudEvents data or problem+json payloads.
+      - Null CloudEvents extension attributes are now omitted on write because null means unset. This does not
+        change null metadata in CloudEvents data or problem+json payloads.
+      - Null CloudEvents extension attributes are now treated as absent on read and cannot participate in metadata
+        conflict resolution. This does not change null metadata in CloudEvents data or problem+json payloads.
+      - CloudEvents extension attributes whose String encoding contains controls, Unicode noncharacters, or
+        unpaired surrogates are now rejected. Values are not normalized. This validation is limited to extension
+        attributes and does not change CloudEvents data or problem+json payloads.
+      - MetadataValue.TryGetInt64 now accepts canonical signed-integer text from any string metadata value,
+        including values originating in headers, JSON, or caller code. Noncanonical forms such as a leading plus,
+        negative zero, leading zeros, surrounding whitespace, and out-of-range text remain rejected.
     </PackageReleaseNotes>
   </PropertyGroup>
 

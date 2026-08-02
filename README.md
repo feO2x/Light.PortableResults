@@ -589,6 +589,51 @@ await channel.BasicPublishAsync(
 );
 ```
 
+### Extension Attribute Encoding
+
+CloudEvents extension attributes use the JSON Event Format context-attribute mapping, not each
+`MetadataKind`'s natural JSON shape:
+
+| Metadata value | Extension-attribute JSON |
+|---|---|
+| `Null` | Omitted (unset) |
+| `Boolean` | JSON boolean |
+| `Int64` from `-2147483648` through `2147483647` | JSON number |
+| Every other non-null primitive, including larger `Int64`, `Double`, `Single`, and `Decimal` | JSON string containing canonical invariant text |
+| `Array` or `Object` | Rejected |
+
+CloudEvents `String` values are validated without normalization: controls, Unicode noncharacters, and
+unpaired surrogates are rejected. This mapping affects only extension attributes; metadata inside `data`
+and `problem+json` keeps its normal JSON representation.
+
+The `Int64` rule is value-dependent. For example, one extension name can be emitted as `2147483647` in
+one event and as `"2147483648"` in another. This is a deliberate deviation from CloudEvents' stable-type
+recommendation so all in-range CloudEvents integers retain their natural JSON representation while the
+full `long` domain remains lossless. If a key requires a stable string shape, convert it to
+`MetadataKind.String` with a `CloudEventsAttributeConverter`:
+
+```csharp
+public sealed class StableSequenceConverter : CloudEventsAttributeConverter
+{
+    public StableSequenceConverter() : base(["sequence"]) { }
+
+    public override KeyValuePair<string, MetadataValue> PrepareCloudEventsAttribute(
+        string metadataKey,
+        MetadataValue value
+    ) =>
+        new (
+            metadataKey,
+            MetadataValue.FromString(value.ToCanonicalString(), value.Annotation)
+        );
+}
+```
+
+On read-back, a JSON boolean becomes `MetadataKind.Boolean`, an integer-number becomes
+`MetadataKind.Int64`, and every string-mapped value initially becomes `MetadataKind.String`. Canonical
+out-of-range integer text remains accessible through `MetadataValue.TryGetInt64`. Register a
+`CloudEventsAttributeParser` when a particular attribute must be restored to another original kind.
+Inbound `null` means unset and is not added to extension metadata.
+
 ### Consume from RabbitMQ
 
 ```csharp

@@ -115,7 +115,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         decimal value,
         MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
-        new (MetadataKind.Decimal, new MetadataPayload((object) value), annotation);
+        new (MetadataKind.Decimal, new MetadataPayload(value), annotation);
 
     /// <summary>
     /// Creates a metadata value from an unsigned 64-bit integer.
@@ -136,7 +136,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
     )
     {
         ValidateFinite(value, nameof(value));
-        return new MetadataValue(MetadataKind.Single, new MetadataPayload((double) value), annotation);
+        return new MetadataValue(MetadataKind.Single, new MetadataPayload(value), annotation);
     }
 
     /// <summary>
@@ -182,7 +182,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         DateTimeOffset value,
         MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
-        new (MetadataKind.DateTimeOffset, new MetadataPayload((object) value), annotation);
+        new (MetadataKind.DateTimeOffset, new MetadataPayload(value), annotation);
 
 #if NET10_0_OR_GREATER
     /// <summary>
@@ -220,7 +220,7 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         Guid value,
         MetadataValueAnnotation annotation = DefaultAnnotation
     ) =>
-        new (MetadataKind.Guid, new MetadataPayload((object) value), annotation);
+        new (MetadataKind.Guid, new MetadataPayload(value), annotation);
 
     /// <summary>
     /// Creates a metadata value from a URI. A null URI becomes a null metadata value.
@@ -381,12 +381,19 @@ public readonly struct MetadataValue : IEquatable<MetadataValue>
         return false;
     }
 
-    /// <summary>Attempts to get the stored signed 64-bit integer.</summary>
+    /// <summary>Attempts to get a signed 64-bit integer or parse its canonical string encoding.</summary>
     public bool TryGetInt64(out long value)
     {
         if (Kind == MetadataKind.Int64)
         {
             value = _payload.Int64;
+            return true;
+        }
+
+        if (TryGetRawString(out var text) &&
+            long.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value) &&
+            string.Equals(value.ToString(CultureInfo.InvariantCulture), text, StringComparison.Ordinal))
+        {
             return true;
         }
 
