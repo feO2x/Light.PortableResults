@@ -17,6 +17,10 @@ public sealed class UuidV7ValidationTests
     private static readonly Guid AcceptedUuidV7 = Guid.Parse(RfcExampleUuid);
     private static readonly Guid RejectedUuid = Guid.Parse("017f22e2-79b0-4cc3-98c4-dc0c0c07398f");
 
+    // The BCL computes Version as (_c >> 12) & 0xF and Variant as _d >> 4, which are the same two expressions
+    // the predicate evaluates over its own field overlay. This oracle therefore pins the overlay's field
+    // offsets — the load-bearing assumption — but cannot pin the masks, because a wrong mask would have to be
+    // wrong in the BCL too. The masks are pinned by the RFC-derived accepted set in the test below.
     [Fact]
     public void IsUuidV7_ShouldAgreeWithVersionAndVariantOracle_AcrossTheFullNibbleMatrix()
     {
@@ -38,6 +42,9 @@ public sealed class UuidV7ValidationTests
         }
     }
 
+    // Not redundant with the matrix above: the expected set is read off RFC 9562 rather than derived from
+    // Guid.Version and Guid.Variant, so this is the only test that constrains the version and variant masks
+    // independently of the BCL. Keep it even though both tests walk the same 256 inputs.
     [Fact]
     public void IsUuidV7_ShouldAcceptOnlyVersion7CrossedWithTheRfcVariantNibbles()
     {
