@@ -1,5 +1,7 @@
 # OpenAPI Error Examples for Non-Constant Validation Boundaries
 
+> Correction: two claims in Technical Details are wrong, without consequence for the implemented design. The integral `TimeSpan.From*` overloads arrived in .NET 9, not .NET 8 — the reasoning about `TimeSpan.FromHours(2)` binding differently per target framework holds, only the version is off. And `TimeSpan.FromDays(double)` rounds to the nearest millisecond only on .NET Framework; modern .NET rounds to the tick. The conclusion still stands, because the implementation calls the real `double` overloads on the compiler host and only reimplements `FromMicroseconds(double)`, which `netstandard2.0` lacks.
+
 ## Rationale
 
 The validation source generator learns a rule's boundary value through `SemanticModel.GetConstantValue`, which only succeeds for C# constant expressions. `DateTime`, `DateTimeOffset`, `TimeSpan`, `Guid`, `DateOnly`, `TimeOnly`, and `Uri` cannot be C# constants at all, so a temporal or identifier boundary can never be folded — not by writing it differently and not by hoisting it into a `static readonly` field. The rule then loses both its message and its metadata, and the generated example carries neither. Two checks written identically in the same validator produce usable documentation for the `int` one and an empty example for the `DateTime` one, with no diagnostic to explain the difference.
