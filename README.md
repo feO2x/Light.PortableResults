@@ -673,6 +673,7 @@ Use child validators when your DTO contains nested objects or collections that e
 public sealed record PurchaseOrderDto
 {
     public required Guid OrderId { get; set; }
+    public required DateTime PlacedAt { get; set; }
     public required string CustomerEmail { get; set; } = string.Empty;
     public required ShippingAddressDto ShippingAddress { get; set; }
     public required List<string> Tags { get; set; }
@@ -703,6 +704,11 @@ public sealed class PurchaseOrderValidator : Validator<PurchaseOrderDto>
         // The client mints the order ID, so require a UUIDv7 — its leading timestamp keeps
         // client-generated keys roughly sortable and index-friendly. Guid.Empty and v4 GUIDs fail.
         context.Check(dto.OrderId).IsUuidV7();
+
+        // Timestamps must be unambiguous, so require UTC. With the default System.Text.Json
+        // converter this means the payload has to carry a trailing "Z".
+        context.Check(dto.PlacedAt).IsUtc();
+
         dto.CustomerEmail = context.Check(dto.CustomerEmail).IsEmail();
 
         // If dto.ShippingAddress is null the child validator emits a null error automatically.
@@ -758,6 +764,21 @@ public sealed class OrderItemValidator : Validator<OrderItemDto>
 ```
 
 `IsUuidV7` fails with the `UuidV7` error code unless the GUID's RFC 9562 version field is `7` **and** its variant bits are the RFC variant. The same invariant is available standalone as `guid.IsUuidV7()` (`GuidExtensions`) when a repository or message handler needs to guard it outside a check chain.
+
+`IsUtc`, `IsLocal`, and `IsUnspecified` assert the `DateTime.Kind` of the checked value and fail with the `Utc`, `Local`, and `Unspecified` error codes. They partition `DateTimeKind`: every `DateTime` is accepted by exactly one of them. The contract is only the kind of the value the check sees, independent of its origin — `DateTime.UtcNow`, `DateTime.SpecifyKind`, a custom converter, and non-JSON transports can all produce `Utc` just as a JSON payload with a trailing `Z` does.
+
+That matters for JSON requests, because the default `System.Text.Json` converter maps the ISO 8601 forms to kinds like this:
+
+| Wire value | `DateTime.Kind` | Accepted by |
+| --- | --- | --- |
+| `2026-08-02T10:00:00Z` | `Utc` | `IsUtc` |
+| `2026-08-02T10:00:00+00:00` | `Local` | `IsLocal` |
+| `2026-08-02T10:00:00+02:00` | `Local` | `IsLocal` |
+| `2026-08-02T10:00:00` | `Unspecified` | `IsUnspecified` |
+
+So `IsUtc` effectively requires a trailing `Z` on the wire: an explicit numeric offset is converted to server-local time and deserializes as `Local`, and that includes `+00:00` even though it denotes the same instant as `Z`. Document the `Z` requirement for your clients — a `+00:00` payload is rejected. Conversely, the two `Local` values above only agree on the instant; their wall-clock value depends on the server's time zone, which is rarely what a portable API wants.
+
+`DateTime` values reach these assertions after the per-check normalizer or `ValidationContextOptions.ValueNormalizer` has run — the default `TrimStringNormalizer` passes non-strings through unchanged. Do not install a normalizer that coerces `Unspecified` to `Utc`: it destroys exactly the signal being validated, and `IsUtc` would then pass for every request. Convert to UTC in your mapping code, after validation. Note also that `default(DateTime)` is `Unspecified`, so `IsUnspecified` accepts a missing value; pair it with a range check when that matters.
 
 > **What is `ValidatedValue<T>`?**
 >

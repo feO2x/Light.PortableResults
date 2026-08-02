@@ -109,7 +109,10 @@ public sealed class BuiltInValidationErrorContractsTests
             ValidationErrorCodes.Email,
             ValidationErrorCodes.DigitsOnly,
             ValidationErrorCodes.LettersAndDigitsOnly,
-            ValidationErrorCodes.UuidV7
+            ValidationErrorCodes.UuidV7,
+            ValidationErrorCodes.Utc,
+            ValidationErrorCodes.Local,
+            ValidationErrorCodes.Unspecified
         ];
 
         BuiltInValidationErrorContracts.Contracts.Keys.Should()

@@ -1,9 +1,7 @@
 using System;
-using System.Globalization;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using Light.PortableResults.Metadata;
-using Light.PortableResults.Validation;
 using Light.PortableResults.Validation.Definitions;
 using Light.PortableResults.Validation.Messaging;
 using Light.PortableResults.Validation.Targeting;
@@ -20,7 +18,8 @@ public sealed class ValidationErrorDefinitionTests
         BuiltInValidationErrorDefinitions.Null.Code.Should().Be(ValidationErrorCodes.Null);
         BuiltInValidationErrorDefinitions.Empty.Code.Should().Be(ValidationErrorCodes.Empty);
         BuiltInValidationErrorDefinitions.NotEmpty.Code.Should().Be(ValidationErrorCodes.NotEmpty);
-        BuiltInValidationErrorDefinitions.NotNullOrWhiteSpace.Code.Should().Be(ValidationErrorCodes.NotNullOrWhiteSpace);
+        BuiltInValidationErrorDefinitions.NotNullOrWhiteSpace.Code.Should()
+           .Be(ValidationErrorCodes.NotNullOrWhiteSpace);
         BuiltInValidationErrorDefinitions.Email.Code.Should().Be(ValidationErrorCodes.Email);
         BuiltInValidationErrorDefinitions.Predicate.Code.Should().Be(ValidationErrorCodes.Predicate);
         BuiltInValidationErrorDefinitions.NotNull.Metadata.Should().BeNull();
@@ -519,7 +518,7 @@ public sealed class ValidationErrorDefinitionTests
     }
 
     [Fact]
-    public void CountEqualityStringEnumDecimalAndGuidDefinitions_ShouldExposeStableProviders()
+    public void CountEqualityStringEnumDecimalGuidAndTemporalDefinitions_ShouldExposeStableProviders()
     {
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
         var readOnlyContext = context.AsReadOnly();
@@ -539,6 +538,9 @@ public sealed class ValidationErrorDefinitionTests
         var enumValue = BuiltInValidationErrorDefinitions.IsInEnum<TestStatus>();
         var precisionScale = BuiltInValidationErrorDefinitions.PrecisionScale(4, 2, ignoreTrailingZeros: true);
         var uuidV7 = BuiltInValidationErrorDefinitions.UuidV7;
+        var utc = BuiltInValidationErrorDefinitions.Utc;
+        var local = BuiltInValidationErrorDefinitions.Local;
+        var unspecified = BuiltInValidationErrorDefinitions.Unspecified;
 
         count.TryGetStableMessageProvider(readOnlyContext, out var countProvider).Should().BeTrue();
         minCount.TryGetStableMessageProvider(readOnlyContext, out var minCountProvider).Should().BeTrue();
@@ -557,6 +559,9 @@ public sealed class ValidationErrorDefinitionTests
         enumValue.TryGetStableMessageProvider(readOnlyContext, out var enumProvider).Should().BeTrue();
         precisionScale.TryGetStableMessageProvider(readOnlyContext, out var precisionScaleProvider).Should().BeTrue();
         uuidV7.TryGetStableMessageProvider(readOnlyContext, out var uuidV7Provider).Should().BeTrue();
+        utc.TryGetStableMessageProvider(readOnlyContext, out var utcProvider).Should().BeTrue();
+        local.TryGetStableMessageProvider(readOnlyContext, out var localProvider).Should().BeTrue();
+        unspecified.TryGetStableMessageProvider(readOnlyContext, out var unspecifiedProvider).Should().BeTrue();
 
         countProvider.Should().BeSameAs(context.ErrorTemplates.Count);
         minCountProvider.Should().BeSameAs(context.ErrorTemplates.MinCount);
@@ -574,6 +579,9 @@ public sealed class ValidationErrorDefinitionTests
         enumProvider.Should().BeSameAs(context.ErrorTemplates.Enum);
         precisionScaleProvider.Should().BeSameAs(context.ErrorTemplates.PrecisionScale);
         uuidV7Provider.Should().BeSameAs(context.ErrorTemplates.UuidV7);
+        utcProvider.Should().BeSameAs(context.ErrorTemplates.Utc);
+        localProvider.Should().BeSameAs(context.ErrorTemplates.Local);
+        unspecifiedProvider.Should().BeSameAs(context.ErrorTemplates.Unspecified);
     }
 
     [Fact]
@@ -719,6 +727,38 @@ public sealed class ValidationErrorDefinitionTests
            .CreateMessageContext();
         var uuidV7 = BuiltInValidationErrorDefinitions.UuidV7;
         uuidV7.ProvideMessage(messageContext).Text.Should().ContainAll("Order ID", "version 7 UUID");
+    }
+
+    [Fact]
+    public void Utc_ShouldProvideExpectedMessage()
+    {
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
+        var messageContext = context.Check(default(DateTime), target: "occurredAt", displayName: "Occurred at")
+           .CreateMessageContext();
+        var utc = BuiltInValidationErrorDefinitions.Utc;
+        utc.ProvideMessage(messageContext).Text.Should().ContainAll("Occurred at", "UTC");
+    }
+
+    [Fact]
+    public void Local_ShouldProvideExpectedMessage()
+    {
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
+        var messageContext = context.Check(default(DateTime), target: "occurredAt", displayName: "Occurred at")
+           .CreateMessageContext();
+        var local = BuiltInValidationErrorDefinitions.Local;
+        local.ProvideMessage(messageContext).Text.Should().ContainAll("Occurred at", "local date and time");
+    }
+
+    [Fact]
+    public void Unspecified_ShouldProvideExpectedMessage()
+    {
+        var context = DefaultValidationContextFactory.Create().CreateValidationContext();
+        var messageContext = context.Check(default(DateTime), target: "occurredAt", displayName: "Occurred at")
+           .CreateMessageContext();
+        var unspecified = BuiltInValidationErrorDefinitions.Unspecified;
+        unspecified.ProvideMessage(messageContext)
+           .Text.Should()
+           .ContainAll("Occurred at", "must not specify a time zone");
     }
 
     [Fact]

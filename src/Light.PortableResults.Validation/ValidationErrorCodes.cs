@@ -61,6 +61,12 @@ public static class ValidationErrorCodes
     public const string LettersAndDigitsOnly = "LettersAndDigitsOnly";
     /// <summary>Validation error code for version 7 UUID failures.</summary>
     public const string UuidV7 = "UuidV7";
+    /// <summary>Validation error code for non-UTC date-and-time failures.</summary>
+    public const string Utc = "Utc";
+    /// <summary>Validation error code for non-local date-and-time failures.</summary>
+    public const string Local = "Local";
+    /// <summary>Validation error code for date-and-time values that specify a time zone.</summary>
+    public const string Unspecified = "Unspecified";
     /// <summary>Validation error code for predicate-based failures.</summary>
     public const string Predicate = "Predicate";
 }

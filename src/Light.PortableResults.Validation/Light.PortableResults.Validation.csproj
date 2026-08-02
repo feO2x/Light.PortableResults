@@ -16,6 +16,10 @@
         validation-message encodings.
       - Adds a net10.0 asset so DateOnly and TimeOnly validation boundaries retain their dedicated metadata kinds.
       - Adds the IsUuidV7 assertion for Check&lt;Guid>, with the UuidV7 error code, a customizable message template, and the standalone GuidExtensions.IsUuidV7 predicate.
+      - Adds the IsUtc, IsLocal, and IsUnspecified assertions for Check&lt;DateTime>, with the Utc, Local, and
+        Unspecified error codes and customizable message templates. They assert the DateTime.Kind of the checked
+        value; with the default System.Text.Json converter, IsUtc requires a trailing 'Z' because a numeric
+        offset - including +00:00 - deserializes as Local.
     </PackageReleaseNotes>
   </PropertyGroup>
 
