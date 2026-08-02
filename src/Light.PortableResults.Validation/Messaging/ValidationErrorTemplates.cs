@@ -84,6 +84,15 @@ public sealed partial record ValidationErrorTemplates
     private static readonly IValidationErrorMessageTemplate DefaultUuidV7Template =
         new DisplayName(" must be a version 7 UUID");
 
+    private static readonly IValidationErrorMessageTemplate DefaultUtcTemplate =
+        new DisplayName(" must be represented in UTC");
+
+    private static readonly IValidationErrorMessageTemplate DefaultLocalTemplate =
+        new DisplayName(" must be a local date and time");
+
+    private static readonly IValidationErrorMessageTemplate DefaultUnspecifiedTemplate =
+        new DisplayName(" must not specify a time zone");
+
     private static readonly IValidationErrorMessageTemplate<int> DefaultCountTemplate =
         new DisplayNameWithParameter<int>(" must contain exactly ", " item(s)");
 
@@ -140,6 +149,9 @@ public sealed partial record ValidationErrorTemplates
         DigitsOnly = original.DigitsOnly;
         LettersAndDigitsOnly = original.LettersAndDigitsOnly;
         UuidV7 = original.UuidV7;
+        Utc = original.Utc;
+        Local = original.Local;
+        Unspecified = original.Unspecified;
         Count = original.Count;
         MinCount = original.MinCount;
         MaxCount = original.MaxCount;
@@ -380,6 +392,33 @@ public sealed partial record ValidationErrorTemplates
         get;
         init => field = value ?? throw new ArgumentNullException(nameof(value));
     } = DefaultUuidV7Template;
+
+    /// <summary>
+    /// Gets the template for UTC date-and-time validation failures.
+    /// </summary>
+    public IValidationErrorMessageTemplate Utc
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultUtcTemplate;
+
+    /// <summary>
+    /// Gets the template for local date-and-time validation failures.
+    /// </summary>
+    public IValidationErrorMessageTemplate Local
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultLocalTemplate;
+
+    /// <summary>
+    /// Gets the template for unspecified-time-zone date-and-time validation failures.
+    /// </summary>
+    public IValidationErrorMessageTemplate Unspecified
+    {
+        get;
+        init => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = DefaultUnspecifiedTemplate;
 
     /// <summary>
     /// Gets the template for exact-count validation failures.

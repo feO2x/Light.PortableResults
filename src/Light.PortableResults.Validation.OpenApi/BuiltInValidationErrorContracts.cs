@@ -127,7 +127,10 @@ public static class BuiltInValidationErrorContracts
             [ValidationErrorCodes.Email] = ErrorMetadataContract.NoMetadata,
             [ValidationErrorCodes.DigitsOnly] = ErrorMetadataContract.NoMetadata,
             [ValidationErrorCodes.LettersAndDigitsOnly] = ErrorMetadataContract.NoMetadata,
-            [ValidationErrorCodes.UuidV7] = ErrorMetadataContract.NoMetadata
+            [ValidationErrorCodes.UuidV7] = ErrorMetadataContract.NoMetadata,
+            [ValidationErrorCodes.Utc] = ErrorMetadataContract.NoMetadata,
+            [ValidationErrorCodes.Local] = ErrorMetadataContract.NoMetadata,
+            [ValidationErrorCodes.Unspecified] = ErrorMetadataContract.NoMetadata
         }.ToFrozenDictionary(StringComparer.Ordinal);
     }
 

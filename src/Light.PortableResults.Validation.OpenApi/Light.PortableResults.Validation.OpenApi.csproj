@@ -13,6 +13,7 @@
       - Opt-in source generator for deriving Minimal API and MVC validation OpenAPI metadata from synchronous validators.
       - Native AOT compatible.
       - Registers a built-in metadata-free contract for the new UuidV7 validation error code.
+      - Registers built-in metadata-free contracts for the new Utc, Local, and Unspecified validation error codes.
     </PackageReleaseNotes>
   </PropertyGroup>
 

@@ -116,6 +116,54 @@ public sealed class GeneratedValidationOpenApiIntegrationTests
         exampleErrors.ToJsonString().Should().Contain("\"message\":\"id must be a version 7 UUID\"");
     }
 
+    // A missing registry entry for one of these codes surfaces here rather than as a generator diagnostic:
+    // document construction fails when a discovered rule has no registered metadata contract.
+    [Fact]
+    public async Task ProducesPortableValidationProblemFor_ShouldDocumentDateTimeKindsFromTheBuiltInContracts()
+    {
+        await using var app = ValidationOpenApiDocumentTestUtilities.CreateApp(
+            contracts => contracts.RegisterBuiltInValidationErrors(),
+            endpoints =>
+            {
+                endpoints
+                   .MapPost("/generated-validation/date-time-kinds", static () => Results.BadRequest())
+                   .WithName("GeneratedDateTimeKindValidation")
+                   .ProducesPortableValidationProblemFor<GeneratedTimestampValidator>(
+                        configure: builder => builder.UseFormat(ValidationProblemSerializationFormat.Rich)
+                    );
+            }
+        );
+
+        var document = await ValidationOpenApiDocumentTestUtilities.GetOpenApiDocumentAsync(app);
+        var operation = document.Paths["/generated-validation/date-time-kinds"].Operations![HttpMethod.Post];
+        var response = (OpenApiResponse) operation.Responses![StatusCodes.Status400BadRequest.ToString()];
+        var mediaType = response.Content!["application/problem+json"];
+        var schemaReference = (OpenApiSchemaReference) mediaType.Schema!;
+        var envelope = ValidationOpenApiDocumentTestUtilities.GetSchemaComponent(
+            document,
+            ValidationOpenApiDocumentTestUtilities.GetSchemaReferenceId(schemaReference)
+        );
+        var errors = (OpenApiSchema) ((OpenApiSchema) envelope.Properties!["errors"]).Items!;
+
+        errors.OneOf!.Select(
+                static schema =>
+                    ValidationOpenApiDocumentTestUtilities.GetSchemaReferenceId((OpenApiSchemaReference) schema)
+            )
+           .Should()
+           .BeEquivalentTo("PortableError__Utc", "PortableError__Local", "PortableError__Unspecified");
+
+        var example = (OpenApiExample) mediaType.Examples!["ValidationProblem"];
+        var body = example.Value.Should().BeOfType<JsonObject>().Subject;
+        var exampleErrors = body["errors"].Should().BeOfType<JsonArray>().Subject;
+        var exampleJson = exampleErrors.ToJsonString();
+        exampleJson.Should().Contain("\"code\":\"Utc\"");
+        exampleJson.Should().Contain("\"message\":\"recordedAt must be represented in UTC\"");
+        exampleJson.Should().Contain("\"code\":\"Local\"");
+        exampleJson.Should().Contain("\"message\":\"scheduledAt must be a local date and time\"");
+        exampleJson.Should().Contain("\"code\":\"Unspecified\"");
+        exampleJson.Should().Contain("\"message\":\"observedAt must not specify a time zone\"");
+    }
+
     [Fact]
     public async Task MvcAttribute_ShouldApplyGeneratedSchemasExamplesAndOverrides()
     {
@@ -353,6 +401,32 @@ public sealed partial class GeneratedClientIdentifierValidator : Validator<Gener
     )
     {
         context.Check(dto.Id).IsUuidV7();
+        return checkpoint.ToValidatedValue(dto);
+    }
+}
+
+public sealed class GeneratedTimestampDto
+{
+    public DateTime RecordedAt { get; init; }
+    public DateTime ScheduledAt { get; init; }
+    public DateTime ObservedAt { get; init; }
+}
+
+[GeneratePortableValidationOpenApi]
+public sealed partial class GeneratedTimestampValidator : Validator<GeneratedTimestampDto>
+{
+    public GeneratedTimestampValidator(IValidationContextFactory validationContextFactory)
+        : base(validationContextFactory) { }
+
+    protected override ValidatedValue<GeneratedTimestampDto> PerformValidation(
+        ValidationContext context,
+        ValidationCheckpoint checkpoint,
+        GeneratedTimestampDto dto
+    )
+    {
+        context.Check(dto.RecordedAt).IsUtc();
+        context.Check(dto.ScheduledAt).IsLocal();
+        context.Check(dto.ObservedAt).IsUnspecified();
         return checkpoint.ToValidatedValue(dto);
     }
 }

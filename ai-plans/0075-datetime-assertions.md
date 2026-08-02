@@ -8,14 +8,14 @@ Add `IsUtc`, `IsLocal`, and `IsUnspecified` as the first candidate from #74, fol
 
 ## Acceptance Criteria
 
-- [ ] `Check<DateTime>` exposes `IsUtc`, `IsLocal`, and `IsUnspecified` in built-in-message and `ErrorOverrides` overloads; all honor `shortCircuitOnError` and an already-short-circuited check.
-- [ ] Failures use new `ValidationErrorCodes.Utc`, `Local`, and `Unspecified` codes and customizable `ValidationErrorTemplates` properties that survive `with`-expression copies.
-- [ ] All three built-in-message overloads are discoverable by OpenAPI source generation. A validator using them generates a document against the built-in registry without generator errors, `WithErrorMetadata`, or an unregistered-code failure.
-- [ ] A 3×3 kind matrix proves that each assertion accepts exactly one `DateTimeKind` and that together they partition the enum.
-- [ ] A DTO deserialization test covers the four ISO 8601 forms below, including `+00:00` separately from a non-zero offset, and asserts both the resulting kind and accepted assertion.
-- [ ] `IsUtc` is documented as testing the normalized value's `Kind`, independent of its origin. XML remarks and the README separately explain that the default JSON converter requires trailing `Z` because `+00:00` produces `Local` and is rejected.
-- [ ] Tests also cover both overload forms, short-circuit propagation, template customization, and generated OpenAPI metadata. Solution coverage remains above 95%.
-- [ ] The README shows the assertions in request validation, and the 0.7.0 `<PackageReleaseNotes>` of both affected packages describe their respective changes.
+- [x] `Check<DateTime>` exposes `IsUtc`, `IsLocal`, and `IsUnspecified` in built-in-message and `ErrorOverrides` overloads; all honor `shortCircuitOnError` and an already-short-circuited check.
+- [x] Failures use new `ValidationErrorCodes.Utc`, `Local`, and `Unspecified` codes and customizable `ValidationErrorTemplates` properties that survive `with`-expression copies.
+- [x] All three built-in-message overloads are discoverable by OpenAPI source generation. A validator using them generates a document against the built-in registry without generator errors, `WithErrorMetadata`, or an unregistered-code failure.
+- [x] A 3×3 kind matrix proves that each assertion accepts exactly one `DateTimeKind` and that together they partition the enum.
+- [x] A DTO deserialization test covers the four ISO 8601 forms below, including `+00:00` separately from a non-zero offset, and asserts both the resulting kind and accepted assertion.
+- [x] `IsUtc` is documented as testing the normalized value's `Kind`, independent of its origin. XML remarks and the README separately explain that the default JSON converter requires trailing `Z` because `+00:00` produces `Local` and is rejected.
+- [x] Tests also cover both overload forms, short-circuit propagation, template customization, and generated OpenAPI metadata. Solution coverage remains above 95%.
+- [x] The README shows the assertions in request validation, and the 0.7.0 `<PackageReleaseNotes>` of both affected packages describe their respective changes.
 
 ## Technical Details
 
