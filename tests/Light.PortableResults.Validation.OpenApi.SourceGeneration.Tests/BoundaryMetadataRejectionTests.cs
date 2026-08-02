@@ -1,8 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -137,27 +135,6 @@ public sealed class BoundaryMetadataRejectionTests
         result.Diagnostics.Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
            .Should()
            .BeEmpty();
-    }
-
-    [Fact]
-    public void GeneratorPropagatesCancellation()
-    {
-        var compilation = GeneratorTestHarness.CreateCompilation(
-            (
-                "Validator.cs",
-                CreateValidatorSource("DateTime", "new DateTime(2026, 1, 2)")
-            )
-        );
-        var cancellationToken = new CancellationToken(canceled: true);
-
-        Action act = () => GeneratorTestHarness.CreateDriver().RunGeneratorsAndUpdateCompilation(
-            compilation,
-            out _,
-            out _,
-            cancellationToken
-        );
-
-        act.Should().ThrowExactly<OperationCanceledException>();
     }
 
     [Theory]

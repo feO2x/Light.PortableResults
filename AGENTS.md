@@ -28,3 +28,5 @@ Read ./ai-plans/AGENTS.md for details on how to write plans.
 ## Here is Your Space
 
 If you encounter something worth noting while you are working on this code base, write it down here in this section. Once you are finished, I will discuss it with you, and we can decide where to put your notes.
+
+- `MetadataValueReconstructor` preserves `OperationCanceledException` through its exception filters, but this is not behaviorally testable through the generator's public surface: a pre-cancelled token is intercepted by Roslyn before reconstruction, and none of the whitelisted framework evaluations can throw cancellation. The contract therefore rests on the filters' structure unless an accepted evaluation gains a reachable cancellation path.
