@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 
 namespace Light.PortableResults.Validation.OpenApi.SourceGeneration;
 
@@ -95,7 +94,7 @@ public static class ValidatorOpenApiEmitter
         {
             writer
                .Write("builder.WithErrorCodes(")
-               .Write(string.Join(", ", registeredCodes.Select(ToStringLiteral)))
+               .Write(string.Join(", ", registeredCodes.Select(CSharpLiterals.ToStringLiteral)))
                .WriteLine(");");
         }
 
@@ -110,7 +109,7 @@ public static class ValidatorOpenApiEmitter
                .Write("builder.WithErrorMetadata<")
                .Write(hint.MetadataTypeName!)
                .Write(">(")
-               .Write(ToStringLiteral(hint.Code))
+               .Write(CSharpLiterals.ToStringLiteral(hint.Code))
                .WriteLine(");");
         }
 
@@ -194,11 +193,11 @@ public static class ValidatorOpenApiEmitter
         var properties = metadataSchemaProperties
            .OrderBy(static property => property.Key, StringComparer.Ordinal)
            .ToArray();
-        var requiredKeys = string.Join(", ", properties.Select(static property => ToStringLiteral(property.Key)));
+        var requiredKeys = string.Join(", ", properties.Select(static property => CSharpLiterals.ToStringLiteral(property.Key)));
 
         writer
            .Write("builder.WithErrorMetadata(")
-           .Write(ToStringLiteral(code))
+           .Write(CSharpLiterals.ToStringLiteral(code))
            .WriteLine(", _ => new OpenApiSchema")
            .WriteLine("{")
            .IncreaseIndent()
@@ -211,7 +210,7 @@ public static class ValidatorOpenApiEmitter
         {
             writer
                .Write("[")
-               .Write(ToStringLiteral(property.Key))
+               .Write(CSharpLiterals.ToStringLiteral(property.Key))
                .Write("] = PortableOpenApiSchemaTypeMapper.Map<")
                .Write(property.TypeName)
                .WriteLine(">(),");
@@ -225,7 +224,7 @@ public static class ValidatorOpenApiEmitter
            .WriteLine(" }")
            .DecreaseIndent()
            .Write("}, ")
-           .Write(ToStringLiteral(schemaId))
+           .Write(CSharpLiterals.ToStringLiteral(schemaId))
            .WriteLine(");");
     }
 
@@ -237,11 +236,11 @@ public static class ValidatorOpenApiEmitter
 
             writer
                .Write("builder.WithErrorExample(")
-               .Write(ToStringLiteral(rule.Code))
+               .Write(CSharpLiterals.ToStringLiteral(rule.Code))
                .Write(", ")
-               .Write(rule.Target is null ? "null" : ToStringLiteral(rule.Target))
+               .Write(rule.Target is null ? "null" : CSharpLiterals.ToStringLiteral(rule.Target))
                .Write(", ")
-               .Write(rule.Message is null ? "null" : ToStringLiteral(rule.Message));
+               .Write(rule.Message is null ? "null" : CSharpLiterals.ToStringLiteral(rule.Message));
 
             if (canEmitMetadata && rule.MetadataValues.Length > 0)
             {
@@ -273,11 +272,11 @@ public static class ValidatorOpenApiEmitter
         {
             writer
                .Write("builder.WithErrorExample(")
-               .Write(ToStringLiteral(example.Code))
+               .Write(CSharpLiterals.ToStringLiteral(example.Code))
                .Write(", ")
-               .Write(example.Target is null ? "null" : ToStringLiteral(example.Target))
+               .Write(example.Target is null ? "null" : CSharpLiterals.ToStringLiteral(example.Target))
                .Write(", ")
-               .Write(example.Message is null ? "null" : ToStringLiteral(example.Message));
+               .Write(example.Message is null ? "null" : CSharpLiterals.ToStringLiteral(example.Message));
 
             if (example.MetadataValues.Length > 0)
             {
@@ -304,7 +303,7 @@ public static class ValidatorOpenApiEmitter
             ", ",
             metadataValues.Select(
                 static metadataValue =>
-                    $"[{ToStringLiteral(metadataValue.Key)}] = {ToLiteral(metadataValue.Value)}"
+                    $"[{CSharpLiterals.ToStringLiteral(metadataValue.Key)}] = {ToLiteral(metadataValue.Value)}"
             )
         );
 
@@ -332,12 +331,11 @@ public static class ValidatorOpenApiEmitter
     private static string ToLiteral(object? value) =>
         value is ReconstructedMetadataValue reconstructedValue ?
             reconstructedValue.ToCSharpLiteral() :
-            TryCreateDateOnlyOrTimeOnlyLiteral(value) ??
             value switch
             {
                 null => "null",
-                string stringValue => ToStringLiteral(stringValue),
-                char charValue => "'" + EscapeChar(charValue) + "'",
+                string stringValue => CSharpLiterals.ToStringLiteral(stringValue),
+                char charValue => "'" + CSharpLiterals.EscapeChar(charValue) + "'",
                 bool boolValue => boolValue ? "true" : "false",
                 byte byteValue => byteValue.ToString(CultureInfo.InvariantCulture),
                 sbyte sbyteValue => sbyteValue.ToString(CultureInfo.InvariantCulture),
@@ -350,92 +348,11 @@ public static class ValidatorOpenApiEmitter
                 float floatValue => floatValue.ToString("R", CultureInfo.InvariantCulture) + "F",
                 double doubleValue => doubleValue.ToString("R", CultureInfo.InvariantCulture) + "D",
                 decimal decimalValue => decimalValue.ToString(CultureInfo.InvariantCulture) + "M",
-                DateTime dateTimeValue =>
-                    "new global::System.DateTime(" +
-                    dateTimeValue.Ticks.ToString(CultureInfo.InvariantCulture) +
-                    "L, global::System.DateTimeKind." +
-                    dateTimeValue.Kind +
-                    ")",
-                DateTimeOffset dateTimeOffsetValue =>
-                    "new global::System.DateTimeOffset(" +
-                    dateTimeOffsetValue.Ticks.ToString(CultureInfo.InvariantCulture) +
-                    "L, global::System.TimeSpan.FromTicks(" +
-                    dateTimeOffsetValue.Offset.Ticks.ToString(CultureInfo.InvariantCulture) +
-                    "L))",
-                TimeSpan timeSpanValue =>
-                    "global::System.TimeSpan.FromTicks(" +
-                    timeSpanValue.Ticks.ToString(CultureInfo.InvariantCulture) +
-                    "L)",
-                Guid guidValue =>
-                    "global::System.Guid.ParseExact(" +
-                    ToStringLiteral(guidValue.ToString("D")) +
-                    ", \"D\")",
-                Uri uriValue =>
-                    "new global::System.Uri(" +
-                    ToStringLiteral(uriValue.OriginalString) +
-                    ", global::System.UriKind.RelativeOrAbsolute)",
-                _ => ToStringLiteral(value.ToString() ?? string.Empty)
+                _ => CSharpLiterals.ToStringLiteral(value.ToString() ?? string.Empty)
             };
 
     private static string GetDeduplicationValue(object? value) =>
         value is ReconstructedMetadataValue reconstructedValue ?
             reconstructedValue.Kind + ":" + reconstructedValue.ToCSharpLiteral() :
             value?.ToString() ?? string.Empty;
-
-    private static string? TryCreateDateOnlyOrTimeOnlyLiteral(object? value)
-    {
-        if (value is null)
-        {
-            return null;
-        }
-
-        var type = value.GetType();
-        if (string.Equals(type.FullName, "System.DateOnly", StringComparison.Ordinal))
-        {
-            var dayNumber = (int) type.GetProperty("DayNumber")!.GetValue(value, index: null)!;
-            return "global::System.DateOnly.FromDayNumber(" +
-                   dayNumber.ToString(CultureInfo.InvariantCulture) +
-                   ")";
-        }
-
-        if (string.Equals(type.FullName, "System.TimeOnly", StringComparison.Ordinal))
-        {
-            var ticks = (long) type.GetProperty("Ticks")!.GetValue(value, index: null)!;
-            return "new global::System.TimeOnly(" +
-                   ticks.ToString(CultureInfo.InvariantCulture) +
-                   "L)";
-        }
-
-        return null;
-    }
-
-    private static string ToStringLiteral(string value)
-    {
-        var builder = new StringBuilder(value.Length + 2).Append('"');
-        foreach (var c in value)
-        {
-            builder.Append(EscapeChar(c));
-        }
-
-        return builder.Append('"').ToString();
-    }
-
-    private static string EscapeChar(char value) =>
-        value switch
-        {
-            '\\' => @"\\",
-            '"' => "\\\"",
-            '\'' => "\\'",
-            '\0' => "\\0",
-            '\a' => "\\a",
-            '\b' => "\\b",
-            '\f' => "\\f",
-            '\n' => "\\n",
-            '\r' => "\\r",
-            '\t' => "\\t",
-            '\v' => "\\v",
-            _ => char.IsControl(value) ?
-                "\\u" + ((int) value).ToString("x4", CultureInfo.InvariantCulture) :
-                value.ToString()
-        };
 }

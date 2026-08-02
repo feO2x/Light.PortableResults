@@ -1,6 +1,5 @@
 using System;
 using System.Globalization;
-using System.Text;
 using System.Xml;
 
 namespace Light.PortableResults.Validation.OpenApi.SourceGeneration;
@@ -235,10 +234,10 @@ public sealed class ReconstructedMetadataValue : IEquatable<ReconstructedMetadat
                 PrimaryValue.ToString(CultureInfo.InvariantCulture) +
                 "L)",
             ReconstructedMetadataValueKind.Guid =>
-                "global::System.Guid.ParseExact(" + ToStringLiteral(Text!) + ", \"D\")",
+                "global::System.Guid.ParseExact(" + CSharpLiterals.ToStringLiteral(Text!) + ", \"D\")",
             ReconstructedMetadataValueKind.Uri =>
                 "new global::System.Uri(" +
-                ToStringLiteral(Text!) +
+                CSharpLiterals.ToStringLiteral(Text!) +
                 ", global::System.UriKind.RelativeOrAbsolute)",
             _ => throw new InvalidOperationException($"Unsupported reconstructed metadata kind '{Kind}'.")
         };
@@ -266,35 +265,5 @@ public sealed class ReconstructedMetadataValue : IEquatable<ReconstructedMetadat
             DateTimeKind.Utc => nameof(DateTimeKind.Utc),
             DateTimeKind.Local => nameof(DateTimeKind.Local),
             _ => throw new InvalidOperationException($"Unsupported DateTime kind '{kind}'.")
-        };
-
-    private static string ToStringLiteral(string value)
-    {
-        var builder = new StringBuilder(value.Length + 2).Append('"');
-        foreach (var c in value)
-        {
-            builder.Append(EscapeChar(c));
-        }
-
-        return builder.Append('"').ToString();
-    }
-
-    private static string EscapeChar(char value) =>
-        value switch
-        {
-            '\\' => @"\\",
-            '"' => "\\\"",
-            '\'' => "\\'",
-            '\0' => "\\0",
-            '\a' => "\\a",
-            '\b' => "\\b",
-            '\f' => "\\f",
-            '\n' => "\\n",
-            '\r' => "\\r",
-            '\t' => "\\t",
-            '\v' => "\\v",
-            _ => char.IsControl(value) ?
-                "\\u" + ((int) value).ToString("x4", CultureInfo.InvariantCulture) :
-                value.ToString()
         };
 }
