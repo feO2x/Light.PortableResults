@@ -53,7 +53,7 @@ public sealed class LightActionResult : BaseLightActionResult<Result>
             typeInfo is not JsonTypeInfo<HttpResultForWriting> castTypeInfo)
         {
             throw new InvalidOperationException(
-                $"Could not resolve 'JsonTypeInfo<{typeof(HttpResultForWriting)}>'. Please ensure that your JsonSerializerOptions are configured correctly. The AddDefaultLightResultsHttpWriteJsonConverters extension method can help you with this."
+                $"Could not resolve 'JsonTypeInfo<{typeof(HttpResultForWriting)}>'. Please ensure that your JsonSerializerOptions are configured correctly: the AddDefaultPortableResultsHttpWriteJsonConverters extension method registers the required converters, and a source-generated resolver must declare this type in its JsonSerializerContext."
             );
         }
 
@@ -110,7 +110,7 @@ public sealed class LightActionResult<T> : BaseLightActionResult<Result<T>>
             typeInfo is not JsonTypeInfo<HttpResultForWriting<T>> castTypeInfo)
         {
             throw new InvalidOperationException(
-                $"Could not resolve 'JsonTypeInfo<{typeof(HttpResultForWriting<T>)}>'. Please ensure that your JsonSerializerOptions are configured correctly. The AddDefaultLightResultsHttpWriteJsonConverters extension method can help you with this."
+                $"Could not resolve 'JsonTypeInfo<{typeof(HttpResultForWriting<T>)}>'. Please ensure that your JsonSerializerOptions are configured correctly: the AddDefaultPortableResultsHttpWriteJsonConverters extension method registers the required converters, and a source-generated resolver must declare this type in its JsonSerializerContext."
             );
         }
 
