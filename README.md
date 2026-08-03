@@ -1377,7 +1377,8 @@ For each library-owned type, `PortableResultsJsonContracts` resolves in this ord
    `JsonSerializerOptions` precedence — the first entry in `Converters` that can convert the type. A converter you
    insert **before** the Light.PortableResults defaults keeps its precedence; the library converter is only reached
    when nothing else matches. Contracts created this way are cached per `JsonSerializerOptions` instance and can be
-   created after the options became read-only.
+   created after the options became read-only. Creating one also makes the options read-only, so register every
+   converter before the first read or write.
 
 If a value type is missing from your context, the affected entry point throws an `InvalidOperationException` that
 names the unresolved type and tells you to register it, instead of failing deep inside `System.Text.Json`.
