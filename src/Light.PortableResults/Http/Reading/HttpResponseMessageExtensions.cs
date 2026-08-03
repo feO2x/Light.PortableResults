@@ -2,10 +2,12 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using Light.PortableResults.Http.Reading.Json;
 using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization;
 
 namespace Light.PortableResults.Http.Reading;
 
@@ -124,19 +126,30 @@ public static class HttpResponseMessageExtensions
             return HandleEmptyBody(isFailure, static () => Result.Ok(), successEmptyBodyMessage: null);
         }
 
+#if NET10_0_OR_GREATER
+        await using (contentStream)
+#else
         using (contentStream)
+#endif
         {
             if (isFailure)
             {
                 var failurePayload = await JsonSerializer
-                   .DeserializeAsync<HttpReadFailureResultPayload>(contentStream, serializerOptions, cancellationToken)
+                   .DeserializeAsync(contentStream, GetFailurePayloadTypeInfo(serializerOptions), cancellationToken)
                    .ConfigureAwait(false);
                 EnsureFailurePayloadHasErrors(failurePayload.Errors, NonGenericFailureMustDeserializeToFailedMessage);
                 return Result.Fail(failurePayload.Errors, failurePayload.Metadata);
             }
 
             var successPayload = await JsonSerializer
-               .DeserializeAsync<HttpReadSuccessResultPayload>(contentStream, serializerOptions, cancellationToken)
+               .DeserializeAsync(
+                    contentStream,
+                    PortableResultsJsonContracts.GetLibraryTypeInfo(
+                        serializerOptions,
+                        static () => new HttpReadSuccessResultPayloadJsonConverter()
+                    ),
+                    cancellationToken
+                )
                .ConfigureAwait(false);
             return Result.Ok(successPayload.Metadata);
         }
@@ -160,12 +173,16 @@ public static class HttpResponseMessageExtensions
             );
         }
 
+#if NET10_0_OR_GREATER
+        await using (contentStream)
+#else
         using (contentStream)
+#endif
         {
             if (isFailure)
             {
                 var failurePayload = await JsonSerializer
-                   .DeserializeAsync<HttpReadFailureResultPayload>(contentStream, serializerOptions, cancellationToken)
+                   .DeserializeAsync(contentStream, GetFailurePayloadTypeInfo(serializerOptions), cancellationToken)
                    .ConfigureAwait(false);
                 EnsureFailurePayloadHasErrors(failurePayload.Errors, GenericFailureMustDeserializeToFailedMessage);
                 return Result<T>.Fail(failurePayload.Errors, failurePayload.Metadata);
@@ -198,9 +215,12 @@ public static class HttpResponseMessageExtensions
         if (preferSuccessPayload == PreferSuccessPayload.BareValue)
         {
             var barePayload = await JsonSerializer
-               .DeserializeAsync<HttpReadBareSuccessResultPayload<T>>(
+               .DeserializeAsync(
                     contentStream,
-                    serializerOptions,
+                    PortableResultsJsonContracts.GetLibraryTypeInfo(
+                        serializerOptions,
+                        static () => new HttpReadBareSuccessResultPayloadJsonConverter<T>()
+                    ),
                     cancellationToken
                 )
                .ConfigureAwait(false);
@@ -210,9 +230,12 @@ public static class HttpResponseMessageExtensions
         if (preferSuccessPayload == PreferSuccessPayload.WrappedValue)
         {
             var wrappedPayload = await JsonSerializer
-               .DeserializeAsync<HttpReadWrappedSuccessResultPayload<T>>(
+               .DeserializeAsync(
                     contentStream,
-                    serializerOptions,
+                    PortableResultsJsonContracts.GetLibraryTypeInfo(
+                        serializerOptions,
+                        static () => new HttpReadWrappedSuccessResultPayloadJsonConverter<T>()
+                    ),
                     cancellationToken
                 )
                .ConfigureAwait(false);
@@ -220,10 +243,25 @@ public static class HttpResponseMessageExtensions
         }
 
         var autoPayload = await JsonSerializer
-           .DeserializeAsync<HttpReadAutoSuccessResultPayload<T>>(contentStream, serializerOptions, cancellationToken)
+           .DeserializeAsync(
+                contentStream,
+                PortableResultsJsonContracts.GetLibraryTypeInfo(
+                    serializerOptions,
+                    static () => new HttpReadAutoSuccessResultPayloadJsonConverter<T>()
+                ),
+                cancellationToken
+            )
            .ConfigureAwait(false);
         return CreateSuccessfulGenericResult(autoPayload.Value, autoPayload.Metadata);
     }
+
+    private static JsonTypeInfo<HttpReadFailureResultPayload> GetFailurePayloadTypeInfo(
+        JsonSerializerOptions serializerOptions
+    ) =>
+        PortableResultsJsonContracts.GetLibraryTypeInfo(
+            serializerOptions,
+            static () => new HttpReadFailureResultPayloadJsonConverter()
+        );
 
     private static Result<T> CreateSuccessfulGenericResult<T>(T value, MetadataObject? metadata)
     {
@@ -281,12 +319,12 @@ public static class HttpResponseMessageExtensions
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        var stream = await response.Content.ReadAsStreamAsync();
+        var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
         switch (stream.CanSeek)
         {
             case true when stream.Length == 0L:
-                stream.Dispose();
+                await stream.DisposeAsync();
                 return null;
             default: return stream;
         }

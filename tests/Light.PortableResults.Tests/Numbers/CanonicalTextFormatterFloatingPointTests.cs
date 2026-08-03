@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Light.PortableResults.Tests.Numbers;
 
+[Collection(AllocationMeasurementCollection.Name)]
 public sealed class CanonicalTextFormatterFloatingPointTests
 {
     private const int CorpusSize = 50_000;

@@ -5,8 +5,14 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <IsPackable>false</IsPackable>
     <InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.AspNetCore.OpenApi.Generated</InterceptorsNamespaces>
-    <!-- Serilog is not yet fully annotated for trimming; suppress the assembly-level IL2104 rollup. -->
-    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+    <!--
+      Keep package-reference rollups non-fatal; project references still report detailed diagnostics.
+      Serilog is not yet fully annotated for trimming and only surfaces as the assembly-level IL2104 rollup,
+      while trim and AOT warnings from the Light.PortableResults project references stay fatal in Release.
+      Do not set TrimmerSingleWarn=false: it expands Serilog to IL2067, which Release promotes to an error,
+      and globally suppressing IL2067 could hide the same defect in the Light assemblies.
+    -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);IL2104</WarningsNotAsErrors>
     <RestoreLockedMode>false</RestoreLockedMode>
   </PropertyGroup>
 

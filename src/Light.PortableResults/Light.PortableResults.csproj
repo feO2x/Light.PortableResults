@@ -3,6 +3,7 @@
     <TargetFramework />
     <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
     <PublishAot>false</PublishAot>
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnablePackageValidation>true</EnablePackageValidation>
     <Description>The Light.PortableResults package implements the core functionality: Results, Errors, Metadata, Functional Extensions, and serialization support for various formats like HTTP and CloudEvents. Compatible with Native AOT. Check out the integration packages Light.PortableResults.AspNetCore.MinimalApis or Light.PortableResults.AspNetCore.Mvc.</Description>
@@ -25,9 +26,20 @@
         and CloudEvents extension-attribute writing for bounded primitive values.
       - Emits primitive metadata arrays as ordered, separate HTTP header values. Custom header converters can reuse
         the new public HttpHeaderValueFormatter.
+      - Builds the net10.0 asset with IsAotCompatible, so trim and Native AOT analyzer diagnostics fail the build.
+      - Resolves its own CloudEvents write, CloudEvents read, and HTTP read envelope and payload contracts through
+        the new public PortableResultsJsonContracts. Consumers only register their result value types with a
+        JsonSerializerContext; closed library wrappers such as CloudEventsEnvelopeForWriting&lt;T> no longer have to
+        be declared. Non-generic results need no consumer registration at all.
+      - Keeps the precedence of converters registered before the Light.PortableResults defaults, and caches
+        library-created contracts per JsonSerializerOptions instance, including read-only instances.
 
       Breaking changes
       ---------------------------------
+
+      - Missing serialization metadata for a result value type now throws an InvalidOperationException that names the
+        type and the remedy at every CloudEvents and HTTP entry point, instead of the NotSupportedException that
+        System.Text.Json raised for the unresolved contract.
 
       - Values of the ten newly typed BCL metadata types no longer flatten to MetadataKind.String.
         Their JSON representations now use the canonical encoding of their dedicated kind.

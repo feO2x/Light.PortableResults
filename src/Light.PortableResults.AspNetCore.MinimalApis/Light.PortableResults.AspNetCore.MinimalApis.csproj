@@ -11,6 +11,9 @@
       - Easy integration into ASP.NET Core's composition root via IServiceCollection.AddPortableResultsForMinimalApis.
       - OpenAPI helpers and schema-only CLR surrogate types were removed; use Light.PortableResults.AspNetCore.OpenApi for OpenAPI integration.
       - Compatible with .NET Native AOT.
+      - LightResult and LightResult&lt;T> now report an unresolvable HttpResultForWriting contract as an
+        InvalidOperationException naming the closed wrapper type. The previous guard was unreachable because
+        JsonSerializerOptions.GetTypeInfo threw a NotSupportedException first.
     </PackageReleaseNotes>
   </PropertyGroup>
 

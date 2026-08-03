@@ -2,7 +2,9 @@ using System;
 using System.Globalization;
 using System.Text.Json;
 using Light.PortableResults.Buffers;
+using Light.PortableResults.CloudEvents.Writing.Json;
 using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization;
 
 namespace Light.PortableResults.CloudEvents.Writing;
 
@@ -176,7 +178,12 @@ public static class CloudEventsResultExtensions
             options
         );
 
-        JsonSerializer.Serialize(writer, envelope, options.SerializerOptions);
+        PortableResultsJsonContracts.WriteLibraryValue(
+            writer,
+            envelope,
+            options.SerializerOptions,
+            static () => new CloudEventsEnvelopeForWritingJsonConverter()
+        );
     }
 
     /// <summary>
@@ -412,7 +419,12 @@ public static class CloudEventsResultExtensions
             resolvedOptions
         );
 
-        JsonSerializer.Serialize(writer, envelope, resolvedOptions.SerializerOptions);
+        PortableResultsJsonContracts.WriteLibraryValue(
+            writer,
+            envelope,
+            resolvedOptions.SerializerOptions,
+            static () => new CloudEventsEnvelopeForWritingJsonConverter<T>()
+        );
     }
 
     /// <summary>

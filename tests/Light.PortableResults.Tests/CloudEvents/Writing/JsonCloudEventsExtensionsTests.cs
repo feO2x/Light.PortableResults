@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Light.PortableResults.Tests.CloudEvents.Writing;
 
+[Collection(AllocationMeasurementCollection.Name)]
 public sealed class JsonCloudEventsExtensionsTests
 {
     private const int AllocationSampleCount = 5;

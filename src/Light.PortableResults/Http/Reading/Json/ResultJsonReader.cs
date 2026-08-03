@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
 using Light.PortableResults.Metadata;
+using Light.PortableResults.SharedJsonSerialization;
 using Light.PortableResults.SharedJsonSerialization.Reading;
 
 namespace Light.PortableResults.Http.Reading.Json;
@@ -663,7 +664,10 @@ public static class ResultJsonReader
 
     private static T? ReadGenericValue<T>(ref Utf8JsonReader reader, JsonSerializerOptions serializerOptions)
     {
-        return JsonSerializer.Deserialize<T>(ref reader, serializerOptions);
+        return JsonSerializer.Deserialize(
+            ref reader,
+            PortableResultsJsonContracts.GetRequiredTypeInfo<T>(serializerOptions)
+        );
     }
 
     private static bool IsWrappedSuccessPayloadCandidate(ref Utf8JsonReader reader)

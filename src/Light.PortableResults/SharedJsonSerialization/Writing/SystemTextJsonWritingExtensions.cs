@@ -67,28 +67,22 @@ public static class SystemTextJsonWritingExtensions
             return;
         }
 
-        var valueTypeInfo = options.GetTypeInfo(typeof(T));
-        if (valueTypeInfo is null)
-        {
-            throw new InvalidOperationException(
-                $"Could not find JsonTypeInfo for type '{nameof(T)}'. Please ensure that your JsonSerializerOptions are configured correctly."
-            );
-        }
+        var valueTypeInfo = PortableResultsJsonContracts.GetRequiredTypeInfo<T>(options);
 
         var runtimeType = value.GetType();
         if (valueTypeInfo.ShouldUseWith(runtimeType))
         {
-            JsonSerializer.Serialize(writer, value, (JsonTypeInfo<T>) valueTypeInfo);
+            JsonSerializer.Serialize(writer, value, valueTypeInfo);
             return;
         }
 
-        if (!options.TryGetTypeInfo(runtimeType, out valueTypeInfo))
+        if (!options.TryGetTypeInfo(runtimeType, out var runtimeTypeInfo))
         {
             throw new InvalidOperationException(
-                $"No JSON serialization metadata was found for type '{runtimeType}' - please ensure that JsonOptions are configured properly"
+                PortableResultsJsonContracts.CreateMissingTypeInfoMessage(runtimeType)
             );
         }
 
-        JsonSerializer.Serialize(writer, value, valueTypeInfo);
+        JsonSerializer.Serialize(writer, value, runtimeTypeInfo);
     }
 }

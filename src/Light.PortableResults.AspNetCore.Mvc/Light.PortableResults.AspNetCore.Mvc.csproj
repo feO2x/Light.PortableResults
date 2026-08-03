@@ -9,6 +9,10 @@
       - LightActionResult and LightActionResult&lt;T> and corresponding extension methods to turn result instances into HTTP success responses or RFC 9457 (and RFC 7807) compatible Problem Details responses.
       - Easy integration into ASP.NET Core's composition root via IServiceCollection.AddPortableResultsForMvc.
       - OpenAPI attributes and schema-only CLR surrogate types were removed; use Light.PortableResults.AspNetCore.OpenApi for OpenAPI integration.
+      - LightActionResult and LightActionResult&lt;T> now report an unresolvable HttpResultForWriting contract as an
+        InvalidOperationException naming the closed wrapper type. The previous guard was unreachable because
+        JsonSerializerOptions.GetTypeInfo threw a NotSupportedException first. This package remains incompatible
+        with .NET Native AOT.
     </PackageReleaseNotes>
   </PropertyGroup>
 

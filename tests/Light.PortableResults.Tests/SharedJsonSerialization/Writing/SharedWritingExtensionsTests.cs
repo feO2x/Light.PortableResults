@@ -13,6 +13,7 @@ using Xunit;
 
 namespace Light.PortableResults.Tests.SharedJsonSerialization.Writing;
 
+[Collection(AllocationMeasurementCollection.Name)]
 public sealed class SharedWritingExtensionsTests
 {
     private const int AllocationIterations = 1_000;

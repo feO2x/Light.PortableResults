@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Light.PortableResults.Tests.Metadata;
 
+[Collection(AllocationMeasurementCollection.Name)]
 public sealed class CanonicalTextFormatterTests
 {
     private const int AllocationIterations = 1_000;
