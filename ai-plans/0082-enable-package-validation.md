@@ -12,7 +12,7 @@ Without a baseline the property is close to decorative: it activates only the co
 
 - [ ] Every packable project under `src/` builds with package validation enabled. The non-packable source generator is unaffected.
 - [ ] All seven published packages validate against a `0.6.0` baseline, and an undeclared shape break fails the build.
-- [ ] `dotnet pack -c Release` reproduces the CI gate exactly, with no additional arguments, properties or scripts. No validation runs during `dotnet build` or `dotnet test`, so their cost is unchanged; restore gains the seven baseline packages.
+- [ ] `dotnet pack -c Release` reproduces the CI gate exactly, with no additional arguments, properties or scripts. No validation runs during `dotnet build` or `dotnet test`, so compilation and test execution cost is unchanged after restore; restore itself gains the seven baseline packages, which a cold `dotnet build` or `dotnet test` pays for through implicit restore.
 - [ ] A single documented property suppresses both the baseline download at restore and the validation at pack, so the solution restores, builds and tests offline. `packages.lock.json` files stay unchanged and locked-mode restore keeps working.
 - [ ] The CI NuGet cache key covers the baseline packages, so they are cached rather than re-downloaded on every run, and the key rotates when the baseline version changes.
 - [ ] Package validation runs on push and pull request, so a break is caught in review rather than during the release job.
