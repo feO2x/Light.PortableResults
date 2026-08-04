@@ -295,6 +295,79 @@ public sealed class HttpExtensionsTests
     }
 
     [Fact]
+    public void SetStatusCodeFromResultShouldRejectDefaultResultWithoutSettingAStatusCode()
+    {
+        var response = new DefaultHttpContext().Response;
+        var initialStatusCode = response.StatusCode;
+
+        var act = () => response.SetStatusCodeFromResult(default(Result<string>));
+
+        AssertDefaultInstanceRejected(act);
+        response.StatusCode.Should().Be(initialStatusCode);
+    }
+
+    [Fact]
+    public void SetStatusCodeFromResultShouldRejectAnyResultObjectThatIsInvalidWithoutErrors()
+    {
+        var response = new DefaultHttpContext().Response;
+
+        var act = () => response.SetStatusCodeFromResult(default(InvalidResultObjectStub));
+
+        AssertDefaultInstanceRejected(act);
+    }
+
+    [Fact]
+    public void SetContentTypeFromResultShouldRejectDefaultResultWithoutSettingAContentType()
+    {
+        var response = new DefaultHttpContext().Response;
+
+        var act = () =>
+            response.SetContentTypeFromResult(default(Result<string>), MetadataSerializationMode.Always);
+
+        AssertDefaultInstanceRejected(act);
+        response.ContentType.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetContentTypeFromResultShouldRejectAnyResultObjectThatIsInvalidWithoutErrors()
+    {
+        var response = new DefaultHttpContext().Response;
+
+        var act = () =>
+            response.SetContentTypeFromResult(default(InvalidResultObjectStub), MetadataSerializationMode.Always);
+
+        AssertDefaultInstanceRejected(act);
+        response.ContentType.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetMetadataValuesAsHeadersIfNecessaryShouldRejectDefaultResultWithoutAddingHeaders()
+    {
+        var response = new DefaultHttpContext().Response;
+        var conversionService = new CapturingHttpHeaderConversionService();
+
+        var act = () => response.SetMetadataValuesAsHeadersIfNecessary(default(Result<string>), conversionService);
+
+        AssertDefaultInstanceRejected(act);
+        conversionService.PreparedHeaders.Should().BeEmpty();
+        response.Headers.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void SetMetadataValuesAsHeadersIfNecessaryShouldRejectAnyResultObjectThatIsInvalidWithoutErrors()
+    {
+        var response = new DefaultHttpContext().Response;
+        var conversionService = new CapturingHttpHeaderConversionService();
+
+        var act = () =>
+            response.SetMetadataValuesAsHeadersIfNecessary(default(InvalidResultObjectStub), conversionService);
+
+        AssertDefaultInstanceRejected(act);
+        conversionService.PreparedHeaders.Should().BeEmpty();
+        response.Headers.Should().BeEmpty();
+    }
+
+    [Fact]
     public void ResolvePortableResultsHttpWriteOptions_ShouldThrow_WhenHttpContextIsNull()
     {
         HttpContext? httpContext = null;
@@ -345,6 +418,12 @@ public sealed class HttpExtensionsTests
            .WithMessage("No PortableResultsHttpWriteOptions are configured in the DI container");
     }
 
+    private static void AssertDefaultInstanceRejected(Action act) =>
+        act.Should()
+           .Throw<ArgumentException>()
+           .WithParameterName("result")
+           .WithMessage("*default instance*Result.Ok or Result.Fail*");
+
     private static DefaultHttpContext CreateHttpContext(PortableResultsHttpWriteOptions? options = null)
     {
         var services = new ServiceCollection();
@@ -358,6 +437,19 @@ public sealed class HttpExtensionsTests
         {
             RequestServices = services.BuildServiceProvider()
         };
+    }
+
+    /// <summary>
+    /// A result object whose default instance is invalid and carries no errors. <see cref="Result" /> cannot take
+    /// that shape, because its encapsulated value can never be null, but any custom implementation of
+    /// <see cref="IResultObject" /> can.
+    /// </summary>
+    private readonly struct InvalidResultObjectStub : IResultObject
+    {
+        public bool IsValid => false;
+        public Errors Errors => default;
+        public bool HasValue => false;
+        public MetadataObject? Metadata => null;
     }
 
     private sealed class CapturingHttpHeaderConversionService : IHttpHeaderConversionService

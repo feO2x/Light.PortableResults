@@ -12,6 +12,16 @@
       - Compatible with .NET Native AOT.
       - Suppresses response headers when header conversion produces no values, including empty primitive arrays
         and deliberate empty output from custom converters.
+
+      Breaking changes
+      ---------------------------------
+
+      - HttpExtensions.SetStatusCodeFromResult, SetContentTypeFromResult, and SetMetadataValuesAsHeadersIfNecessary
+        now reject a result that is invalid while carrying no errors - the default instance of Result&lt;T> for a
+        reference type or nullable value type - with an ArgumentException that names the default instance as the
+        cause and Result.Ok/Result.Fail as the remedy. An endpoint returning such a result now fails before any
+        status code, header, or body byte reaches the response, instead of throwing an InvalidOperationException
+        from the errors collection that named neither the result nor the default instance.
     </PackageReleaseNotes>
   </PropertyGroup>
 

@@ -36,14 +36,14 @@ Revisit `coverage-analysis: off` when Stryker's MTP per-test coverage support ([
 # One project — sufficient for the four small projects
 dotnet stryker -p Light.PortableResults.AspNetCore.Shared.csproj
 
-# One-file configuration smoke check (~4 minutes)
-# Expect: 2,401 tests, 67 killed, 0 NoCoverage, 100.00%
+# One-file configuration smoke check (~5 minutes)
+# Expect: 2,675 tests, 67 killed, 0 NoCoverage, 100.00%
 dotnet stryker -p Light.PortableResults.csproj -m '**/Result.cs'
 ```
 
 The smoke-check vector is tied to the current `Result.cs` and its tests; update it after intentional changes alter the mutant inventory. All mutants surviving with a 0.00% score suggests fallback to the `vstest` runner, while any non-zero `NoCoverage` count suggests `coverage-analysis: off` was lost.
 
-`-p` selects the mutated project, not the tests: Stryker runs every test project transitively referencing it (`AspNetCore.Shared` → 337 tests, `Light.PortableResults` → all 2,401). Cross-project kills are legitimate (sociable tests) and nearly free. Never pass `-tp` (it does not narrow tests) or `--since` (any non-C# file in the diff, e.g. an `ai-plans/` document, degrades it to a full run). Reports go to `StrykerOutput/<timestamp>/reports/` (gitignored): JSON for agents (filter `"status"` for both `"Survived"` and `"Timeout"`; investigate the timeout cause before survivor triage), HTML for humans.
+`-p` selects the mutated project, not the tests: Stryker runs every test project transitively referencing it (`AspNetCore.Shared` → 415 tests, `Light.PortableResults` → all 2,675). Cross-project kills are legitimate (sociable tests) and nearly free. Never pass `-tp` (it does not narrow tests) or `--since` (any non-C# file in the diff, e.g. an `ai-plans/` document, degrades it to a full run). Reports go to `StrykerOutput/<timestamp>/reports/` (gitignored): JSON for agents (filter `"status"` for both `"Survived"` and `"Timeout"`; investigate the timeout cause before survivor triage), HTML for humans.
 
 ### Cost and baseline
 
@@ -56,7 +56,7 @@ The smoke-check vector is tied to the current `Result.cs` and its tests; update 
 | `Validation.OpenApi.SourceGeneration` | 1,272 | 204 |
 | `AspNetCore.OpenApi` | 848 | 65 |
 | `Validation.OpenApi` | 114 | 2 |
-| `AspNetCore.Shared` | 44 | 3 |
+| `AspNetCore.Shared` | 47 | 3 |
 | `AspNetCore.Mvc` | 33 | 11 |
 | `AspNetCore.MinimalApis` | 32 | 11 |
 
@@ -66,7 +66,7 @@ Baselines carry per-row provenance, because rows are re-measured individually as
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | `AspNetCore.Mvc` | `#66` | 103 | 0:43 | 17 | 0 | 0 | 11 | 5 | 0 |
 | `AspNetCore.MinimalApis` | `04aee20` | 237 | 1:22 | 16 | 0 | 0 | 11 | 5 | 0 |
-| `AspNetCore.Shared` | `04aee20` | 337 | 2:29 | 31 | 0 | 0 | 3 | 10 | 0 |
+| `AspNetCore.Shared` | `#80` | 415 | 2:44 | 34 | 0 | 0 | 3 | 10 | 0 |
 | `Validation.OpenApi` | `#66` | 165 | 2:20 | 59 | 0 | 14 | 2 | 39 | 0 |
 
 Both `Validation.OpenApi` survivor groups are accounted for and neither is a missing test: twelve are the `target`-provided branch of the typed helpers, deferred to the bug in #57 so that tests are written against the corrected contract, and two are the known-false static-initializer mutants described in the blind spots below. Its 39 `Ignored` are 36 block-removal plus the three triage suppressions.

@@ -8,16 +8,16 @@ The damage is at the write boundaries. `default(Result<string>).ToCloudEvent(...
 
 ## Acceptance Criteria
 
-- [ ] The public API of `Result`, `Result<T>` and `IResultObject` is unchanged.
-- [ ] Serializing a default result over CloudEvents throws instead of emitting a payload, for the generic and non-generic result and for every public entry point: the byte-array, pooled, `Utf8JsonWriter` and envelope-factory overloads.
-- [ ] A hand-constructed `CloudEventsEnvelopeForWriting`/`CloudEventsEnvelopeForWriting<T>` carrying a default result is rejected by the JSON writing path, so the guard cannot be bypassed by skipping the envelope factory.
-- [ ] Writing a default result over HTTP throws for both the wrapper factories and the JSON converters, including when a custom `CreateProblemDetailsInfo` delegate is configured.
-- [ ] `HttpExtensions.SetStatusCodeFromResult`, `SetContentTypeFromResult` and `SetMetadataValuesAsHeadersIfNecessary` reject a default result, so a Minimal API or MVC endpoint returning one — directly or through an `IHttpResultEnricher` — fails before any status code, header or body byte reaches the response.
-- [ ] Every guarded site routes through one shared guard clause, throwing the same exception type and a message naming the default instance as the cause and `Result.Ok`/`Result.Fail` as the remedy. `Errors.GetLeadingCategory` and `ProblemDetailsInfo.CreateDefault` are no longer the observable failure for a default result.
-- [ ] Automated tests cover every guarded entry point, assert that no bytes are written when the guard trips, and pin the round-trip property that the library never writes a failure payload its own reader rejects.
-- [ ] The XML documentation states that a default result is neither a success nor a failure and cannot be written, and `Validator.CheckForErrors` documents that `failure` is meaningful only when it returns `true`.
-- [ ] Affected packages update `<PackageReleaseNotes>`.
-- [ ] The Stryker figures in `tests/AGENTS.md` are re-measured where this change invalidates them: the `Light.PortableResults` smoke-check test count, and the `AspNetCore.Shared` baseline row, whose mutant inventory grows with the `HttpExtensions` guards.
+- [x] The public API of `Result`, `Result<T>` and `IResultObject` is unchanged.
+- [x] Serializing a default result over CloudEvents throws instead of emitting a payload, for the generic and non-generic result and for every public entry point: the byte-array, pooled, `Utf8JsonWriter` and envelope-factory overloads. *(see `0080-1-plan-deviations.md`: only `Result<T>` with a nullable value can take the default shape, so the non-generic sites are guarded but unreachable.)*
+- [x] A hand-constructed `CloudEventsEnvelopeForWriting`/`CloudEventsEnvelopeForWriting<T>` carrying a default result is rejected by the JSON writing path, so the guard cannot be bypassed by skipping the envelope factory. *(see `0080-1-plan-deviations.md`: only `Result<T>` with a nullable value can take the default shape, so the non-generic sites are guarded but unreachable.)*
+- [x] Writing a default result over HTTP throws for both the wrapper factories and the JSON converters, including when a custom `CreateProblemDetailsInfo` delegate is configured. *(see `0080-1-plan-deviations.md`: only `Result<T>` with a nullable value can take the default shape, so the non-generic sites are guarded but unreachable.)*
+- [x] `HttpExtensions.SetStatusCodeFromResult`, `SetContentTypeFromResult` and `SetMetadataValuesAsHeadersIfNecessary` reject a default result, so a Minimal API or MVC endpoint returning one — directly or through an `IHttpResultEnricher` — fails before any status code, header or body byte reaches the response.
+- [x] Every guarded site routes through one shared guard clause, throwing the same exception type and a message naming the default instance as the cause and `Result.Ok`/`Result.Fail` as the remedy. `Errors.GetLeadingCategory` and `ProblemDetailsInfo.CreateDefault` are no longer the observable failure for a default result.
+- [x] Automated tests cover every guarded entry point, assert that no bytes are written when the guard trips, and pin the round-trip property that the library never writes a failure payload its own reader rejects.
+- [x] The XML documentation states that a default result is neither a success nor a failure and cannot be written, and `Validator.CheckForErrors` documents that `failure` is meaningful only when it returns `true`. *(see `0080-1-plan-deviations.md`: the non-generic `Result` documents the opposite, because its default instance is a valid success.)*
+- [x] Affected packages update `<PackageReleaseNotes>`.
+- [x] The Stryker figures in `tests/AGENTS.md` are re-measured where this change invalidates them: the `Light.PortableResults` smoke-check test count, and the `AspNetCore.Shared` baseline row, whose mutant inventory grows with the `HttpExtensions` guards.
 
 ## Technical Details
 

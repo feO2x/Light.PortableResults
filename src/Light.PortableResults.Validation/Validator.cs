@@ -85,7 +85,11 @@ public abstract class Validator<T> : BaseValidator<T>
     /// Validates the value and materializes failures as a non-generic <see cref="Result" />.
     /// </summary>
     /// <param name="value">The value to validate.</param>
-    /// <param name="failure">The failure result when validation fails.</param>
+    /// <param name="failure">
+    /// The failure result when validation fails. This value is only meaningful when this method returns
+    /// <see langword="true" />; on success it is set to the default <see cref="Result" /> instance, which carries
+    /// no information about the validated value and must not be passed on to a caller as a result of its own.
+    /// </param>
     /// <param name="displayName">The optional display name. Defaults to the caller-expression of <paramref name="value" />.</param>
     /// <returns><see langword="true" /> when validation failed; otherwise, <see langword="false" />.</returns>
     public bool CheckForErrors(
@@ -105,7 +109,11 @@ public abstract class Validator<T> : BaseValidator<T>
     /// Validates the value and materializes failures as a non-generic <see cref="Result" /> using an explicit target descriptor.
     /// </summary>
     /// <param name="value">The value to validate.</param>
-    /// <param name="failure">The failure result when validation fails.</param>
+    /// <param name="failure">
+    /// The failure result when validation fails. This value is only meaningful when this method returns
+    /// <see langword="true" />; on success it is set to the default <see cref="Result" /> instance, which carries
+    /// no information about the validated value and must not be passed on to a caller as a result of its own.
+    /// </param>
     /// <param name="target">The explicit target descriptor.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns><see langword="true" /> when validation failed; otherwise, <see langword="false" />.</returns>
@@ -117,7 +125,11 @@ public abstract class Validator<T> : BaseValidator<T>
     /// </summary>
     /// <param name="value">The value to validate.</param>
     /// <param name="context">The validation context.</param>
-    /// <param name="failure">The failure result when validation fails.</param>
+    /// <param name="failure">
+    /// The failure result when validation fails. This value is only meaningful when this method returns
+    /// <see langword="true" />; on success it is set to the default <see cref="Result" /> instance, which carries
+    /// no information about the validated value and must not be passed on to a caller as a result of its own.
+    /// </param>
     /// <param name="displayName">The optional display name. Defaults to the caller-expression of <paramref name="value" />.</param>
     /// <returns><see langword="true" /> when validation failed; otherwise, <see langword="false" />.</returns>
     public bool CheckForErrors(
@@ -139,7 +151,11 @@ public abstract class Validator<T> : BaseValidator<T>
     /// </summary>
     /// <param name="value">The value to validate.</param>
     /// <param name="context">The validation context.</param>
-    /// <param name="failure">The failure result when validation fails.</param>
+    /// <param name="failure">
+    /// The failure result when validation fails. This value is only meaningful when this method returns
+    /// <see langword="true" />; on success it is set to the default <see cref="Result" /> instance, which carries
+    /// no information about the validated value and must not be passed on to a caller as a result of its own.
+    /// </param>
     /// <param name="target">The explicit target descriptor.</param>
     /// <param name="displayName">The optional display name.</param>
     /// <returns><see langword="true" /> when validation failed; otherwise, <see langword="false" />.</returns>
