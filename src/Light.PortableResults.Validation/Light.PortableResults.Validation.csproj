@@ -5,32 +5,7 @@
     <PublishAot>false</PublishAot>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
     <Description>Framework-agnostic validation foundations for Light.PortableResults, including validation contexts, low-allocation checks, validator base classes, and validated value pipelines.</Description>
-    <PackageReleaseNotes>
-      Light.PortableResults.Validation 0.7.0
-      ---------------------------------
-
-      - Validation foundations with validation contexts, checks, validated value pipelines, and sync/async validator base classes.
-      - Supports validation errors that integrate with Light.PortableResults HTTP and messaging transports.
-      - Validate your Microsoft.Extensions.Configuration options with Validator&lt;T>.
-      - Compatible with .NET Native AOT.
-      - Built-in comparison and range metadata now preserves the typed scalar vocabulary and its canonical
-        validation-message encodings.
-      - Adds a net10.0 asset so DateOnly and TimeOnly validation boundaries retain their dedicated metadata kinds.
-      - Adds the IsUuidV7 assertion for Check&lt;Guid>, with the UuidV7 error code, a customizable message template, and the standalone GuidExtensions.IsUuidV7 predicate.
-      - Adds the IsUtc, IsLocal, and IsUnspecified assertions for Check&lt;DateTime>, with the Utc, Local, and
-        Unspecified error codes and customizable message templates. They assert the DateTime.Kind of the checked
-        value; with the default System.Text.Json converter, IsUtc requires a trailing 'Z' because a numeric
-        offset - including +00:00 - deserializes as Local.
-      - Builds the net10.0 asset with IsAotCompatible, so trim and Native AOT analyzer diagnostics fail the build.
-
-      Breaking changes
-      ---------------------------------
-
-      - The TValidator type parameter of OptionsBuilder&lt;T>.ValidateWithPortableResults is annotated with
-        DynamicallyAccessedMemberTypes.PublicConstructors, because the DI container instantiates it. Callers that
-        forward their own unannotated generic parameter now get a trim analysis warning and have to add the same
-        annotation.
-    </PackageReleaseNotes>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

@@ -3,18 +3,7 @@
   <PropertyGroup>
     <IsAotCompatible>true</IsAotCompatible>
     <Description>Integration package for turning result instances into Minimal API's IResult instances. Compatible with Native AOT. Compatible with RFC 9457 (and RFC 7807) Problem Details responses.</Description>
-    <PackageReleaseNotes>
-      Light.PortableResults.AspNetCore.MinimalApis 0.7.0
-      ---------------------------------
-
-      - LightResult and LightResult&lt;T> and corresponding extension methods to turn result instances into HTTP success responses or RFC 9457 (and RFC 7807) compatible Problem Details responses.
-      - Easy integration into ASP.NET Core's composition root via IServiceCollection.AddPortableResultsForMinimalApis.
-      - OpenAPI helpers and schema-only CLR surrogate types were removed; use Light.PortableResults.AspNetCore.OpenApi for OpenAPI integration.
-      - Compatible with .NET Native AOT.
-      - LightResult and LightResult&lt;T> now report an unresolvable HttpResultForWriting contract as an
-        InvalidOperationException naming the closed wrapper type. The previous guard was unreachable because
-        JsonSerializerOptions.GetTypeInfo threw a NotSupportedException first.
-    </PackageReleaseNotes>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

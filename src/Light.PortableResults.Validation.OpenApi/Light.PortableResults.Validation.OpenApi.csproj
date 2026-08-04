@@ -3,26 +3,7 @@
   <PropertyGroup>
     <IsAotCompatible>true</IsAotCompatible>
     <Description>OpenAPI bridge package for Light.PortableResults.Validation. Provides built-in validation error metadata contracts and typed helpers for endpoint-specific validation error narrowing.</Description>
-    <PackageReleaseNotes>
-      Light.PortableResults.Validation.OpenApi 0.7.0
-      ----------------------------------------
-
-      - Built-in OpenAPI metadata contracts for Light.PortableResults.Validation error codes.
-      - Opt-in registration extension for the global PortableResults OpenAPI contract registry.
-      - Typed comparison and range helper metadata contracts for endpoint-specific narrowing.
-      - Opt-in source generator for deriving Minimal API and MVC validation OpenAPI metadata from synchronous validators.
-      - Native AOT compatible.
-      - Registers a built-in metadata-free contract for the new UuidV7 validation error code.
-      - Registers built-in metadata-free contracts for the new Utc, Local, and Unspecified validation error codes.
-      - The source generator reconstructs non-constant validation boundaries - DateTime, DateTimeOffset, TimeSpan,
-        DateOnly, TimeOnly, Guid, and Uri written as a recognized constructor, named factory, well-known static, or
-        a static readonly field declared in the validator's own file - so their OpenAPI error examples carry both
-        the message and the metadata entry instead of degrading silently.
-      - A boundary outside the recognized shapes, including one computed at runtime, now reports the new
-        LPRSG0015 (Info) and degrades the example instead of failing the build. A static readonly field declared in
-        another file or assembly reports the new LPRSG0016 (Warning) and is not resolved; declare it in the
-        validator's file or write the value inline.
-    </PackageReleaseNotes>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
