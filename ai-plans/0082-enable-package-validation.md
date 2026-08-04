@@ -14,6 +14,7 @@ Without a baseline the property is close to decorative: it activates only the co
 - [ ] All seven published packages validate against a `0.6.0` baseline, and an undeclared shape break fails the build.
 - [ ] `dotnet pack -c Release` reproduces the CI gate exactly, with no additional arguments, properties or scripts. No validation runs during `dotnet build` or `dotnet test`, so their cost is unchanged; restore gains the seven baseline packages.
 - [ ] A single documented property suppresses both the baseline download at restore and the validation at pack, so the solution restores, builds and tests offline. `packages.lock.json` files stay unchanged and locked-mode restore keeps working.
+- [ ] The CI NuGet cache key covers the baseline packages, so they are cached rather than re-downloaded on every run, and the key rotates when the baseline version changes.
 - [ ] Package validation runs on push and pull request, so a break is caught in review rather than during the release job.
 - [ ] Validation compares like with like on strong naming: a build without the release SNK produces no `CP0003`, and the release job keeps producing genuinely signed assemblies. Packages built for validation are never pushed.
 - [ ] Strong-naming the `src` assemblies by default leaves the test suite and the Native AOT sample publish green.
@@ -104,7 +105,17 @@ warning : This project cannot be packaged because packaging has been disabled. .
 
 Baseline *acquisition* is a different matter and does reach the ordinary loop. The SDK injects the `PackageDownload` from an evaluation-time `ItemGroup` in `Microsoft.NET.ApiCompat.targets`, not from a target, so it participates in restore whether or not `Pack` ever runs. A plain `dotnet restore` — and therefore `dotnet build` or `dotnet test` with implicit restore — fetches all seven 0.6.0 packages. Do not describe the inner loop as untouched; the accurate statement is that it is untouched *after restore*.
 
-That cost is one cold download of seven small packages, cached thereafter, and CI already caches NuGet, so it does not justify a redesign. Gating the baseline on whether packing is underway would mean depending on the undocumented `_IsPacking` property and would leave the CI restore without the baselines that the `--no-build` pack step needs. Accept the download and document the opt-out instead.
+That cost is one cold download of seven small packages, cached thereafter, so it does not justify a redesign. Gating the baseline on whether packing is underway would mean depending on the undocumented `_IsPacking` property and would leave the CI restore without the baselines that the `--no-build` pack step needs. Accept the download and document the opt-out instead.
+
+The existing CI cache does not cover it without a change, and this is not self-correcting. `.github/actions/cache-nuget/action.yml` keys on `hashFiles('**/packages.lock.json')`, and the baseline `PackageDownload` provably does not alter those files, so the key is unchanged by this work. `actions/cache` skips its post-job save on an exact key hit, so the pre-existing entry — which predates the baseline and does not contain the seven packages — would be restored on every run, the baselines re-downloaded every time, and the entry never refreshed. This affects every run, not only fresh runners, and it applies to `release-on-nuget.yml` too, which uses the same composite action.
+
+Add the file that declares the baseline to the key:
+
+```yaml
+key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json', 'src/Directory.Build.props') }}
+```
+
+That is the correct dependency set rather than a workaround: lock files describe what `PackageReference` resolves to, and `src/Directory.Build.props` is where `PackageValidationBaselineVersion` lives, so together they cover everything restore fetches. It rotates the key once when this change lands, so the refreshed entry is saved with the baselines in it, and rotates again when the baseline moves to 0.7.0 at release. Do not hard-code the baseline version into the cache key instead: it would duplicate a value that already exists in the props file and would silently go stale the first time someone bumps one without the other. The occasional unnecessary cache rebuild when that props file changes for an unrelated reason is the accepted cost.
 
 The same `ItemGroup` is conditioned on `DisablePackageBaselineValidation`, so one property covers both halves:
 
