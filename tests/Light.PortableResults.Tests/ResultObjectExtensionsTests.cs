@@ -17,7 +17,7 @@ public sealed class ResultObjectExtensionsTests
         act.Should()
            .Throw<ArgumentException>()
            .WithParameterName("result")
-           .WithMessage("*default instance*Result.Ok or Result.Fail*");
+           .WithMessage("*invalid while carrying no errors*default instance*Result.Ok or Result.Fail*");
     }
 
     [Fact]
@@ -27,17 +27,24 @@ public sealed class ResultObjectExtensionsTests
 
         var act = () => result.MustNotBeDefaultInstance();
 
-        act.Should().Throw<ArgumentException>().WithParameterName("result");
+        act.Should()
+           .Throw<ArgumentException>()
+           .WithParameterName("result")
+           .WithMessage("*invalid while carrying no errors*default instance*Result.Ok or Result.Fail*");
     }
 
     [Fact]
     public void MustNotBeDefaultInstanceShouldRejectAnyResultObjectThatIsInvalidWithoutErrors()
     {
-        var result = new ResultObjectStub(isValid: false, default);
+        var result = new ResultObjectStub(isValid: false, default, nonDefaultMarker: 1);
 
+        result.Should().NotBe(default(ResultObjectStub));
         var act = () => result.MustNotBeDefaultInstance();
 
-        act.Should().Throw<ArgumentException>().WithParameterName("result");
+        act.Should()
+           .Throw<ArgumentException>()
+           .WithParameterName("result")
+           .WithMessage("*invalid while carrying no errors*default instance*Result.Ok or Result.Fail*");
     }
 
     [Fact]
@@ -100,15 +107,18 @@ public sealed class ResultObjectExtensionsTests
 
     private readonly struct ResultObjectStub : IResultObject
     {
-        public ResultObjectStub(bool isValid, Errors errors)
+        private readonly int _nonDefaultMarker;
+
+        public ResultObjectStub(bool isValid, Errors errors, int nonDefaultMarker)
         {
             IsValid = isValid;
             Errors = errors;
+            _nonDefaultMarker = nonDefaultMarker;
         }
 
         public bool IsValid { get; }
         public Errors Errors { get; }
-        public bool HasValue => false;
+        public bool HasValue => _nonDefaultMarker < 0;
         public MetadataObject? Metadata => null;
     }
 }

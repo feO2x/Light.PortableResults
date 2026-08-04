@@ -11,14 +11,14 @@ public static class ResultObjectExtensions
 {
     /// <summary>
     /// <para>
-    /// Ensures that the specified result is not the default instance of its struct type.
+    /// Ensures that the specified result represents either a success or a failure.
     /// </para>
     /// <para>
-    /// A default instance is neither a success nor a failure: it reports <see cref="IResultObject.IsValid" /> as
-    /// <see langword="false" /> while its <see cref="IResultObject.Errors" /> collection is empty. Such an instance
-    /// carries no information that could be written to a transport, thus every write boundary of this library
-    /// rejects it up front. <c>default(Result&lt;T>)</c> takes this shape whenever <c>T</c> is a reference type or
-    /// a nullable value type.
+    /// A result that reports <see cref="IResultObject.IsValid" /> as <see langword="false" /> while its
+    /// <see cref="IResultObject.Errors" /> collection is empty is neither a success nor a failure and carries no
+    /// information that could be written to a transport. Every write boundary of this library rejects that state
+    /// up front. <c>default(Result&lt;T>)</c> takes this shape whenever <c>T</c> is a reference type or a nullable
+    /// value type; default results with non-nullable value types, including <c>default(Result)</c>, are successes.
     /// </para>
     /// </summary>
     /// <param name="result">The result to check.</param>
@@ -28,7 +28,9 @@ public static class ResultObjectExtensions
     /// </param>
     /// <typeparam name="TResult">The concrete result struct implementing <see cref="IResultObject" />.</typeparam>
     /// <returns>The unchanged <paramref name="result" />.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="result" /> is the default instance.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors.
+    /// </exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TResult MustNotBeDefaultInstance<TResult>(
         this TResult result,
@@ -36,11 +38,11 @@ public static class ResultObjectExtensions
     )
         where TResult : struct, IResultObject
     {
-        // No result created via Result.Ok or Result.Fail can be invalid and carry no errors at the same time,
-        // thus this condition identifies the default instance exactly.
+        // No built-in result created via Result.Ok or Result.Fail can be invalid and carry no errors at the same
+        // time. Custom IResultObject implementations must uphold the same invariant at the write boundaries.
         if (result is { IsValid: false, Errors.Count: 0 })
         {
-            ThrowDefaultInstance(parameterName);
+            ThrowInvalidWithoutErrors(parameterName);
         }
 
         return result;
@@ -48,10 +50,10 @@ public static class ResultObjectExtensions
 
     [DoesNotReturn]
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void ThrowDefaultInstance(string? parameterName) =>
+    private static void ThrowInvalidWithoutErrors(string? parameterName) =>
         throw new ArgumentException(
-            "The result is the default instance which is neither a success nor a failure and thus cannot be " +
-            "written. Create results with Result.Ok or Result.Fail.",
+            "The result is invalid while carrying no errors and thus cannot be written. This usually indicates " +
+            "the default instance. Create results with Result.Ok or Result.Fail.",
             parameterName
         );
 }

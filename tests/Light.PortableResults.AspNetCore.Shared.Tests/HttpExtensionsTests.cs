@@ -302,7 +302,7 @@ public sealed class HttpExtensionsTests
 
         var act = () => response.SetStatusCodeFromResult(default(Result<string>));
 
-        AssertDefaultInstanceRejected(act);
+        AssertInvalidWithoutErrorsRejected(act);
         response.StatusCode.Should().Be(initialStatusCode);
     }
 
@@ -311,9 +311,9 @@ public sealed class HttpExtensionsTests
     {
         var response = new DefaultHttpContext().Response;
 
-        var act = () => response.SetStatusCodeFromResult(default(InvalidResultObjectStub));
+        var act = () => response.SetStatusCodeFromResult(new InvalidResultObjectStub(nonDefaultMarker: 1));
 
-        AssertDefaultInstanceRejected(act);
+        AssertInvalidWithoutErrorsRejected(act);
     }
 
     [Fact]
@@ -324,7 +324,7 @@ public sealed class HttpExtensionsTests
         var act = () =>
             response.SetContentTypeFromResult(default(Result<string>), MetadataSerializationMode.Always);
 
-        AssertDefaultInstanceRejected(act);
+        AssertInvalidWithoutErrorsRejected(act);
         response.ContentType.Should().BeNull();
     }
 
@@ -334,9 +334,12 @@ public sealed class HttpExtensionsTests
         var response = new DefaultHttpContext().Response;
 
         var act = () =>
-            response.SetContentTypeFromResult(default(InvalidResultObjectStub), MetadataSerializationMode.Always);
+            response.SetContentTypeFromResult(
+                new InvalidResultObjectStub(nonDefaultMarker: 1),
+                MetadataSerializationMode.Always
+            );
 
-        AssertDefaultInstanceRejected(act);
+        AssertInvalidWithoutErrorsRejected(act);
         response.ContentType.Should().BeNull();
     }
 
@@ -348,7 +351,7 @@ public sealed class HttpExtensionsTests
 
         var act = () => response.SetMetadataValuesAsHeadersIfNecessary(default(Result<string>), conversionService);
 
-        AssertDefaultInstanceRejected(act);
+        AssertInvalidWithoutErrorsRejected(act);
         conversionService.PreparedHeaders.Should().BeEmpty();
         response.Headers.Should().BeEmpty();
     }
@@ -360,9 +363,12 @@ public sealed class HttpExtensionsTests
         var conversionService = new CapturingHttpHeaderConversionService();
 
         var act = () =>
-            response.SetMetadataValuesAsHeadersIfNecessary(default(InvalidResultObjectStub), conversionService);
+            response.SetMetadataValuesAsHeadersIfNecessary(
+                new InvalidResultObjectStub(nonDefaultMarker: 1),
+                conversionService
+            );
 
-        AssertDefaultInstanceRejected(act);
+        AssertInvalidWithoutErrorsRejected(act);
         conversionService.PreparedHeaders.Should().BeEmpty();
         response.Headers.Should().BeEmpty();
     }
@@ -418,11 +424,11 @@ public sealed class HttpExtensionsTests
            .WithMessage("No PortableResultsHttpWriteOptions are configured in the DI container");
     }
 
-    private static void AssertDefaultInstanceRejected(Action act) =>
+    private static void AssertInvalidWithoutErrorsRejected(Action act) =>
         act.Should()
            .Throw<ArgumentException>()
            .WithParameterName("result")
-           .WithMessage("*default instance*Result.Ok or Result.Fail*");
+           .WithMessage("*invalid while carrying no errors*default instance*Result.Ok or Result.Fail*");
 
     private static DefaultHttpContext CreateHttpContext(PortableResultsHttpWriteOptions? options = null)
     {
@@ -440,15 +446,19 @@ public sealed class HttpExtensionsTests
     }
 
     /// <summary>
-    /// A result object whose default instance is invalid and carries no errors. <see cref="Result" /> cannot take
-    /// that shape, because its encapsulated value can never be null, but any custom implementation of
-    /// <see cref="IResultObject" /> can.
+    /// A non-default result object that is invalid and carries no errors. <see cref="Result" /> cannot take that
+    /// shape, because its encapsulated value can never be null, but a custom implementation of
+    /// <see cref="IResultObject" /> can violate the success-or-errors invariant independently of its CLR default.
     /// </summary>
     private readonly struct InvalidResultObjectStub : IResultObject
     {
+        private readonly int _nonDefaultMarker;
+
+        public InvalidResultObjectStub(int nonDefaultMarker) => _nonDefaultMarker = nonDefaultMarker;
+
         public bool IsValid => false;
         public Errors Errors => default;
-        public bool HasValue => false;
+        public bool HasValue => _nonDefaultMarker < 0;
         public MetadataObject? Metadata => null;
     }
 

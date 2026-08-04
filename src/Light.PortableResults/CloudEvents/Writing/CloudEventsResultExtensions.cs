@@ -40,8 +40,8 @@ public static class CloudEventsResultExtensions
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure and
-    /// thus cannot be written, or when <paramref name="source" />, <paramref name="dataschema" />, or
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written, or
+    /// when <paramref name="source" />, <paramref name="dataschema" />, or
     /// <paramref name="time" /> has an invalid format.
     /// </exception>
     public static byte[] ToCloudEvent(
@@ -96,8 +96,8 @@ public static class CloudEventsResultExtensions
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure and
-    /// thus cannot be written, or when <paramref name="source" />, <paramref name="dataschema" />, or
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written, or
+    /// when <paramref name="source" />, <paramref name="dataschema" />, or
     /// <paramref name="time" /> has an invalid format.
     /// </exception>
     public static IRentedArray ToCloudEventPooled(
@@ -150,8 +150,8 @@ public static class CloudEventsResultExtensions
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure and
-    /// thus cannot be written, or when <paramref name="source" />, <paramref name="dataschema" />, or
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written, or
+    /// when <paramref name="source" />, <paramref name="dataschema" />, or
     /// <paramref name="time" /> has an invalid format.
     /// </exception>
     /// <remarks>
@@ -225,8 +225,8 @@ public static class CloudEventsResultExtensions
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure and
-    /// thus cannot be written, or when <paramref name="source" />, <paramref name="dataschema" />, or
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written, or
+    /// when <paramref name="source" />, <paramref name="dataschema" />, or
     /// <paramref name="time" /> has an invalid format.
     /// </exception>
     public static CloudEventsEnvelopeForWriting ToCloudEventsEnvelopeForWriting(
@@ -299,8 +299,8 @@ public static class CloudEventsResultExtensions
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure and
-    /// thus cannot be written, or when <paramref name="source" />, <paramref name="dataschema" />, or
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written, or
+    /// when <paramref name="source" />, <paramref name="dataschema" />, or
     /// <paramref name="time" /> has an invalid format.
     /// </exception>
     public static byte[] ToCloudEvent<T>(
@@ -356,8 +356,8 @@ public static class CloudEventsResultExtensions
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure and
-    /// thus cannot be written, or when <paramref name="source" />, <paramref name="dataschema" />, or
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written, or
+    /// when <paramref name="source" />, <paramref name="dataschema" />, or
     /// <paramref name="time" /> has an invalid format.
     /// </exception>
     public static IRentedArray ToCloudEventPooled<T>(
@@ -408,8 +408,8 @@ public static class CloudEventsResultExtensions
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is <see langword="null" />.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure and
-    /// thus cannot be written, or when <paramref name="source" />, <paramref name="dataschema" />, or
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written, or
+    /// when <paramref name="source" />, <paramref name="dataschema" />, or
     /// <paramref name="time" /> has an invalid format.
     /// </exception>
     /// <remarks>
@@ -481,8 +481,8 @@ public static class CloudEventsResultExtensions
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the CloudEvents <c>type</c> or <c>source</c> cannot be resolved.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure and
-    /// thus cannot be written, or when <paramref name="source" />, <paramref name="dataschema" />, or
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written, or
+    /// when <paramref name="source" />, <paramref name="dataschema" />, or
     /// <paramref name="time" /> has an invalid format.
     /// </exception>
     public static CloudEventsEnvelopeForWriting<T> ToCloudEventsEnvelopeForWriting<T>(

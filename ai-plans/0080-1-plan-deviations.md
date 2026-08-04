@@ -54,10 +54,15 @@ independently of `Result` and are tested both with `default(Result<string>)` and
 ### Documentation wording
 
 The acceptance criterion asks the XML documentation to state that "a default result is neither a success nor a
-failure and cannot be written". That sentence is written on `Result<T>`, qualified by the value type, and on
-`MustNotBeDefaultInstance`. On the non-generic `Result` the opposite is documented instead: its default instance is
-a valid success, indistinguishable from `Result.Ok()`. Documenting the criterion verbatim there would have been
-false and would invite a later "fix" that breaks the successful default.
+failure and cannot be written". `Result<T>` qualifies that statement by the value type, while
+`MustNotBeDefaultInstance` documents the exact rejected state and identifies a default nullable `Result<T>` as its
+usual source. On the non-generic `Result` the opposite is documented instead: its default instance is a valid
+success, indistinguishable from `Result.Ok()`. Documenting the criterion verbatim there would have been false and
+would invite a later "fix" that breaks the successful default.
+
+The exception message follows the same distinction. It names the invalid-without-errors state as the defect and a
+default instance as its usual source, rather than asserting that every custom `IResultObject` rejected by the
+guard must be its CLR default. It still gives `Result.Ok` and `Result.Fail` as the remedy for built-in results.
 
 `Validator.CheckForErrors` documents that `failure` is meaningful only when the method returns `true`, as required,
 without repeating the claim that the assigned `default` is neither a success nor a failure — on `Result` it is a
@@ -75,16 +80,16 @@ because re-measuring it is not part of this change and attributing the drift to 
 
 Not deviations from the plan, but recorded here because they touch shared documents in the same branch.
 
-The "Here is Your Space" section of the root `AGENTS.md` was emptied. Both of its notes were relocated to where the
-knowledge is used:
+Two observations from this work are recorded where the knowledge is used:
 
-- The finding that `default(Result)` is a valid success became the first section of this file, and is referenced
-  from the commit that introduces the guard.
-- The note on `MetadataValueReconstructor` and `OperationCanceledException` was split. Why the two evaluation catch
-  filters exclude cancellation is now a comment at both filters in the generator, because that is where a reader
-  needs it. That the contract is not observable through the generator's public surface became a bullet in the blind
-  spots section of `tests/AGENTS.md`, next to the other "do not read as adequate coverage" entries, and it now names
-  the trigger that makes it testable: an accepted evaluation gaining a reachable cancellation path.
+- The finding that `default(Result)` is a valid success is the first section of this file and is referenced from
+  the commit that introduces the guard.
+- The existing `AGENTS.md` scratch note on `MetadataValueReconstructor` and `OperationCanceledException` was split,
+  leaving the scratch section empty. Why the two evaluation catch filters exclude cancellation is now a comment at
+  both filters in the generator, because that is where a reader needs it. That the contract is not observable
+  through the generator's public surface became a bullet in the blind spots section of `tests/AGENTS.md`, next to
+  the other "do not read as adequate coverage" entries, and it now names the trigger that makes it testable: an
+  accepted evaluation gaining a reachable cancellation path.
 
 A `README.md` for `Light.PortableResults.Validation.OpenApi.SourceGeneration` was considered and rejected for now.
 The existing folder READMEs under `Numbers/`, `Text/` and `Metadata/` each carry a substantial, multi-faceted

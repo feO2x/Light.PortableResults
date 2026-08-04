@@ -32,8 +32,7 @@ public static class HttpExtensions
     /// <typeparam name="TResult">The concrete result struct implementing <see cref="IResultObject" />.</typeparam>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpResponse" /> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure
-    /// and thus cannot be written.
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
     /// </exception>
     public static void SetStatusCodeFromResult<TResult>(
         this HttpResponse httpResponse,
@@ -68,8 +67,7 @@ public static class HttpExtensions
     /// <typeparam name="TResult">The concrete result struct implementing <see cref="IResultObject" />.</typeparam>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpResponse" /> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure
-    /// and thus cannot be written.
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
     /// </exception>
     public static void SetContentTypeFromResult<TResult>(
         this HttpResponse httpResponse,
@@ -116,8 +114,7 @@ public static class HttpExtensions
     /// <paramref name="conversionService" /> is <c>null</c>.
     /// </exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure
-    /// and thus cannot be written.
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
     /// </exception>
     public static void SetMetadataValuesAsHeadersIfNecessary<TResult>(
         this HttpResponse httpResponse,

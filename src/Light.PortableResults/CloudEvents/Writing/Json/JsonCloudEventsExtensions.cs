@@ -20,8 +20,8 @@ public static class JsonCloudEventsExtensions
     /// <param name="serializerOptions">The serializer options used for writing complex values.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is null.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when the result in <paramref name="envelope" /> is the default instance, which is neither a success
-    /// nor a failure and thus cannot be written.
+    /// Thrown when the result in <paramref name="envelope" /> is invalid while carrying no errors and thus cannot
+    /// be written.
     /// </exception>
     public static void WriteCloudEvents(
         this Utf8JsonWriter writer,
@@ -89,8 +89,8 @@ public static class JsonCloudEventsExtensions
     /// <param name="serializerOptions">The serializer options used when writing the payload.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is null.</exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when the result in <paramref name="envelope" /> is the default instance, which is neither a success
-    /// nor a failure and thus cannot be written.
+    /// Thrown when the result in <paramref name="envelope" /> is invalid while carrying no errors and thus cannot
+    /// be written.
     /// </exception>
     public static void WriteCloudEvents<T>(
         this Utf8JsonWriter writer,

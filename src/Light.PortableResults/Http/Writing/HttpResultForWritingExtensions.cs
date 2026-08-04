@@ -15,8 +15,7 @@ public static class HttpResultForWritingExtensions
     /// <param name="options">The mutable options to freeze into the wrapper.</param>
     /// <returns>The wrapper struct ready for JSON serialization.</returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure
-    /// and thus cannot be written.
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
     /// </exception>
     public static HttpResultForWriting ToHttpResultForWriting(
         this Result result,
@@ -32,8 +31,7 @@ public static class HttpResultForWritingExtensions
     /// <param name="options">The mutable options to freeze into the wrapper.</param>
     /// <returns>The wrapper struct ready for JSON serialization.</returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure
-    /// and thus cannot be written.
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
     /// </exception>
     public static HttpResultForWriting<T> ToHttpResultForWriting<T>(
         this Result<T> result,
@@ -48,8 +46,7 @@ public static class HttpResultForWritingExtensions
     /// <param name="resolvedOptions">The already-frozen options.</param>
     /// <returns>The wrapper struct ready for JSON serialization.</returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure
-    /// and thus cannot be written.
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
     /// </exception>
     public static HttpResultForWriting ToHttpResultForWriting(
         this Result result,
@@ -65,8 +62,7 @@ public static class HttpResultForWritingExtensions
     /// <param name="resolvedOptions">The already-frozen options.</param>
     /// <returns>The wrapper struct ready for JSON serialization.</returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="result" /> is the default instance, which is neither a success nor a failure
-    /// and thus cannot be written.
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
     /// </exception>
     public static HttpResultForWriting<T> ToHttpResultForWriting<T>(
         this Result<T> result,

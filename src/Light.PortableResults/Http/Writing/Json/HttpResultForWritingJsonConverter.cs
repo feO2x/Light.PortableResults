@@ -30,8 +30,8 @@ public sealed class HttpResultForWritingJsonConverter : JsonConverter<HttpResult
 
     /// <inheritdoc />
     /// <exception cref="ArgumentException">
-    /// Thrown when the result in <paramref name="wrapper" /> is the default instance, which is neither a success
-    /// nor a failure and thus cannot be written.
+    /// Thrown when the result in <paramref name="wrapper" /> is invalid while carrying no errors and thus cannot
+    /// be written.
     /// </exception>
     public override void Write(
         Utf8JsonWriter writer,
@@ -88,8 +88,8 @@ public sealed class HttpResultForWritingJsonConverter<T> : JsonConverter<HttpRes
 
     /// <inheritdoc />
     /// <exception cref="ArgumentException">
-    /// Thrown when the result in <paramref name="wrapper" /> is the default instance, which is neither a success
-    /// nor a failure and thus cannot be written.
+    /// Thrown when the result in <paramref name="wrapper" /> is invalid while carrying no errors and thus cannot
+    /// be written.
     /// </exception>
     public override void Write(
         Utf8JsonWriter writer,

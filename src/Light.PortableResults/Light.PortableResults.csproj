@@ -37,11 +37,12 @@
       Breaking changes
       ---------------------------------
 
-      - Every write boundary now rejects a result that is invalid while carrying no errors - the default instance
-        of Result&lt;T> for a reference type or nullable value type - with an ArgumentException that names the
-        default instance as the cause and Result.Ok/Result.Fail as the remedy. This covers the CloudEvents entry
-        points ToCloudEvent, ToCloudEventPooled, WriteCloudEvent, and ToCloudEventsEnvelopeForWriting, the HTTP
-        entry point ToHttpResultForWriting, and the JSON writing paths for hand-constructed
+      - Every write boundary now rejects a result that is invalid while carrying no errors - usually the default
+        instance of Result&lt;T> for a reference type or nullable value type - with an ArgumentException that names
+        the invalid state, identifies a default instance as its usual source, and gives Result.Ok/Result.Fail as the
+        remedy. This covers the CloudEvents entry points ToCloudEvent, ToCloudEventPooled, WriteCloudEvent, and
+        ToCloudEventsEnvelopeForWriting, the HTTP entry point ToHttpResultForWriting, and the JSON writing paths for
+        hand-constructed
         CloudEventsEnvelopeForWriting&lt;T> and HttpResultForWriting&lt;T> values. Previously, CloudEvents writing
         emitted a failure payload with an empty errors array that this library's own reader rejects, and HTTP
         writing threw only when default problem-details creation was in use - a configured
