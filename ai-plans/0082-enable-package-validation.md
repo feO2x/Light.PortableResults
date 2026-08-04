@@ -12,7 +12,8 @@ Without a baseline the property is close to decorative: it activates only the co
 
 - [ ] Every packable project under `src/` builds with package validation enabled. The non-packable source generator is unaffected.
 - [ ] All seven published packages validate against a `0.6.0` baseline, and an undeclared shape break fails the build.
-- [ ] `dotnet pack -c Release` reproduces the CI gate exactly, with no additional arguments, properties or scripts. The inner `dotnet build` and `dotnet test` loop is unaffected.
+- [ ] `dotnet pack -c Release` reproduces the CI gate exactly, with no additional arguments, properties or scripts. No validation runs during `dotnet build` or `dotnet test`, so their cost is unchanged; restore gains the seven baseline packages.
+- [ ] A single documented property suppresses both the baseline download at restore and the validation at pack, so the solution restores, builds and tests offline. `packages.lock.json` files stay unchanged and locked-mode restore keeps working.
 - [ ] Package validation runs on push and pull request, so a break is caught in review rather than during the release job.
 - [ ] Validation compares like with like on strong naming: a build without the release SNK produces no `CP0003`, and the release job keeps producing genuinely signed assemblies. Packages built for validation are never pushed.
 - [ ] Strong-naming the `src` assemblies by default leaves the test suite and the Native AOT sample publish green.
@@ -49,7 +50,7 @@ Unnecessary suppressions fail the build by default, which is load-bearing for th
 
 Confirm the gate is real before trusting a clean run. A `0.4.0` baseline for `Light.PortableResults.AspNetCore.MinimalApis` correctly reports `CP0001` for `PortableResultsEndpointExtensions`, the type extracted into the OpenApi package in 0.5.0; that check, or an equivalent injected regression, satisfies the proof criterion.
 
-All seven packages published a `0.6.0`, so a single `PackageValidationBaselineVersion` in `src/Directory.Build.props` covers them. `AspNetCore.OpenApi` and `Validation.OpenApi` first shipped in 0.5.0, which does not affect a 0.6.0 baseline. The baseline `PackageDownload` does not enter `packages.lock.json` and does not trip `RestoreLockedMode`, so no lock file changes are expected — a lock file diff during implementation means something else moved.
+All seven packages published a `0.6.0`, so a single `PackageValidationBaselineVersion` in `src/Directory.Build.props` covers them. `AspNetCore.OpenApi` and `Validation.OpenApi` first shipped in 0.5.0, which does not affect a 0.6.0 baseline. Setting the baseline has restore-time consequences, covered under the local loop below.
 
 ### Strong naming
 
@@ -79,7 +80,7 @@ The consequence is that all `src` assemblies become strong-named in every build,
 
 ### CI shape and the local loop
 
-Package validation hangs off `Pack`, so `dotnet build` and `dotnet test` stay untouched and the inner loop keeps its current speed. Agents and developers opt in with:
+Validation *runs* on `Pack`, so no `CP` diagnostic can appear during `dotnet build` or `dotnet test` and their cost is unchanged. Agents and developers opt in with:
 
 ```shell
 dotnet pack ./Light.PortableResults.slnx -c Release
@@ -87,7 +88,19 @@ dotnet pack ./Light.PortableResults.slnx -c Release
 
 No properties, no script, no separate target — the same command CI runs, and on a warm NuGet cache it completes in a few seconds. Document it in `AGENTS.md` next to the existing build and test guidance, including that a clean run prints only `Successfully created package` lines, and that a break prints a `CP` diagnostic naming the API.
 
-Setting a baseline adds a `PackageDownload` for the seven 0.6.0 packages, so a cold restore needs network access; the CI NuGet cache already covers this. `-p:DisablePackageBaselineValidation=true` is the escape hatch for working offline, and it belongs in the `AGENTS.md` note so it is not rediscovered as a workaround for a genuine break.
+Baseline *acquisition* is a different matter and does reach the ordinary loop. The SDK injects the `PackageDownload` from an evaluation-time `ItemGroup` in `Microsoft.NET.ApiCompat.targets`, not from a target, so it participates in restore whether or not `Pack` ever runs. A plain `dotnet restore` — and therefore `dotnet build` or `dotnet test` with implicit restore — fetches all seven 0.6.0 packages. Do not describe the inner loop as untouched; the accurate statement is that it is untouched *after restore*.
+
+That cost is one cold download of seven small packages, cached thereafter, and CI already caches NuGet, so it does not justify a redesign. Gating the baseline on whether packing is underway would mean depending on the undocumented `_IsPacking` property and would leave the CI restore without the baselines that the `--no-build` pack step needs. Accept the download and document the opt-out instead.
+
+The same `ItemGroup` is conditioned on `DisablePackageBaselineValidation`, so one property covers both halves:
+
+```shell
+dotnet build ./Light.PortableResults.slnx -c Release -p:DisablePackageBaselineValidation=true
+```
+
+Passed as a global property it suppresses the download at restore as well as the baseline check at pack. Verified with the baseline packages purged from the cache: restore fetches nothing, and build and the full test suite still pass. This belongs in the `AGENTS.md` note as the offline escape hatch, worded so it is not mistaken for a way to silence a genuine break.
+
+Lock files are not involved. The baseline `PackageDownload` does not appear in `packages.lock.json` even after `dotnet restore --force`, and locked-mode restore under `ContinuousIntegrationBuild=true` succeeds unchanged — so there is no lock file maintenance and no `NU1004` risk. Determinism does not depend on the lock file either, because the injected download pins an exact version range. A lock file diff appearing during implementation means something else moved.
 
 In `build-and-test.yml` this is a step, not a job. Because signing is defaulted in the props file, the existing build job already produces the strong-named assemblies validation needs, so a `--no-build` pack reuses them and adds a couple of seconds:
 
