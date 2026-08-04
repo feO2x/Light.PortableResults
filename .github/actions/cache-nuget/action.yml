@@ -5,10 +5,15 @@ author: 'Kenny Pflug'
 runs:
   using: 'composite'
   steps:
+    # src/Directory.Build.props is part of the key because it declares PackageValidationBaselineVersion.
+    # The baselines are acquired through PackageDownload, which never touches packages.lock.json, so a
+    # lock-file-only key would not rotate when the baseline version changes and an exact hit on the
+    # immutable cache could never acquire the new baseline packages. Unrelated edits to that props file
+    # rebuild the cache, which is cheaper than duplicating the baseline version in this workflow.
     - name: Cache NuGet packages
       uses: actions/cache@v4
       with:
         path: ~/.nuget/packages
-        key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+        key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json', 'src/Directory.Build.props') }}
         restore-keys: |
           nuget-${{ runner.os }}-

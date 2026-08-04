@@ -1,5 +1,7 @@
 # Enable Package Validation Across All Packages
 
+> Correction: the suggested probe value in Technical Details does not compile. Setting `MetadataKind.String` to `15` collides with an existing kind and yields `CS0152` and `CS8510` instead of a `CP` diagnostic — exactly the masked-failure mode the following sentence warns about, reached through a value collision rather than through `CS1591`. Pick a value inside the reserved 16–199 range; `150` was used to verify the gate. The rest of the probe reasoning holds: the 0.6.0 enum does contain `String`, so changing its value reports `CP0011` on the `netstandard2.0` asset.
+
 ## Rationale
 
 Only `Light.PortableResults` enables package validation, no package has a baseline, and validation currently runs only when `release-on-nuget.yml` packs an already-tagged release. An API shape break therefore reaches review only as prose and reaches automation too late.
@@ -8,16 +10,16 @@ Enable validation for every published package against `0.6.0`, run it on push an
 
 ## Acceptance Criteria
 
-- [ ] All seven packable projects under `src/` validate against `0.6.0`; the non-packable source generator does not run package validation, and an undeclared shape break fails the build.
-- [ ] `dotnet pack -c Release` reproduces the CI gate without extra arguments, properties or scripts. Validation does not run during build or test; only restore gains the seven baseline packages.
-- [ ] One documented property disables baseline acquisition and comparison so restore, build, test and pack work offline. Compatible-framework validation remains active, lock files remain unchanged, and locked restore succeeds.
-- [ ] Validation runs on push and pull request. The CI NuGet cache includes baseline inputs and rotates when the baseline version changes; validation packages are never pushed.
-- [ ] Ordinary builds use the matching public signing key and produce no `CP0003`; releases remain genuinely private-signed. Strong-naming all `src` assemblies leaves the full test suite and Native AOT sample publish green.
-- [ ] Solution packing emits no non-packable-project warning locally or during release.
-- [ ] `AGENTS.md` documents the local command, exit-code/diagnostic interpretation, restore impact, and offline escape hatch.
-- [ ] The only suppressions are the two intentional `MetadataKind` value changes already in the release notes; every other listed break is confirmed behavioral or absent from the 0.6.0 API.
-- [ ] An injected public-member regression fails clean and incremental packs with the corresponding `CP` diagnostic and a non-zero exit code.
-- [ ] The release-time handover to a `0.7.0` baseline with no suppression file is recorded where it will be found.
+- [x] All seven packable projects under `src/` validate against `0.6.0`; the non-packable source generator does not run package validation, and an undeclared shape break fails the build.
+- [x] `dotnet pack -c Release` reproduces the CI gate without extra arguments, properties or scripts. Validation does not run during build or test; only restore gains the seven baseline packages.
+- [x] One documented property disables baseline acquisition and comparison so restore, build, test and pack work offline. Compatible-framework validation remains active, lock files remain unchanged, and locked restore succeeds.
+- [x] Validation runs on push and pull request. The CI NuGet cache includes baseline inputs and rotates when the baseline version changes; validation packages are never pushed.
+- [x] Ordinary builds use the matching public signing key and produce no `CP0003`; releases remain genuinely private-signed. Strong-naming all `src` assemblies leaves the full test suite and Native AOT sample publish green.
+- [x] Solution packing emits no non-packable-project warning locally or during release.
+- [x] `AGENTS.md` documents the local command, exit-code/diagnostic interpretation, restore impact, and offline escape hatch.
+- [x] The only suppressions are the two intentional `MetadataKind` value changes already in the release notes; every other listed break is confirmed behavioral or absent from the 0.6.0 API.
+- [x] An injected public-member regression fails clean and incremental packs with the corresponding `CP` diagnostic and a non-zero exit code.
+- [x] The release-time handover to a `0.7.0` baseline with no suppression file is recorded where it will be found.
 
 ## Technical Details
 

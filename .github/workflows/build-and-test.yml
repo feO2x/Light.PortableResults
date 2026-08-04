@@ -61,6 +61,16 @@ jobs:
           --configuration Release
           -p:PortableResultsAssetTargetFramework=netstandard2.0
           -p:ContinuousIntegrationBuild=true
+      # Package validation runs after the tests so that an undeclared API shape break cannot mask a test
+      # failure. --no-build reuses the public-signed Release outputs above and still executes
+      # RunPackageValidation over the packages it produces. Those packages are byproducts and are never
+      # pushed; only the release workflow publishes, and only from privately signed builds.
+      - name: Validate packages
+        run: >
+          dotnet pack ./Light.PortableResults.slnx
+          --configuration Release
+          --no-build
+          /p:ContinuousIntegrationBuild=true
 
   # ILC regression gate for the Native AOT compatibility claim. Trim and AOT diagnostics from the
   # Light.PortableResults project references are fatal in Release, while rollups from unannotated package
