@@ -32,6 +32,9 @@
         be declared. Non-generic results need no consumer registration at all.
       - Keeps the precedence of converters registered before the Light.PortableResults defaults, and caches
         library-created contracts per JsonSerializerOptions instance, including read-only instances.
+      - Adds the guard clause ResultObjectExtensions.MustNotBeDefaultInstance for any struct implementing
+        IResultObject. It is the single place where the write boundaries of this library reject a result that is
+        neither a success nor a failure.
 
       Breaking changes
       ---------------------------------
@@ -82,12 +85,14 @@
         the reserved lproutcome attribute now causes an ArgumentException during JSON writing instead of having
         that supplied value silently dropped. Supplied data and data_base64 entries remain skipped as standard
         attributes.
+      - A CloudEvents 'time' attribute supplied through metadata whose text carries no UTC offset - the canonical
+        encoding of a DateTime with DateTimeKind.Unspecified - is now rejected with an ArgumentException instead of
+        being resolved against the local time zone of the machine that serializes the event. Supply a
+        DateTimeOffset or a DateTime with DateTimeKind.Utc so that the same metadata denotes the same instant on
+        every host.
       - MetadataValue.TryGetInt64 now accepts canonical signed-integer text from any string metadata value,
         including values originating in headers, JSON, or caller code. Noncanonical forms such as a leading plus,
         negative zero, leading zeros, surrounding whitespace, and out-of-range text remain rejected.
-      - Adds the guard clause ResultObjectExtensions.MustNotBeDefaultInstance for any struct implementing
-        IResultObject. It is the single place where the write boundaries of this library reject a result that is
-        neither a success nor a failure.
     </PackageReleaseNotes>
   </PropertyGroup>
 

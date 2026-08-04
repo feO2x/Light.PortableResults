@@ -14,6 +14,14 @@
       - Native AOT compatible.
       - Registers a built-in metadata-free contract for the new UuidV7 validation error code.
       - Registers built-in metadata-free contracts for the new Utc, Local, and Unspecified validation error codes.
+      - The source generator reconstructs non-constant validation boundaries - DateTime, DateTimeOffset, TimeSpan,
+        DateOnly, TimeOnly, Guid, and Uri written as a recognized constructor, named factory, well-known static, or
+        a static readonly field declared in the validator's own file - so their OpenAPI error examples carry both
+        the message and the metadata entry instead of degrading silently.
+      - A boundary outside the recognized shapes, including one computed at runtime, now reports the new
+        LPRSG0015 (Info) and degrades the example instead of failing the build. A static readonly field declared in
+        another file or assembly reports the new LPRSG0016 (Warning) and is not resolved; declare it in the
+        validator's file or write the value inline.
     </PackageReleaseNotes>
   </PropertyGroup>
 
