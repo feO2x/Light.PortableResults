@@ -5,7 +5,6 @@
     <PublishAot>false</PublishAot>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <EnablePackageValidation>true</EnablePackageValidation>
     <Description>The Light.PortableResults package implements the core functionality: Results, Errors, Metadata, Functional Extensions, and serialization support for various formats like HTTP and CloudEvents. Compatible with Native AOT. Check out the integration packages Light.PortableResults.AspNetCore.MinimalApis or Light.PortableResults.AspNetCore.Mvc.</Description>
     <PackageReleaseNotes>
       Light.PortableResults 0.7.0

@@ -19,6 +19,40 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
+  <!--
+    Package validation compares the packages produced here against the last published release.
+    IsPackable must be set explicitly: Microsoft.NET.ApiCompat.targets is imported before the NuGet pack
+    targets that default it to true, and its baseline PackageDownload requires the value at evaluation time.
+    Projects that opt out (the source generator) set IsPackable to false in their own project file, which is
+    evaluated after this one.
+    Setting the baseline version here covers all packable source projects: every one of them published 0.6.0.
+    -p:DisablePackageBaselineValidation=true is the offline escape hatch. It is an SDK property that skips both
+    the baseline download and the baseline comparison while leaving compatible-framework validation active.
+    The two baseline suppressions then have nothing to match, so unnecessary suppressions are permitted for
+    that case only - ordinary builds must keep failing on a stale suppression file.
+  -->
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageValidationBaselineVersion>0.6.0</PackageValidationBaselineVersion>
+    <ApiCompatPermitUnnecessarySuppressions Condition="'$(DisablePackageBaselineValidation)' == 'true'">true</ApiCompatPermitUnnecessarySuppressions>
+  </PropertyGroup>
+
+  <!--
+    The 0.6.0 packages are strong-named, so unsigned ordinary builds would report CP0003 against every baseline.
+    Public signing with the committed public key gives ordinary builds the matching identity without a private
+    signature. Defaulting it here rather than on the command line keeps `dotnet pack -c Release` the whole gate.
+    The release workflow passes AssemblyOriginatorKeyFile as a global property, which this file cannot override;
+    the guard therefore reads that property, leaves UsePublicSigningKey empty and never sets PublicSign, so
+    released packages stay privately signed. Do not guard on SignAssembly - the release sets that too.
+  -->
+  <PropertyGroup>
+    <UsePublicSigningKey Condition="'$(AssemblyOriginatorKeyFile)' == ''">true</UsePublicSigningKey>
+    <SignAssembly Condition="'$(UsePublicSigningKey)' == 'true'">true</SignAssembly>
+    <PublicSign Condition="'$(UsePublicSigningKey)' == 'true'">true</PublicSign>
+    <AssemblyOriginatorKeyFile Condition="'$(UsePublicSigningKey)' == 'true'">$(MSBuildThisFileDirectory)../Light.PortableResults.Public.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
   </ItemGroup>
