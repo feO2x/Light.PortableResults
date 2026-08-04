@@ -163,6 +163,10 @@ public sealed class MetadataValueReconstructor
             value = EvaluateConstructor(supportedConstructor, arguments);
             return MetadataReconstructionResult.Success;
         }
+        // The broad catch funnels every evaluation failure into Unsupported. Cancellation is excluded so that an
+        // aborted generation pass propagates instead of being downgraded to an unsupported value, which would bake
+        // the cancellation into the generator output. No whitelisted evaluation observes the token today, so the
+        // filter is structural rather than reachable - see the blind spot recorded in tests/AGENTS.md.
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             value = null;
@@ -207,6 +211,7 @@ public sealed class MetadataValueReconstructor
             value = EvaluateFactory(supportedFactory, arguments);
             return MetadataReconstructionResult.Success;
         }
+        // See TryReconstructObjectCreation for why cancellation is excluded from this filter.
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             value = null;
