@@ -13,7 +13,7 @@ Without a baseline the property is close to decorative: it activates only the co
 - [ ] Every packable project under `src/` builds with package validation enabled. The non-packable source generator is unaffected.
 - [ ] All seven published packages validate against a `0.6.0` baseline, and an undeclared shape break fails the build.
 - [ ] `dotnet pack -c Release` reproduces the CI gate exactly, with no additional arguments, properties or scripts. No validation runs during `dotnet build` or `dotnet test`, so compilation and test execution cost is unchanged after restore; restore itself gains the seven baseline packages, which a cold `dotnet build` or `dotnet test` pays for through implicit restore.
-- [ ] A single documented property suppresses both the baseline download at restore and the validation at pack, so the solution restores, builds and tests offline. `packages.lock.json` files stay unchanged and locked-mode restore keeps working.
+- [ ] A single documented property suppresses the baseline download at restore and baseline validation at pack, so the solution restores, builds, tests and packs offline. Compatible-framework validation still runs offline. `packages.lock.json` files stay unchanged and locked-mode restore keeps working.
 - [ ] The CI NuGet cache key covers the baseline packages, so they are cached rather than re-downloaded on every run, and the key rotates when the baseline version changes.
 - [ ] Package validation runs on push and pull request, so a break is caught in review rather than during the release job.
 - [ ] Validation compares like with like on strong naming: a build without the release SNK produces no `CP0003`, and the release job keeps producing genuinely signed assemblies. Packages built for validation are never pushed.
@@ -48,7 +48,7 @@ The measured result against `0.6.0`, across every package and both assets, is th
 
 Both are the deliberate renumbering to 200 and 201 that reserves 16–199 for future primitive kinds. Only `netstandard2.0` entries are required; the `net10.0` asset needs none. Generate the file with `/p:ApiCompatGenerateSuppressionFile=true` rather than hand-writing it, and treat any third entry appearing during implementation as a finding to escalate, not to suppress.
 
-Unnecessary suppressions fail the build by default, which is load-bearing for the handover below: once the baseline moves to `0.7.0`, these two entries become stale and the build fails until they are deleted. The cleanup cannot be forgotten silently, so do not set `ApiCompatPermitUnnecessarySuppressions`.
+Unnecessary suppressions fail the build by default, which is load-bearing for the handover below: once the baseline moves to `0.7.0`, these two entries become stale and the build fails until they are deleted. The cleanup cannot be forgotten silently, so do not grant `ApiCompatPermitUnnecessarySuppressions` unconditionally. The one narrow exception, scoped to the offline escape hatch, is described below.
 
 Confirm the gate is real before trusting a clean run. A `0.4.0` baseline for `Light.PortableResults.AspNetCore.MinimalApis` correctly reports `CP0001` for `PortableResultsEndpointExtensions`, the type extracted into the OpenApi package in 0.5.0; that check, or an equivalent injected regression, satisfies the proof criterion.
 
@@ -123,7 +123,16 @@ The same `ItemGroup` is conditioned on `DisablePackageBaselineValidation`, so on
 dotnet build ./Light.PortableResults.slnx -c Release -p:DisablePackageBaselineValidation=true
 ```
 
-Passed as a global property it suppresses the download at restore as well as the baseline check at pack. Verified with the baseline packages purged from the cache: restore fetches nothing, and build and the full test suite still pass. This belongs in the `AGENTS.md` note as the offline escape hatch, worded so it is not mistaken for a way to silence a genuine break.
+Passed as a global property it suppresses the download at restore and the baseline comparison at pack. It does *not* disable package validation: `RunPackageValidation` still executes and still performs the compatible-framework checks, which is the desirable outcome — a `netstandard2.0`-only public type is reported as `CP0001` with the baseline disabled, so the multi-targeted packages keep their asset-compatibility gate offline. Describe it as disabling baseline validation, never as disabling validation. Verified with the baseline packages purged from the cache: restore fetches nothing, and build and the full test suite still pass.
+
+One interaction has to be handled or the escape hatch fails at pack. With baseline validation off, the two committed baseline suppressions are never matched, and unnecessary suppressions are an error by default, so `dotnet pack -p:DisablePackageBaselineValidation=true` fails with `Unnecessary suppressions found` — an offline developer would see a hard error on an otherwise correct tree. Tie the permission to the escape hatch rather than granting it globally:
+
+```xml
+<!-- Exact. Global permission would defeat the stale-suppression detection the release handover relies on. -->
+<ApiCompatPermitUnnecessarySuppressions Condition="'$(DisablePackageBaselineValidation)' == 'true'">true</ApiCompatPermitUnnecessarySuppressions>
+```
+
+Verified both directions: offline pack then succeeds with the one property, and an ordinary pack still fails on a stale suppression entry. This belongs in the `AGENTS.md` note as the offline escape hatch, worded so it is not mistaken for a way to silence a genuine break.
 
 Lock files are not involved. The baseline `PackageDownload` does not appear in `packages.lock.json` even after `dotnet restore --force`, and locked-mode restore under `ContinuousIntegrationBuild=true` succeeds unchanged — so there is no lock file maintenance and no `NU1004` risk. Determinism does not depend on the lock file either, because the injected download pins an exact version range. A lock file diff appearing during implementation means something else moved.
 
