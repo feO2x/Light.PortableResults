@@ -36,14 +36,14 @@ Revisit `coverage-analysis: off` when Stryker's MTP per-test coverage support ([
 # One project — sufficient for the four small projects
 dotnet stryker -p Light.PortableResults.AspNetCore.Shared.csproj
 
-# One-file configuration smoke check (~4 minutes)
-# Expect: 2,401 tests, 67 killed, 0 NoCoverage, 100.00%
+# One-file configuration smoke check (~5 minutes)
+# Expect: 2,675 tests, 67 killed, 0 NoCoverage, 100.00%
 dotnet stryker -p Light.PortableResults.csproj -m '**/Result.cs'
 ```
 
 The smoke-check vector is tied to the current `Result.cs` and its tests; update it after intentional changes alter the mutant inventory. All mutants surviving with a 0.00% score suggests fallback to the `vstest` runner, while any non-zero `NoCoverage` count suggests `coverage-analysis: off` was lost.
 
-`-p` selects the mutated project, not the tests: Stryker runs every test project transitively referencing it (`AspNetCore.Shared` → 337 tests, `Light.PortableResults` → all 2,401). Cross-project kills are legitimate (sociable tests) and nearly free. Never pass `-tp` (it does not narrow tests) or `--since` (any non-C# file in the diff, e.g. an `ai-plans/` document, degrades it to a full run). Reports go to `StrykerOutput/<timestamp>/reports/` (gitignored): JSON for agents (filter `"status"` for both `"Survived"` and `"Timeout"`; investigate the timeout cause before survivor triage), HTML for humans.
+`-p` selects the mutated project, not the tests: Stryker runs every test project transitively referencing it (`AspNetCore.Shared` → 415 tests, `Light.PortableResults` → all 2,675). Cross-project kills are legitimate (sociable tests) and nearly free. Never pass `-tp` (it does not narrow tests) or `--since` (any non-C# file in the diff, e.g. an `ai-plans/` document, degrades it to a full run). Reports go to `StrykerOutput/<timestamp>/reports/` (gitignored): JSON for agents (filter `"status"` for both `"Survived"` and `"Timeout"`; investigate the timeout cause before survivor triage), HTML for humans.
 
 ### Cost and baseline
 
@@ -56,7 +56,7 @@ The smoke-check vector is tied to the current `Result.cs` and its tests; update 
 | `Validation.OpenApi.SourceGeneration` | 1,272 | 204 |
 | `AspNetCore.OpenApi` | 848 | 65 |
 | `Validation.OpenApi` | 114 | 2 |
-| `AspNetCore.Shared` | 44 | 3 |
+| `AspNetCore.Shared` | 47 | 3 |
 | `AspNetCore.Mvc` | 33 | 11 |
 | `AspNetCore.MinimalApis` | 32 | 11 |
 
@@ -66,7 +66,7 @@ Baselines carry per-row provenance, because rows are re-measured individually as
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | `AspNetCore.Mvc` | `#66` | 103 | 0:43 | 17 | 0 | 0 | 11 | 5 | 0 |
 | `AspNetCore.MinimalApis` | `04aee20` | 237 | 1:22 | 16 | 0 | 0 | 11 | 5 | 0 |
-| `AspNetCore.Shared` | `04aee20` | 337 | 2:29 | 31 | 0 | 0 | 3 | 10 | 0 |
+| `AspNetCore.Shared` | `#80` | 415 | 2:44 | 34 | 0 | 0 | 3 | 10 | 0 |
 | `Validation.OpenApi` | `#66` | 165 | 2:20 | 59 | 0 | 14 | 2 | 39 | 0 |
 
 Both `Validation.OpenApi` survivor groups are accounted for and neither is a missing test: twelve are the `target`-provided branch of the typed helpers, deferred to the bug in #57 so that tests are written against the corrected contract, and two are the known-false static-initializer mutants described in the blind spots below. Its 39 `Ignored` are 36 block-removal plus the three triage suppressions.
@@ -99,5 +99,6 @@ If a survivor can only be killed by asserting on something incidental — exact 
 
   When changing a method in that set, mutation score carries no information about it and line coverage only proves execution. Adequacy has to be argued by hand: enumerate the behaviors the method promises and point at the test constraining each one. State that reasoning in the pull request, because no tool in this repository can check it.
 - Mutants reachable only during static initialization are reported as survived even when the suite kills them. Measured on `BuiltInValidationErrorContracts`: emptying the `Contracts` registry fails 46 of 112 tests and blanking the built-in schema id string fails 52 of 112, yet Stryker reported both as `Survived`. Both sites run only while a static property initializer executes, which a reused test host runs once per process, independently of mutant activation. Verify any survivor in a static initializer, a static constructor, or a helper called only from one by applying the mutation to the source by hand and running the affected test project — the report cannot settle it. Do not add tests for such a survivor before that check: the two above already had covering assertions.
+- `MetadataValueReconstructor` keeps `OperationCanceledException` out of its two evaluation catch filters, and that contract cannot be observed through the generator's public surface: Roslyn intercepts a pre-cancelled token before reconstruction runs, and none of the whitelisted framework constructors and factories can throw cancellation. No test can distinguish the filter from a plain `catch (Exception)`, so the contract rests on the filters' structure. It becomes testable — and needs a test — as soon as an accepted evaluation gains a reachable cancellation path.
 - `Timeout` counts as killed. The pinned 30,000 ms additional timeout reduced `Validation.OpenApi` from 21 timeouts to zero in two consecutive concurrency-8 runs, but no finite value makes classification independent of hardware and load. Investigate any future timeout as either a genuine hang or insufficient headroom; do not assume it represents a killed mutant.
 - The MTP runner is a preview (stryker-mutator/stryker-net#3094); verify surprising results against a plain `dotnet test` run.

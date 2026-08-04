@@ -19,6 +19,10 @@ public static class JsonCloudEventsExtensions
     /// <param name="envelope">The envelope whose metadata and error details will be emitted.</param>
     /// <param name="serializerOptions">The serializer options used for writing complex values.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is null.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the result in <paramref name="envelope" /> is invalid while carrying no errors and thus cannot
+    /// be written.
+    /// </exception>
     public static void WriteCloudEvents(
         this Utf8JsonWriter writer,
         CloudEventsEnvelopeForWriting envelope,
@@ -29,6 +33,8 @@ public static class JsonCloudEventsExtensions
         {
             throw new ArgumentNullException(nameof(writer));
         }
+
+        envelope.Data.MustNotBeDefaultInstance(nameof(envelope));
 
         var shouldWriteMetadataToCloudEventsDataSectionWhenResultIsValid =
             envelope.CheckIfMetadataShouldBeWrittenForValidResult<CloudEventsEnvelopeForWriting, Result>();
@@ -82,6 +88,10 @@ public static class JsonCloudEventsExtensions
     /// <param name="envelope">The envelope containing the typed payload and metadata.</param>
     /// <param name="serializerOptions">The serializer options used when writing the payload.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer" /> is null.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the result in <paramref name="envelope" /> is invalid while carrying no errors and thus cannot
+    /// be written.
+    /// </exception>
     public static void WriteCloudEvents<T>(
         this Utf8JsonWriter writer,
         CloudEventsEnvelopeForWriting<T> envelope,
@@ -92,6 +102,8 @@ public static class JsonCloudEventsExtensions
         {
             throw new ArgumentNullException(nameof(writer));
         }
+
+        envelope.Data.MustNotBeDefaultInstance(nameof(envelope));
 
         WriteEnvelopeStart(
             writer,

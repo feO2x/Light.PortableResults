@@ -31,6 +31,9 @@ public static class HttpExtensions
     /// </param>
     /// <typeparam name="TResult">The concrete result struct implementing <see cref="IResultObject" />.</typeparam>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpResponse" /> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
+    /// </exception>
     public static void SetStatusCodeFromResult<TResult>(
         this HttpResponse httpResponse,
         TResult result,
@@ -40,6 +43,7 @@ public static class HttpExtensions
         where TResult : struct, IResultObject
     {
         ArgumentNullException.ThrowIfNull(httpResponse);
+        result.MustNotBeDefaultInstance();
 
         HttpStatusCode statusCode;
         if (result.IsValid)
@@ -62,6 +66,9 @@ public static class HttpExtensions
     /// <param name="metadataSerializationMode">Controls when metadata should be serialized.</param>
     /// <typeparam name="TResult">The concrete result struct implementing <see cref="IResultObject" />.</typeparam>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="httpResponse" /> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
+    /// </exception>
     public static void SetContentTypeFromResult<TResult>(
         this HttpResponse httpResponse,
         TResult result,
@@ -70,6 +77,7 @@ public static class HttpExtensions
         where TResult : struct, IResultObject
     {
         ArgumentNullException.ThrowIfNull(httpResponse);
+        result.MustNotBeDefaultInstance();
 
         if (!result.IsValid)
         {
@@ -105,6 +113,9 @@ public static class HttpExtensions
     /// Thrown when <paramref name="httpResponse" /> or
     /// <paramref name="conversionService" /> is <c>null</c>.
     /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
+    /// </exception>
     public static void SetMetadataValuesAsHeadersIfNecessary<TResult>(
         this HttpResponse httpResponse,
         TResult result,
@@ -114,6 +125,7 @@ public static class HttpExtensions
     {
         ArgumentNullException.ThrowIfNull(httpResponse);
         ArgumentNullException.ThrowIfNull(conversionService);
+        result.MustNotBeDefaultInstance();
 
         if (result.Metadata is null)
         {

@@ -8,7 +8,17 @@ using Light.PortableResults.Metadata;
 namespace Light.PortableResults;
 
 /// <summary>
+/// <para>
 /// Represents either a successful value of <typeparamref name="T" /> or one or more errors.
+/// </para>
+/// <para>
+/// Do not use the default instance of this struct. When <typeparamref name="T" /> is a reference type or a
+/// nullable value type, the default instance is neither a success nor a failure: it reports <see cref="IsValid" />
+/// as <see langword="false" /> while its <see cref="Errors" /> collection is empty. Such an instance carries no
+/// information and cannot be written to any transport - every write boundary of this library rejects it with an
+/// <see cref="ArgumentException" />. Always create results with <see cref="Ok" /> or one of the <c>Fail</c>
+/// overloads.
+/// </para>
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]
 public readonly struct Result<T> : IResultObject<T>, IEquatable<Result<T>>, ICanReplaceMetadata<Result<T>>
@@ -252,6 +262,12 @@ public readonly struct Result<T> : IResultObject<T>, IEquatable<Result<T>>, ICan
 /// </para>
 /// <para>
 /// This is a convenience type for <see cref="Result{T}" /> with <see cref="Unit" /> as the value type.
+/// </para>
+/// <para>
+/// Unlike <see cref="Result{T}" /> with a nullable value type, the default instance of this struct is a valid
+/// success: the encapsulated <c>Result&lt;Unit></c> value can never be null, thus <c>default(Result)</c> is
+/// indistinguishable from <see cref="Ok" /> without metadata. Prefer <see cref="Ok" /> and the <c>Fail</c>
+/// overloads anyway, because they state the intent at the call site.
 /// </para>
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay,nq}")]

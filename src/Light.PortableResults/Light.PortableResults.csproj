@@ -37,6 +37,17 @@
       Breaking changes
       ---------------------------------
 
+      - Every write boundary now rejects a result that is invalid while carrying no errors - usually the default
+        instance of Result&lt;T> for a reference type or nullable value type - with an ArgumentException that names
+        the invalid state, identifies a default instance as its usual source, and gives Result.Ok/Result.Fail as the
+        remedy. This covers the CloudEvents entry points ToCloudEvent, ToCloudEventPooled, WriteCloudEvent, and
+        ToCloudEventsEnvelopeForWriting, the HTTP entry point ToHttpResultForWriting, and the JSON writing paths for
+        hand-constructed
+        CloudEventsEnvelopeForWriting&lt;T> and HttpResultForWriting&lt;T> values. Previously, CloudEvents writing
+        emitted a failure payload with an empty errors array that this library's own reader rejects, and HTTP
+        writing threw only when default problem-details creation was in use - a configured
+        CreateProblemDetailsInfo delegate emitted the empty errors array instead.
+
       - Missing serialization metadata for a result value type now throws an InvalidOperationException that names the
         type and the remedy at every CloudEvents and HTTP entry point, instead of the NotSupportedException that
         System.Text.Json raised for the unresolved contract.
@@ -75,6 +86,9 @@
       - MetadataValue.TryGetInt64 now accepts canonical signed-integer text from any string metadata value,
         including values originating in headers, JSON, or caller code. Noncanonical forms such as a leading plus,
         negative zero, leading zeros, surrounding whitespace, and out-of-range text remain rejected.
+      - Adds the guard clause ResultObjectExtensions.MustNotBeDefaultInstance for any struct implementing
+        IResultObject. It is the single place where the write boundaries of this library reject a result that is
+        neither a success nor a failure.
     </PackageReleaseNotes>
   </PropertyGroup>
 

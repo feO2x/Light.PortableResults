@@ -29,13 +29,17 @@ public sealed class HttpResultForWritingJsonConverter : JsonConverter<HttpResult
         );
 
     /// <inheritdoc />
+    /// <exception cref="ArgumentException">
+    /// Thrown when the result in <paramref name="wrapper" /> is invalid while carrying no errors and thus cannot
+    /// be written.
+    /// </exception>
     public override void Write(
         Utf8JsonWriter writer,
         HttpResultForWriting wrapper,
         JsonSerializerOptions options
     )
     {
-        var result = wrapper.Data;
+        var result = wrapper.Data.MustNotBeDefaultInstance(nameof(wrapper));
         var resolvedOptions = wrapper.ResolvedOptions;
 
         if (result.IsValid)
@@ -83,13 +87,17 @@ public sealed class HttpResultForWritingJsonConverter<T> : JsonConverter<HttpRes
         );
 
     /// <inheritdoc />
+    /// <exception cref="ArgumentException">
+    /// Thrown when the result in <paramref name="wrapper" /> is invalid while carrying no errors and thus cannot
+    /// be written.
+    /// </exception>
     public override void Write(
         Utf8JsonWriter writer,
         HttpResultForWriting<T> wrapper,
         JsonSerializerOptions options
     )
     {
-        var result = wrapper.Data;
+        var result = wrapper.Data.MustNotBeDefaultInstance(nameof(wrapper));
         var resolvedOptions = wrapper.ResolvedOptions;
 
         if (result.IsValid)

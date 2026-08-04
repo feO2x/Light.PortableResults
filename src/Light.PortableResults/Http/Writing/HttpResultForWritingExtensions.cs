@@ -1,3 +1,5 @@
+using System;
+
 namespace Light.PortableResults.Http.Writing;
 
 /// <summary>
@@ -12,11 +14,14 @@ public static class HttpResultForWritingExtensions
     /// <param name="result">The result to wrap.</param>
     /// <param name="options">The mutable options to freeze into the wrapper.</param>
     /// <returns>The wrapper struct ready for JSON serialization.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
+    /// </exception>
     public static HttpResultForWriting ToHttpResultForWriting(
         this Result result,
         PortableResultsHttpWriteOptions options
     ) =>
-        new (result, options.ToResolvedHttpWriteOptions());
+        new (result.MustNotBeDefaultInstance(), options.ToResolvedHttpWriteOptions());
 
     /// <summary>
     /// Creates an <see cref="HttpResultForWriting{T}" /> wrapper from the result and options.
@@ -25,11 +30,14 @@ public static class HttpResultForWritingExtensions
     /// <param name="result">The result to wrap.</param>
     /// <param name="options">The mutable options to freeze into the wrapper.</param>
     /// <returns>The wrapper struct ready for JSON serialization.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
+    /// </exception>
     public static HttpResultForWriting<T> ToHttpResultForWriting<T>(
         this Result<T> result,
         PortableResultsHttpWriteOptions options
     ) =>
-        new (result, options.ToResolvedHttpWriteOptions());
+        new (result.MustNotBeDefaultInstance(), options.ToResolvedHttpWriteOptions());
 
     /// <summary>
     /// Creates an <see cref="HttpResultForWriting" /> wrapper from the result and already-resolved options.
@@ -37,11 +45,14 @@ public static class HttpResultForWritingExtensions
     /// <param name="result">The result to wrap.</param>
     /// <param name="resolvedOptions">The already-frozen options.</param>
     /// <returns>The wrapper struct ready for JSON serialization.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
+    /// </exception>
     public static HttpResultForWriting ToHttpResultForWriting(
         this Result result,
         ResolvedHttpWriteOptions resolvedOptions
     ) =>
-        new (result, resolvedOptions);
+        new (result.MustNotBeDefaultInstance(), resolvedOptions);
 
     /// <summary>
     /// Creates an <see cref="HttpResultForWriting{T}" /> wrapper from the result and already-resolved options.
@@ -50,9 +61,12 @@ public static class HttpResultForWritingExtensions
     /// <param name="result">The result to wrap.</param>
     /// <param name="resolvedOptions">The already-frozen options.</param>
     /// <returns>The wrapper struct ready for JSON serialization.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="result" /> is invalid while carrying no errors and thus cannot be written.
+    /// </exception>
     public static HttpResultForWriting<T> ToHttpResultForWriting<T>(
         this Result<T> result,
         ResolvedHttpWriteOptions resolvedOptions
     ) =>
-        new (result, resolvedOptions);
+        new (result.MustNotBeDefaultInstance(), resolvedOptions);
 }
