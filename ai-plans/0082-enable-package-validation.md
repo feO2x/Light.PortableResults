@@ -17,9 +17,10 @@ Without a baseline the property is close to decorative: it activates only the co
 - [ ] Package validation runs on push and pull request, so a break is caught in review rather than during the release job.
 - [ ] Validation compares like with like on strong naming: a build without the release SNK produces no `CP0003`, and the release job keeps producing genuinely signed assemblies. Packages built for validation are never pushed.
 - [ ] Strong-naming the `src` assemblies by default leaves the test suite and the Native AOT sample publish green.
-- [ ] `AGENTS.md` documents the local command, its expected clean output, and the offline escape hatch.
+- [ ] Packing the solution emits no warning for the non-packable sample, in the release workflow as well as locally.
+- [ ] `AGENTS.md` documents the local command, how to tell success from failure, and the offline escape hatch.
 - [ ] The only committed suppressions are the two `MetadataKind` enum-value changes already named in the release notes. Every other break listed there is confirmed to be either behavioral or invisible to a 0.6.0 consumer.
-- [ ] The gate is proven with an injected regression: removing or renaming a public member fails the build with the corresponding `CP` diagnostic.
+- [ ] The gate is proven with an injected regression: removing or renaming a public member fails with the corresponding `CP` diagnostic and a non-zero exit code, on an incremental pack as well as a clean one.
 - [ ] The post-release step — bump the baseline to `0.7.0` and delete the suppression file — is recorded where it will be found at release time.
 
 ## Technical Details
@@ -86,7 +87,20 @@ Validation *runs* on `Pack`, so no `CP` diagnostic can appear during `dotnet bui
 dotnet pack ./Light.PortableResults.slnx -c Release
 ```
 
-No properties, no script, no separate target — the same command CI runs, and on a warm NuGet cache it completes in a few seconds. Document it in `AGENTS.md` next to the existing build and test guidance, including that a clean run prints only `Successfully created package` lines, and that a break prints a `CP` diagnostic naming the API.
+No properties, no script, no separate target — the same command CI runs, and on a warm NuGet cache it completes in a few seconds. Document it in `AGENTS.md` next to the existing build and test guidance.
+
+Describe success by exit code and the absence of `CP` diagnostics, never by asserting expected output. Pack is incremental, so the console is not a reliable success signal: a first run prints restore lines, build lines and `Successfully created package` lines, a second run with no source changes prints build lines and no package lines at all, and a `--no-build` repeat on an up-to-date tree prints *nothing whatsoever* and exits 0. An agent told to look for `Successfully created package` would read that silent, correct run as a failure. Measured, on a clean tree: `--no-build` produces zero output lines and exit 0; with a break present, exit 1 and `error CP0011: ...` naming the API.
+
+Incremental packing does not weaken the gate. Verified by changing `MetadataKind.String` from `4` — a member that exists in the 0.6.0 baseline — on an already-packed, up-to-date tree: the break is reported on the next `dotnet pack` and on the next `--no-build` pack. Note when constructing such a check that most `MetadataKind` members are new in 0.7.0, so altering them proves nothing; the baseline only contains `Null`, `Boolean`, `Int64`, `Double`, `String`, `Array` and `Object`.
+
+Remove the non-packable warning rather than documenting around it. Packing the solution today prints:
+
+```
+warning : This project cannot be packaged because packaging has been disabled. ...
+  [samples/NativeAotMovieRating/NativeAotMovieRating.csproj]
+```
+
+`Microsoft.NET.Sdk.Web.ProjectSystem.props` sets `WarnOnPackingNonPackableProject` to `true` for web projects, which the sample is; the other non-packable projects use non-web SDKs and stay quiet. Setting the property to `false` in the sample silences it. This is worth fixing on its own account — the warning is in the release workflow's pack output today — and it is what leaves a correct `--no-build` run genuinely silent instead of showing a lone warning as its only output.
 
 Baseline *acquisition* is a different matter and does reach the ordinary loop. The SDK injects the `PackageDownload` from an evaluation-time `ItemGroup` in `Microsoft.NET.ApiCompat.targets`, not from a target, so it participates in restore whether or not `Pack` ever runs. A plain `dotnet restore` — and therefore `dotnet build` or `dotnet test` with implicit restore — fetches all seven 0.6.0 packages. Do not describe the inner loop as untouched; the accurate statement is that it is untouched *after restore*.
 
@@ -121,5 +135,6 @@ After 0.7.0 is tagged, `PackageValidationBaselineVersion` moves to `0.7.0` and `
 - Reverting or reworking the `MetadataKind` renumbering. It is intentional and already documented; the suppression records it.
 - Any change to the release signing model. Ordinary builds do gain public signing, but the private key, the workflow and the published artifacts are untouched.
 - A dedicated MSBuild target, script or `dotnet` tool wrapping the local check. `dotnet pack -c Release` is the whole interface.
+- Making the sample packable, or removing it from the solution. Only its warning is silenced.
 - Making behavioral breaks enforceable. ApiCompat cannot see them and the release notes remain the record.
 - The remaining v0.7.0 preparations. This is item 3 of #77; Native AOT compatibility is #78 and the default-result write guard is #80.
