@@ -15,6 +15,8 @@
       and globally suppressing IL2067 could hide the same defect in the Light assemblies.
     -->
     <WarningsNotAsErrors>$(WarningsNotAsErrors);IL2104</WarningsNotAsErrors>
+    <!-- For this sample project, we do not use packages.lock.json files as they differ on different OSes -->
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
     <RestoreLockedMode>false</RestoreLockedMode>
   </PropertyGroup>
 
