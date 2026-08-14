@@ -46,8 +46,8 @@
     the guard therefore reads that property, leaves UsePublicSigningKey empty and never sets PublicSign, so
     released packages stay privately signed. Do not guard on SignAssembly - the release sets that too.
     The guard also respects an externally set UsePublicSigningKey so that Stryker runs can opt out of signing:
-    Stryker 4.16.0 cannot re-emit mutated assemblies with a public-only key (CS7032), so tests/AGENTS.md
-    invokes it with UsePublicSigningKey=false in the environment.
+    Stryker 4.16.0 cannot re-emit mutated assemblies with a public-only key (CS7032), so the mutation-testing
+    command in the root AGENTS.md sets UsePublicSigningKey=false in the environment.
   -->
   <PropertyGroup>
     <UsePublicSigningKey Condition="'$(AssemblyOriginatorKeyFile)' == '' and '$(UsePublicSigningKey)' == ''">true</UsePublicSigningKey>
