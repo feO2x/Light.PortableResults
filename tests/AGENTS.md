@@ -32,13 +32,15 @@ Always run from the repository root: Stryker reads `stryker-config.json` only fr
 
 Revisit `coverage-analysis: off` when Stryker's MTP per-test coverage support ([#3516](https://github.com/stryker-mutator/stryker-net/pull/3516)) ships and proves trustworthy; it is the main lever on run time because it avoids running the full discovered test set for every mutant.
 
+Always run Stryker with `UsePublicSigningKey=false` in the environment. Ordinary builds public-sign with the committed `Light.PortableResults.Public.snk` (see `src/Directory.Build.props`), and Stryker 4.16.0 cannot re-emit mutated assemblies with a public-only key — the mutation compile fails with `error CS7032` before any mutant is tested. The props file deliberately lets an externally set `UsePublicSigningKey` win over its default, so the environment variable opts the whole run (initial build, project analysis, and mutation compiles) out of signing. Stryker has no MSBuild-property passthrough, which is why this goes through the environment rather than a `-p:` argument.
+
 ```shell
 # One project — sufficient for the four small projects
-dotnet stryker -p Light.PortableResults.AspNetCore.Shared.csproj
+UsePublicSigningKey=false dotnet stryker -p Light.PortableResults.AspNetCore.Shared.csproj
 
 # One-file configuration smoke check (~5 minutes)
 # Expect: 2,675 tests, 67 killed, 0 NoCoverage, 100.00%
-dotnet stryker -p Light.PortableResults.csproj -m '**/Result.cs'
+UsePublicSigningKey=false dotnet stryker -p Light.PortableResults.csproj -m '**/Result.cs'
 ```
 
 The smoke-check vector is tied to the current `Result.cs` and its tests; update it after intentional changes alter the mutant inventory. All mutants surviving with a 0.00% score suggests fallback to the `vstest` runner, while any non-zero `NoCoverage` count suggests `coverage-analysis: off` was lost.

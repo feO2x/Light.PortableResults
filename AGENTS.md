@@ -2,18 +2,29 @@
 
 Light.PortableResults is a lightweight, high-performance library implementing the Result Pattern for .NET. It stands out for reducing allocations and being able to serialize and deserialize results across different protocols (HTTP via RFC-9457, gRPC, Asynchronous Messaging). Extensibility is less important than performance.
 
-## Implementation rules
+## When you implement a plan
 
-Plans typically have acceptance criteria with check boxes. Check each box when you are finished with the corresponding criterion.
+Plans in `ai-plans/` are frozen after their Planning Phase. The only permitted change to a frozen plan is checking an acceptance criterion (`- [ ]` to `- [x]`), and only after the implementation and the relevant feedback loops verify it. Leave unmet criteria unchecked and never change their wording. If the implementation materially departs from an explicit plan decision, write a Plan Deviations document instead of editing the frozen plan.
+
+## Feedback loops
+
+Run all commands from the repository root.
+
+- `dotnet test Light.PortableResults.slnx` - builds the solution and runs all test projects. See ./tests/AGENTS.md for how to write tests.
+- `dotnet test Light.PortableResults.slnx -- --coverage --coverage-settings "$PWD/coverage.runsettings" --coverage-output-format cobertura` - additionally collects line coverage. Merge the per-project reports with `reportgenerator -reports:'**/*.cobertura.xml' -targetdir:./coverage-merged -reporttypes:'Cobertura;TextSummary'`. Line coverage must stay at or above 95%.
+- `dotnet pack ./Light.PortableResults.slnx -c Release` - Release build (warnings are errors) plus package validation of the public API shape against the published baseline. This is exactly the CI gate; see Package Validation for details and the offline escape hatch.
+- `dotnet test ./tests/Light.PortableResults.Tests/Light.PortableResults.Tests.csproj --configuration Release -p:PortableResultsAssetTargetFramework=netstandard2.0` - CI gate that runs the core test suite against the netstandard2.0 asset.
+- `dotnet publish ./samples/NativeAotMovieRating/NativeAotMovieRating.csproj -c Release -r linux-x64` - CI gate for the Native AOT compatibility claim. Requires a platform linker (clang/gcc), see https://aka.ms/nativeaot-prerequisites.
+- Benchmarks: `dotnet run -c Release --project benchmarks/Benchmarks -- --filter <glob>` (BenchmarkDotNet switcher). Run only for changes where performance is a material risk or requirement.
+- Mutation testing: `dotnet tool restore`, then `UsePublicSigningKey=false dotnet stryker -p <project>` from the repository root (the environment variable opts out of public signing, which Stryker 4.16.0 cannot re-emit). Local, on-demand use only; see ./tests/AGENTS.md for configuration, baselines, and triage rules.
+
+No dependency, secret, container, or source-code security scans are configured in this repository.
 
 ## General Rules for the Code Base
 
 In our Directory.Build.props files in this solution, the following rules are defined:
 
-- Implicit usings or global usings are not allowed - use explicit using statements for clarity.
-- Use C# 14 across all projects.
 - The library is not published in a stable version yet, you can make breaking changes.
-- `<TreatWarningsAsErrors>` is enabled in Release builds, so your code changes must not generate warnings.
 - When a type or method is properly encapsulated, make it public. We don't know how callers would like to use this library. When some types are internal, this might make it hard for callers to access these in tests or when making configuration changes. Prefer public APIs over internal ones.
 - Use Conventional Commits messages. Decide whether a commit title is enough or a commit body is required.
 
@@ -59,10 +70,10 @@ The `0.7.0` cleanup was done this way: the two intentional `MetadataKind.Array`/
 
 Read ./tests/AGENTS.md for details about how to write tests.
 
-## Plan Rules
+## How to write plans
 
 Read ./ai-plans/AGENTS.md for details on how to write plans.
 
-## Here is Your Space
+## This is your space
 
 If you encounter something worth noting while you are working on this code base, write it down here in this section. Once you are finished, I will discuss it with you, and we can decide where to put your notes.

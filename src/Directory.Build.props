@@ -45,9 +45,12 @@
     The release workflow passes AssemblyOriginatorKeyFile as a global property, which this file cannot override;
     the guard therefore reads that property, leaves UsePublicSigningKey empty and never sets PublicSign, so
     released packages stay privately signed. Do not guard on SignAssembly - the release sets that too.
+    The guard also respects an externally set UsePublicSigningKey so that Stryker runs can opt out of signing:
+    Stryker 4.16.0 cannot re-emit mutated assemblies with a public-only key (CS7032), so tests/AGENTS.md
+    invokes it with UsePublicSigningKey=false in the environment.
   -->
   <PropertyGroup>
-    <UsePublicSigningKey Condition="'$(AssemblyOriginatorKeyFile)' == ''">true</UsePublicSigningKey>
+    <UsePublicSigningKey Condition="'$(AssemblyOriginatorKeyFile)' == '' and '$(UsePublicSigningKey)' == ''">true</UsePublicSigningKey>
     <SignAssembly Condition="'$(UsePublicSigningKey)' == 'true'">true</SignAssembly>
     <PublicSign Condition="'$(UsePublicSigningKey)' == 'true'">true</PublicSign>
     <AssemblyOriginatorKeyFile Condition="'$(UsePublicSigningKey)' == 'true'">$(MSBuildThisFileDirectory)../Light.PortableResults.Public.snk</AssemblyOriginatorKeyFile>

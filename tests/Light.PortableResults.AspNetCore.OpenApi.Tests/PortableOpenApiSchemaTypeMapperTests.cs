@@ -11,7 +11,7 @@ namespace Light.PortableResults.AspNetCore.OpenApi.Tests;
 
 public sealed class PortableOpenApiSchemaTypeMapperTests
 {
-    // The schema column of the vocabulary table in ai-plans/0055-metadata-restructuring.md is normative, and
+    // The schema column of the vocabulary table in ai-plans/2026-07-28-0559-55-metadata-restructuring.md is normative, and
     // this is its only guard: the validation source generator emits Map<T>() calls rather than keeping a table
     // of its own. Keying the expectations on MetadataKind means declaring a kind fails this test until its
     // schema has been decided, instead of silently degrading to a schema without a type.
