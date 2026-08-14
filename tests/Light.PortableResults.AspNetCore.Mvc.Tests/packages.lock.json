@@ -602,13 +602,13 @@
       "light.portableresults.aspnetcore.mvc": {
         "type": "Project",
         "dependencies": {
-          "Light.PortableResults.AspNetCore.Shared": "[0.6.0, )"
+          "Light.PortableResults.AspNetCore.Shared": "[0.7.1, )"
         }
       },
       "light.portableresults.aspnetcore.shared": {
         "type": "Project",
         "dependencies": {
-          "Light.PortableResults": "[0.6.0, )"
+          "Light.PortableResults": "[0.7.1, )"
         }
       },
       "Microsoft.Bcl.AsyncInterfaces": {

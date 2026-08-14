@@ -1,0 +1,7 @@
+interface:
+  display_name: "Prepare Guided Coding Issue"
+  short_description: "Create a tracker issue and clean planning branch"
+  default_prompt: "Use $guided-coding-prepare-issue-for-plan to create an issue and branch for this work."
+
+policy:
+  allow_implicit_invocation: false

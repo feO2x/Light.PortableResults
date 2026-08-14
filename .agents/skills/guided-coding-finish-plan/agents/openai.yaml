@@ -1,0 +1,7 @@
+interface:
+  display_name: "Finish Guided Coding Plan"
+  short_description: "Validate, commit, and freeze a completed plan"
+  default_prompt: "Use $guided-coding-finish-plan to validate and finish this plan."
+
+policy:
+  allow_implicit_invocation: false

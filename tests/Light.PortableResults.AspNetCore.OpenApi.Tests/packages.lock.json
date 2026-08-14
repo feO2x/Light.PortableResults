@@ -243,26 +243,26 @@
       "light.portableresults.aspnetcore.minimalapis": {
         "type": "Project",
         "dependencies": {
-          "Light.PortableResults.AspNetCore.Shared": "[0.6.0, )"
+          "Light.PortableResults.AspNetCore.Shared": "[0.7.1, )"
         }
       },
       "light.portableresults.aspnetcore.mvc": {
         "type": "Project",
         "dependencies": {
-          "Light.PortableResults.AspNetCore.Shared": "[0.6.0, )"
+          "Light.PortableResults.AspNetCore.Shared": "[0.7.1, )"
         }
       },
       "light.portableresults.aspnetcore.openapi": {
         "type": "Project",
         "dependencies": {
-          "Light.PortableResults.AspNetCore.Shared": "[0.6.0, )",
+          "Light.PortableResults.AspNetCore.Shared": "[0.7.1, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.10, )"
         }
       },
       "light.portableresults.aspnetcore.shared": {
         "type": "Project",
         "dependencies": {
-          "Light.PortableResults": "[0.6.0, )"
+          "Light.PortableResults": "[0.7.1, )"
         }
       },
       "Microsoft.AspNetCore.OpenApi": {
