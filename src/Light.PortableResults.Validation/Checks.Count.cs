@@ -31,8 +31,8 @@ public static partial class Checks
     [ValidationRule(ValidationErrorCodes.Count)]
     [ValidationRuleMessage("{displayName} must contain exactly {expectedCount} item(s)")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.ExpectedCount, nameof(expectedCount))]
-    public static Check<string?> HasCount(
-        this Check<string?> check,
+    public static Check<string> HasCount(
+        this Check<string> check,
         int expectedCount,
         bool shortCircuitOnError = false
     )
@@ -81,8 +81,8 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
-    public static Check<string?> HasCount(
-        this Check<string?> check,
+    public static Check<string> HasCount(
+        this Check<string> check,
         int expectedCount,
         ErrorOverrides overrides,
         bool shortCircuitOnError = false
@@ -126,8 +126,8 @@ public static partial class Checks
     [ValidationRule(ValidationErrorCodes.MinCount)]
     [ValidationRuleMessage("{displayName} must contain at least {minCount} item(s)")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.MinCount, nameof(minCount))]
-    public static Check<string?> HasMinCount(
-        this Check<string?> check,
+    public static Check<string> HasMinCount(
+        this Check<string> check,
         int minCount,
         bool shortCircuitOnError = false
     )
@@ -176,8 +176,8 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
-    public static Check<string?> HasMinCount(
-        this Check<string?> check,
+    public static Check<string> HasMinCount(
+        this Check<string> check,
         int minCount,
         ErrorOverrides overrides,
         bool shortCircuitOnError = false
@@ -221,8 +221,8 @@ public static partial class Checks
     [ValidationRule(ValidationErrorCodes.MaxCount)]
     [ValidationRuleMessage("{displayName} must contain at most {maxCount} item(s)")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.MaxCount, nameof(maxCount))]
-    public static Check<string?> HasMaxCount(
-        this Check<string?> check,
+    public static Check<string> HasMaxCount(
+        this Check<string> check,
         int maxCount,
         bool shortCircuitOnError = false
     )
@@ -271,8 +271,8 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
-    public static Check<string?> HasMaxCount(
-        this Check<string?> check,
+    public static Check<string> HasMaxCount(
+        this Check<string> check,
         int maxCount,
         ErrorOverrides overrides,
         bool shortCircuitOnError = false

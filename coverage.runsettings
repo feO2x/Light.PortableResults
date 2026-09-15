@@ -12,6 +12,22 @@
       <DataCollector friendlyName="Code Coverage">
         <Configuration>
           <CodeCoverage>
+            <ModulePaths>
+              <!--
+                Only measure the library's own assemblies. Third-party packages that embed
+                their PDB are instrumented otherwise: Argon (the JSON serializer used by
+                Verify) showed up with 21% line coverage and dragged the total from 98%
+                down to 67%.
+
+                Module paths are matched as regular expressions, not globs.
+              -->
+              <Include>
+                <ModulePath>.*[\\/]Light\.PortableResults[^\\/]*\.dll$</ModulePath>
+              </Include>
+              <Exclude>
+                <ModulePath>.*\.Tests\.dll$</ModulePath>
+              </Exclude>
+            </ModulePaths>
             <Sources>
               <Exclude>
                 <!--

@@ -196,8 +196,8 @@ public static partial class Checks
     [ValidationRule(ValidationErrorCodes.EnumName)]
     [ValidationRuleMessage("{displayName} must be a valid enum name")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.IgnoreCase, nameof(ignoreCase))]
-    public static Check<string?> IsEnumName<TEnum>(
-        this Check<string?> check,
+    public static Check<string> IsEnumName<TEnum>(
+        this Check<string> check,
         bool ignoreCase = false,
         bool shortCircuitOnError = false
     )
@@ -251,8 +251,8 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
-    public static Check<string?> IsEnumName<TEnum>(
-        this Check<string?> check,
+    public static Check<string> IsEnumName<TEnum>(
+        this Check<string> check,
         ErrorOverrides overrides,
         bool ignoreCase = false,
         bool shortCircuitOnError = false

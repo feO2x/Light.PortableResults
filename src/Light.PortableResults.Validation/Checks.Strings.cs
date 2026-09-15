@@ -200,8 +200,8 @@ public static partial class Checks
     [ValidationRule(ValidationErrorCodes.MaxLength)]
     [ValidationRuleMessage("{displayName} must be at most {maxLength} characters long")]
     [ValidationRuleMetadata(ValidationErrorMetadataKeys.MaxLength, nameof(maxLength))]
-    public static Check<string?> HasMaxLength(
-        this Check<string?> check,
+    public static Check<string> HasMaxLength(
+        this Check<string> check,
         int maxLength,
         bool shortCircuitOnError = false
     )
@@ -250,8 +250,8 @@ public static partial class Checks
     /// <see langword="null" /> is converted to <see cref="string.Empty" /> before this assertion,
     /// so this only occurs when using a no-op normalizer.
     /// </exception>
-    public static Check<string?> HasMaxLength(
-        this Check<string?> check,
+    public static Check<string> HasMaxLength(
+        this Check<string> check,
         int maxLength,
         ErrorOverrides overrides,
         bool shortCircuitOnError = false

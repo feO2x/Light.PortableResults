@@ -5,7 +5,15 @@
     <PublishAot>false</PublishAot>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
     <Description>Framework-agnostic validation foundations for Light.PortableResults, including validation contexts, low-allocation checks, validator base classes, and validated value pipelines.</Description>
-    <PackageReleaseNotes></PackageReleaseNotes>
+    <PackageReleaseNotes>
+      Light.PortableResults.Validation 0.7.1
+      ---------------------------------
+
+      - HasMaxLength, HasCount, HasMinCount, HasMaxCount, and IsEnumName for strings now accept and return Check&lt;string>
+        instead of Check&lt;string?>, matching HasMinLength and HasLengthIn. They can now be chained with the other string
+        assertions without nullable reference type warnings (CS8620, CS8601). Callers that pass a Check&lt;string?> explicitly
+        now get a nullability warning; normalize or guard the value first, e.g. with IsNotNullOrWhiteSpace.
+    </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
