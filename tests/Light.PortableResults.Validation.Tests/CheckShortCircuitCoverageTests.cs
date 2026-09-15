@@ -462,7 +462,7 @@ public sealed class CheckShortCircuitCoverageTests
     public void HasMaxLength_ShouldRespectShortCircuit()
     {
         var context = CreateContext();
-        var check = context.Check<string?>(null, NoOpValueNormalizer.Instance, target: "nullableText").ShortCircuit();
+        var check = context.Check<string>(null!, NoOpValueNormalizer.Instance, target: "nullableText").ShortCircuit();
 
         check.HasMaxLength(1).IsShortCircuited.Should().BeTrue();
     }
@@ -471,7 +471,7 @@ public sealed class CheckShortCircuitCoverageTests
     public void HasMaxLength_ShouldRespectShortCircuit_WhenOverridesAreUsed()
     {
         var context = CreateContext();
-        var check = context.Check<string?>(null, NoOpValueNormalizer.Instance, target: "nullableText").ShortCircuit();
+        var check = context.Check<string>(null!, NoOpValueNormalizer.Instance, target: "nullableText").ShortCircuit();
 
         check.HasMaxLength(1, new ErrorOverrides { Code = "UnusedMaxLength" }).IsShortCircuited.Should().BeTrue();
     }
@@ -634,7 +634,7 @@ public sealed class CheckShortCircuitCoverageTests
     public void IsEnumName_ShouldRespectShortCircuit()
     {
         var context = CreateContext();
-        var check = context.Check<string?>(null, NoOpValueNormalizer.Instance, target: "statusName").ShortCircuit();
+        var check = context.Check<string>(null!, NoOpValueNormalizer.Instance, target: "statusName").ShortCircuit();
 
         check.IsEnumName<OrderStatus>().IsShortCircuited.Should().BeTrue();
     }
@@ -643,7 +643,7 @@ public sealed class CheckShortCircuitCoverageTests
     public void IsEnumName_ShouldRespectShortCircuit_WhenOverridesAreUsed()
     {
         var context = CreateContext();
-        var check = context.Check<string?>(null, NoOpValueNormalizer.Instance, target: "statusName").ShortCircuit();
+        var check = context.Check<string>(null!, NoOpValueNormalizer.Instance, target: "statusName").ShortCircuit();
 
         check.IsEnumName<OrderStatus>(new ErrorOverrides { Code = "UnusedEnumName" }, ignoreCase: true)
            .IsShortCircuited
@@ -697,8 +697,7 @@ public sealed class CheckShortCircuitCoverageTests
     public void StringHasCount_ShouldRespectShortCircuit()
     {
         var context = CreateContext();
-        string? nullableText = null;
-        var check = context.Check(nullableText, NoOpValueNormalizer.Instance, target: "text").ShortCircuit();
+        var check = context.Check<string>(null!, NoOpValueNormalizer.Instance, target: "text").ShortCircuit();
 
         check.HasCount(1).IsShortCircuited.Should().BeTrue();
     }
@@ -707,8 +706,7 @@ public sealed class CheckShortCircuitCoverageTests
     public void StringHasCount_ShouldRespectShortCircuit_WhenOverridesAreUsed()
     {
         var context = CreateContext();
-        string? nullableText = null;
-        var check = context.Check(nullableText, NoOpValueNormalizer.Instance, target: "text").ShortCircuit();
+        var check = context.Check<string>(null!, NoOpValueNormalizer.Instance, target: "text").ShortCircuit();
 
         check.HasCount(1, new ErrorOverrides { Code = "UnusedStringCount" }).IsShortCircuited.Should().BeTrue();
     }
@@ -717,8 +715,7 @@ public sealed class CheckShortCircuitCoverageTests
     public void StringHasMinCount_ShouldRespectShortCircuit()
     {
         var context = CreateContext();
-        string? nullableText = null;
-        var check = context.Check(nullableText, NoOpValueNormalizer.Instance, target: "text").ShortCircuit();
+        var check = context.Check<string>(null!, NoOpValueNormalizer.Instance, target: "text").ShortCircuit();
 
         check.HasMinCount(1).IsShortCircuited.Should().BeTrue();
     }
@@ -727,8 +724,7 @@ public sealed class CheckShortCircuitCoverageTests
     public void StringHasMinCount_ShouldRespectShortCircuit_WhenOverridesAreUsed()
     {
         var context = CreateContext();
-        string? nullableText = null;
-        var check = context.Check(nullableText, NoOpValueNormalizer.Instance, target: "text").ShortCircuit();
+        var check = context.Check<string>(null!, NoOpValueNormalizer.Instance, target: "text").ShortCircuit();
 
         check.HasMinCount(1, new ErrorOverrides { Code = "UnusedStringMinCount" }).IsShortCircuited.Should().BeTrue();
     }
@@ -737,8 +733,7 @@ public sealed class CheckShortCircuitCoverageTests
     public void StringHasMaxCount_ShouldRespectShortCircuit()
     {
         var context = CreateContext();
-        string? nullableText = null;
-        var check = context.Check(nullableText, NoOpValueNormalizer.Instance, target: "text").ShortCircuit();
+        var check = context.Check<string>(null!, NoOpValueNormalizer.Instance, target: "text").ShortCircuit();
 
         check.HasMaxCount(1).IsShortCircuited.Should().BeTrue();
     }
@@ -747,8 +742,7 @@ public sealed class CheckShortCircuitCoverageTests
     public void StringHasMaxCount_ShouldRespectShortCircuit_WhenOverridesAreUsed()
     {
         var context = CreateContext();
-        string? nullableText = null;
-        var check = context.Check(nullableText, NoOpValueNormalizer.Instance, target: "text").ShortCircuit();
+        var check = context.Check<string>(null!, NoOpValueNormalizer.Instance, target: "text").ShortCircuit();
 
         check.HasMaxCount(1, new ErrorOverrides { Code = "UnusedStringMaxCount" }).IsShortCircuited.Should().BeTrue();
     }

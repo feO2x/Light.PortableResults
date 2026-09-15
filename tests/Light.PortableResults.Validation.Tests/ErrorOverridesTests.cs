@@ -24,7 +24,7 @@ public sealed class ErrorOverridesTests
            .Check("ab12", target: "alternateCode", displayName: "Alternate code")
            .Matches("^[A-Z]+$", "Alternate code is invalid", RegexOptions.IgnoreCase);
         context
-           .Check<string?>("PendingApproval", target: "statusName", displayName: "Status name")
+           .Check("PendingApproval", target: "statusName", displayName: "Status name")
            .IsEnumName<OrderStatus>("Status name is invalid");
         context
            .Check(123.4500m, target: "amount", displayName: "Amount")
@@ -118,7 +118,7 @@ public sealed class ErrorOverridesTests
            .Check("abc", target: "status", displayName: "Status")
            .IsEqualTo("ABC", new ErrorOverrides { Category = ErrorCategory.UnprocessableContent });
         context
-           .Check<string?>("AB", target: "tags", displayName: "Tags")
+           .Check("AB", target: "tags", displayName: "Tags")
            .HasCount(3, new ErrorOverrides { Metadata = customMetadata });
         context
            .Check(string.Empty, target: "note", displayName: "Note")

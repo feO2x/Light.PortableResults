@@ -64,10 +64,9 @@ public sealed class BuiltInRuleFamilyWorkflowTests
     public void GuardedChecks_HasMaxLength_ShouldThrow_WhenValueIsNullAndAutomaticNullHandlingIsDisabled()
     {
         var context = CreateNullHandlingDisabledContext();
-        string? nullableText = null;
 
         Action act = () => context
-           .Check(nullableText, NoOpValueNormalizer.Instance, target: "name")
+           .Check<string>(null!, NoOpValueNormalizer.Instance, target: "name")
            .HasMaxLength(1);
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*non-null string*");
@@ -147,7 +146,7 @@ public sealed class BuiltInRuleFamilyWorkflowTests
     {
         var context = CreateNullHandlingDisabledContext();
 
-        Action act = () => context.Check<string?>("A", target: "code").HasCount(-1);
+        Action act = () => context.Check("A", target: "code").HasCount(-1);
 
         act.Should().Throw<ArgumentOutOfRangeException>().WithMessage("*zero or greater*");
     }
@@ -397,7 +396,7 @@ public sealed class BuiltInRuleFamilyWorkflowTests
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
 
         context
-           .Check<string?>("ABCD", target: "shortCode", displayName: "Short code")
+           .Check("ABCD", target: "shortCode", displayName: "Short code")
            .HasMaxLength(3, "Short code is too long");
 
         context.Errors.Should().ContainSingle(
@@ -500,7 +499,7 @@ public sealed class BuiltInRuleFamilyWorkflowTests
     {
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
 
-        context.Check<string?>("AB", target: "code", displayName: "Code").HasCount(3);
+        context.Check("AB", target: "code", displayName: "Code").HasCount(3);
 
         context.Errors.Should().ContainSingle(
             error =>
@@ -562,7 +561,7 @@ public sealed class BuiltInRuleFamilyWorkflowTests
         var context = ValidationWorkflowTestData.ValidationContextFactory.CreateValidationContext();
 
         context
-           .Check<string?>("PendingApproval", target: "statusName", displayName: "Status name")
+           .Check("PendingApproval", target: "statusName", displayName: "Status name")
            .IsEnumName<OrderStatus>("Status name is invalid");
 
         context.Errors.Should().ContainSingle(

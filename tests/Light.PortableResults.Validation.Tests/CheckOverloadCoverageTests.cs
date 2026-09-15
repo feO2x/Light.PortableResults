@@ -115,7 +115,7 @@ public sealed class CheckOverloadCoverageTests
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
         context
-           .Check<string?>("ab", target: "exactStringCount", displayName: "Exact string count")
+           .Check("ab", target: "exactStringCount", displayName: "Exact string count")
            .HasCount(3, new ErrorOverrides { Code = "ExactStringCount" });
 
         context.Errors.Should()
@@ -127,7 +127,7 @@ public sealed class CheckOverloadCoverageTests
     {
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
-        context.Check<string?>("ab", target: "minStringCount", displayName: "Min string count").HasMinCount(3);
+        context.Check("ab", target: "minStringCount", displayName: "Min string count").HasMinCount(3);
 
         context.Errors.Should().ContainSingle(error => error.Target == "minStringCount" && error.Code == "MinCount");
     }
@@ -138,7 +138,7 @@ public sealed class CheckOverloadCoverageTests
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
         context
-           .Check<string?>("abcd", target: "maxStringCount", displayName: "Max string count")
+           .Check("abcd", target: "maxStringCount", displayName: "Max string count")
            .HasMaxCount(3, new ErrorOverrides { Message = "Too many string characters" });
 
         context.Errors.Should().ContainSingle(
@@ -366,7 +366,7 @@ public sealed class CheckOverloadCoverageTests
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
         context
-           .Check<string?>("unknown", target: "enumName", displayName: "Enum name")
+           .Check("unknown", target: "enumName", displayName: "Enum name")
            .IsEnumName<OrderStatus>(ignoreCase: true);
 
         context.Errors.Should().ContainSingle(error => error.Target == "enumName" && error.Code == "EnumName");
@@ -378,7 +378,7 @@ public sealed class CheckOverloadCoverageTests
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
         context
-           .Check<string?>("unknown", target: "enumNameOverride", displayName: "Enum name override")
+           .Check("unknown", target: "enumNameOverride", displayName: "Enum name override")
            .IsEnumName<OrderStatus>(new ErrorOverrides { Code = "EnumNameInvalid" }, ignoreCase: false);
 
         context.Errors.Should()
@@ -668,7 +668,7 @@ public sealed class CheckOverloadCoverageTests
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
         context
-           .Check<string?>("ab", target: "minStringCountOverride", displayName: "Min string count override")
+           .Check("ab", target: "minStringCountOverride", displayName: "Min string count override")
            .HasMinCount(3, new ErrorOverrides { Code = "MinStringCountOverride" });
 
         context.Errors.Should().ContainSingle(
@@ -682,7 +682,7 @@ public sealed class CheckOverloadCoverageTests
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
         context
-           .Check<string?>("abcd", target: "maxStringCountDefault", displayName: "Max string count default")
+           .Check("abcd", target: "maxStringCountDefault", displayName: "Max string count default")
            .HasMaxCount(3);
 
         context.Errors.Should()
@@ -842,7 +842,7 @@ public sealed class CheckOverloadCoverageTests
     {
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
-        context.Check<string?>("abcd", target: "maxLengthDefault", displayName: "Max length default").HasMaxLength(3);
+        context.Check("abcd", target: "maxLengthDefault", displayName: "Max length default").HasMaxLength(3);
 
         context.Errors.Should().ContainSingle(error => error.Target == "maxLengthDefault" && error.Code == "MaxLength");
     }
@@ -890,7 +890,7 @@ public sealed class CheckOverloadCoverageTests
         OrderStatus? nullableStatus = OrderStatus.Pending;
         decimal? nullableAmount = 12.30m;
 
-        context.Check<string?>("abc", target: "exactString", displayName: "Exact string").HasCount(3);
+        context.Check("abc", target: "exactString", displayName: "Exact string").HasCount(3);
         context
            .Check<IEnumerable<int>>([1, 2, 3], target: "exactCollection", displayName: "Exact collection")
            .HasCount(3, new ErrorOverrides { Code = "Unused" });
@@ -968,7 +968,7 @@ public sealed class CheckOverloadCoverageTests
            .Check("abc", target: "notEqual", displayName: "Not equal")
            .IsNotEqualTo("xyz", StringComparer.OrdinalIgnoreCase);
         context
-           .Check<string?>("abcd", target: "maxLength", displayName: "Max length")
+           .Check("abcd", target: "maxLength", displayName: "Max length")
            .HasMaxLength(4, new ErrorOverrides { Code = "Unused" });
         context
            .Check("ab", target: "minLength", displayName: "Min length")
@@ -1034,15 +1034,15 @@ public sealed class CheckOverloadCoverageTests
         context.Check(3, target: "exclusiveRange", displayName: "Exclusive range").IsInExclusiveRange(2, 4);
 
         context
-           .Check<string?>("abc", target: "exactCountOverride", displayName: "Exact count override")
+           .Check("abc", target: "exactCountOverride", displayName: "Exact count override")
            .HasCount(3, new ErrorOverrides { Code = "Unused" });
-        context.Check<string?>("abc", target: "minCount", displayName: "Min count").HasMinCount(2);
+        context.Check("abc", target: "minCount", displayName: "Min count").HasMinCount(2);
         context
-           .Check<string?>("abc", target: "minCountOverride", displayName: "Min count override")
+           .Check("abc", target: "minCountOverride", displayName: "Min count override")
            .HasMinCount(2, new ErrorOverrides { Code = "Unused" });
-        context.Check<string?>("abc", target: "maxCount", displayName: "Max count").HasMaxCount(3);
+        context.Check("abc", target: "maxCount", displayName: "Max count").HasMaxCount(3);
         context
-           .Check<string?>("abc", target: "maxCountOverride", displayName: "Max count override")
+           .Check("abc", target: "maxCountOverride", displayName: "Max count override")
            .HasMaxCount(3, new ErrorOverrides { Code = "Unused" });
         context
            .Check<IEnumerable<int>>([1, 2], target: "collectionCount", displayName: "Collection count")
@@ -1067,9 +1067,9 @@ public sealed class CheckOverloadCoverageTests
         context
            .Check(nullableStatus, target: "nullableEnumOverride", displayName: "Nullable enum override")
            .IsInEnum(new ErrorOverrides { Code = "Unused" });
-        context.Check<string?>("Approved", target: "enumName", displayName: "Enum name").IsEnumName<OrderStatus>();
+        context.Check("Approved", target: "enumName", displayName: "Enum name").IsEnumName<OrderStatus>();
         context
-           .Check<string?>("approved", target: "enumNameOverride", displayName: "Enum name override")
+           .Check("approved", target: "enumNameOverride", displayName: "Enum name override")
            .IsEnumName<OrderStatus>(new ErrorOverrides { Code = "Unused" }, ignoreCase: true);
 
         context
@@ -1127,10 +1127,10 @@ public sealed class CheckOverloadCoverageTests
            .Check("A1", target: "requiredTextOverride", displayName: "Required text override")
            .IsNotNullOrWhiteSpace(new ErrorOverrides { Code = "Unused" });
         context
-           .Check<string?>("abc", target: "maxLengthDefaultSuccess", displayName: "Max length default success")
+           .Check("abc", target: "maxLengthDefaultSuccess", displayName: "Max length default success")
            .HasMaxLength(3);
         context
-           .Check<string?>("abc", target: "maxLengthOverrideSuccess", displayName: "Max length override success")
+           .Check("abc", target: "maxLengthOverrideSuccess", displayName: "Max length override success")
            .HasMaxLength(3, new ErrorOverrides { Code = "Unused" });
         context
            .Check("abc", target: "lengthInOverrideSuccess", displayName: "Length in override success")
@@ -1160,10 +1160,10 @@ public sealed class CheckOverloadCoverageTests
         var context = DefaultValidationContextFactory.Create().CreateValidationContext();
 
         context
-           .Check<string?>("Approved", target: "enumNameCaseSensitive", displayName: "Enum name case sensitive")
+           .Check("Approved", target: "enumNameCaseSensitive", displayName: "Enum name case sensitive")
            .IsEnumName<OrderStatus>();
         context
-           .Check<string?>("approved", target: "enumNameOverrideCaseInsensitive", displayName: "Enum name override")
+           .Check("approved", target: "enumNameOverrideCaseInsensitive", displayName: "Enum name override")
            .IsEnumName<OrderStatus>(new ErrorOverrides { Code = "Unused" }, ignoreCase: true);
 
         context.HasErrors.Should().BeFalse();
