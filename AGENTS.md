@@ -44,7 +44,3 @@ This repository follows Guided Coding. See [`ai-plans/AGENTS.md`](ai-plans/AGENT
 ## This is your space
 
 Found something noteworthy during implementation? Write down your discoveries here, we will discuss them afterward.
-
-- Issue #91 (docs overhaul): `PortableResultsCloudEventsWriteOptions.IdResolver` says the default generates "a new UUIDv7 string", but `CloudEventsResultExtensions` uses `Ulid.NewUlid().ToGuid()`, whose version nibble is not 7. The docs now only promise "a new GUID string"; either the XML doc or the implementation should change.
-- Issue #91: `ErrorCategory.ImATeapot` (418) is missing from `GetTypeUri`, `GetTitle`, and `GetDetail` in `ErrorCategoryExtensionsForHttp`, so a 418 response carries the type, title, and detail of a 500.
-- Issue #91: `HasCount`, `HasMinCount`, and `HasMaxCount` on `Check<string>` count UTF-16 code units but use the "must contain … item(s)" messages of the collection checks.
