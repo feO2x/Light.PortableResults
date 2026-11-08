@@ -1,6 +1,6 @@
 interface:
   display_name: "Write Guided Coding Plan"
-  short_description: "Write an agreed approach as a plan document"
+  short_description: "Write an agreed approach as an initial or follow-up plan document"
   default_prompt: "Use $guided-coding-write-plan to write the agreed plan for this work."
 
 policy:

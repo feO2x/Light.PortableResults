@@ -2,10 +2,6 @@
 
 Light.PortableResults is a high-performance Result Pattern library for .NET with typed round trips, e.g., for RFC 9457 HTTP responses and CloudEvents. Prioritize low allocations and throughput over extensibility.
 
-## When you implement a plan
-
-Plans in `ai-plans/` are frozen after their Planning Phase. The only permitted change to a frozen plan is checking an acceptance criterion (`- [ ]` to `- [x]`), and only after the implementation and relevant feedback loops verify it. Leave unmet criteria unchecked and never change their wording. If the implementation materially departs from an explicit plan decision, write a Plan Deviations document instead of editing the frozen plan.
-
 ## Feedback loops
 
 Run all commands from the repository root.

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Guided Coding Setup"
+  short_description: "Set up or upgrade Guided Coding in a repository"
+  default_prompt: "Use $guided-coding-setup to set up or upgrade Guided Coding in this repository."
+
+policy:
+  allow_implicit_invocation: false

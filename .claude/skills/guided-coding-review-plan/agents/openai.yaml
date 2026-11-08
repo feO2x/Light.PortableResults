@@ -1,0 +1,7 @@
+interface:
+  display_name: "Review Guided Coding Plan"
+  short_description: "Review a plan draft against the repository"
+  default_prompt: "Use $guided-coding-review-plan to review this plan draft against the repository."
+
+policy:
+  allow_implicit_invocation: false
