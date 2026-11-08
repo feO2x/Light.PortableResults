@@ -21,6 +21,7 @@ No dependency, secret, container, or source-code security scans are configured.
 - Breaking changes are permitted before 1.0, but they must follow the package-validation and release-note requirements below.
 - Prefer public APIs over internal ones when a type or member is properly encapsulated, so callers can configure and test the library without workarounds. See https://blog.ploeh.dk/2015/09/21/public-types-hidden-in-plain-sight/
 - Use Conventional Commits; add a body when the title does not adequately explain the rationale.
+- User documentation lives in `README.md` and `docs/`. Changes to public APIs, wire formats or diagnostics update the affected page in the same PR.
 
 ## Package validation
 
@@ -43,3 +44,7 @@ This repository follows Guided Coding. See [`ai-plans/AGENTS.md`](ai-plans/AGENT
 ## This is your space
 
 Found something noteworthy during implementation? Write down your discoveries here, we will discuss them afterward.
+
+- Issue #91 (docs overhaul): `PortableResultsCloudEventsWriteOptions.IdResolver` says the default generates "a new UUIDv7 string", but `CloudEventsResultExtensions` uses `Ulid.NewUlid().ToGuid()`, whose version nibble is not 7. The docs now only promise "a new GUID string"; either the XML doc or the implementation should change.
+- Issue #91: `ErrorCategory.ImATeapot` (418) is missing from `GetTypeUri`, `GetTitle`, and `GetDetail` in `ErrorCategoryExtensionsForHttp`, so a 418 response carries the type, title, and detail of a 500.
+- Issue #91: `HasCount`, `HasMinCount`, and `HasMaxCount` on `Check<string>` count UTF-16 code units but use the "must contain … item(s)" messages of the collection checks.

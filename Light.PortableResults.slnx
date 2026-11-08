@@ -36,6 +36,7 @@
     <Project Path="tests\Light.PortableResults.AspNetCore.OpenApi.Tests\Light.PortableResults.AspNetCore.OpenApi.Tests.csproj" />
     <Project Path="tests\Light.PortableResults.Validation.OpenApi.Tests\Light.PortableResults.Validation.OpenApi.Tests.csproj" />
     <File Path="tests\Directory.Build.props" />
+    <Project Path="tests/Light.PortableResults.Documentation.Tests/Light.PortableResults.Documentation.Tests.csproj" />
     <Project Path="tests/Light.PortableResults.Validation.OpenApi.SourceGeneration.Tests/Light.PortableResults.Validation.OpenApi.SourceGeneration.Tests.csproj" />
     <Project Path="tests/Light.PortableResults.Validation.Tests/Light.PortableResults.Validation.Tests.csproj" />
     <Project Path="tests\Light.PortableResults.AspNetCore.MinimalApis.Tests\Light.PortableResults.AspNetCore.MinimalApis.Tests.csproj" />
