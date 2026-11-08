@@ -3,67 +3,63 @@ description: Set up or upgrade Guided Coding repository instructions, plan stora
 license: MIT
 metadata:
     github-path: skills/guided-coding-setup
-    github-ref: refs/heads/main
+    github-ref: refs/tags/2.0.0
     github-repo: https://github.com/feO2x/guided-coding
-    github-tree-sha: 45dc5336407039c7a5c1422eb37ad7069a11724f
+    github-tree-sha: f62cf51e978b5b53af1a93a66f6b653e226dc3e9
 name: guided-coding-setup
 ---
 # Set Up Guided Coding
 
-Set up or upgrade Guided Coding in the current repository. Preserve project-specific instructions
-and user-authored content. Never modify existing plan or Plan Deviations documents.
+Your goal is to set up or upgrade Guided Coding in the current repository. After finishing, report what you changed, give the customization tips below, and stop.
 
-## 1. Inspect the repository
+Guided Coding needs these artifacts:
 
-Read the root `AGENTS.md` when present, `ai-plans/AGENTS.md` when present, nested instruction
-files, build manifests, task runners, scripts, and CI configuration.
+- `AGENTS.md` at the repository root, listing the feedback loops and pointing to `ai-plans/AGENTS.md`.
+- `ai-plans/`, the folder holding all plans and Plan Deviations documents.
+- `ai-plans/AGENTS.md`, describing the folder, its file naming rules, and how Frozen Plans are treated.
 
-Identify feedback loops and their exact commands. Look for:
+The outcome must be idempotent. Running this skill on a repository sets the artifacts up from scratch, brings outdated ones up to date, or leaves current ones untouched. Content unrelated to Guided Coding, such as project-specific instructions or user-authored notes, is never changed.
 
-- compilers, transpilers, type checkers, static analyzers, and linters;
-- unit, integration, end-to-end, coverage, and mutation tests;
-- benchmarks and performance tests; and
+## 1. Inspect the Repository
+
+Read the root `AGENTS.md` and `ai-plans/AGENTS.md` if they exist, plus build manifests, task runners, scripts, and CI configuration.
+
+Identify the feedback loops and their exact commands. Look for:
+
+- compilers, type checkers, static analyzers, and linters;
+- automated tests, code coverage, and mutation testing tools;
+- benchmarks; and
 - dependency, secret, container, and source-code security scans.
 
-Do not invent commands or list tools merely because they are common for the detected language.
-Prefer the repository's documented entry points. When a command is safe, non-destructive, and
-reasonably bounded, run it to detect stale instructions. Do not claim that a command passed unless
-it was executed successfully; report why any documented command was not run. If existing Guided
-Coding instructions conflict with this version and resolving them would discard a project-specific
-decision, ask before editing.
+Only select commands that are immediately executable in the repository. Do not list tools merely because they are common for the detected language.
 
-## 2. Update the root instructions
+## 2. Ensure the Root `AGENTS.md`
 
-Create `AGENTS.md` if it does not exist. Otherwise make the smallest idempotent update that
-preserves unrelated sections.
+Create `AGENTS.md` in the repository root if it does not exist. Otherwise, make the smallest update that adds what is missing and corrects what is outdated. Match existing sections by meaning, not by exact heading.
 
 Ensure it contains:
 
-1. `## When you implement a plan`, stating that:
-   - plans in `ai-plans/` are frozen after their Planning Phase;
-   - only acceptance criteria may change, from `- [ ]` to `- [x]`;
-   - a criterion is checked only after the implementation and relevant feedback loops verify it;
-   - unmet criteria remain unchecked and their wording is never changed; and
-   - material departures from explicit plan decisions require a Plan Deviations document rather
-     than edits to the frozen plan.
-2. `## Feedback loops`, listing each repository-confirmed command and what it verifies. State
-   plainly when no automated feedback-loop command can be confirmed.
-3. `## How to write plans`, linking to `ai-plans/AGENTS.md`.
-4. `## This is your space` as the final section, inviting agents to record noteworthy repository
-   discoveries for later discussion. Preserve any notes already in that section.
+1. `## Feedback Loops`: each command and what it verifies. Report to the user when no feedback loops could be found, and warn that `guided-coding-write-plan` refuses to write plans until at least one is listed.
+2. `## Guided Coding`: a link to `ai-plans/AGENTS.md`, noting that it holds the file naming conventions and the rules for working with Frozen Plans. Do not restate those rules here; they live next to the plans they govern, and agents pick them up when they read the folder.
 
-Consolidate equivalent existing sections instead of adding duplicates.
+If both sections already exist and are current, leave the file alone.
 
-## 3. Update the plan record
+## 3. Ensure `ai-plans/AGENTS.md`
 
-Create `ai-plans/` when missing. Create or update `ai-plans/AGENTS.md` from
-`assets/ai-plans-AGENTS.md`.
+Create `ai-plans/` if it is missing. Compare `ai-plans/AGENTS.md` with `assets/ai-plans-AGENTS.md` relative to this skill file.
 
-Keep the version marker and portable Guided Coding rules current while preserving repository-
-specific additions and notes about legacy plan filenames. Do not rename, rewrite, or reorganize
-historical documents during an upgrade.
+- If the file is missing, copy the asset.
+- If the file exists with an older `guided-coding-version` marker or without one, update the Guided Coding paragraphs and the marker. Keep every repository-specific addition, such as a custom plan structure, naming conventions, or notes about legacy file names.
 
-## 4. Report
+## 4. Report and Give Customization Tips
 
-Report the files created or updated, the feedback loops documented, which commands were executed
-and their results, why any were not run, and any unresolved conflicts. Then stop.
+List the files you created, updated, or left unchanged, the feedback loops you documented, and which commands you ran. Report to the user that they should verify the changes.
+
+Then explain how Guided Coding can be customized, so the user knows the defaults are only a starting point:
+
+- **Plan structure:** `guided-coding-write-plan` uses a default structure with `## Rationale`, `## Acceptance Criteria`, and `## Technical Details`. Describing a different structure in `ai-plans/AGENTS.md` overrides the default.
+- **File names:** the skills use the placeholders `<timestamp>` (UTC, `YYYY-MM-DD-HHMM`), `<ticket-id>`, and `<short-title>` (kebab-case, shortened ticket title). Conventions for these, e.g., a `<ticket-id>` format or a maximum length for `<short-title>`, belong in `ai-plans/AGENTS.md`.
+- **Feedback loops:** plans should reference the feedback loops in the root `AGENTS.md` to make Acceptance Criteria verifiable. Adding or removing a feedback loop later only requires updating that list.
+- **Deviations:** the threshold for what counts as a material deviation can be tightened or relaxed in `ai-plans/AGENTS.md`.
+
+Repository-specific conventions in `AGENTS.md` files take precedence over the skills' defaults.

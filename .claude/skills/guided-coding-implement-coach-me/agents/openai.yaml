@@ -1,0 +1,7 @@
+interface:
+  display_name: "Coach Me Through a Guided Coding Plan"
+  short_description: "Solve each milestone yourself with coaching"
+  default_prompt: "Use $guided-coding-implement-coach-me to coach me through implementing the Frozen Plan by solving each milestone myself."
+
+policy:
+  allow_implicit_invocation: false

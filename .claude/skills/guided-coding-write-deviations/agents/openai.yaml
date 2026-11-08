@@ -1,0 +1,7 @@
+interface:
+  display_name: "Write Guided Coding Plan Deviations"
+  short_description: "Summarize follow-up plans and code deviations"
+  default_prompt: "Use $guided-coding-write-deviations to compare the implementation with its plans."
+
+policy:
+  allow_implicit_invocation: false

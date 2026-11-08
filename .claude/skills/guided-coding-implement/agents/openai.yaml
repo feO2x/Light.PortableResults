@@ -1,0 +1,7 @@
+interface:
+  display_name: "Implement Guided Coding Plan"
+  short_description: "Implement a Frozen Plan with repository feedback loops"
+  default_prompt: "Use $guided-coding-implement to implement this Frozen Plan and run its documented feedback loops."
+
+policy:
+  allow_implicit_invocation: false

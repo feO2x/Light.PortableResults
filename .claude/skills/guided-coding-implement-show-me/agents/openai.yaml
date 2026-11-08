@@ -1,0 +1,7 @@
+interface:
+  display_name: "Show Me How to Implement a Guided Coding Plan"
+  short_description: "Enter and discuss worked code, one milestone at a time"
+  default_prompt: "Use $guided-coding-implement-show-me to help me implement the Frozen Plan through worked code examples that I enter and discuss."
+
+policy:
+  allow_implicit_invocation: false

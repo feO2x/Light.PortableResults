@@ -3,78 +3,35 @@ description: Write a Guided Coding plan or follow-up plan after its approach has
 license: MIT
 metadata:
     github-path: skills/guided-coding-write-plan
-    github-ref: refs/heads/main
+    github-ref: refs/tags/2.0.0
     github-repo: https://github.com/feO2x/guided-coding
-    github-tree-sha: a4f2460317872e658ae15c3074140d8f432e75d3
+    github-tree-sha: b4fdb943b5653407986e70ade81073e3e3d8576d
 name: guided-coding-write-plan
 ---
 # Write a Plan
 
-Write the agreed approach into `ai-plans/`. Do not use this skill to begin or replace the
-planning conversation. Read the repository instructions, including `ai-plans/AGENTS.md`, first.
+Your goal is to write an Initial Plan or Follow-Up Plan into the `ai-plans/` folder at the repository root. After writing, report the plan path and stop.
 
-After writing, report the plan path and stop.
+## Plan File Name
 
-## File name
+The initial file name of the new plan file is `<short-title>.md`. `<short-title>` is a shortened kebab-case version of the ticket title. At this point in the conversation, you should be able to derive a full title from the discussion that you can shorten. If not, ask the user to provide one and shorten it.
 
-Use:
+## Plan Structure
 
-```text
-YYYY-MM-DD-HHMM-<issue-id>-<kebab-case-description>.md
-```
+Check whether `ai-plans/AGENTS.md` contains the plan structure. If not, fall back to `assets/default-plan-structure.md` relative to this skill file.
 
-Omit `<issue-id>-` when the work has no tracker issue. Obtain the current UTC timestamp from the
-shell; never infer it from conversation context. For example:
+## What Happens After Writing a Plan?
 
-```sh
-date -u +%F-%H%M
-```
+The user reviews the plan. They will provide feedback, aspects of the plan might change. Once both you and the user agree on the plan being ready for implementation, it is frozen and becomes largely immutable (except for checking off Acceptance Criteria). When a plan is frozen, its file name is changed to `<timestamp>-<ticket-id>-<short-title>.md`, or `<timestamp>-<short-title>.md` (if no `<ticket-id>` is present). Also, a `*Frozen at ...*` line is inserted right below the `# Title` of the plan. All this doesn't happen in this step of the conversation.
 
-In PowerShell, use `(Get-Date).ToUniversalTime().ToString("yyyy-MM-dd-HHmm")`.
+## Follow-up Plans
 
-Normalize the tracker identifier for filenames: convert it to lowercase, remove a leading `#`,
-replace each run of characters other than `a-z` and `0-9` with one hyphen, trim leading and trailing
-hyphens, and do not add zero padding. Stop if normalization produces an empty identifier. If the
-work requires an issue but none exists, stop and suggest the Guided Coding issue-preparation skill
-instead of creating a temporary filename.
+A Follow-Up Plan supersedes decisions of a Frozen Plan. The decision to write one is made in the Guiding Phase, when the review of the implementation calls for larger changes.
 
-Resolve the complete destination path before writing and confirm it does not exist. Never
-overwrite or reuse an existing plan or Plan Deviations document; report a collision and stop.
+Use the same format and file naming convention. Read every earlier document for the ticket. In the opening section of the plan (`## Rationale` in the default structure), name the plans this one follows by exact filename.
 
-## Structure
+Record only the changed decisions and outcomes. State exactly which earlier decisions this plan supersedes and why. Do not repeat unchanged decisions or contradict earlier plans silently.
 
-Start with `# Title`, followed by exactly these `##` sections in order:
+## Most Importantly
 
-1. `## Rationale`: briefly state the problem and overarching goal.
-2. `## Acceptance Criteria`: list observable, verifiable outcomes as unticked Markdown tasks
-   (`- [ ]`). Describe results, not implementation steps.
-3. `## Technical Details`: record important decisions, constraints, affected components, and
-   non-obvious interactions. Give a senior engineer room to implement.
-
-Use minimal code examples only when they clarify an important contract, such as an API
-signature, interface, or DTO shape. Say whether an example is exact or illustrative when
-unclear. Avoid method bodies, step-by-step instructions, exhaustive file lists, and routine
-background.
-
-When behavior changes, require appropriate automated test coverage in the acceptance criteria.
-Require benchmarks only when performance is a material risk or requirement.
-
-Discover feedback loops from repository instructions, build files, scripts, and CI configuration.
-Look for:
-
-- compilers, type checkers, static analyzers, and linters;
-- automated tests, code coverage, and mutation tests;
-- benchmarks and performance tests; and
-- security scans.
-
-Use the relevant feedback loops to make acceptance criteria verifiable. Do not require every
-available loop or claim that tooling exists without confirming it. If the change requires a
-missing feedback loop, make adding it explicit in the plan.
-
-## Follow-up plans
-
-Use the same format and issue identifier with a later timestamp. Read every earlier document for
-the issue. In the Rationale, name the plans this one follows by exact filename.
-
-Record only the changed decisions and outcomes. State exactly which earlier decisions this plan
-supersedes and why. Do not repeat unchanged decisions or contradict earlier plans silently.
+Try to keep each plan as concise as possible. Simpler language is preferred over elaborate prose.
