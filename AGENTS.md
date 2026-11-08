@@ -21,6 +21,7 @@ No dependency, secret, container, or source-code security scans are configured.
 - Breaking changes are permitted before 1.0, but they must follow the package-validation and release-note requirements below.
 - Prefer public APIs over internal ones when a type or member is properly encapsulated, so callers can configure and test the library without workarounds. See https://blog.ploeh.dk/2015/09/21/public-types-hidden-in-plain-sight/
 - Use Conventional Commits; add a body when the title does not adequately explain the rationale.
+- User documentation lives in `README.md` and `docs/`. Changes to public APIs, wire formats or diagnostics update the affected page in the same PR.
 
 ## Package validation
 

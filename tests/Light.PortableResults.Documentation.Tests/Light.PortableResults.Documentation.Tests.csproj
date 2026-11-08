@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Light.PortableResults.AspNetCore.MinimalApis\Light.PortableResults.AspNetCore.MinimalApis.csproj" />
+    <ProjectReference Include="..\..\src\Light.PortableResults.Validation\Light.PortableResults.Validation.csproj" />
+  </ItemGroup>
+
+</Project>
