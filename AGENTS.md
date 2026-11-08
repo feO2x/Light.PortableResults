@@ -36,9 +36,9 @@ Ordinary `src` builds are public-signed to match the published assembly identity
 
 In one commit, set `PackageValidationBaselineVersion` to the released version, bump the root `Version` to the next patch, empty every `PackageReleaseNotes`, and delete all `CompatibilitySuppressions.xml` files under `src/`.
 
-## How to write plans
+## Guided Coding
 
-Follow `ai-plans/AGENTS.md` and use the corresponding Guided Coding skill before writing a plan or Plan Deviations document.
+This repository follows Guided Coding. See [`ai-plans/AGENTS.md`](ai-plans/AGENTS.md) for the file naming conventions of plans and Plan Deviations documents and for the rules for working with Frozen Plans.
 
 ## This is your space
 
