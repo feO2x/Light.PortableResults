@@ -6,8 +6,8 @@ public static class DiagnosticDescriptors
 {
     private const string Category = "Light.PortableResults.Validation.OpenApi.SourceGeneration";
 
-    private const string HelpLinkBase =
-        "https://github.com/feO2x/Light.PortableResults/blob/main/README.md#validation-openapi-source-generation";
+    // Each diagnostic links to its own explicit anchor in docs/openapi.md, e.g. "#lprsg0001".
+    private const string HelpLinkBase = "https://github.com/feO2x/Light.PortableResults/blob/main/docs/openapi.md#";
 
     public static readonly DiagnosticDescriptor ValidatorMustBePartial = new (
         "LPRSG0001",
@@ -16,7 +16,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0001"
     );
 
     public static readonly DiagnosticDescriptor UnsupportedValidatorShape = new (
@@ -26,7 +26,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0002"
     );
 
     public static readonly DiagnosticDescriptor AsyncValidatorUnsupported = new (
@@ -36,7 +36,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0003"
     );
 
     public static readonly DiagnosticDescriptor MissingPerformValidation = new (
@@ -46,7 +46,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0004"
     );
 
     public static readonly DiagnosticDescriptor NestedCheckSkipped = new (
@@ -56,7 +56,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0005"
     );
 
     public static readonly DiagnosticDescriptor OpaqueValidationFlow = new (
@@ -66,7 +66,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0006"
     );
 
     public static readonly DiagnosticDescriptor InvalidRuleMetadata = new (
@@ -76,7 +76,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0007"
     );
 
     public static readonly DiagnosticDescriptor NoDocumentedRules = new (
@@ -86,7 +86,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0008"
     );
 
     public static readonly DiagnosticDescriptor InvalidErrorContract = new (
@@ -96,7 +96,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0009"
     );
 
     public static readonly DiagnosticDescriptor InvalidHint = new (
@@ -106,7 +106,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0010"
     );
 
     public static readonly DiagnosticDescriptor ConflictingHint = new (
@@ -116,7 +116,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0011"
     );
 
     public static readonly DiagnosticDescriptor ExampleMetadataWithoutSchema = new (
@@ -126,7 +126,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0012"
     );
 
     public static readonly DiagnosticDescriptor UnknownMessageTemplatePlaceholder = new (
@@ -136,7 +136,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0013"
     );
 
     public static readonly DiagnosticDescriptor MalformedMessageTemplate = new (
@@ -146,7 +146,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0014"
     );
 
     public static readonly DiagnosticDescriptor MetadataValueCannotBeReconstructed = new (
@@ -156,7 +156,7 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0015"
     );
 
     public static readonly DiagnosticDescriptor MultiFileMetadataFieldUnsupported = new (
@@ -166,6 +166,6 @@ public static class DiagnosticDescriptors
         Category,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        helpLinkUri: HelpLinkBase
+        helpLinkUri: HelpLinkBase + "lprsg0016"
     );
 }

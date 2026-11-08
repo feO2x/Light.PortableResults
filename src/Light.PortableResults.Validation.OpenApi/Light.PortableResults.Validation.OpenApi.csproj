@@ -3,7 +3,13 @@
   <PropertyGroup>
     <IsAotCompatible>true</IsAotCompatible>
     <Description>OpenAPI bridge package for Light.PortableResults.Validation. Provides built-in validation error metadata contracts and typed helpers for endpoint-specific validation error narrowing.</Description>
-    <PackageReleaseNotes></PackageReleaseNotes>
+    <PackageReleaseNotes>
+      Light.PortableResults.Validation.OpenApi 0.7.1
+      ---------------------------------------------
+
+      - The help links of the source generator diagnostics LPRSG0001 to LPRSG0016 now point to a dedicated section
+        for each diagnostic in docs/openapi.md instead of a README anchor that did not exist.
+    </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
