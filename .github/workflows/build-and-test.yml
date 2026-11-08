@@ -103,12 +103,12 @@ jobs:
       pull-requests: write
     steps:
       - name: Download coverage results
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: coverage-results
       # Add Coverage PR Comment runs always to ensure the comment is updated
       - name: Add Coverage PR Comment
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         with:
           recreate: true
           path: code-coverage-results.md
