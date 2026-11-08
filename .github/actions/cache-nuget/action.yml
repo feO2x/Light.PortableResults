@@ -11,7 +11,7 @@ runs:
     # immutable cache could never acquire the new baseline packages. Unrelated edits to that props file
     # rebuild the cache, which is cheaper than duplicating the baseline version in this workflow.
     - name: Cache NuGet packages
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/.nuget/packages
         key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json', 'src/Directory.Build.props') }}
